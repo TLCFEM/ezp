@@ -1,6 +1,6 @@
 {
     "cmake.configureSettings": {
-        "MPI_HOME": "/home/theodore/Documents/OpenMPI"
+        "MPI_HOME": "/home/theodore/Documents/MPICH"
     },
     "files.associations": {
         "type_traits": "cpp",
@@ -75,7 +75,9 @@
         "cfenv": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "ezp": "cpp"
+        "ezp": "cpp",
+        "future": "cpp",
+        "variant": "cpp"
     },
     "cSpell.words": [
         "blacs",

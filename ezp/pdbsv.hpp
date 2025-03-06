@@ -63,7 +63,7 @@ namespace ezp {
             );
 
             const IT laf = loc.block * (loc.kl + loc.ku) + 6 * std::pow(loc.max_klu, 2);
-            const IT lwork = loc.max_klu * std::max(B.n_cols, loc.max_klu);
+            const IT lwork = loc.max_klu * std::max(2 * B.n_cols + 1, loc.max_klu);
             loc.work.resize(laf + lwork);
 
             IT info;
@@ -98,7 +98,7 @@ namespace ezp {
             this->ctx.scatter(B, full_desc_b, loc.b, local_desc_b);
 
             const IT laf = loc.block * (loc.kl + loc.ku) + 6 * std::pow(loc.max_klu, 2);
-            const IT lwork = loc.max_klu * std::max(B.n_cols, loc.max_klu);
+            const IT lwork = loc.max_klu * std::max(2 * B.n_cols + 1, loc.max_klu);
             loc.work.resize(laf + lwork);
 
             desc<IT> desc1d_b{502, this->trans_ctx.context, loc.n, loc.block, 0, loc.block, 0, 0, 0};

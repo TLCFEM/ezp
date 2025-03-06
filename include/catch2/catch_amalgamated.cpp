@@ -15,6 +15,7 @@
 
 #include "catch_amalgamated.hpp"
 
+#include <ezp/abstract/abstract_solver.hpp>
 
 #ifndef CATCH_WINDOWS_H_PROXY_HPP_INCLUDED
 #define CATCH_WINDOWS_H_PROXY_HPP_INCLUDED
@@ -9415,6 +9416,7 @@ void ConsoleReporter::testCaseEnded(TestCaseStats const& _testCaseStats) {
     m_headerPrinted = false;
 }
 void ConsoleReporter::testRunEnded(TestRunStats const& _testRunStats) {
+    if(0 != ezp::get_env<int>().rank()) return;
     printTotalsDivider(_testRunStats.totals);
     printTestRunTotals( m_stream, *m_colour, _testRunStats.totals );
     m_stream << '\n' << std::flush;
