@@ -1,0 +1,6 @@
+[
+    {
+        "name": "intel",
+        "environmentSetupScript": "/opt/intel/oneapi/setvars.sh"
+    }
+]

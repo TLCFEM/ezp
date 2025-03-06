@@ -1,0 +1,26 @@
+name: Example
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+jobs:
+  linux-dev:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        build: [ RelWithDebInfo, Debug ]
+    steps:
+      - name: Clone
+        uses: actions/checkout@v4
+      - name: MKL
+        run: |
+          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt-get update && sudo apt-get install libopenmpi-dev
+      - name: Compile
+        run: |
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} ..
+          cmake --build . --target all
