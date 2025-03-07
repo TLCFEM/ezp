@@ -16,7 +16,7 @@
  ******************************************************************************/
 
 #include <chrono>
-#include <ezp/pdbsv.hpp>
+#include <ezp/pgbsv.hpp>
 #include <random>
 #include <thread>
 
@@ -25,11 +25,11 @@ using namespace std::chrono;
 
 #ifdef EZP_ENABLE_TEST
 #include <catch2/catchy.hpp>
-TEST_CASE("Random PDBSV", "[Simple Solver]") {
+TEST_CASE("Random PGBSV", "[Simple Solver]") {
 #else
 #define REQUIRE(...)
 
-void random_pdbsv() {
+void random_pgbsv() {
 #endif
     const auto& env = get_env<int>();
 
@@ -43,8 +43,8 @@ void random_pdbsv() {
         const auto NRHS = band(gen);
         const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 400)(gen);
 
-        const auto LDA = KL + KU + 1;
-        const auto OFFSET = KU;
+        const auto LDA = 2 * (KL + KU) + 1;
+        const auto OFFSET = 2 * KU + KL;
 
         const auto IDX = [&](const int r, const int c) {
             if(r - c > KL || c - r > KU) return -1;
@@ -67,7 +67,7 @@ void random_pdbsv() {
                 if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += dist_v(gen);
         }
 
-        const auto info = par_ddbsv(env.size()).solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
+        const auto info = par_dgbsv(env.size()).solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }
@@ -80,7 +80,7 @@ int main(const int argc, const char*[]) {
     if(argc <= 1)
         while(0 == i) std::this_thread::sleep_for(seconds(10));
 
-    random_pdbsv();
+    random_pgbsv();
 
     return 0;
 }
