@@ -50,6 +50,7 @@ namespace ezp {
             loc.lines = this->ctx.rows(loc.n, loc.block);
             loc.desc1d_a = {501, this->trans_ctx.context, loc.n, loc.block, 0, loc.lead, 0, 0, 0};
 
+            // see: https://github.com/Reference-ScaLAPACK/scalapack/issues/117
             loc.a.resize(loc.lead * loc.lines + loc.ku);
             loc.ipiv.resize(std::min(loc.n, loc.lines + loc.kl + loc.ku), -987654);
         }
