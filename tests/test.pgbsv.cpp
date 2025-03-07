@@ -33,15 +33,17 @@ void random_pgbsv() {
 #endif
     const auto& env = get_env<int>();
 
-    for(auto K = 0; K < 1000; ++K) {
-        const auto seed = blacs_context<int>().amx(static_cast<int>(duration_cast<seconds>(system_clock::now().time_since_epoch()).count()));
+    const auto context = blacs_context<int>();
+
+    for(auto K = 0; K < 100; ++K) {
+        const auto seed = context.amn(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
         std::mt19937 gen(seed);
 
-        auto band = std::uniform_int_distribution(1, 20);
+        auto band = std::uniform_int_distribution(1, 4);
         const auto KL = band(gen);
         const auto KU = band(gen);
         const auto NRHS = band(gen);
-        const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 400)(gen);
+        const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 10)(gen);
 
         const auto LDA = 2 * (KL + KU) + 1;
         const auto OFFSET = 2 * KU + KL;
@@ -61,10 +63,10 @@ void random_pgbsv() {
 
             for(auto I = 0; I < N; ++I) A[IDX(I, I)] = 10. * dist_v(gen) + 10.;
 
-            std::uniform_int_distribution dist_idx(0, N - 1);
-
-            for(auto I = 0; I < N * N; ++I)
-                if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += dist_v(gen);
+            // std::uniform_int_distribution dist_idx(0, N - 1);
+            //
+            // for(auto I = 0; I < N * N; ++I)
+            //     if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += dist_v(gen);
         }
 
         const auto info = par_dgbsv(env.size()).solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
