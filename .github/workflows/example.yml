@@ -15,10 +15,10 @@ jobs:
       - name: Clone
         uses: actions/checkout@v4
       - name: MKL
+        if: false
         run: |
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-          sudo apt-get update && sudo apt-get install libopenmpi-dev
       - name: Compile
         run: |
           mkdir build && cd build
@@ -27,7 +27,7 @@ jobs:
       - name: Test
         if: matrix.build == 'Debug'
         run: |
-          mpirun -n 4 ./catch2
+          mpirun --use-hwthread-cpus -n 2 ./catch2
           for SRC in `find . | egrep '\.o'`; do gcov -n $SRC > /dev/null; done
       - name: Report
         if: matrix.build == 'Debug'
