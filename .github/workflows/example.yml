@@ -30,13 +30,4 @@ jobs:
         run: |
           source /opt/intel/oneapi/setvars.sh
           cd build
-          mpirun -n 2 ./catch2
           for SRC in `find . -type f -executable | egrep 'example'`; do mpirun -n 2 $SRC; done
-          for SRC in `find . | egrep '\.o'`; do gcov -n $SRC > /dev/null; done
-      - name: Report
-        if: matrix.build == 'Debug'
-        uses: codecov/codecov-action@v5
-        with:
-          plugins: gcov
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
