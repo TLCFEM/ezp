@@ -29,8 +29,10 @@ jobs:
         if: matrix.build == 'Debug'
         run: |
           source /opt/intel/oneapi/setvars.sh
-          cd build && mpirun -n 2 ./catch2
-          for SRC in `find . | egrep '\.o'`; do gcov -n $SRC > /dev/null; done
+          cd build
+          mpirun -n 2 ./catch2
+          for SRC in `find . | egrep 'example'`; do mpirun -n 2 $SRC; done
+          for SRC in `find . | egrep '\.o'`; do gcov-13 -n $SRC > /dev/null; done
       - name: Report
         if: matrix.build == 'Debug'
         uses: codecov/codecov-action@v5
