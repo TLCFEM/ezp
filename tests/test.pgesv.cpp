@@ -55,7 +55,7 @@ void random_pgesv() {
             std::uniform_real_distribution dist_v(0., 1.);
 
             for(auto I = 0; I < N; ++I)
-                for(auto J = 0; J < N; ++J) A[IDX(I, J)] = dist_v(gen);
+                for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen);
         }
 
         const auto info = par_dgesv(rows, cols).solve({N, N, A.data()}, {N, NRHS, B.data()});

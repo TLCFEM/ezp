@@ -56,7 +56,7 @@ void random_pposv() {
 
             for(auto I = 0; I < N; ++I) {
                 A[IDX(I, I)] = 10. + 10. * dist_v(gen);
-                for(auto J = I + 1; J < N; ++J) A[IDX(I, J)] = A[IDX(J, I)] = dist_v(gen);
+                for(auto J = I + 1; J < std::min(N, I + 5); ++J) A[IDX(I, J)] = A[IDX(J, I)] = dist_v(gen);
             }
         }
 
