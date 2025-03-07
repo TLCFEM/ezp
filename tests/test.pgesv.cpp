@@ -16,7 +16,8 @@
  ******************************************************************************/
 
 #include <chrono>
-#include <ezp/pdbsv.hpp>
+#include <cmath>
+#include <ezp/pgesv.hpp>
 #include <random>
 #include <thread>
 
@@ -25,49 +26,39 @@ using namespace std::chrono;
 
 #ifdef EZP_ENABLE_TEST
 #include <catch2/catchy.hpp>
-TEST_CASE("Random PDBSV", "[Simple Solver]") {
+TEST_CASE("Random PGESV", "[Simple Solver]") {
 #else
 #define REQUIRE(...)
 
-void random_pdbsv() {
+void random_pgesv() {
 #endif
     const auto& env = get_env<int>();
+
+    const auto rows = std::max(1, static_cast<int>(std::sqrt(env.size())));
+    const auto cols = env.size() / rows;
 
     for(auto K = 0; K < 1000; ++K) {
         const auto seed = blacs_context<int>().amx(static_cast<int>(duration_cast<seconds>(system_clock::now().time_since_epoch()).count()));
         std::mt19937 gen(seed);
 
-        auto band = std::uniform_int_distribution(1, 20);
-        const auto KL = band(gen);
-        const auto KU = band(gen);
-        const auto NRHS = band(gen);
-        const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 400)(gen);
+        const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
+        const auto N = std::uniform_int_distribution(100, 400)(gen);
 
-        const auto LDA = KL + KU + 1;
-        const auto OFFSET = KU;
-
-        const auto IDX = [&](const int r, const int c) {
-            if(r - c > KL || c - r > KU) return -1;
-            return OFFSET + r - c + c * LDA;
-        };
+        const auto IDX = [=](const int r, const int c) { return r + c * N; };
 
         std::vector<double> A, B;
 
         if(0 == env.rank()) {
-            A.resize(N * LDA, 0.);
+            A.resize(N * N, 0.);
             B.resize(N * NRHS, 1.);
 
             std::uniform_real_distribution dist_v(0., 1.);
 
-            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = 10. * dist_v(gen) + 10.;
-
-            std::uniform_int_distribution dist_idx(0, N - 1);
-
-            for(auto I = 0; I < N * N; ++I)
-                if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += 10. * dist_v(gen);
+            for(auto I = 0; I < N; ++I)
+                for(auto J = 0; J < N; ++J) A[IDX(I, J)] = dist_v(gen);
         }
 
-        const auto info = par_ddbsv(env.size()).solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
+        const auto info = par_dgesv(rows, cols).solve({N, N, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }
@@ -80,7 +71,7 @@ int main(const int argc, const char*[]) {
     if(argc <= 1)
         while(0 == i) std::this_thread::sleep_for(seconds(10));
 
-    random_pdbsv();
+    random_pgesv();
 
     return 0;
 }
