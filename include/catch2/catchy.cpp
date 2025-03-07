@@ -13,7 +13,7 @@
 //  You probably shouldn't edit it directly.
 //  ----------------------------------------------------------
 
-#include "catch_amalgamated.hpp"
+#include "catchy.hpp"
 
 #include <ezp/abstract/abstract_solver.hpp>
 

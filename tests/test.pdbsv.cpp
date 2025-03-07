@@ -24,7 +24,7 @@ using namespace ezp;
 using namespace std::chrono;
 
 #ifdef EZP_ENABLE_TEST
-#include <catch2/catch_amalgamated.hpp>
+#include <catch2/catchy.hpp>
 TEST_CASE("Random PDBSV", "[Simple Solver]") {
 #else
 #define REQUIRE(...)
