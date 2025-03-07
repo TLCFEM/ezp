@@ -27,6 +27,7 @@ jobs:
       - name: Test
         if: matrix.build == 'Debug'
         run: |
+          cd build
           mpirun --use-hwthread-cpus -n 2 ./catch2
           for SRC in `find . | egrep '\.o'`; do gcov -n $SRC > /dev/null; done
       - name: Report
