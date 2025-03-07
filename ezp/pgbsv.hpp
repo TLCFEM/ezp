@@ -91,10 +91,12 @@ namespace ezp {
 
             if(!this->ctx.is_valid() || !this->trans_ctx.is_valid()) return 0;
 
-            loc.b.resize(loc.lines * B.n_cols);
+            const auto lead_b = std::max(loc.block, loc.lines);
 
-            auto full_desc_b = this->ctx.desc_g(B.n_rows, B.n_cols);
-            auto local_desc_b = this->ctx.desc_l(B.n_rows, B.n_cols, loc.block, B.n_cols, loc.lines);
+            loc.b.resize(lead_b * B.n_cols);
+
+            const auto full_desc_b = this->ctx.desc_g(B.n_rows, B.n_cols);
+            const auto local_desc_b = this->ctx.desc_l(B.n_rows, B.n_cols, loc.block, B.n_cols, lead_b);
 
             this->ctx.scatter(B, full_desc_b, loc.b, local_desc_b);
 
@@ -102,7 +104,7 @@ namespace ezp {
             const IT lwork = std::max(B.n_cols * (loc.block + 2 * loc.kl + 4 * loc.ku), 1);
             loc.work.resize(laf + lwork);
 
-            desc<IT> desc1d_b{502, this->trans_ctx.context, loc.n, loc.block, 0, loc.block, 0, 0, 0};
+            desc<IT> desc1d_b{502, this->trans_ctx.context, loc.n, loc.block, 0, lead_b, 0, 0, 0};
 
             IT info;
             // ReSharper disable CppCStyleCast

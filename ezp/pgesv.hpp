@@ -59,8 +59,8 @@ namespace ezp {
 
             this->loc.b.resize(this->loc.rows * this->ctx.cols(B.n_cols, this->loc.block));
 
-            auto full_desc_b = this->ctx.desc_g(B.n_rows, B.n_cols);
-            auto loc_desc_b = this->ctx.desc_l(B.n_rows, B.n_cols, this->loc.block, this->loc.rows);
+            const auto full_desc_b = this->ctx.desc_g(B.n_rows, B.n_cols);
+            const auto loc_desc_b = this->ctx.desc_l(B.n_rows, B.n_cols, this->loc.block, this->loc.rows);
 
             this->ctx.scatter(B, full_desc_b, this->loc.b, loc_desc_b);
 

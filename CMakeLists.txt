@@ -34,8 +34,8 @@ endif ()
 
 link_libraries(MPI::MPI_C MPI::MPI_CXX)
 
-# add_compile_options(-fsanitize=address)
-# add_link_options(-fsanitize=address)
+add_compile_options(-fsanitize=address)
+add_link_options(-fsanitize=address)
 
 file(GLOB EXAMPLES "*.cpp" "examples/*.cpp")
 
