@@ -1,6 +1,6 @@
 {
     "cmake.configureSettings": {
-        "MPI_HOME": "/home/theodore/Documents/MPICH"
+        "MPI_HOME": "/home/theodore/Documents/OpenMPI"
     },
     "files.associations": {
         "type_traits": "cpp",
