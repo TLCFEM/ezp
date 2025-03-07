@@ -36,6 +36,7 @@ link_libraries(MPI::MPI_C MPI::MPI_CXX)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_options(-fprofile-arcs -ftest-coverage)
+    link_libraries(gcov)
 endif ()
 
 option(EZP_ASAN "Enable asan." OFF)
