@@ -33,49 +33,44 @@ void random_pdbsv() {
 #endif
     const auto& env = get_env<int>();
 
-    std::mt19937 gen(duration_cast<seconds>(system_clock::now().time_since_epoch()).count());
+    for(auto K = 0; K < 1000; ++K) {
+        const auto seed = blacs_context<int>().amx(static_cast<int>(duration_cast<seconds>(system_clock::now().time_since_epoch()).count()));
+        std::mt19937 gen(seed);
 
-    const auto KL = std::uniform_int_distribution(0, 20)(gen);
-    const auto KU = std::uniform_int_distribution(0 == KL ? 1 : 0, 20)(gen);
-    const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
-    const auto N = std::uniform_int_distribution(std::max(KL, KU) + 2, 100)(gen);
+        auto band = std::uniform_int_distribution(1, 20);
+        const auto KL = band(gen);
+        const auto KU = band(gen);
+        const auto NRHS = band(gen);
+        const auto N = std::uniform_int_distribution(std::max(KL, KU) + 2, 100)(gen);
 
-    const auto LDA = KL + KU + 1;
-    const auto OFFSET = KU;
+        const auto LDA = KL + KU + 1;
+        const auto OFFSET = KU;
 
-    const auto IDX = [&](const int r, const int c) {
-        if(r - c > KL || c - r > KU) return -1;
-        return OFFSET + r - c + c * LDA;
-    };
+        const auto IDX = [&](const int r, const int c) {
+            if(r - c > KL || c - r > KU) return -1;
+            return OFFSET + r - c + c * LDA;
+        };
 
-    std::vector<double> A, B;
+        std::vector<double> A, B;
 
-    if(0 == env.rank()) {
-        A.resize(N * LDA, 0.);
-        B.resize(N * NRHS, 1.);
+        if(0 == env.rank()) {
+            A.resize(N * LDA, 0.);
+            B.resize(N * NRHS, 1.);
 
-        std::uniform_real_distribution dist_v(0., 1.);
+            std::uniform_real_distribution dist_v(0., 1.);
 
-        for(auto I = 0; I < N; ++I) A[IDX(I, I)] = 10. * dist_v(gen) + 10.;
+            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = 10. * dist_v(gen) + 10.;
 
-        std::uniform_int_distribution dist_idx(0, N - 1);
+            std::uniform_int_distribution dist_idx(0, N - 1);
 
-        for(auto I = 0; I < N * N; ++I)
-            if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += 10. * dist_v(gen);
+            for(auto I = 0; I < N * N; ++I)
+                if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += 10. * dist_v(gen);
+        }
+
+        const auto info = par_ddbsv(env.size()).solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
+
+        if(0 == env.rank()) REQUIRE(info == 0);
     }
-
-    // create a parallel solver
-    // it uses a one-dimensional process grid
-    // it takes the number of processes as arguments
-    auto solver = par_ddbsv(env.size());
-
-    // need to wrap the data in full_mat objects
-    // it requires the number of rows and columns of the matrix, and a pointer to the data
-    // on non-root processes, the data pointer is nullptr as the vector is empty
-    // solver.solve(band_mat{N, N, KL, KU, A.data()}, full_mat{N, NRHS, B.data()});
-    const auto info = solver.solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
-
-    if(0 == env.rank()) REQUIRE(info == 0);
 }
 
 #ifdef EZP_ENABLE_TEST

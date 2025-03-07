@@ -14,6 +14,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+/**
+ * @class pdbsv
+ * @brief General band matrix.
+ *
+ * Although the `pdbsv` solver supports KL=0 and/or KU=0, a zero (half) bandwidth
+ * would lead to unwanted warning message from ScaLAPACK.
+ * See: https://github.com/Reference-ScaLAPACK/scalapack/issues/116
+ *
+ * @author tlc
+ * @date 07/03/2025
+ * @version 1.0.0
+ * @file pdbsv.hpp
+ * @{
+ */
 
 #ifndef PDBSV_HPP
 #define PDBSV_HPP
@@ -134,3 +148,5 @@ namespace ezp {
 } // namespace ezp
 
 #endif // PDBSV_HPP
+
+//! @}

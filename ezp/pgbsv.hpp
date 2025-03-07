@@ -14,6 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+/**
+ * @class pgbsv
+ * @brief General band matrix.
+ * @author tlc
+ * @date 07/03/2025
+ * @version 1.0.0
+ * @file pgbsv.hpp
+ * @{
+ */
 
 #ifndef PGBSV_HPP
 #define PGBSV_HPP
@@ -133,3 +142,5 @@ namespace ezp {
 } // namespace ezp
 
 #endif // PGBSV_HPP
+
+//! @}

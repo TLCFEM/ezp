@@ -119,6 +119,9 @@ namespace ezp {
     public:
         IT n_rows, n_cols, context{-1}, rank{-1}, size{-1}, my_row{-1}, my_col{-1};
 
+        blacs_context()
+            : blacs_context(get_env<IT>().size(), 1) {}
+
         blacs_context(const IT rows, const IT cols, const char order = 'R')
             : n_rows(rows)
             , n_cols(cols) {

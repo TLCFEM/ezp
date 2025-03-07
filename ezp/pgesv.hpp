@@ -14,6 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+/**
+ * @class pgesv
+ * @brief General matrix.
+ * @author tlc
+ * @date 07/03/2025
+ * @version 1.0.0
+ * @file pgesv.hpp
+ * @{
+ */
 
 #ifndef PGESV_HPP
 #define PGESV_HPP
@@ -91,3 +100,5 @@ namespace ezp {
 } // namespace ezp
 
 #endif // PGESV_HPP
+
+//! @}

@@ -14,6 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+/**
+ * @class pposv
+ * @brief General full matrix.
+ * @author tlc
+ * @date 07/03/2025
+ * @version 1.0.0
+ * @file pposv.hpp
+ * @{
+ */
 
 #ifndef PPOSV_HPP
 #define PPOSV_HPP
@@ -95,3 +104,5 @@ namespace ezp {
 } // namespace ezp
 
 #endif // PPOSV_HPP
+
+//! @}
