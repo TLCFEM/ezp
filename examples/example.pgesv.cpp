@@ -18,6 +18,7 @@
 #include <cmath>
 #include <ezp/pgesv.hpp>
 #include <iomanip>
+#include <iostream>
 
 using namespace ezp;
 

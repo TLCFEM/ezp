@@ -44,15 +44,6 @@ namespace ezp {
             loc.ipiv.resize(loc.rows + loc.block);
         }
 
-        IT error_code(IT info) const {
-            static constexpr char SCOPE = 'A', TOP = ' ';
-            static constexpr IT NEGONE = -1;
-
-            igamx2d(&ctx.context, &SCOPE, &TOP, &this->ONE, &this->ONE, &info, &this->ONE, nullptr, nullptr, &NEGONE, &this->ZERO, &this->ZERO);
-
-            return info;
-        }
-
     public:
         full_solver(const IT rows, const IT cols)
             : abstract_solver<IT>()

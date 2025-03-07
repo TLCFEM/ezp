@@ -47,7 +47,7 @@ namespace ezp {
             }
             // ReSharper restore CppCStyleCast
 
-            if((info = this->error_code(info)) != 0) return info;
+            if((info = this->ctx.amx(info)) != 0) return info;
 
             return solve(std::move(B));
         }
@@ -76,7 +76,7 @@ namespace ezp {
             }
             // ReSharper restore CppCStyleCast
 
-            info = this->error_code(info);
+            info = this->ctx.amx(info);
 
             if(0 == info) this->ctx.gather(this->loc.b, loc_desc_b, B, full_desc_b);
 

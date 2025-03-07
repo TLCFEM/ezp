@@ -21,8 +21,6 @@
 #include "ezp.h"
 
 #include <array>
-#include <cmath>
-#include <iostream>
 #include <vector>
 
 namespace ezp {
@@ -80,7 +78,8 @@ namespace ezp {
     template<index_t IT> using desc = std::array<IT, 9>;
 
     template<index_t IT> class blacs_context final {
-        static constexpr IT ZERO{0}, ONE{1};
+        static constexpr IT ZERO{0}, ONE{1}, NEGONE{-1};
+        static constexpr char SCOPE = 'A', TOP = ' ';
 
         IT info;
 
@@ -227,6 +226,18 @@ namespace ezp {
          * @return The number of local columns of the calling process.
          */
         auto cols(const IT n, const IT nb) const { return numroc(&n, &nb, &my_col, &ZERO, &n_cols); }
+
+        IT amx(IT number) const {
+            igamx2d(&context, &SCOPE, &TOP, &ONE, &ONE, &number, &ONE, nullptr, nullptr, &NEGONE, &ZERO, &ZERO);
+
+            return number;
+        }
+
+        IT amn(IT number) const {
+            igamn2d(&context, &SCOPE, &TOP, &ONE, &ONE, &number, &ONE, nullptr, nullptr, &NEGONE, &ZERO, &ZERO);
+
+            return number;
+        }
     };
 
     template<index_t IT> class abstract_solver {

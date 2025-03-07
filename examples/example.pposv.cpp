@@ -18,6 +18,7 @@
 #include <cmath>
 #include <ezp/pposv.hpp>
 #include <iomanip>
+#include <iostream>
 
 using namespace ezp;
 

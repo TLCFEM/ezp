@@ -25,15 +25,6 @@ namespace ezp {
     protected:
         blacs_context<IT> ctx, trans_ctx;
 
-        IT error_code(IT info) const {
-            static constexpr char SCOPE = 'A', TOP = ' ';
-            static constexpr IT NEGONE = -1;
-
-            igamx2d(&trans_ctx.context, &SCOPE, &TOP, &this->ONE, &this->ONE, &info, &this->ONE, nullptr, nullptr, &NEGONE, &this->ZERO, &this->ZERO);
-
-            return info;
-        }
-
     public:
         explicit band_solver(const IT rows)
             : abstract_solver<IT>()

@@ -20,6 +20,8 @@
 
 #include "abstract/band_solver.hpp"
 
+#include <cmath>
+
 namespace ezp {
     template<data_t DT, index_t IT, char ODER = 'R'> class pdbsv final : public band_solver<IT, ODER> {
         struct band_system {
@@ -78,7 +80,7 @@ namespace ezp {
             }
             // ReSharper restore CppCStyleCast
 
-            if((info = this->error_code(info)) != 0) return info;
+            if((info = this->trans_ctx.amx(info)) != 0) return info;
 
             return solve(std::move(B));
         }
@@ -117,7 +119,7 @@ namespace ezp {
             }
             // ReSharper restore CppCStyleCast
 
-            info = this->error_code(info);
+            info = this->trans_ctx.amx(info);
 
             if(0 == info) this->ctx.gather(loc.b, local_desc_b, B, full_desc_b);
 

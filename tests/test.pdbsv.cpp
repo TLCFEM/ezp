@@ -33,7 +33,7 @@ void random_pdbsv() {
 #endif
     const auto& env = get_env<int>();
 
-    std::mt19937 gen(duration_cast<days>(system_clock::now().time_since_epoch()).count() - 1);
+    std::mt19937 gen(duration_cast<seconds>(system_clock::now().time_since_epoch()).count());
 
     const auto KL = std::uniform_int_distribution(0, 20)(gen);
     const auto KU = std::uniform_int_distribution(0 == KL ? 1 : 0, 20)(gen);
@@ -58,12 +58,10 @@ void random_pdbsv() {
 
         for(auto I = 0; I < N; ++I) A[IDX(I, I)] = 10. * dist_v(gen) + 10.;
 
-        // std::uniform_int_distribution dist_idx(0, N - 1);
+        std::uniform_int_distribution dist_idx(0, N - 1);
 
-        // for(auto I = 0; I < N * N; ++I) {
-        //     const auto position = IDX(dist_idx(gen), dist_idx(gen));
-        //     if(position >= 0) A[position] += 10. * dist_v(gen);
-        // }
+        for(auto I = 0; I < N * N; ++I)
+            if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += 10. * dist_v(gen);
     }
 
     // create a parallel solver
