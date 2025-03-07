@@ -46,7 +46,7 @@ endforeach ()
 
 file(GLOB EXAMPLES "tests/*.cpp")
 
-option(EZP_TEST "Enable testing" OFF)
+option(EZP_TEST "Enable testing." OFF)
 
 if (EZP_TEST)
     add_compile_definitions(EZP_ENABLE_TEST)
