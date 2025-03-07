@@ -24,3 +24,15 @@ jobs:
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} ..
           cmake --build . --target all
+      - name: Test
+        if: matrix.build == 'Debug'
+        run: |
+          mpirun -n 4 ./catch2
+          for SRC in `find . | egrep '\.o'`; do gcov -n $SRC > /dev/null; done
+      - name: Report
+        if: matrix.build == 'Debug'
+        uses: codecov/codecov-action@v5
+        with:
+          plugins: gcov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
