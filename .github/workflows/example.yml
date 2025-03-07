@@ -30,4 +30,4 @@ jobs:
         run: |
           source /opt/intel/oneapi/setvars.sh
           cd build
-          for SRC in `find . -type f -executable | egrep 'example'`; do mpirun -n 2 $SRC; done
+          for SRC in `find . -type f -executable`; do mpirun -n 2 $SRC; done
