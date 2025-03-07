@@ -22,13 +22,12 @@ jobs:
       - name: Compile
         run: |
           mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} ..
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON ..
           cmake --build . --target all
       - name: Test
         if: matrix.build == 'Debug'
         run: |
-          cd build
-          mpirun --use-hwthread-cpus -n 2 ./catch2
+          cd build && mpirun --use-hwthread-cpus -n 2 ./catch2
           for SRC in `find . | egrep '\.o'`; do gcov -n $SRC > /dev/null; done
       - name: Report
         if: matrix.build == 'Debug'
