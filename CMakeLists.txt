@@ -34,8 +34,12 @@ endif ()
 
 link_libraries(MPI::MPI_C MPI::MPI_CXX)
 
-add_compile_options(-fsanitize=address)
-add_link_options(-fsanitize=address)
+option(EZP_ASAN "Enable asan." OFF)
+
+if (EZP_ASAN)
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
+endif ()
 
 file(GLOB EXAMPLES "*.cpp" "examples/*.cpp")
 
