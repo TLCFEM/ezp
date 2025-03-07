@@ -34,7 +34,7 @@ void random_pdbsv() {
     const auto& env = get_env<int>();
 
     for(auto K = 0; K < 1000; ++K) {
-        const auto seed = blacs_context<int>().amx(static_cast<int>(duration_cast<seconds>(system_clock::now().time_since_epoch()).count()));
+        const auto seed = blacs_context<int>().amx(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
         std::mt19937 gen(seed);
 
         auto band = std::uniform_int_distribution(1, 20);

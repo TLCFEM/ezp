@@ -231,14 +231,12 @@ namespace ezp {
         auto cols(const IT n, const IT nb) const { return numroc(&n, &nb, &my_col, &ZERO, &n_cols); }
 
         IT amx(IT number) const {
-            igamx2d(&context, &SCOPE, &TOP, &ONE, &ONE, &number, &ONE, nullptr, nullptr, &NEGONE, &ZERO, &ZERO);
-
+            igamx2d(&context, &SCOPE, &TOP, &ONE, &ONE, &number, &ONE, nullptr, nullptr, &NEGONE, &NEGONE, &NEGONE);
             return number;
         }
 
         IT amn(IT number) const {
-            igamn2d(&context, &SCOPE, &TOP, &ONE, &ONE, &number, &ONE, nullptr, nullptr, &NEGONE, &ZERO, &ZERO);
-
+            igamn2d(&context, &SCOPE, &TOP, &ONE, &ONE, &number, &ONE, nullptr, nullptr, &NEGONE, &NEGONE, &NEGONE);
             return number;
         }
     };

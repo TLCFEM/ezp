@@ -70,6 +70,7 @@
 
 #define igamn2d EZP(igamn2d)
 #define igamx2d EZP(igamx2d)
+#define igebr2d EZP(igebr2d)
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,6 +118,7 @@ void pspotrs(const char* uplo, const int* n, const int* nrhs, const float* a, co
 
 void igamn2d(const int* ConTxt, const char* scope, const char* top, const int* m, const int* n, int* A, const int* lda, int* rA, int* cA, const int* ldia, const int* rdest, const int* cdest);
 void igamx2d(const int* ConTxt, const char* scope, const char* top, const int* m, const int* n, int* A, const int* lda, int* rA, int* cA, const int* ldia, const int* rdest, const int* cdest);
+void igebr2d(const int* ConTxt, const char* scope, const char* top, const int* m, const int* n, int* A, const int* lda, const int* rsrc, const int* csrc);
 
 #ifdef __cplusplus
 }
