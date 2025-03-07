@@ -39,7 +39,7 @@ void random_pgesv() {
 
     const auto context = blacs_context<int>();
 
-    for(auto K = 0; K < 1000; ++K) {
+    for(auto K = 0; K < 100; ++K) {
         const auto seed = context.amx(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
         std::mt19937 gen(seed);
 

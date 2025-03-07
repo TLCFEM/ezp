@@ -60,3 +60,7 @@ foreach (EXAMPLE ${EXAMPLES})
         add_executable(${EXAMPLE_NAME} ${EXAMPLE})
     endif ()
 endforeach ()
+
+if (EZP_TEST)
+    add_executable(catch2 ${EXAMPLES} include/catch2/catchy.cpp)
+endif ()
