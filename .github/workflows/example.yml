@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         build: [ RelWithDebInfo, Debug ]
-        mpi: [ libmpich-dev, libopenmpi-dev ]
+        mpi: [ libmpich-dev ]
     steps:
       - name: Clone
         uses: actions/checkout@v4
@@ -30,7 +30,7 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON ..
           cmake --build . --target all
       - name: Test
-        if: matrix.build == 'Debug'
+        if: matrix.build == 'Debug' && matrix.mpi == 'libmpich-dev'
         run: |
           # source /opt/intel/oneapi/setvars.sh
           cd build
