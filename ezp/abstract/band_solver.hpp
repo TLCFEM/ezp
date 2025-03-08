@@ -26,6 +26,11 @@ namespace ezp::detail {
         blacs_context<IT> ctx, trans_ctx;
 
     public:
+        band_solver()
+            : abstract_solver<IT>()
+            , ctx(get_env<IT>().size(), 1, 'R')
+            , trans_ctx(1, get_env<IT>().size(), 'R') {}
+
         explicit band_solver(const IT rows)
             : abstract_solver<IT>()
             , ctx(rows, 1, 'R')

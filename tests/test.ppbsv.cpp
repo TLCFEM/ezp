@@ -67,7 +67,7 @@ void random_pdpbsv() {
             //     if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += dist_v(gen);
         }
 
-        const auto info = par_dpbsv(env.size()).solve({N, N, KLU, A.data()}, {N, NRHS, B.data()});
+        const auto info = par_dpbsv<int>().solve({N, N, KLU, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }
@@ -111,7 +111,7 @@ void random_pdpbsv_u() {
             //     if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += dist_v(gen);
         }
 
-        const auto info = par_dpbsv_u(env.size()).solve({N, N, KLU, A.data()}, {N, NRHS, B.data()});
+        const auto info = par_dpbsv_u<int>().solve({N, N, KLU, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }
@@ -155,7 +155,7 @@ void random_pspbsv() {
             //     if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += dist_v(gen);
         }
 
-        const auto info = par_spbsv(env.size()).solve({N, N, KLU, A.data()}, {N, NRHS, B.data()});
+        const auto info = par_spbsv<int>().solve({N, N, KLU, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }
@@ -199,7 +199,7 @@ void random_pspbsv_u() {
             //     if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += dist_v(gen);
         }
 
-        const auto info = par_spbsv_u(env.size()).solve({N, N, KLU, A.data()}, {N, NRHS, B.data()});
+        const auto info = par_spbsv_u<int>().solve({N, N, KLU, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }

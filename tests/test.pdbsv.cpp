@@ -68,7 +68,7 @@ void random_pddbsv() {
                 if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += dist_v(gen);
         }
 
-        const auto info = par_ddbsv(env.size()).solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
+        const auto info = par_ddbsv<int>().solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }
@@ -113,7 +113,7 @@ void random_psdbsv() {
                 if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += dist_v(gen);
         }
 
-        const auto info = par_sdbsv(env.size()).solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
+        const auto info = par_sdbsv<int>().solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }

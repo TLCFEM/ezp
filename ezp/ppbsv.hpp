@@ -107,6 +107,9 @@ namespace ezp {
         }
 
     public:
+        ppbsv()
+            : detail::band_solver<IT>() {}
+
         explicit ppbsv(const IT rows)
             : detail::band_solver<IT>(rows) {}
 
