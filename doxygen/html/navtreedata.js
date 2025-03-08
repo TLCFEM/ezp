@@ -25,8 +25,15 @@
 var NAVTREE =
 [
   [ "ezp", "index.html", [
-    [ "Dependency", "index.html#autotoc_md1", null ],
-    [ "Example", "index.html#autotoc_md2", null ],
+    [ "Dependency", "index.html#autotoc_md7", null ],
+    [ "Example", "index.html#autotoc_md8", null ],
+    [ "Standalone Solver", "d4/d72/md_docs_2Guide_2Standalone.html", [
+      [ "Backbone", "d4/d72/md_docs_2Guide_2Standalone.html#autotoc_md1", null ],
+      [ "The Caller", "d4/d72/md_docs_2Guide_2Standalone.html#autotoc_md2", null ],
+      [ "Full Reference Implementation", "d4/d72/md_docs_2Guide_2Standalone.html#autotoc_md3", null ]
+    ] ],
+    [ "Compilation", "db/d2c/md_docs_2Intro_2Compilation.html", null ],
+    [ "Motivation", "d7/d75/md_docs_2Intro_2Motivation.html", null ],
     [ "Concepts", "concepts.html", "concepts" ],
     [ "Classes", "annotated.html", [
       [ "Class List", "annotated.html", "annotated_dup" ],
