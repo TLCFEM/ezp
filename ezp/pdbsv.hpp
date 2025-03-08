@@ -16,33 +16,35 @@
  ******************************************************************************/
 /**
  * @class pdbsv
- * @brief General band matrix.
+ * @brief Solver for general band matrices.
  *
- * Although the `pdbsv` solver supports KL=0 and/or KU=0, a zero (half) bandwidth
+ * @note Although the `pdbsv` solver supports KL=0 and/or KU=0, a zero (half) bandwidth
  * would lead to unwanted warning message from ScaLAPACK.
- * See: https://github.com/Reference-ScaLAPACK/scalapack/issues/116
+ * @note See: https://github.com/Reference-ScaLAPACK/scalapack/issues/116
  *
- * It solves the system of linear equations A * X = B with a general band matrix A.
- * The band matrix A has KL sub-diagonals and KU super-diagonals.
+ * It solves the system of linear equations `A*X=B` with a general band matrix `A`.
+ * The band matrix `A` has `KL` sub-diagonals and `KU` super-diagonals.
  * It shall be stored in the following format.
  * The band storage scheme is illustrated by the following example, when
- * M = N = 6, KL = 2, KU = 1:
+ * `M=N=6`, `KL=2`, `KU=1`.
  *
- *     *   a12  a23  a34  a45  a56
+ * ```
+ *     .   a12  a23  a34  a45  a56
  *    a11  a22  a33  a44  a55  a66
- *    a21  a32  a43  a54  a65   *
- *    a31  a42  a53  a64   *    *
+ *    a21  a32  a43  a54  a65   .
+ *    a31  a42  a53  a64   .    .
+ * ```
  *
- * The lead dimension should be (KL + KU + 1).
+ * The lead dimension should be `(KL+KU+1)`.
  *
- * With 0 based indexing, for a general band matrix A, the element at row i and column j
- * is stored at A[IDX(i, j)].
+ * With zero based indexing, for a general band matrix `A`, the element at row `i` and
+ * column `j` is stored at `A[IDX(i, j)]`.
  *
  * @code
- * const auto IDX = [&](const int i, const int j) {
- *     if(i - j > KL || j - i > KU) return -1;
- *     return KU + i - j + j * (KL + KU + 1);
- * };
+   const auto IDX = [&](const int i, const int j) {
+       if(i - j > KL || j - i > KU) return -1;
+       return KU + i - j + j * (KL + KU + 1);
+   };
  * @endcode
  *
  * @author tlc
@@ -69,6 +71,17 @@ namespace ezp {
 
         band_system loc;
 
+        /**
+         * @brief Initialize the storage for a matrix with given dimensions and bandwidth.
+         *
+         * @tparam IT Integer type for matrix dimensions and bandwidth.
+         * @param n Number of rows/columns in the matrix.
+         * @param kl Number of sub-diagonals (lower bandwidth).
+         * @param ku Number of super-diagonals (upper bandwidth).
+         *
+         * This function sets up the storage parameters for a band matrix, including the leading dimension,
+         * block size, and the number of lines. It also resizes the storage vector to accommodate the matrix data.
+         */
         auto init_storage(const IT n, const IT kl, const IT ku) {
             loc.n = n;
             loc.kl = kl;

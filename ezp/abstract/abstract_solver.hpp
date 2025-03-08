@@ -238,11 +238,37 @@ namespace ezp {
          */
         auto cols(const IT n, const IT nb) const { return numroc(&n, &nb, &my_col, &ZERO, &n_cols); }
 
+        /**
+         * @brief Perform the global amx operation.
+         *
+         * This function takes an integer number, which may be different on each process,
+         * and computes the maximum value across all processes.
+         * The result is broadcasted to all processes.
+         *
+         * For example, if the input number is 0, 1, 2, 3 on four processes, this function
+         * will return 3 on all processes.
+         *
+         * @param number The integer number to be updated.
+         * @return The updated integer number.
+         */
         IT amx(IT number) const {
             igamx2d(&context, &SCOPE, &TOP, &ONE, &ONE, &number, &ONE, nullptr, nullptr, &NEGONE, &NEGONE, &NEGONE);
             return number;
         }
 
+        /**
+         * @brief Perform the global amn operation.
+         *
+         * This function takes an integer number, which may be different on each process,
+         * and computes the minimum value across all processes.
+         * The result is broadcasted to all processes.
+         *
+         * For example, if the input number is 0, 1, 2, 3 on four processes, this function
+         * will return 0 on all processes.
+         *
+         * @param number The integer number to be updated.
+         * @return The updated integer number.
+         */
         IT amn(IT number) const {
             igamn2d(&context, &SCOPE, &TOP, &ONE, &ONE, &number, &ONE, nullptr, nullptr, &NEGONE, &NEGONE, &NEGONE);
             return number;

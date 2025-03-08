@@ -16,7 +16,40 @@
  ******************************************************************************/
 /**
  * @class pgbsv
- * @brief General band matrix.
+ * @brief Solver for general band matrices.
+ *
+ * @note Although the `pgbsv` solver supports KL=0 and/or KU=0, a zero (half) bandwidth
+ * would lead to unwanted warning message from ScaLAPACK.
+ * @note See: https://github.com/Reference-ScaLAPACK/scalapack/issues/116
+ *
+ * It solves the system of linear equations `A*X=B` with a general band matrix `A`.
+ * The band matrix `A` has `KL` sub-diagonals and `KU` super-diagonals.
+ * It shall be stored in the following format.
+ * The band storage scheme is illustrated by the following example, when
+ * `M=N=6`, `KL=2`, `KU=1`.
+ *
+ * ```
+ *     .    .    .    .    .    .
+ *     .    .    .    .    .    .
+ *     .    .    .    .    .    .
+ *     .   a12  a23  a34  a45  a56
+ *    a11  a22  a33  a44  a55  a66
+ *    a21  a32  a43  a54  a65   .
+ *    a31  a42  a53  a64   .    .
+ * ```
+ *
+ * The lead dimension should be `2*(KL+KU)+1`.
+ *
+ * With zero based indexing, for a general band matrix `A`, the element at row `i` and
+ * column `j` is stored at `A[IDX(i, j)]`.
+ *
+ * @code
+    const auto IDX = [&](const int i, const int j) {
+        if(i - j > KL || j - i > KU) return -1;
+        return 2 * KU + KL + i + 2 * j * (KL + KU);
+    };
+ * @endcode
+ *
  * @author tlc
  * @date 07/03/2025
  * @version 1.0.0

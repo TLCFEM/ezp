@@ -16,7 +16,60 @@
  ******************************************************************************/
 /**
  * @class ppbsv
- * @brief General band symmetric matrix.
+ * @brief Solver for symmetric band positive definite matrices.
+ *
+ * @note Although the `ppbsv` solver supports KLU, a zero (half) bandwidth
+ * would lead to unwanted warning message from ScaLAPACK.
+ * @note See: https://github.com/Reference-ScaLAPACK/scalapack/issues/116
+ *
+ * It solves the system of linear equations `A*X=B` with a symmetric band positive definite matrix `A`.
+ * The band matrix `A` has `KLU` sub-diagonals.
+ * It shall be stored in the following format.
+ * The band storage scheme is illustrated by the following example, when
+ * `M=N=6`, `KLU=2`.
+ *
+ * For `UPLO='L'`, the lower half is stored.
+ *
+ * ```
+ *    a11  a22  a33  a44  a55  a66
+ *    a21  a32  a43  a54  a65   .
+ *    a31  a42  a53  a64   .    .
+ * ```
+ *
+ * The lead dimension should be `KLU+1`.
+ *
+ * With zero based indexing, for a general band matrix `A`, the element at row `i` and
+ * column `j` is stored at `A[IDX(i, j)]`.
+ *
+ * @code
+    const auto IDX = [&](int i, int j) {
+        if(i > j) std::swap(i, j);
+        if(j - i > KLU) return -1;
+        return 2 * j - i + (j + 1) * KLU;
+    };
+ * @endcode
+ *
+ * For `UPLO='U'`, the upper half is stored.
+ *
+ * ```
+ *     .    .   a13  a24  a35  a46
+ *     .   a12  a23  a34  a45  a56
+ *    a11  a22  a33  a44  a55  a66
+ * ```
+ *
+ * The lead dimension should be `KLU+1`.
+ *
+ * With zero based indexing, for a general band matrix `A`, the element at row `i` and
+ * column `j` is stored at `A[IDX(i, j)]`.
+ *
+ * @code
+    const auto IDX = [&](int i, int j) {
+        if(i < j) std::swap(i, j);
+        if(i - j > KLU) return -1;
+        return i + j * KLU;
+    };
+ * @endcode
+ *
  * @author tlc
  * @date 07/03/2025
  * @version 1.0.0
