@@ -26,8 +26,8 @@ jobs:
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON ..
           cmake --build . --target all
-      - name: Debug
-        uses: mxschmitt/action-tmate@v3
+      #      - name: Debug
+      #        uses: mxschmitt/action-tmate@v3
       - name: Test
         if: matrix.build == 'Debug'
         run: |
