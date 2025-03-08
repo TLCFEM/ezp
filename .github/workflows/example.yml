@@ -34,7 +34,7 @@ jobs:
           mkdir build && cd build
           if [ "${{ matrix.mpi }}" == "impi" ]; then
             source /opt/intel/oneapi/setvars.sh
-            cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMKL_DIR=/opt/intel/oneapi/mkl/latest/lib/cmake/mkl/MKLConfig.cmake ..
+            cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMKL_DIR=/opt/intel/oneapi/mkl/latest/lib/cmake/mkl/ ..
           else
             cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON ..
           fi
