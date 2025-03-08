@@ -125,6 +125,8 @@ namespace ezp {
         IT solve(band_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(!this->ctx.is_valid() || !this->trans_ctx.is_valid()) return 0;
 
+            if(A.n_rows != A.n_cols || A.n_rows != B.n_rows) return -1;
+
             init_storage(A.n_cols, A.kl, A.ku);
 
             // pretend that A is a full matrix of size (2*(kl+ku)+1) x n
