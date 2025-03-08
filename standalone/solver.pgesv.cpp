@@ -14,6 +14,33 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+/**
+ * @brief Standalone `pgesv` solver.
+ *
+ * This program is a standalone application that solves a system of linear equations
+ * using the `pgesv` solver.
+ *
+ * The caller spawns this program as a worker process.
+ *
+ * The caller must send three buffers to the worker process:
+ * - an integer array of size 3 containing the matrix size (`N`),
+ *   number of right-hand sides (`NRHS`), and the data type (> 0 for `double`, < 0 for `float`),
+ * - a buffer containing the matrix `A`, size `N x N`,
+ * - a buffer containing the right-hand side `B`, size `N x NRHS`.
+ *
+ * The error code (0 for success) will be sent back to the root process of the caller.
+ * If error code is 0, the solution will be sent back as well.
+ *
+ * The example caller logic can be seen as follows.
+ *
+ * @include standalone/runner.pgesv.cpp
+ *
+ * @author tlc
+ * @date 07/03/2025
+ * @version 1.0.0
+ * @file solver.pgesv.cpp
+ * @{
+ */
 
 #include <ezp/pgesv.hpp>
 #include <mpl/mpl.hpp>
@@ -69,3 +96,5 @@ int main(int argc, char** argv) {
 
     return FLOAT > 0 ? run<double>(N, NRHS) : run<float>(N, NRHS);
 }
+
+//! @}

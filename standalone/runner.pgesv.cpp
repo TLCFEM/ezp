@@ -14,6 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+/**
+ * @brief Example caller to the standalone `pgesv` solver.
+ *
+ * @author tlc
+ * @date 07/03/2025
+ * @version 1.0.0
+ * @file runner.pgesv.cpp
+ * @{
+ */
 
 #include <mpl/mpl.hpp>
 
@@ -49,3 +58,5 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
+//! @}

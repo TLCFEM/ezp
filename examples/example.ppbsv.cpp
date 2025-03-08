@@ -14,6 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+/**
+ * @brief Example caller to the `ppbsv` solver.
+ *
+ * @author tlc
+ * @date 07/03/2025
+ * @version 1.0.0
+ * @file example.ppbsv.cpp
+ * @{
+ */
 
 #include <ezp/ppbsv.hpp>
 #include <iomanip>
@@ -85,3 +94,5 @@ int main() {
 
     return 0;
 }
+
+//! @}

@@ -48,6 +48,13 @@ namespace ezp {
         blacs_env() { blacs_pinfo(&_rank, &_size); }
         ~blacs_env() { blacs_exit(FINALIZE ? &ZERO : &ONE); }
 
+        /**
+         * @brief Disables the management of MPI (Message Passing Interface) finalization.
+         *
+         * This static function sets the FINALIZE flag to false, indicating that the
+         * MPI environment should not be finalized by `blacs`. This can be useful
+         * in scenarios where MPI is managed externally or by another component.
+         */
         static void do_not_manage_mpi() { FINALIZE = false; }
 
         auto rank() const { return _rank; }
