@@ -127,7 +127,7 @@ int main() {
         X[7] = 0.523065;
         X[8] = 0.253049;
         X[9] = 0.937470;
-        for(auto i = 0; i < B.size(); ++i) std::cout << B[i] << ' ' << X[i] << '\n';
+        for(auto i = 0; i < B.size(); ++i) std::cout << B[i] << ' ' << X[i] << " abs(diff): " << std::abs(B[i] - X[i]) << '\n';
     }
 
     return 0;
