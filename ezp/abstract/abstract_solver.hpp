@@ -21,11 +21,19 @@
 #include "ezp.h"
 
 #include <array>
+#include <ranges>
 #include <vector>
 
 namespace ezp {
-    template<class T> concept data_t = std::is_floating_point_v<T>;
-    template<class T> concept index_t = std::is_integral_v<T>;
+    template<typename T> concept data_t = std::is_floating_point_v<T>;
+    template<typename T> concept index_t = std::is_integral_v<T>;
+
+    template<typename T> concept mat_t = requires(T t) {
+        requires std::ranges::contiguous_range<T>;
+        requires std::floating_point<std::remove_pointer_t<decltype(t.begin())>>;
+    };
+
+    template<typename T> concept mem_t = std::floating_point<std::remove_pointer_t<T>> || mat_t<std::remove_pointer_t<T>>;
 
     template<index_t IT> class blacs_env final {
         static constexpr IT ZERO{0};
@@ -57,19 +65,19 @@ namespace ezp {
         return scoped_env;
     }
 
-    template<data_t DT, index_t IT> struct full_mat {
+    template<mem_t DT, index_t IT> struct full_mat {
         const IT n_rows, n_cols;
         DT* const data;
         const bool distributed = false;
     };
 
-    template<data_t DT, index_t IT> struct band_mat {
+    template<mem_t DT, index_t IT> struct band_mat {
         const IT n_rows, n_cols, kl, ku;
         DT* const data;
         const bool distributed = false;
     };
 
-    template<data_t DT, index_t IT> struct band_symm_mat {
+    template<mem_t DT, index_t IT> struct band_symm_mat {
         const IT n_rows, n_cols, klu;
         DT* const data;
         const bool distributed = false;
