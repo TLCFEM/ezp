@@ -66,4 +66,8 @@ jobs:
           cp -r doxygen/ docs/
           pip install -r requirements.txt
           mkdocs build
+          git fetch origin
+          git config --global user.name "Theodore Chang"
+          git config --global user.email "tlcfem@gmail.com"
+          git pull
           mkdocs gh-deploy
