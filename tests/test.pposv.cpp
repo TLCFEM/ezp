@@ -30,14 +30,11 @@ using namespace std::chrono;
 #endif
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PPOSV", "[Simple Solver]") {
+TEST_CASE("Random PDPOSV", "[Simple Solver]") {
 #else
-void random_pposv() {
+void random_pdposv() {
 #endif
     const auto& env = get_env<int>();
-
-    const auto rows = std::max(1, static_cast<int>(std::sqrt(env.size())));
-    const auto cols = env.size() / rows;
 
     const auto context = blacs_context<int>();
 
@@ -64,21 +61,18 @@ void random_pposv() {
             }
         }
 
-        const auto info = par_dposv(rows, cols).solve({N, N, A.data()}, {N, NRHS, B.data()});
+        const auto info = par_dposv<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PPOSVC", "[Simple Solver]") {
+TEST_CASE("Random PDPOSVC", "[Simple Solver]") {
 #else
-void random_pposv_c() {
+void random_pdposv_c() {
 #endif
     const auto& env = get_env<int>();
-
-    const auto rows = std::max(1, static_cast<int>(std::sqrt(env.size())));
-    const auto cols = env.size() / rows;
 
     const auto context = blacs_context<int>();
 
@@ -89,7 +83,7 @@ void random_pposv_c() {
         const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
         const auto N = std::uniform_int_distribution(100, 400)(gen);
 
-        const auto IDX = [=](const int r, const int c) { return r + c * N; };
+        const auto IDX = par_dposv_c<int>::indexer{N};
 
         std::vector<double> A, B;
 
@@ -105,7 +99,83 @@ void random_pposv_c() {
             }
         }
 
-        const auto info = par_dposv_c(rows, cols).solve({N, N, A.data()}, {N, NRHS, B.data()});
+        const auto info = par_dposv_c<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
+
+        if(0 == env.rank()) REQUIRE(info == 0);
+    }
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PSPOSV", "[Simple Solver]") {
+#else
+void random_psposv() {
+#endif
+    const auto& env = get_env<int>();
+
+    const auto context = blacs_context<int>();
+
+    for(auto K = 0; K < 100; ++K) {
+        const auto seed = context.amx(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
+        std::mt19937 gen(seed);
+
+        const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
+        const auto N = std::uniform_int_distribution(100, 400)(gen);
+
+        const auto IDX = par_sposv<int>::indexer{N};
+
+        std::vector<float> A, B;
+
+        if(0 == env.rank()) {
+            A.resize(N * N, 0.f);
+            B.resize(N * NRHS, 1.f);
+
+            std::uniform_real_distribution dist_v(0.f, 1.f);
+
+            for(auto I = 0; I < N; ++I) {
+                A[IDX(I, I)] = 10.f + 10.f * dist_v(gen);
+                for(auto J = I + 1; J < std::min(N, I + 5); ++J) A[IDX(I, J)] = A[IDX(J, I)] = dist_v(gen);
+            }
+        }
+
+        const auto info = par_sposv<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
+
+        if(0 == env.rank()) REQUIRE(info == 0);
+    }
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PSPOSVC", "[Simple Solver]") {
+#else
+void random_psposv_c() {
+#endif
+    const auto& env = get_env<int>();
+
+    const auto context = blacs_context<int>();
+
+    for(auto K = 0; K < 100; ++K) {
+        const auto seed = context.amx(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
+        std::mt19937 gen(seed);
+
+        const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
+        const auto N = std::uniform_int_distribution(100, 400)(gen);
+
+        const auto IDX = par_sposv_c<int>::indexer{N};
+
+        std::vector<float> A, B;
+
+        if(0 == env.rank()) {
+            A.resize(N * N, 0.f);
+            B.resize(N * NRHS, 1.f);
+
+            std::uniform_real_distribution dist_v(0.f, 1.f);
+
+            for(auto I = 0; I < N; ++I) {
+                A[IDX(I, I)] = 10.f + 10.f * dist_v(gen);
+                for(auto J = I + 1; J < std::min(N, I + 5); ++J) A[IDX(I, J)] = A[IDX(J, I)] = dist_v(gen);
+            }
+        }
+
+        const auto info = par_sposv_c<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }
@@ -118,8 +188,10 @@ int main(const int argc, const char*[]) {
     if(argc <= 1)
         while(0 == i) std::this_thread::sleep_for(seconds(10));
 
-    random_pposv();
-    random_pposv_c();
+    random_pdposv();
+    random_pdposv_c();
+    random_psposv();
+    random_psposv_c();
 
     return 0;
 }

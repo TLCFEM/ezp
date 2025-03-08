@@ -30,14 +30,11 @@ using namespace std::chrono;
 #endif
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PGESV", "[Simple Solver]") {
+TEST_CASE("Random PDGESV", "[Simple Solver]") {
 #else
-void random_pgesv() {
+void random_pdgesv() {
 #endif
     const auto& env = get_env<int>();
-
-    const auto rows = std::max(1, static_cast<int>(std::sqrt(env.size())));
-    const auto cols = env.size() / rows;
 
     const auto context = blacs_context<int>();
 
@@ -62,21 +59,18 @@ void random_pgesv() {
                 for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen);
         }
 
-        const auto info = par_dgesv(rows, cols).solve({N, N, A.data()}, {N, NRHS, B.data()});
+        const auto info = par_dgesv<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PGESVC", "[Simple Solver]") {
+TEST_CASE("Random PDGESVC", "[Simple Solver]") {
 #else
-void random_pgesv_c() {
+void random_pdgesv_c() {
 #endif
     const auto& env = get_env<int>();
-
-    const auto rows = std::max(1, static_cast<int>(std::sqrt(env.size())));
-    const auto cols = env.size() / rows;
 
     const auto context = blacs_context<int>();
 
@@ -87,7 +81,7 @@ void random_pgesv_c() {
         const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
         const auto N = std::uniform_int_distribution(100, 400)(gen);
 
-        const auto IDX = [=](const int r, const int c) { return r + c * N; };
+        const auto IDX = par_dgesv<int>::indexer{N};
 
         std::vector<double> A, B;
 
@@ -101,7 +95,79 @@ void random_pgesv_c() {
                 for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen);
         }
 
-        const auto info = par_dgesv_c(rows, cols).solve({N, N, A.data()}, {N, NRHS, B.data()});
+        const auto info = par_dgesv_c<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
+
+        if(0 == env.rank()) REQUIRE(info == 0);
+    }
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PSGESV", "[Simple Solver]") {
+#else
+void random_psgesv() {
+#endif
+    const auto& env = get_env<int>();
+
+    const auto context = blacs_context<int>();
+
+    for(auto K = 0; K < 100; ++K) {
+        const auto seed = context.amx(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
+        std::mt19937 gen(seed);
+
+        const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
+        const auto N = std::uniform_int_distribution(100, 400)(gen);
+
+        const auto IDX = par_sgesv<int>::indexer{N};
+
+        std::vector<float> A, B;
+
+        if(0 == env.rank()) {
+            A.resize(N * N, 0.f);
+            B.resize(N * NRHS, 1.f);
+
+            std::uniform_real_distribution dist_v(0.f, 1.f);
+
+            for(auto I = 0; I < N; ++I)
+                for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen);
+        }
+
+        const auto info = par_sgesv<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
+
+        if(0 == env.rank()) REQUIRE(info == 0);
+    }
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PSGESVC", "[Simple Solver]") {
+#else
+void random_psgesv_c() {
+#endif
+    const auto& env = get_env<int>();
+
+    const auto context = blacs_context<int>();
+
+    for(auto K = 0; K < 100; ++K) {
+        const auto seed = context.amx(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
+        std::mt19937 gen(seed);
+
+        const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
+        const auto N = std::uniform_int_distribution(100, 400)(gen);
+
+        const auto IDX = par_sgesv<int>::indexer{N};
+
+        std::vector<float> A, B;
+
+        if(0 == env.rank()) {
+            A.resize(N * N, 0.f);
+            B.resize(N * NRHS, 1.f);
+
+            std::uniform_real_distribution dist_v(0.f, 1.f);
+
+            for(auto I = 0; I < N; ++I)
+                for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen);
+        }
+
+        const auto info = par_sgesv_c<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }
@@ -113,8 +179,10 @@ int main(const int argc, const char*[]) {
     if(argc <= 1)
         while(0 == i) std::this_thread::sleep_for(seconds(10));
 
-    random_pgesv();
-    random_pgesv_c();
+    random_pdgesv();
+    random_pdgesv_c();
+    random_psgesv();
+    random_psgesv_c();
 
     return 0;
 }
