@@ -32,6 +32,5 @@ jobs:
         if: matrix.build == 'Debug'
         run: |
           # source /opt/intel/oneapi/setvars.sh
-          cd build
-          for SRC in `find . -type f -executable`; do mpirun -n 2 $SRC; done
+          cd build && ./catch2
           for SRC in `find . | egrep '\.o'`; do gcov -n $SRC > /dev/null; done
