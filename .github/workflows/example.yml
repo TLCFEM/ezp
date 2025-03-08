@@ -31,11 +31,13 @@ jobs:
           fi
       - name: Compile
         run: |
+          mkdir build && cd build
           if [ "${{ matrix.mpi }}" == "impi" ]; then
             source /opt/intel/oneapi/setvars.sh
+            cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMKL_DIR=/opt/intel/oneapi/mkl/latest/lib/cmake/mkl/MKLConfig.cmake ..
+          else
+            cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON ..
           fi
-          mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON ..
           cmake --build . --target all
       - name: Test
         if: matrix.build == 'Debug' && matrix.mpi == 'mpich'
