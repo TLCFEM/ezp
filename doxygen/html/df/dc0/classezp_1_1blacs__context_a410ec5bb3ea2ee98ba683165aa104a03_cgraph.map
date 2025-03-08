@@ -1,0 +1,7 @@
+<map id="ezp::blacs_context::desc_l" name="ezp::blacs_context::desc_l">
+<area shape="rect" id="Node000001" title="Generates a descriptor for a local matrix." alt="" coords="5,37,148,77"/>
+<area shape="rect" id="Node000002" href="$df/dc0/classezp_1_1blacs__context.html#a538d81ff653101dea6ea38ea2c4fc250" title="Computes the column block size." alt="" coords="196,5,339,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,43,182,37,183,42,148,48"/>
+<area shape="rect" id="Node000003" href="$df/dc0/classezp_1_1blacs__context.html#a7f9a53810f17eaa2f37d953b13ad8251" title="Computes the row block size." alt="" coords="196,69,339,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="148,67,183,72,182,78,148,72"/>
+</map>
