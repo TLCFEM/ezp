@@ -26,8 +26,6 @@ jobs:
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON ..
           cmake --build . --target all
-      #      - name: Debug
-      #        uses: mxschmitt/action-tmate@v3
       - name: Test
         if: matrix.build == 'Debug'
         run: |
@@ -39,10 +37,11 @@ jobs:
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
           lcov --list coverage.info
           bash <(curl -s https://codecov.io/bash) -f coverage.info
-#      - name: Report
-#        if: matrix.build == 'Debug'
-#        uses: codecov/codecov-action@v5
-#        with:
-#          plugins: gcov
-#        env:
-#          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Report
+        if: matrix.build == 'Debug'
+        uses: codecov/codecov-action@v5
+        with:
+          plugins: gcov
+          files: ./build/coverage.info
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
