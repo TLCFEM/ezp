@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
 
     constexpr auto N = 6, NRHS = 1;
 
-    int config[3]{N, NRHS, 1};
+    int config[]{N, NRHS, 1};
 
     std::vector<double> A(N * N, 0.), B(N * NRHS, 1.);
 
