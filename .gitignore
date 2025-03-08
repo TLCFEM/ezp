@@ -1,5 +1,6 @@
-cmake-build-*/
 .idea/
-build/
 .venv/
 *.py
+build/
+cmake-build-*/
+doxygen/
