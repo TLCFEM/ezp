@@ -35,6 +35,7 @@ jobs:
           # source /opt/intel/oneapi/setvars.sh
           cd build
           for SRC in `find . -type f -executable -iname "*example*"`; do $SRC; done
+          for SRC in `find . -type f -executable -iname "*runner*"`; do $SRC; done
           ./catch2
           lcov --capture --directory . --output-file coverage.info
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
