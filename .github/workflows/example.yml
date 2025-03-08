@@ -38,6 +38,7 @@ jobs:
           cd build
           for SRC in `find . -type f -executable -iname "*example*"`; do $SRC; done
           export PATH=$(pwd):$PATH
+          echo $PATH
           for SRC in `find . -type f -executable -iname "*runner*"`; do $SRC; done
           ./catch2
           lcov --capture --directory . --output-file coverage.info
