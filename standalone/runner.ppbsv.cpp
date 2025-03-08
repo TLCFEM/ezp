@@ -27,7 +27,7 @@
 #include <mpl/mpl.hpp>
 
 int main(int argc, char* argv[]) {
-    constexpr int NUM_NODE = 2;
+    constexpr int NUM_NODE = 1;
 
     const auto& comm_world{mpl::environment::comm_world()};
     const auto worker = comm_world.spawn(0, NUM_NODE, {"solver.ppbsv"});
