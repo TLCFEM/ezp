@@ -146,24 +146,86 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (int argc, ch
 <div class="line"><span class="comment"> * You should have received a copy of the GNU General Public License</span></div>
 <div class="line"><span class="comment"> * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span></div>
 <div class="line"><span class="comment"> ******************************************************************************/</span></div>
+<div class="line"><span class="preprocessor">#include &lt;iostream&gt;</span></div>
 <div class="line"><span class="preprocessor">#include &lt;mpl/mpl.hpp&gt;</span></div>
 <div class="line"> </div>
-<div class="line"><span class="keywordtype">int</span> main(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span>* argv[]) {</div>
+<div class="line"><span class="keywordtype">int</span> main(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span>** argv) {</div>
+<div class="line">    <span class="keywordflow">if</span>(argc == 1) {</div>
+<div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Usage: runner ge|po|gb|db|pb\n&quot;</span>;</div>
+<div class="line">        <span class="keywordflow">return</span> 0;</div>
+<div class="line">    }</div>
+<div class="line"> </div>
 <div class="line">    <span class="keyword">constexpr</span> <span class="keywordtype">int</span> NUM_NODE = 1;</div>
 <div class="line"> </div>
+<div class="line">    std::vector&lt;double&gt; A, B;</div>
+<div class="line">    std::vector&lt;int&gt; config;</div>
+<div class="line"> </div>
+<div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> N = 6, NRHS = 1;</div>
+<div class="line"> </div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> type = std::string(argv[1]);</div>
+<div class="line">    std::string solver;</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordflow">if</span>(<span class="stringliteral">&quot;ge&quot;</span> == type) {</div>
+<div class="line">        solver = <span class="stringliteral">&quot;solver.pgesv&quot;</span>;</div>
+<div class="line"> </div>
+<div class="line">        config = {N, NRHS, 1};</div>
+<div class="line"> </div>
+<div class="line">        A.resize(N * N, 0.), B.resize(N * NRHS, 1.);</div>
+<div class="line"> </div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[I * N + I] = I + 1.;</div>
+<div class="line">    }</div>
+<div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;po&quot;</span> == type) {</div>
+<div class="line">        solver = <span class="stringliteral">&quot;solver.pposv&quot;</span>;</div>
+<div class="line"> </div>
+<div class="line">        config = {N, NRHS, 1};</div>
+<div class="line"> </div>
+<div class="line">        A.resize(N * N, 0.), B.resize(N * NRHS, 1.);</div>
+<div class="line"> </div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[I * N + I] = I + 1.;</div>
+<div class="line">    }</div>
+<div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;gb&quot;</span> == type) {</div>
+<div class="line">        solver = <span class="stringliteral">&quot;solver.pgbsv&quot;</span>;</div>
+<div class="line"> </div>
+<div class="line">        <span class="keyword">constexpr</span> <span class="keyword">auto</span> KL = 1, KU = 1;</div>
+<div class="line"> </div>
+<div class="line">        config = {N, KL, KU, NRHS, 1};</div>
+<div class="line"> </div>
+<div class="line">        A.resize(N * (2 * (KL + KU) + 1), 0.), B.resize(N * NRHS, 1.);</div>
+<div class="line"> </div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[2 * KU + KL + I + 2 * I * (KL + KU)] = I + 1.;</div>
+<div class="line">    }</div>
+<div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;db&quot;</span> == type) {</div>
+<div class="line">        solver = <span class="stringliteral">&quot;solver.pdbsv&quot;</span>;</div>
+<div class="line"> </div>
+<div class="line">        <span class="keyword">constexpr</span> <span class="keyword">auto</span> KL = 1, KU = 1;</div>
+<div class="line"> </div>
+<div class="line">        config = {N, KL, KU, NRHS, 1};</div>
+<div class="line"> </div>
+<div class="line">        A.resize(N * (KL + KU + 1), 0.), B.resize(N * NRHS, 1.);</div>
+<div class="line"> </div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[KU + I * (KL + KU + 1)] = I + 1.;</div>
+<div class="line">    }</div>
+<div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;pb&quot;</span> == type) {</div>
+<div class="line">        solver = <span class="stringliteral">&quot;solver.ppbsv&quot;</span>;</div>
+<div class="line"> </div>
+<div class="line">        <span class="keyword">constexpr</span> <span class="keyword">auto</span> KLU = 1;</div>
+<div class="line"> </div>
+<div class="line">        config = {N, KLU, NRHS, 1};</div>
+<div class="line"> </div>
+<div class="line">        A.resize(N * (KLU + 1), 0.), B.resize(N * NRHS, 1.);</div>
+<div class="line"> </div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[I + I * KLU] = I + 1.;</div>
+<div class="line">    }</div>
+<div class="line">    <span class="keywordflow">else</span> {</div>
+<div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Usage: runner ge|po|gb|db|pb\n&quot;</span>;</div>
+<div class="line">        <span class="keywordflow">return</span> 0;</div>
+<div class="line">    }</div>
+<div class="line"> </div>
 <div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; comm_world{mpl::environment::comm_world()};</div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> worker = comm_world.spawn(0, NUM_NODE, {<span class="stringliteral">&quot;solver.pdbsv&quot;</span>});</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> worker = comm_world.spawn(0, NUM_NODE, {solver});</div>
 <div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> all = mpl::communicator(worker, mpl::communicator::order_low);</div>
 <div class="line"> </div>
-<div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> N = 6, KL = 1, KU = 1, NRHS = 1;</div>
-<div class="line"> </div>
-<div class="line">    <span class="keywordtype">int</span> config[]{N, KL, KU, NRHS, 1};</div>
-<div class="line"> </div>
-<div class="line">    std::vector&lt;double&gt; A(N * (KL + KU + 1), 0.), B(N * NRHS, 1.);</div>
-<div class="line"> </div>
-<div class="line">    <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[KU + I * (KL + KU + 1)] = I + 1.;</div>
-<div class="line"> </div>
-<div class="line">    all.bcast(0, config);</div>
+<div class="line">    all.bcast(0, config.data(), mpl::contiguous_layout&lt;int&gt;(config.size()));</div>
 <div class="line"> </div>
 <div class="line">    mpl::irequest_pool requests;</div>
 <div class="line"> </div>

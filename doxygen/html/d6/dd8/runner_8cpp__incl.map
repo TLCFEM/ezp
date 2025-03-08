@@ -1,0 +1,7 @@
+<map id="standalone/runner.cpp" name="standalone/runner.cpp">
+<area shape="rect" id="Node000001" title="Example caller to the standalone solvers." alt="" coords="19,5,186,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,79,85,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="95,33,65,70,61,66,91,29"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="109,79,213,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="114,29,145,67,141,70,110,33"/>
+</map>
