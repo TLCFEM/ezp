@@ -78,6 +78,54 @@ void random_ppbsv() {
 }
 
 #ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PPBSVU", "[Simple Solver]") {
+#else
+void random_ppbsv_u() {
+#endif
+    const auto& env = get_env<int>();
+
+    const auto context = blacs_context<int>();
+
+    for(auto K = 0; K < 100; ++K) {
+        const auto seed = context.amx(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
+        std::mt19937 gen(seed);
+
+        auto band = std::uniform_int_distribution(1, 20);
+
+        const auto KLU = band(gen);
+        const auto NRHS = band(gen);
+        const auto N = std::uniform_int_distribution(KLU + 1, 400)(gen);
+        const auto LDA = KLU + 1;
+
+        const auto IDX = [&](int r, int c) {
+            if(r > c) std::swap(r, c);
+            if(c - r > KLU) return -1;
+            return c - r - 1 + (c + 1) * LDA;
+        };
+
+        std::vector<double> A, B;
+
+        if(0 == env.rank()) {
+            A.resize(N * LDA, 0.);
+            B.resize(N * NRHS, 1.);
+
+            std::uniform_real_distribution dist_v(0., 1.);
+
+            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = 10. * dist_v(gen) + 10.;
+
+            // std::uniform_int_distribution dist_idx(0, N - 1);
+            //
+            // for(auto I = 0; I < N * N; ++I)
+            //     if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += dist_v(gen);
+        }
+
+        const auto info = par_dpbsv_u(env.size()).solve({N, N, KLU, A.data()}, {N, NRHS, B.data()});
+
+        if(0 == env.rank()) REQUIRE(info == 0);
+    }
+}
+
+#ifdef EZP_ENABLE_TEST
 #else
 int main(const int argc, const char*[]) {
     volatile int i = 0;
@@ -85,6 +133,7 @@ int main(const int argc, const char*[]) {
         while(0 == i) std::this_thread::sleep_for(seconds(10));
 
     random_ppbsv();
+    random_ppbsv_u();
 
     return 0;
 }
