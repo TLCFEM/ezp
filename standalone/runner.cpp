@@ -28,17 +28,15 @@
 #include <mpl/mpl.hpp>
 
 int main(int argc, char** argv) {
-    if(argc == 1) {
-        std::cout << "Usage: runner ge|po|gb|db|pb\n";
+    if(argc < 2) {
+        std::cout << "Usage: runner ge|po|gb|db|pb [n]\n";
+        std::cout << "Example: runner ge 3\n";
         return 0;
     }
-
-    constexpr int NUM_NODE = 1;
-
-    std::vector<double> A, B;
-    std::vector<int> config;
-
     constexpr auto N = 6, NRHS = 1;
+
+    std::vector<double> A, B(N * NRHS, 1.);
+    std::vector<int> config;
 
     const auto type = std::string(argv[1]);
     std::string solver;
@@ -48,8 +46,7 @@ int main(int argc, char** argv) {
 
         config = {N, NRHS, 1};
 
-        A.resize(N * N, 0.), B.resize(N * NRHS, 1.);
-
+        A.resize(N * N, 0.);
         for(auto I = 0; I < N; ++I) A[I * N + I] = I + 1.;
     }
     else if("po" == type) {
@@ -57,8 +54,7 @@ int main(int argc, char** argv) {
 
         config = {N, NRHS, 1};
 
-        A.resize(N * N, 0.), B.resize(N * NRHS, 1.);
-
+        A.resize(N * N, 0.);
         for(auto I = 0; I < N; ++I) A[I * N + I] = I + 1.;
     }
     else if("gb" == type) {
@@ -68,8 +64,7 @@ int main(int argc, char** argv) {
 
         config = {N, KL, KU, NRHS, 1};
 
-        A.resize(N * (2 * (KL + KU) + 1), 0.), B.resize(N * NRHS, 1.);
-
+        A.resize(N * (2 * (KL + KU) + 1), 0.);
         for(auto I = 0; I < N; ++I) A[2 * KU + KL + I + 2 * I * (KL + KU)] = I + 1.;
     }
     else if("db" == type) {
@@ -79,8 +74,7 @@ int main(int argc, char** argv) {
 
         config = {N, KL, KU, NRHS, 1};
 
-        A.resize(N * (KL + KU + 1), 0.), B.resize(N * NRHS, 1.);
-
+        A.resize(N * (KL + KU + 1), 0.);
         for(auto I = 0; I < N; ++I) A[KU + I * (KL + KU + 1)] = I + 1.;
     }
     else if("pb" == type) {
@@ -90,17 +84,16 @@ int main(int argc, char** argv) {
 
         config = {N, KLU, NRHS, 1};
 
-        A.resize(N * (KLU + 1), 0.), B.resize(N * NRHS, 1.);
-
+        A.resize(N * (KLU + 1), 0.);
         for(auto I = 0; I < N; ++I) A[I + I * KLU] = I + 1.;
     }
     else {
-        std::cout << "Usage: runner ge|po|gb|db|pb\n";
+        std::cout << "Usage: runner ge|po|gb|db|pb [n]\n";
         return 0;
     }
 
     const auto& comm_world{mpl::environment::comm_world()};
-    const auto worker = comm_world.spawn(0, NUM_NODE, {solver});
+    const auto worker = comm_world.spawn(0, argc < 3 ? 1 : std::abs(std::stoi(argv[2])), {solver});
     const auto all = mpl::communicator(worker, mpl::communicator::order_low);
 
     all.bcast(0, config.data(), mpl::contiguous_layout<int>(config.size()));

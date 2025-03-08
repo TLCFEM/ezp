@@ -1,3 +1,5 @@
 nav:
   - README.md
+  - Intro
+  - Guide
   - Doxygen: doxygen/html/index.html
