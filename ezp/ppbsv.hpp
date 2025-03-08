@@ -30,7 +30,7 @@
 #include "abstract/band_solver.hpp"
 
 namespace ezp {
-    template<data_t DT, index_t IT, char UL = 'L', char ODER = 'R'> class ppbsv final : public band_solver<IT, ODER> {
+    template<data_t DT, index_t IT, char UL = 'L'> class ppbsv final : public band_solver<IT> {
         static constexpr char UPLO = UL;
 
         struct band_system {
@@ -55,7 +55,7 @@ namespace ezp {
 
     public:
         explicit ppbsv(const IT rows)
-            : band_solver<IT, ODER>(rows) {}
+            : band_solver<IT>(rows) {}
 
         IT solve(band_symm_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(!this->ctx.is_valid() || !this->trans_ctx.is_valid()) return 0;
@@ -132,14 +132,10 @@ namespace ezp {
         }
     };
 
-    template<index_t IT, char UL = 'L', char ODER = 'R'> using par_dpbsv = ppbsv<double, IT, UL, ODER>;
-    template<index_t IT, char UL = 'L', char ODER = 'R'> using par_spbsv = ppbsv<float, IT, UL, ODER>;
-    template<index_t IT, char UL = 'L'> using par_dpbsv_c = ppbsv<double, IT, UL, 'C'>;
-    template<index_t IT, char UL = 'L'> using par_spbsv_c = ppbsv<float, IT, UL, 'C'>;
-    template<index_t IT, char ODER = 'R'> using par_dpbsv_u = ppbsv<double, IT, 'U', ODER>;
-    template<index_t IT, char ODER = 'R'> using par_spbsv_u = ppbsv<float, IT, 'U', ODER>;
-    template<index_t IT> using par_dpbsv_uc = ppbsv<double, IT, 'U', 'C'>;
-    template<index_t IT> using par_spbsv_uc = ppbsv<float, IT, 'U', 'C'>;
+    template<index_t IT, char UL = 'L'> using par_dpbsv = ppbsv<double, IT, UL>;
+    template<index_t IT, char UL = 'L'> using par_spbsv = ppbsv<float, IT, UL>;
+    template<index_t IT> using par_dpbsv_u = ppbsv<double, IT, 'U'>;
+    template<index_t IT> using par_spbsv_u = ppbsv<float, IT, 'U'>;
 } // namespace ezp
 
 #endif // PPBSV_HPP

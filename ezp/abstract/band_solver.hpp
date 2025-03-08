@@ -21,15 +21,15 @@
 #include "abstract_solver.hpp"
 
 namespace ezp {
-    template<index_t IT, char ODER = 'R'> class band_solver : public abstract_solver<IT> {
+    template<index_t IT> class band_solver : public abstract_solver<IT> {
     protected:
         blacs_context<IT> ctx, trans_ctx;
 
     public:
         explicit band_solver(const IT rows)
             : abstract_solver<IT>()
-            , ctx(rows, 1, ODER)
-            , trans_ctx(1, rows, ODER) {}
+            , ctx(rows, 1, 'R')
+            , trans_ctx(1, rows, 'R') {}
     };
 } // namespace ezp
 

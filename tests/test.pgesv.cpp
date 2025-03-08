@@ -26,10 +26,13 @@ using namespace std::chrono;
 
 #ifdef EZP_ENABLE_TEST
 #include <catch2/catchy.hpp>
-TEST_CASE("Random PGESV", "[Simple Solver]") {
 #else
 #define REQUIRE(...)
+#endif
 
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PGESV", "[Simple Solver]") {
+#else
 void random_pgesv() {
 #endif
     const auto& env = get_env<int>();
@@ -67,13 +70,52 @@ void random_pgesv() {
 }
 
 #ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PGESVC", "[Simple Solver]") {
 #else
+void random_pgesv_c() {
+#endif
+    const auto& env = get_env<int>();
+
+    const auto rows = std::max(1, static_cast<int>(std::sqrt(env.size())));
+    const auto cols = env.size() / rows;
+
+    const auto context = blacs_context<int>();
+
+    for(auto K = 0; K < 100; ++K) {
+        const auto seed = context.amx(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
+        std::mt19937 gen(seed);
+
+        const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
+        const auto N = std::uniform_int_distribution(100, 400)(gen);
+
+        const auto IDX = [=](const int r, const int c) { return r + c * N; };
+
+        std::vector<double> A, B;
+
+        if(0 == env.rank()) {
+            A.resize(N * N, 0.);
+            B.resize(N * NRHS, 1.);
+
+            std::uniform_real_distribution dist_v(0., 1.);
+
+            for(auto I = 0; I < N; ++I)
+                for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen);
+        }
+
+        const auto info = par_dgesv_c(rows, cols).solve({N, N, A.data()}, {N, NRHS, B.data()});
+
+        if(0 == env.rank()) REQUIRE(info == 0);
+    }
+}
+
+#ifndef EZP_ENABLE_TEST
 int main(const int argc, const char*[]) {
     volatile int i = 0;
     if(argc <= 1)
         while(0 == i) std::this_thread::sleep_for(seconds(10));
 
     random_pgesv();
+    random_pgesv_c();
 
     return 0;
 }

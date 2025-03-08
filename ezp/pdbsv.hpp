@@ -37,7 +37,7 @@
 #include <cmath>
 
 namespace ezp {
-    template<data_t DT, index_t IT, char ODER = 'R'> class pdbsv final : public band_solver<IT, ODER> {
+    template<data_t DT, index_t IT> class pdbsv final : public band_solver<IT> {
         struct band_system {
             IT n{-1}, kl{-1}, ku{-1}, max_klu{-1}, lead{-1}, block{-1}, lines{-1};
             desc<IT> desc1d_a;
@@ -62,7 +62,7 @@ namespace ezp {
 
     public:
         explicit pdbsv(const IT rows)
-            : band_solver<IT, ODER>(rows) {}
+            : band_solver<IT>(rows) {}
 
         IT solve(band_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(!this->ctx.is_valid() || !this->trans_ctx.is_valid()) return 0;
@@ -141,10 +141,8 @@ namespace ezp {
         }
     };
 
-    template<index_t IT, char ODER = 'R'> using par_ddbsv = pdbsv<double, IT, ODER>;
-    template<index_t IT, char ODER = 'R'> using par_sdbsv = pdbsv<float, IT, ODER>;
-    template<index_t IT> using par_ddbsv_c = pdbsv<double, IT, 'C'>;
-    template<index_t IT> using par_sdbsv_c = pdbsv<float, IT, 'C'>;
+    template<index_t IT> using par_ddbsv = pdbsv<double, IT>;
+    template<index_t IT> using par_sdbsv = pdbsv<float, IT>;
 } // namespace ezp
 
 #endif // PDBSV_HPP

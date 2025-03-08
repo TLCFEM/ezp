@@ -25,10 +25,13 @@ using namespace std::chrono;
 
 #ifdef EZP_ENABLE_TEST
 #include <catch2/catchy.hpp>
-TEST_CASE("Random PGBSV", "[Simple Solver]") {
 #else
 #define REQUIRE(...)
+#endif
 
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PGBSV", "[Simple Solver]") {
+#else
 void random_pgbsv() {
 #endif
     const auto& env = get_env<int>();
