@@ -30,12 +30,12 @@
 #include "abstract/full_solver.hpp"
 
 namespace ezp {
-    template<data_t DT, index_t IT, char UL = 'L', char ODER = 'R'> class pposv final : public full_solver<DT, IT, ODER> {
+    template<data_t DT, index_t IT, char UL = 'L', char ODER = 'R'> class pposv final : public detail::full_solver<DT, IT, ODER> {
         static constexpr char UPLO = UL;
 
     public:
         pposv(const IT rows, const IT cols)
-            : full_solver<DT, IT, ODER>(rows, cols) {}
+            : detail::full_solver<DT, IT, ODER>(rows, cols) {}
 
         IT solve(full_mat<DT, IT>&& A, full_mat<DT, IT>&& B) override {
             if(!this->ctx.is_valid()) return 0;

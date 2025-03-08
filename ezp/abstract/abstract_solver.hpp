@@ -275,15 +275,17 @@ namespace ezp {
         }
     };
 
-    template<index_t IT> class abstract_solver {
-    protected:
-        static constexpr IT ZERO{0}, ONE{1};
+    namespace detail {
+        template<index_t IT> class abstract_solver {
+        protected:
+            static constexpr IT ZERO{0}, ONE{1};
 
-    public:
-        abstract_solver() = default;
+        public:
+            abstract_solver() = default;
 
-        virtual ~abstract_solver() = default;
-    };
+            virtual ~abstract_solver() = default;
+        };
+    } // namespace detail
 } // namespace ezp
 
 #endif // ABSTRACT_SOLVER_HPP

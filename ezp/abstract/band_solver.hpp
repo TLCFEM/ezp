@@ -20,7 +20,7 @@
 
 #include "abstract_solver.hpp"
 
-namespace ezp {
+namespace ezp::detail {
     template<index_t IT> class band_solver : public abstract_solver<IT> {
     protected:
         blacs_context<IT> ctx, trans_ctx;
@@ -31,6 +31,6 @@ namespace ezp {
             , ctx(rows, 1, 'R')
             , trans_ctx(1, rows, 'R') {}
     };
-} // namespace ezp
+} // namespace ezp::detail
 
 #endif // BAND_SOLVER_HPP

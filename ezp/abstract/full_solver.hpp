@@ -20,7 +20,7 @@
 
 #include "abstract_solver.hpp"
 
-namespace ezp {
+namespace ezp::detail {
     template<data_t DT, index_t IT, char ODER = 'R'> class full_solver : public abstract_solver<IT> {
         struct full_system {
             IT n{-1}, block{-1}, rows{-1};
@@ -52,6 +52,6 @@ namespace ezp {
         virtual IT solve(full_mat<DT, IT>&&, full_mat<DT, IT>&&) = 0;
         virtual IT solve(full_mat<DT, IT>&&) = 0;
     };
-} // namespace ezp
+} // namespace ezp::detail
 
 #endif // FULL_SOLVER_HPP

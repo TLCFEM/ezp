@@ -30,10 +30,10 @@
 #include "abstract/full_solver.hpp"
 
 namespace ezp {
-    template<data_t DT, index_t IT, char ODER = 'R'> class pgesv final : public full_solver<DT, IT, ODER> {
+    template<data_t DT, index_t IT, char ODER = 'R'> class pgesv final : public detail::full_solver<DT, IT, ODER> {
     public:
         pgesv(const IT rows, const IT cols)
-            : full_solver<DT, IT, ODER>(rows, cols) {}
+            : detail::full_solver<DT, IT, ODER>(rows, cols) {}
 
         IT solve(full_mat<DT, IT>&& A, full_mat<DT, IT>&& B) override {
             if(!this->ctx.is_valid()) return 0;
