@@ -21,6 +21,7 @@
 #include "ezp.h"
 
 #include <array>
+#include <atomic>
 #include <cmath>
 #include <ranges>
 #include <vector>
@@ -37,17 +38,23 @@ namespace ezp {
     template<typename T> concept mem_t = std::floating_point<T> || mat_t<T>;
 
     template<index_t IT> class blacs_env final {
-        static constexpr IT ZERO{0};
+        static constexpr IT ZERO{0}, ONE{1};
+
+        static std::atomic_bool FINALIZE;
 
         IT _rank{-1}, _size{-1};
 
     public:
         blacs_env() { blacs_pinfo(&_rank, &_size); }
-        ~blacs_env() { blacs_exit(&ZERO); }
+        ~blacs_env() { blacs_exit(FINALIZE ? &ZERO : &ONE); }
+
+        static void do_not_manage_mpi() { FINALIZE = false; }
 
         auto rank() const { return _rank; }
         auto size() const { return _size; }
     };
+
+    template<index_t IT> std::atomic_bool blacs_env<IT>::FINALIZE{true};
 
     /**
      * @brief Retrieves a constant reference to a static instance of blacs_env.
