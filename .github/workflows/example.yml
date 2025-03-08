@@ -27,16 +27,15 @@ jobs:
           if [ "${{ matrix.mpi }}" == "mpich" ]; then
             sudo apt-get install lib${{ matrix.mpi }}-dev
           else
-            sudo apt-get install intel-oneapi-mkl intel-oneapi-mpi intel-oneapi-mpi-devel
+            sudo apt-get install intel-oneapi-mkl-devel intel-oneapi-mpi-devel
           fi
       - name: Compile
         run: |
           mkdir build && cd build
           if [ "${{ matrix.mpi }}" == "impi" ]; then
-            source /opt/intel/oneapi/setvars.sh && cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON ..
-          else
-            cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON ..
+            source /opt/intel/oneapi/setvars.sh
           fi
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON ..
           cmake --build . --target all
       - name: Test
         if: matrix.build == 'Debug' && matrix.mpi == 'mpich'
