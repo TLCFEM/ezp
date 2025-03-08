@@ -32,14 +32,14 @@ using namespace ezp;
 
 int main() {
     // get the current blacs environment
-    const auto& env = get_env<int>();
+    const auto rank = get_env<int>().rank();
 
     constexpr auto N = 6, NRHS = 2;
 
     // storage for the matrices A and B
     std::vector<double> A, B;
 
-    if(0 == env.rank()) {
+    if(0 == rank) {
         // the matrices are only initialized on the root process
         A.resize(N * N, 0.);
         B.resize(N * NRHS, 1.);
@@ -53,17 +53,14 @@ int main() {
     // create a parallel solver
     // it takes the number of rows and columns of the process grid as arguments
     // or let the library automatically determine as follows
-    auto solver = par_dgesv<int>();
-
     // need to wrap the data in full_mat objects
     // it requires the number of rows and columns of the matrix, and a pointer to the data
     // on non-root processes, the data pointer is nullptr as the vector is empty
-    // solver.solve(full_mat{N, N, A.data()}, full_mat{N, NRHS, B.data()});
-    const auto info = solver.solve({N, N, A.data()}, {N, NRHS, B.data()});
+    // par_dgesv<int>().solve(full_mat{N, N, A.data()}, full_mat{N, NRHS, B.data()});
+    par_dgesv<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
 
-    if(0 == env.rank()) {
-        std::cout << std::setprecision(10) << "Info: " << info << '\n';
-        std::cout << "Solution:\n";
+    if(0 == rank) {
+        std::cout << std::setprecision(10) << "Solution:\n";
         for(auto i = 0; i < B.size(); ++i) std::cout << B[i] << '\n';
     }
 
