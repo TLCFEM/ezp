@@ -19,15 +19,15 @@ jobs:
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           # sudo apt-get update && sudo apt-get install intel-oneapi-mkl intel-oneapi-mpi intel-oneapi-mpi-devel
-          sudo apt-get update && sudo apt-get install libmpich-dev locv
+          sudo apt-get update && sudo apt-get install libmpich-dev lcov
       - name: Compile
         run: |
           # source /opt/intel/oneapi/setvars.sh
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON ..
           cmake --build . --target all
-      - name: Debug
-        uses: mxschmitt/action-tmate@v3
+      #      - name: Debug
+      #        uses: mxschmitt/action-tmate@v3
       - name: Test
         if: matrix.build == 'Debug'
         run: |
