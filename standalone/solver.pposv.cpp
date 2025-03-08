@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 /**
- * @brief Standalone `pgesv` solver.
+ * @brief Standalone `pposv` solver.
  *
  * This program is a standalone application that solves a system of linear equations
- * using the `pgesv` solver.
+ * using the `pposv` solver.
  *
  * The caller spawns this program as a worker process.
  *
@@ -33,16 +33,16 @@
  *
  * The example caller logic can be seen as follows.
  *
- * @include standalone/runner.pgesv.cpp
+ * @include standalone/runner.pposv.cpp
  *
  * @author tlc
  * @date 07/03/2025
  * @version 1.0.0
- * @file solver.pgesv.cpp
+ * @file solver.pposv.cpp
  * @{
  */
 
-#include <ezp/pgesv.hpp>
+#include <ezp/pposv.hpp>
 #include <mpl/mpl.hpp>
 
 const auto& comm_world{mpl::environment::comm_world()};
@@ -63,7 +63,7 @@ template<ezp::data_t DT> int run(const int N, const int NRHS) {
         requests.waitall();
     }
 
-    const auto error = ezp::pgesv<DT, int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
+    const auto error = ezp::pposv<DT, int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
 
     if(0 == comm_world.rank()) {
         parent.send(error, 0);

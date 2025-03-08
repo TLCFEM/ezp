@@ -43,9 +43,9 @@
  *
  * @code
     const auto IDX = [&](int i, int j) {
-        if(i > j) std::swap(i, j);
-        if(j - i > KLU) return -1;
-        return 2 * j - i + (j + 1) * KLU;
+        if(i < j) std::swap(i, j);
+        if(i - j > KLU) return -1;
+        return i + j * KLU;
     };
  * @endcode
  *
@@ -64,9 +64,9 @@
  *
  * @code
     const auto IDX = [&](int i, int j) {
-        if(i < j) std::swap(i, j);
-        if(i - j > KLU) return -1;
-        return i + j * KLU;
+        if(i > j) std::swap(i, j);
+        if(j - i > KLU) return -1;
+        return 2 * j - i + (j + 1) * KLU;
     };
  * @endcode
  *

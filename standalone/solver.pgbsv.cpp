@@ -15,17 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 /**
- * @brief Standalone `pgesv` solver.
+ * @brief Standalone `pgbsv` solver.
  *
  * This program is a standalone application that solves a system of linear equations
- * using the `pgesv` solver.
+ * using the `pgbsv` solver.
  *
  * The caller spawns this program as a worker process.
  *
  * The caller must send three buffers to the worker process:
- * - an integer array of size 3 containing the matrix size (`N`),
- *   number of right-hand sides (`NRHS`), and the data type (> 0 for `double`, < 0 for `float`),
- * - a buffer containing the matrix `A`, size `N x N`,
+ * - an integer array of size 5 containing the matrix size (`N`), number of sub-diagonals (`KL`),
+ *   number of super-diagonals (`KU`), number of right-hand sides (`NRHS`),
+ *   and the data type (> 0 for `double`, < 0 for `float`),
+ * - a buffer containing the matrix `A`, size `N x (2 * (KL + KU) + 1)`,
  * - a buffer containing the right-hand side `B`, size `N x NRHS`.
  *
  * The error code (0 for success) will be sent back to the root process of the caller.
@@ -33,26 +34,26 @@
  *
  * The example caller logic can be seen as follows.
  *
- * @include standalone/runner.pgesv.cpp
+ * @include standalone/runner.pgbsv.cpp
  *
  * @author tlc
  * @date 07/03/2025
  * @version 1.0.0
- * @file solver.pgesv.cpp
+ * @file solver.pgbsv.cpp
  * @{
  */
 
-#include <ezp/pgesv.hpp>
+#include <ezp/pgbsv.hpp>
 #include <mpl/mpl.hpp>
 
 const auto& comm_world{mpl::environment::comm_world()};
 const auto& parent = mpl::inter_communicator::parent();
 
-template<ezp::data_t DT> int run(const int N, const int NRHS) {
+template<ezp::data_t DT> int run(const int N, const int KL, const int KU, const int NRHS) {
     std::vector<DT> A, B;
 
     if(0 == comm_world.rank()) {
-        A.resize(N * N);
+        A.resize(N * (2 * (KL + KU) + 1));
         B.resize(N * NRHS);
 
         mpl::irequest_pool requests;
@@ -63,7 +64,7 @@ template<ezp::data_t DT> int run(const int N, const int NRHS) {
         requests.waitall();
     }
 
-    const auto error = ezp::pgesv<DT, int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
+    const auto error = ezp::pgbsv<DT, int>().solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
 
     if(0 == comm_world.rank()) {
         parent.send(error, 0);
@@ -83,15 +84,17 @@ int main(int argc, char** argv) {
 
     const auto all = mpl::communicator(parent, mpl::communicator::order_high);
 
-    int config[3]{};
+    int config[5]{};
 
     all.bcast(0, config);
 
     const auto N = config[0];
-    const auto NRHS = config[1];
-    const auto FLOAT = config[2];
+    const auto KL = config[1];
+    const auto KU = config[2];
+    const auto NRHS = config[3];
+    const auto FLOAT = config[4];
 
-    return FLOAT > 0 ? run<double>(N, NRHS) : run<float>(N, NRHS);
+    return FLOAT > 0 ? run<double>(N, KL, KU, NRHS) : run<float>(N, KL, KU, NRHS);
 }
 
 //! @}
