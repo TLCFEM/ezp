@@ -12,3 +12,4 @@ parsers:
 ignore:
   - "include"
   - "misc"
+  - "standalone"
