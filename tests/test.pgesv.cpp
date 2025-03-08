@@ -16,7 +16,6 @@
  ******************************************************************************/
 
 #include <chrono>
-#include <cmath>
 #include <ezp/pgesv.hpp>
 #include <random>
 #include <thread>

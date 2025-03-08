@@ -59,8 +59,6 @@
 
 #include "abstract/band_solver.hpp"
 
-#include <cmath>
-
 namespace ezp {
     template<data_t DT, index_t IT> class pdbsv final : public detail::band_solver<IT> {
         struct band_system {
