@@ -45,6 +45,10 @@ namespace ezp::detail {
         }
 
     public:
+        full_solver()
+            : abstract_solver<IT>()
+            , ctx(ODER) {}
+
         full_solver(const IT rows, const IT cols)
             : abstract_solver<IT>()
             , ctx(rows, cols, ODER) {}

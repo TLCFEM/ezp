@@ -21,6 +21,7 @@
 #include "ezp.h"
 
 #include <array>
+#include <cmath>
 #include <ranges>
 #include <vector>
 
@@ -91,6 +92,13 @@ namespace ezp {
 
         IT info;
 
+        auto init(const char order) {
+            blacs_get(nullptr, &ZERO, &context);
+            blacs_gridinit(&context, &order, &n_rows, &n_cols);
+            blacs_pinfo(&rank, &size);
+            blacs_gridinfo(&context, &n_rows, &n_cols, &my_row, &my_col);
+        }
+
         auto release() {
             if(context >= 0) blacs_gridexit(&context);
         }
@@ -130,14 +138,18 @@ namespace ezp {
         blacs_context()
             : blacs_context(get_env<IT>().size(), 1) {}
 
+        blacs_context(const char order)
+            : n_rows(-1)
+            , n_cols(-1) {
+            const auto& env = get_env<IT>();
+            n_rows = std::max(1, static_cast<IT>(std::sqrt(env.size())));
+            n_cols = env.size() / n_rows;
+            init(order);
+        };
+
         blacs_context(const IT rows, const IT cols, const char order = 'R')
             : n_rows(rows)
-            , n_cols(cols) {
-            blacs_get(nullptr, &ZERO, &context);
-            blacs_gridinit(&context, &order, &n_rows, &n_cols);
-            blacs_pinfo(&rank, &size);
-            blacs_gridinfo(&context, &n_rows, &n_cols, &my_row, &my_col);
-        };
+            , n_cols(cols) { init(order); };
 
         blacs_context(const blacs_context&) = delete;
         blacs_context(blacs_context&&) noexcept = delete;

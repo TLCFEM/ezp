@@ -34,6 +34,9 @@ namespace ezp {
         static constexpr char UPLO = UL;
 
     public:
+        pposv()
+            : detail::full_solver<DT, IT, ODER>() {}
+
         pposv(const IT rows, const IT cols)
             : detail::full_solver<DT, IT, ODER>(rows, cols) {}
 

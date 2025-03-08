@@ -32,6 +32,9 @@
 namespace ezp {
     template<data_t DT, index_t IT, char ODER = 'R'> class pgesv final : public detail::full_solver<DT, IT, ODER> {
     public:
+        pgesv()
+            : detail::full_solver<DT, IT, ODER>() {}
+
         pgesv(const IT rows, const IT cols)
             : detail::full_solver<DT, IT, ODER>(rows, cols) {}
 
