@@ -28,16 +28,21 @@ jobs:
             sudo apt-get install lib${{ matrix.mpi }}-dev
           else
             sudo apt-get install intel-oneapi-mkl intel-oneapi-mpi intel-oneapi-mpi-devel
-            source /opt/intel/oneapi/setvars.sh
           fi
       - name: Compile
         run: |
+          if [ "${{ matrix.mpi }}" == "impi" ]; then
+            source /opt/intel/oneapi/setvars.sh
+          fi
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON ..
           cmake --build . --target all
       - name: Test
         if: matrix.build == 'Debug' && matrix.mpi == 'mpich'
         run: |
+          if [ "${{ matrix.mpi }}" == "impi" ]; then
+            source /opt/intel/oneapi/setvars.sh
+          fi
           cd build
           for SRC in `find . -type f -executable -iname "*example*"`; do $SRC; done
           # export PATH=$(pwd):$PATH
