@@ -34,17 +34,12 @@ jobs:
           mkdir build && cd build
           if [ "${{ matrix.mpi }}" == "impi" ]; then
             source /opt/intel/oneapi/setvars.sh
-            cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMKL_DIR=/opt/intel/oneapi/mkl/latest/lib/cmake/mkl/ ..
-          else
-            cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON ..
           fi
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON ..
           cmake --build . --target all
       - name: Test
         if: matrix.build == 'Debug' && matrix.mpi == 'mpich'
         run: |
-          if [ "${{ matrix.mpi }}" == "impi" ]; then
-            source /opt/intel/oneapi/setvars.sh
-          fi
           cd build
           for SRC in `find . -type f -executable -iname "*example*"`; do $SRC; done
           # export PATH=$(pwd):$PATH
