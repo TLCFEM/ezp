@@ -37,6 +37,8 @@ namespace ezp {
         pposv(const IT rows, const IT cols)
             : detail::full_solver<DT, IT, ODER>(rows, cols) {}
 
+        using detail::full_solver<DT, IT, ODER>::indexer;
+
         IT solve(full_mat<DT, IT>&& A, full_mat<DT, IT>&& B) override {
             if(!this->ctx.is_valid()) return 0;
 

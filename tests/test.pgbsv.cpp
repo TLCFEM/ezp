@@ -51,10 +51,7 @@ void random_pgbsv() {
         const auto LDA = 2 * (KL + KU) + 1;
         const auto OFFSET = 2 * KU + KL;
 
-        const auto IDX = [&](const int r, const int c) {
-            if(r - c > KL || c - r > KU) return -1;
-            return OFFSET + r - c + c * LDA;
-        };
+        const auto IDX = par_dgbsv<int>::indexer{N, KL, KU};
 
         std::vector<double> A, B;
 

@@ -35,10 +35,7 @@ int main() {
     // helper function to convert 2D indices to 1D indices
     // the band symmetric matrix used for dbsv subroutine requires the matrix to be stored with a leading dimension of (KL + KU + 1)
     // see Fig. 4.9 https://netlib.org/scalapack/slug/node84.html
-    const auto IDX = [&](int r, int c) {
-        if(r - c > KL || c - r > KU) throw;
-        return OFFSET + r - c + c * LDA;
-    };
+    const auto IDX = par_ddbsv<int>::indexer{N, KL, KU};
 
     if(0 == env.rank()) {
         // the matrices are only initialized on the root process

@@ -110,6 +110,33 @@ namespace ezp {
         explicit ppbsv(const IT rows)
             : detail::band_solver<IT>(rows) {}
 
+        class indexer {
+            const IT n, klu;
+
+        public:
+            indexer(const band_mat<DT, IT>& A)
+                : n(A.n)
+                , klu(A.klu) {}
+
+            indexer(const IT N, const IT KLU)
+                : n(N)
+                , klu(KLU) {}
+
+            auto operator()(IT i, IT j) const {
+                if(i < 0 || i >= n || j < 0 || j >= n) return -1;
+                if('L' == UL) {
+                    if(i < j) std::swap(i, j);
+                    if(i - j > klu) return -1;
+                    return i + j * klu;
+                }
+                else {
+                    if(i > j) std::swap(i, j);
+                    if(j - i > klu) return -1;
+                    return 2 * j - i + (j + 1) * klu;
+                }
+            }
+        };
+
         IT solve(band_symm_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(!this->ctx.is_valid() || !this->trans_ctx.is_valid()) return 0;
 

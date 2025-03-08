@@ -36,7 +36,7 @@ int main() {
     std::vector<double> A, B;
 
     // helper function to convert 2D indices to 1D indices
-    const auto IDX = [&N](const int r, const int c) { return r + c * N; };
+    const auto IDX = par_dposv<int>::indexer{N};
 
     if(0 == env.rank()) {
         // the matrices are only initialized on the root process

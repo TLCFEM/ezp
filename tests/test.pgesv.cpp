@@ -49,7 +49,7 @@ void random_pgesv() {
         const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
         const auto N = std::uniform_int_distribution(100, 400)(gen);
 
-        const auto IDX = [=](const int r, const int c) { return r + c * N; };
+        const auto IDX = par_dgesv<int>::indexer{N};
 
         std::vector<double> A, B;
 

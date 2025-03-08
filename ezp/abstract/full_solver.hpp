@@ -49,6 +49,22 @@ namespace ezp::detail {
             : abstract_solver<IT>()
             , ctx(rows, cols, ODER) {}
 
+        class indexer {
+            const IT n;
+
+        public:
+            indexer(const full_mat<DT, IT>& A)
+                : n(A.n) {}
+
+            indexer(const IT N)
+                : n(N) {}
+
+            auto operator()(const IT i, const IT j) const {
+                if(i < 0 || i >= n || j < 0 || j >= n) return -1;
+                return i + j * n;
+            }
+        };
+
         virtual IT solve(full_mat<DT, IT>&&, full_mat<DT, IT>&&) = 0;
         virtual IT solve(full_mat<DT, IT>&&) = 0;
     };

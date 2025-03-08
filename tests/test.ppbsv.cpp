@@ -49,11 +49,7 @@ void random_ppbsv() {
         const auto N = std::uniform_int_distribution(KLU + 1, 400)(gen);
         const auto LDA = KLU + 1;
 
-        const auto IDX = [&](int r, int c) {
-            if(r < c) std::swap(r, c);
-            if(r - c > KLU) return -1;
-            return r - c + c * LDA;
-        };
+        const auto IDX = par_dpbsv<int>::indexer{N, KLU};
 
         std::vector<double> A, B;
 

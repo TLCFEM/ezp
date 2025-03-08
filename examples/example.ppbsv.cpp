@@ -34,11 +34,7 @@ int main() {
     // helper function to convert 2D indices to 1D indices
     // the band symmetric matrix used for pbsv subroutine requires the matrix to be stored with a leading dimension of (KLU+1)
     // see Fig. 4.11 https://netlib.org/scalapack/slug/node84.html
-    const auto IDX = [&](int r, int c) {
-        if(r < c) std::swap(r, c);
-        if(r - c > KLU) throw;
-        return r - c + c * LDA;
-    };
+    const auto IDX = par_dpbsv<int>::indexer{N, KLU};
 
     if(0 == env.rank()) {
         // the matrices are only initialized on the root process

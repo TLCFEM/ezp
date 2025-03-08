@@ -100,6 +100,27 @@ namespace ezp {
         explicit pdbsv(const IT rows)
             : detail::band_solver<IT>(rows) {}
 
+        class indexer {
+            const IT n, kl, ku;
+
+        public:
+            indexer(const band_mat<DT, IT>& A)
+                : n(A.n)
+                , kl(A.kl)
+                , ku(A.ku) {}
+
+            indexer(const IT N, const IT KL, const IT KU)
+                : n(N)
+                , kl(KL)
+                , ku(KU) {}
+
+            auto operator()(const IT i, const IT j) const {
+                if(i < 0 || i >= n || j < 0 || j >= n) return -1;
+                if(i - j > kl || j - i > ku) return -1;
+                return ku + i + j * (kl + ku);
+            }
+        };
+
         IT solve(band_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(!this->ctx.is_valid() || !this->trans_ctx.is_valid()) return 0;
 
