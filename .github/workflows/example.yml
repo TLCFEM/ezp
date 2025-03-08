@@ -18,16 +18,18 @@ jobs:
         run: |
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-          sudo apt-get update && sudo apt-get install intel-oneapi-mkl intel-oneapi-mpi intel-oneapi-mpi-devel
+          # sudo apt-get update && sudo apt-get install intel-oneapi-mkl intel-oneapi-mpi intel-oneapi-mpi-devel
+          sudo apt-get update && sudo apt-get install libmpich-dev
       - name: Compile
         run: |
-          source /opt/intel/oneapi/setvars.sh
+          # source /opt/intel/oneapi/setvars.sh
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON ..
           cmake --build . --target all
       - name: Test
         if: matrix.build == 'Debug'
         run: |
-          source /opt/intel/oneapi/setvars.sh
+          # source /opt/intel/oneapi/setvars.sh
           cd build
           for SRC in `find . -type f -executable`; do mpirun -n 2 $SRC; done
+          for SRC in `find . | egrep '\.o'`; do gcov -n $SRC > /dev/null; done
