@@ -130,7 +130,58 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (int argc, ch
 </ul>
 <p>The error code (0 for success) will be sent back to the root process of the caller. If error code is 0, the solution will be sent back as well.</p>
 <p>The example caller logic can be seen as follows.</p>
-<div class="fragment"></div><!-- fragment --><dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
+<div class="fragment"><div class="line"><span class="comment">/*******************************************************************************</span></div>
+<div class="line"><span class="comment"> * Copyright (C) 2025 Theodore Chang</span></div>
+<div class="line"><span class="comment"> *</span></div>
+<div class="line"><span class="comment"> * This program is free software: you can redistribute it and/or modify</span></div>
+<div class="line"><span class="comment"> * it under the terms of the GNU General Public License as published by</span></div>
+<div class="line"><span class="comment"> * the Free Software Foundation, either version 3 of the License, or</span></div>
+<div class="line"><span class="comment"> * (at your option) any later version.</span></div>
+<div class="line"><span class="comment"> *</span></div>
+<div class="line"><span class="comment"> * This program is distributed in the hope that it will be useful,</span></div>
+<div class="line"><span class="comment"> * but WITHOUT ANY WARRANTY; without even the implied warranty of</span></div>
+<div class="line"><span class="comment"> * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span></div>
+<div class="line"><span class="comment"> * GNU General Public License for more details.</span></div>
+<div class="line"><span class="comment"> *</span></div>
+<div class="line"><span class="comment"> * You should have received a copy of the GNU General Public License</span></div>
+<div class="line"><span class="comment"> * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span></div>
+<div class="line"><span class="comment"> ******************************************************************************/</span></div>
+<div class="line"><span class="preprocessor">#include &lt;mpl/mpl.hpp&gt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">int</span> main(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span>* argv[]) {</div>
+<div class="line">    <span class="keyword">constexpr</span> <span class="keywordtype">int</span> NUM_NODE = 1;</div>
+<div class="line"> </div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; comm_world{mpl::environment::comm_world()};</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> worker = comm_world.spawn(0, NUM_NODE, {<span class="stringliteral">&quot;solver.ppbsv&quot;</span>});</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> all = mpl::communicator(worker, mpl::communicator::order_low);</div>
+<div class="line"> </div>
+<div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> N = 6, KLU = 1, NRHS = 1;</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordtype">int</span> config[]{N, KLU, NRHS, 1};</div>
+<div class="line"> </div>
+<div class="line">    std::vector&lt;double&gt; A(N * (KLU + 1), 0.), B(N * NRHS, 1.);</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[I + I * KLU] = I + 1.;</div>
+<div class="line"> </div>
+<div class="line">    all.bcast(0, config);</div>
+<div class="line"> </div>
+<div class="line">    mpl::irequest_pool requests;</div>
+<div class="line"> </div>
+<div class="line">    requests.push(worker.isend(A, 0, mpl::tag_t{0}));</div>
+<div class="line">    requests.push(worker.isend(B, 0, mpl::tag_t{1}));</div>
+<div class="line"> </div>
+<div class="line">    requests.waitall();</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordtype">int</span> error = -1;</div>
+<div class="line">    worker.recv(error, 0);</div>
+<div class="line">    <span class="keywordflow">if</span>(0 == error) worker.recv(B, 0);</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) printf(<span class="stringliteral">&quot;x[%d] = %+.6f\n&quot;</span>, I, B[I]);</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordflow">return</span> 0;</div>
+<div class="line">}</div>
+<div class="line"> </div>
+</div><!-- fragment --><dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>07/03/2025 </dd></dl>
 <dl class="section version"><dt>Version</dt><dd>1.0.0 </dd></dl>
 </div></div><!-- contents -->
