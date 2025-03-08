@@ -30,10 +30,10 @@ namespace ezp {
 
     template<typename T> concept mat_t = requires(T t) {
         requires std::ranges::contiguous_range<T>;
-        requires std::floating_point<std::remove_pointer_t<decltype(t.begin())>>;
+        requires std::floating_point<std::remove_reference_t<decltype(*t.begin())>>;
     };
 
-    template<typename T> concept mem_t = std::floating_point<std::remove_pointer_t<T>> || mat_t<std::remove_pointer_t<T>>;
+    template<typename T> concept mem_t = std::floating_point<T> || mat_t<T>;
 
     template<index_t IT> class blacs_env final {
         static constexpr IT ZERO{0};
