@@ -112,9 +112,9 @@ See: <a href="https://github.com/Reference-ScaLAPACK/scalapack/issues/116">https
 </div><!-- fragment --><p>The lead dimension should be <code>KLU+1</code>.</p>
 <p>With zero based indexing, for a general band matrix <code>A</code>, the element at row <code>i</code> and column <code>j</code> is stored at <code>A[IDX(i, j)]</code>.</p>
 <div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keyword">auto</span> IDX = [&amp;](<span class="keywordtype">int</span> i, <span class="keywordtype">int</span> j) {</div>
-<div class="line">    <span class="keywordflow">if</span>(i &gt; j) std::swap(i, j);</div>
-<div class="line">    <span class="keywordflow">if</span>(j - i &gt; KLU) <span class="keywordflow">return</span> -1;</div>
-<div class="line">    <span class="keywordflow">return</span> 2 * j - i + (j + 1) * KLU;</div>
+<div class="line">    <span class="keywordflow">if</span>(i &lt; j) std::swap(i, j);</div>
+<div class="line">    <span class="keywordflow">if</span>(i - j &gt; KLU) <span class="keywordflow">return</span> -1;</div>
+<div class="line">    <span class="keywordflow">return</span> i + j * KLU;</div>
 <div class="line">};</div>
 </div><!-- fragment --><p>For &lsquo;UPLO='U&rsquo;`, the upper half is stored.</p>
 <div class="fragment"><div class="line"> .    .   a13  a24  a35  a46</div>
@@ -123,9 +123,9 @@ See: <a href="https://github.com/Reference-ScaLAPACK/scalapack/issues/116">https
 </div><!-- fragment --><p>The lead dimension should be <code>KLU+1</code>.</p>
 <p>With zero based indexing, for a general band matrix <code>A</code>, the element at row <code>i</code> and column <code>j</code> is stored at <code>A[IDX(i, j)]</code>.</p>
 <div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keyword">auto</span> IDX = [&amp;](<span class="keywordtype">int</span> i, <span class="keywordtype">int</span> j) {</div>
-<div class="line">    <span class="keywordflow">if</span>(i &lt; j) std::swap(i, j);</div>
-<div class="line">    <span class="keywordflow">if</span>(i - j &gt; KLU) <span class="keywordflow">return</span> -1;</div>
-<div class="line">    <span class="keywordflow">return</span> i + j * KLU;</div>
+<div class="line">    <span class="keywordflow">if</span>(i &gt; j) std::swap(i, j);</div>
+<div class="line">    <span class="keywordflow">if</span>(j - i &gt; KLU) <span class="keywordflow">return</span> -1;</div>
+<div class="line">    <span class="keywordflow">return</span> 2 * j - i + (j + 1) * KLU;</div>
 <div class="line">};</div>
 </div><!-- fragment --><dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>07/03/2025 </dd></dl>
