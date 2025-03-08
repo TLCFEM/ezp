@@ -19,7 +19,7 @@ jobs:
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           # sudo apt-get update && sudo apt-get install intel-oneapi-mkl intel-oneapi-mpi intel-oneapi-mpi-devel
-          sudo apt-get update && sudo apt-get install libmpich-dev
+          sudo apt-get update && sudo apt-get install libmpich-dev locv
       - name: Compile
         run: |
           # source /opt/intel/oneapi/setvars.sh
@@ -32,5 +32,17 @@ jobs:
         if: matrix.build == 'Debug'
         run: |
           # source /opt/intel/oneapi/setvars.sh
-          cd build && ./catch2
-          for SRC in `find . | egrep '\.o'`; do gcov -n $SRC > /dev/null; done
+          cd build
+          for SRC in `find . | egrep 'test'`; do $SRC; done
+          ./catch2
+          lcov --capture --directory . --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' --output-file coverage.info
+          lcov --list coverage.info
+          bash <(curl -s https://codecov.io/bash) -f coverage.info
+#      - name: Report
+#        if: matrix.build == 'Debug'
+#        uses: codecov/codecov-action@v5
+#        with:
+#          plugins: gcov
+#        env:
+#          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
