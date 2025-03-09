@@ -29,42 +29,50 @@ using namespace std::chrono;
 #define REQUIRE(...)
 #endif
 
-#ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PDPOSV", "[Simple Solver]") {
-#else
-void random_pdposv() {
-#endif
+static auto N = 10;
+
+template<data_t DT, char UL = 'L', char ODER = 'R'> auto random_pposv() {
+    using solver_t = pposv<DT, int, UL, ODER>;
+
     const auto& env = get_env<int>();
 
     const auto context = blacs_context<int>();
 
-    for(auto K = 0; K < 100; ++K) {
+    for(auto K = 0; K < N; ++K) {
         const auto seed = context.amx(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
         std::mt19937 gen(seed);
 
         const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
         const auto N = std::uniform_int_distribution(100, 400)(gen);
 
-        const auto IDX = par_dposv<int>::indexer{N};
+        const auto IDX = typename solver_t::indexer{N};
 
-        std::vector<double> A, B;
+        std::vector<DT> A, B;
 
         if(0 == env.rank()) {
-            A.resize(N * N, 0.);
-            B.resize(N * NRHS, 1.);
+            A.resize(N * N, DT{0.});
+            B.resize(N * NRHS, DT{0.});
 
-            std::uniform_real_distribution dist_v(0., 1.);
+            std::uniform_real_distribution dist_v(0.f, 1.f);
 
             for(auto I = 0; I < N; ++I) {
-                A[IDX(I, I)] = 10. + 10. * dist_v(gen);
-                for(auto J = I + 1; J < std::min(N, I + 5); ++J) A[IDX(I, J)] = A[IDX(J, I)] = dist_v(gen);
+                A[IDX(I, I)] = DT{10.f + 10.f * dist_v(gen)};
+                for(auto J = I + 1; J < std::min(N, I + 5); ++J) A[IDX(I, J)] = A[IDX(J, I)] = DT{dist_v(gen)};
             }
         }
 
-        const auto info = par_dposv<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
+        const auto info = solver_t().solve({N, N, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PDPOSV", "[Simple Solver]") {
+#else
+void random_pdposv() {
+#endif
+    random_pposv<double>();
 }
 
 #ifdef EZP_ENABLE_TEST
@@ -72,37 +80,7 @@ TEST_CASE("Random PDPOSVC", "[Simple Solver]") {
 #else
 void random_pdposv_c() {
 #endif
-    const auto& env = get_env<int>();
-
-    const auto context = blacs_context<int>();
-
-    for(auto K = 0; K < 100; ++K) {
-        const auto seed = context.amx(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
-        std::mt19937 gen(seed);
-
-        const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
-        const auto N = std::uniform_int_distribution(100, 400)(gen);
-
-        const auto IDX = par_dposv_c<int>::indexer{N};
-
-        std::vector<double> A, B;
-
-        if(0 == env.rank()) {
-            A.resize(N * N, 0.);
-            B.resize(N * NRHS, 1.);
-
-            std::uniform_real_distribution dist_v(0., 1.);
-
-            for(auto I = 0; I < N; ++I) {
-                A[IDX(I, I)] = 10. + 10. * dist_v(gen);
-                for(auto J = I + 1; J < std::min(N, I + 5); ++J) A[IDX(I, J)] = A[IDX(J, I)] = dist_v(gen);
-            }
-        }
-
-        const auto info = par_dposv_c<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
-
-        if(0 == env.rank()) REQUIRE(info == 0);
-    }
+    random_pposv<double, 'L', 'C'>();
 }
 
 #ifdef EZP_ENABLE_TEST
@@ -110,37 +88,7 @@ TEST_CASE("Random PSPOSV", "[Simple Solver]") {
 #else
 void random_psposv() {
 #endif
-    const auto& env = get_env<int>();
-
-    const auto context = blacs_context<int>();
-
-    for(auto K = 0; K < 100; ++K) {
-        const auto seed = context.amx(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
-        std::mt19937 gen(seed);
-
-        const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
-        const auto N = std::uniform_int_distribution(100, 400)(gen);
-
-        const auto IDX = par_sposv<int>::indexer{N};
-
-        std::vector<float> A, B;
-
-        if(0 == env.rank()) {
-            A.resize(N * N, 0.f);
-            B.resize(N * NRHS, 1.f);
-
-            std::uniform_real_distribution dist_v(0.f, 1.f);
-
-            for(auto I = 0; I < N; ++I) {
-                A[IDX(I, I)] = 10.f + 10.f * dist_v(gen);
-                for(auto J = I + 1; J < std::min(N, I + 5); ++J) A[IDX(I, J)] = A[IDX(J, I)] = dist_v(gen);
-            }
-        }
-
-        const auto info = par_sposv<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
-
-        if(0 == env.rank()) REQUIRE(info == 0);
-    }
+    random_pposv<float>();
 }
 
 #ifdef EZP_ENABLE_TEST
@@ -148,50 +96,57 @@ TEST_CASE("Random PSPOSVC", "[Simple Solver]") {
 #else
 void random_psposv_c() {
 #endif
-    const auto& env = get_env<int>();
+    random_pposv<float, 'L', 'C'>();
+}
 
-    const auto context = blacs_context<int>();
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PZPOSV", "[Simple Solver]") {
+#else
+void random_pzposv() {
+#endif
+    random_pposv<complex16>();
+}
 
-    for(auto K = 0; K < 100; ++K) {
-        const auto seed = context.amx(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
-        std::mt19937 gen(seed);
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PZPOSVC", "[Simple Solver]") {
+#else
+void random_pzposv_c() {
+#endif
+    random_pposv<complex16, 'L', 'C'>();
+}
 
-        const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
-        const auto N = std::uniform_int_distribution(100, 400)(gen);
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PCPOSV", "[Simple Solver]") {
+#else
+void random_pcposv() {
+#endif
+    random_pposv<complex8>();
+}
 
-        const auto IDX = par_sposv_c<int>::indexer{N};
-
-        std::vector<float> A, B;
-
-        if(0 == env.rank()) {
-            A.resize(N * N, 0.f);
-            B.resize(N * NRHS, 1.f);
-
-            std::uniform_real_distribution dist_v(0.f, 1.f);
-
-            for(auto I = 0; I < N; ++I) {
-                A[IDX(I, I)] = 10.f + 10.f * dist_v(gen);
-                for(auto J = I + 1; J < std::min(N, I + 5); ++J) A[IDX(I, J)] = A[IDX(J, I)] = dist_v(gen);
-            }
-        }
-
-        const auto info = par_sposv_c<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
-
-        if(0 == env.rank()) REQUIRE(info == 0);
-    }
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PCPOSVC", "[Simple Solver]") {
+#else
+void random_pcposv_c() {
+#endif
+    random_pposv<complex8, 'L', 'C'>();
 }
 
 #ifdef EZP_ENABLE_TEST
 #else
-int main(const int argc, const char*[]) {
+int main(const int argc, const char* argv[]) {
     volatile int i = 0;
     if(argc <= 1)
         while(0 == i) std::this_thread::sleep_for(seconds(10));
+    else N = std::atoi(argv[1]);
 
     random_pdposv();
     random_pdposv_c();
     random_psposv();
     random_psposv_c();
+    random_pzposv();
+    random_pzposv_c();
+    random_pcposv();
+    random_pcposv_c();
 
     return 0;
 }
