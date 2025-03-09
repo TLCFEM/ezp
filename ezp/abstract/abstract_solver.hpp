@@ -39,7 +39,13 @@ namespace ezp {
 
     template<typename T> concept mem_t = data_t<T> || mat_t<T>;
 
-    template<index_t IT> class blacs_env final {
+    struct blacs_base {
+        static std::atomic_bool RELEASED;
+    };
+
+    std::atomic_bool blacs_base::RELEASED{false};
+
+    template<index_t IT> class blacs_env final : blacs_base {
         static constexpr IT ZERO{0}, ONE{1};
 
         static std::atomic_bool FINALIZE;
@@ -48,7 +54,10 @@ namespace ezp {
 
     public:
         blacs_env() { blacs_pinfo(&_rank, &_size); }
-        ~blacs_env() { blacs_exit(FINALIZE ? &ZERO : &ONE); }
+        ~blacs_env() {
+            if(RELEASED.exchange(true)) return;
+            blacs_exit(FINALIZE ? &ZERO : &ONE);
+        }
 
         /**
          * @brief Disables the management of MPI (Message Passing Interface) finalization.
