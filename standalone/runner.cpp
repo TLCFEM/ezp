@@ -64,8 +64,8 @@ int main(int argc, char** argv) {
 
         config = {N, KL, KU, NRHS, 1};
 
-        A.resize(N * (2 * (KL + KU) + 1), 0.);
-        for(auto I = 0; I < N; ++I) A[2 * KU + KL + I + 2 * I * (KL + KU)] = I + 1.;
+        A.resize(N * (KL + KU + 1), 0.);
+        for(auto I = 0; I < N; ++I) A[KU + I * (KL + KU + 1)] = I + 1.;
     }
     else if("db" == type) {
         solver = "solver.pdbsv";

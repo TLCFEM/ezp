@@ -26,8 +26,14 @@
  * - an integer array of size 5 containing the matrix size (`N`), number of sub-diagonals (`KL`),
  *   number of super-diagonals (`KU`), number of right-hand sides (`NRHS`),
  *   and the data type (> 0 for `double`, < 0 for `float`),
- * - a buffer containing the matrix `A`, size `N x (2 * (KL + KU) + 1)`,
+ * - a buffer containing the matrix `A`, size `N x (KL + KU + 1)`,
  * - a buffer containing the right-hand side `B`, size `N x NRHS`.
+ *
+ * @note The `pgbsv` solver requires the lead dimension of `A` to be `2 * (KL + KU) + 1`.
+ * The top `KL + KU` rows do not contain any data. The bottom `KL + KU + 1` rows contain
+ * the matrix `A`.
+ * @note The caller is expected to send the bottom `KL + KU + 1` rows of `A` only.
+ * This is to avoid sending unnecessary data and optimize the communication.
  *
  * The error code (0 for success) will be sent back to the root process of the caller.
  * If error code is 0, the solution will be sent back as well.
@@ -53,12 +59,18 @@ template<ezp::data_t DT> int run(const int N, const int KL, const int KU, const 
     std::vector<DT> A, B;
 
     if(0 == comm_world.rank()) {
-        A.resize(N * (2 * (KL + KU) + 1));
+        const auto KLU = KL + KU;
+        const auto LDA = 2 * KLU + 1;
+
+        A.resize(N * LDA);
         B.resize(N * NRHS);
 
         mpl::irequest_pool requests;
 
-        requests.push(parent.irecv(A, 0, mpl::tag_t{0}));
+        // ! Expect the caller to send bottom KL + KU + 1 rows of A only.
+        // ! However, the layout of A is still N x LDA.
+        // ! Thus, a strided layout is used to receive the data.
+        requests.push(parent.irecv(A.data() + KLU, mpl::strided_vector_layout<DT>(N, LDA - KLU, LDA), 0, mpl::tag_t{0}));
         requests.push(parent.irecv(B, 0, mpl::tag_t{1}));
 
         requests.waitall();
