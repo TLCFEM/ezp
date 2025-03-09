@@ -125,9 +125,12 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (int argc, ch
 <p>The caller spawns this program as a worker process.</p>
 <p>The caller must send three buffers to the worker process:</p><ul>
 <li>an integer array of size 5 containing the matrix size (<code>N</code>), number of sub-diagonals (<code>KL</code>), number of super-diagonals (<code>KU</code>), number of right-hand sides (<code>NRHS</code>), and the data type (&gt; 0 for <code>double</code>, &lt; 0 for <code>float</code>),</li>
-<li>a buffer containing the matrix <code>A</code>, size <code>N x (2 * (KL + KU) + 1)</code>,</li>
+<li>a buffer containing the matrix <code>A</code>, size <code>N x (KL + KU + 1)</code>,</li>
 <li>a buffer containing the right-hand side <code>B</code>, size <code>N x NRHS</code>.</li>
 </ul>
+<dl class="section note"><dt>Note</dt><dd>The <code>pgbsv</code> solver requires the lead dimension of <code>A</code> to be <code>2 * (KL + KU) + 1</code>. The top <code>KL + KU</code> rows do not contain any data. The bottom <code>KL + KU + 1</code> rows contain the matrix <code>A</code>. </dd>
+<dd>
+The caller is expected to send the bottom <code>KL + KU + 1</code> rows of <code>A</code> only. This is to avoid sending unnecessary data and optimize the communication.</dd></dl>
 <p>The error code (0 for success) will be sent back to the root process of the caller. If error code is 0, the solution will be sent back as well.</p>
 <p>The example caller logic can be seen as follows.</p>
 <div class="fragment"><div class="line"><span class="comment">/*******************************************************************************</span></div>
@@ -186,8 +189,8 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (int argc, ch
 <div class="line"> </div>
 <div class="line">        config = {N, KL, KU, NRHS, 1};</div>
 <div class="line"> </div>
-<div class="line">        A.resize(N * (2 * (KL + KU) + 1), 0.);</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[2 * KU + KL + I + 2 * I * (KL + KU)] = I + 1.;</div>
+<div class="line">        A.resize(N * (KL + KU + 1), 0.);</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[KU + I * (KL + KU + 1)] = I + 1.;</div>
 <div class="line">    }</div>
 <div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;db&quot;</span> == type) {</div>
 <div class="line">        solver = <span class="stringliteral">&quot;solver.pdbsv&quot;</span>;</div>

@@ -186,8 +186,8 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (int argc, ch
 <div class="line"> </div>
 <div class="line">        config = {N, KL, KU, NRHS, 1};</div>
 <div class="line"> </div>
-<div class="line">        A.resize(N * (2 * (KL + KU) + 1), 0.);</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[2 * KU + KL + I + 2 * I * (KL + KU)] = I + 1.;</div>
+<div class="line">        A.resize(N * (KL + KU + 1), 0.);</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[KU + I * (KL + KU + 1)] = I + 1.;</div>
 <div class="line">    }</div>
 <div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;db&quot;</span> == type) {</div>
 <div class="line">        solver = <span class="stringliteral">&quot;solver.pdbsv&quot;</span>;</div>
