@@ -31,11 +31,9 @@ using namespace std::chrono;
 
 static auto N = 10;
 
-#ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PDGBSV", "[Simple Solver]") {
-#else
-void random_pdgbsv() {
-#endif
+template<data_t DT> auto random_pgbsv() {
+    using solver_t = pgbsv<DT, int>;
+
     const auto& env = get_env<int>();
 
     const auto context = blacs_context<int>();
@@ -52,23 +50,31 @@ void random_pdgbsv() {
 
         const auto LDA = 2 * (KL + KU) + 1;
 
-        const auto IDX = par_dgbsv<int>::indexer{N, KL, KU};
+        const auto IDX = typename solver_t::indexer{N, KL, KU};
 
-        std::vector<double> A, B;
+        std::vector<DT> A, B;
 
         if(0 == env.rank()) {
-            A.resize(N * LDA, 0.);
-            B.resize(N * NRHS, 1.);
+            A.resize(N * LDA, DT{0.});
+            B.resize(N * NRHS, DT{1.});
 
-            std::uniform_real_distribution dist_v(0., 1.);
+            std::uniform_real_distribution dist_v(0.f, 1.f);
 
-            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = 10. * dist_v(gen) + 10.;
+            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = DT{10.f * dist_v(gen) + 10.f};
         }
 
-        const auto info = par_dgbsv<int>().solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
+        const auto info = solver_t().solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
 
         if(0 == env.rank()) REQUIRE(info == 0);
     }
+};
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PDGBSV", "[Simple Solver]") {
+#else
+void random_pdgbsv() {
+#endif
+    random_pgbsv<double>();
 }
 
 #ifdef EZP_ENABLE_TEST
@@ -76,39 +82,7 @@ TEST_CASE("Random PSGBSV", "[Simple Solver]") {
 #else
 void random_psgbsv() {
 #endif
-    const auto& env = get_env<int>();
-
-    const auto context = blacs_context<int>();
-
-    for(auto K = 0; K < N; ++K) {
-        const auto seed = context.amn(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
-        std::mt19937 gen(seed);
-
-        auto band = std::uniform_int_distribution(1, 4);
-        const auto KL = band(gen);
-        const auto KU = band(gen);
-        const auto NRHS = band(gen);
-        const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 10)(gen);
-
-        const auto LDA = 2 * (KL + KU) + 1;
-
-        const auto IDX = par_sgbsv<int>::indexer{N, KL, KU};
-
-        std::vector<float> A, B;
-
-        if(0 == env.rank()) {
-            A.resize(N * LDA, 0.);
-            B.resize(N * NRHS, 1.);
-
-            std::uniform_real_distribution dist_v(0.f, 1.f);
-
-            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = 10.f * dist_v(gen) + 10.f;
-        }
-
-        const auto info = par_sgbsv<int>().solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
-
-        if(0 == env.rank()) REQUIRE(info == 0);
-    }
+    random_pgbsv<float>();
 }
 
 #ifdef EZP_ENABLE_TEST
@@ -116,39 +90,7 @@ TEST_CASE("Random PZGBSV", "[Simple Solver]") {
 #else
 void random_pzgbsv() {
 #endif
-    const auto& env = get_env<int>();
-
-    const auto context = blacs_context<int>();
-
-    for(auto K = 0; K < N; ++K) {
-        const auto seed = context.amn(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
-        std::mt19937 gen(seed);
-
-        auto band = std::uniform_int_distribution(1, 10);
-        const auto KL = band(gen);
-        const auto KU = band(gen);
-        const auto NRHS = band(gen);
-        const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 100)(gen);
-
-        const auto LDA = 2 * (KL + KU) + 1;
-
-        const auto IDX = par_zgbsv<int>::indexer{N, KL, KU};
-
-        std::vector<complex16> A, B;
-
-        if(0 == env.rank()) {
-            A.resize(N * LDA, {0., 0.});
-            B.resize(N * NRHS, {1., 0.});
-
-            std::uniform_real_distribution dist_v(0., 1.);
-
-            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = {10. * dist_v(gen) + 10., dist_v(gen)};
-        }
-
-        const auto info = par_zgbsv<int>().solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
-
-        if(0 == env.rank()) REQUIRE(info == 0);
-    }
+    random_pgbsv<complex16>();
 }
 
 #ifdef EZP_ENABLE_TEST
@@ -156,39 +98,7 @@ TEST_CASE("Random PCGBSV", "[Simple Solver]") {
 #else
 void random_pcgbsv() {
 #endif
-    const auto& env = get_env<int>();
-
-    const auto context = blacs_context<int>();
-
-    for(auto K = 0; K < N; ++K) {
-        const auto seed = context.amn(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
-        std::mt19937 gen(seed);
-
-        auto band = std::uniform_int_distribution(1, 10);
-        const auto KL = band(gen);
-        const auto KU = band(gen);
-        const auto NRHS = band(gen);
-        const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 100)(gen);
-
-        const auto LDA = 2 * (KL + KU) + 1;
-
-        const auto IDX = par_cgbsv<int>::indexer{N, KL, KU};
-
-        std::vector<complex8> A, B;
-
-        if(0 == env.rank()) {
-            A.resize(N * LDA, {0.f, 0.f});
-            B.resize(N * NRHS, {1.f, 0.f});
-
-            std::uniform_real_distribution dist_v(0.f, 1.f);
-
-            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = {10.f * dist_v(gen) + 10.f, dist_v(gen)};
-        }
-
-        const auto info = par_cgbsv<int>().solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
-
-        if(0 == env.rank()) REQUIRE(info == 0);
-    }
+    random_pgbsv<complex8>();
 }
 
 #ifdef EZP_ENABLE_TEST
