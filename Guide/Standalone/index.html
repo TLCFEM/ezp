@@ -686,7 +686,8 @@ Such a form is particularly beneficial if the following holds.</p>
 </ol>
 <p>However, such a clear boundary may be a shortcoming as well.
 For example, the root process needs to store the whole matrices in memory, which is subject to physical limitations.
-However, if the matrices need to be read from IO in a distributed manner, one may also need a refined control of how the data is prepared, by probably directly using <code>BLACS</code>/<code>ScaLAPACK</code>/<code>MPI</code> functions.</p>
+And since the spawned processes are not persistent, solving the same system with different right-hand sides may incur unnecessary data communication.</p>
+<p>If the matrices need to be read from IO in a distributed manner, one may also need a refined control of how the data is prepared, by probably directly using <code>BLACS</code>/<code>ScaLAPACK</code>/<code>MPI</code> functions.</p>
 <h2 id="backbone">Backbone</h2>
 <p>Here, we use the <code>pgesv</code> solver as the example to illustrate some critical steps used in implementing the above architecture.</p>
 <p>We are not using the raw <code>MPI</code> functions, instead, the <code>mpl</code> library is used.

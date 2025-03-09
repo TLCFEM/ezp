@@ -1,23 +1,25 @@
 <map id="standalone/solver.ppbsv.cpp" name="standalone/solver.ppbsv.cpp">
-<area shape="rect" id="Node000001" title="Standalone ppbsv solver." alt="" coords="208,5,415,31"/>
-<area shape="rect" id="Node000002" href="$d0/daf/ppbsv_8hpp.html" title=" " alt="" coords="187,79,302,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="302,33,267,70,263,67,298,29"/>
-<area shape="rect" id="Node000011" title=" " alt="" coords="326,79,430,104"/>
-<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="324,29,360,67,356,70,320,33"/>
-<area shape="rect" id="Node000003" href="$d1/d1b/band__solver_8hpp_source.html" title=" " alt="" coords="152,152,337,177"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="247,104,247,138,242,138,242,104"/>
-<area shape="rect" id="Node000004" href="$dc/ddc/abstract__solver_8hpp_source.html" title=" " alt="" coords="170,225,319,251"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="247,178,247,212,242,212,242,178"/>
-<area shape="rect" id="Node000005" href="$d1/d4c/ezp_8h_source.html" title=" " alt="" coords="5,299,63,324"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="212,253,77,298,75,293,210,248"/>
-<area shape="rect" id="Node000006" title=" " alt="" coords="87,299,143,324"/>
-<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="225,253,150,294,148,289,223,248"/>
-<area shape="rect" id="Node000007" title=" " alt="" coords="167,299,234,324"/>
-<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="240,252,217,288,213,286,235,250"/>
-<area shape="rect" id="Node000008" title=" " alt="" coords="259,299,321,324"/>
-<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="254,250,278,286,273,289,250,252"/>
-<area shape="rect" id="Node000009" title=" " alt="" coords="346,299,413,324"/>
-<area shape="poly" id="edge8_Node000004_Node000009" title=" " alt="" coords="268,248,346,290,344,294,265,253"/>
-<area shape="rect" id="Node000010" title=" " alt="" coords="437,299,500,324"/>
-<area shape="poly" id="edge9_Node000004_Node000010" title=" " alt="" coords="281,248,425,293,423,299,280,253"/>
+<area shape="rect" id="Node000001" title="Standalone ppbsv solver." alt="" coords="219,5,425,31"/>
+<area shape="rect" id="Node000002" href="$d0/daf/ppbsv_8hpp.html" title=" " alt="" coords="198,79,313,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="313,33,277,70,274,67,309,29"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="337,79,441,104"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="335,29,370,67,367,70,331,33"/>
+<area shape="rect" id="Node000003" href="$d1/d1b/band__solver_8hpp_source.html" title=" " alt="" coords="163,152,348,177"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="258,104,258,138,253,138,253,104"/>
+<area shape="rect" id="Node000004" href="$dc/ddc/abstract__solver_8hpp_source.html" title=" " alt="" coords="181,225,330,251"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="258,178,258,212,253,212,253,178"/>
+<area shape="rect" id="Node000005" href="$d1/d4c/ezp_8h_source.html" title=" " alt="" coords="16,299,73,324"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="222,253,88,298,86,293,221,248"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="98,299,154,324"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="236,253,161,294,158,289,233,248"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="178,299,245,324"/>
+<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="250,252,228,288,223,286,246,250"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="269,299,332,324"/>
+<area shape="poly" id="edge8_Node000004_Node000009" title=" " alt="" coords="265,250,288,286,284,289,261,252"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="357,299,423,324"/>
+<area shape="poly" id="edge9_Node000004_Node000010" title=" " alt="" coords="278,248,357,290,355,294,276,253"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="448,299,511,324"/>
+<area shape="poly" id="edge10_Node000004_Node000011" title=" " alt="" coords="292,248,436,293,434,299,291,253"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="5,372,84,397"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="47,324,47,358,42,358,42,324"/>
 </map>

@@ -102,7 +102,8 @@ $(document).ready(function(){initNavTree('d4/d72/md_docs_2Guide_2Standalone.html
 <li>The main application adopts a different parallelism pattern.</li>
 <li>Sometimes, one may want to have a clear boundary between the main application and the solver(s).</li>
 </ol>
-<p>However, such a clear boundary may be a shortcoming as well. For example, the root process needs to store the whole matrices in memory, which is subject to physical limitations. However, if the matrices need to be read from IO in a distributed manner, one may also need a refined control of how the data is prepared, by probably directly using <code>BLACS</code>/<code>ScaLAPACK</code>/<code>MPI</code> functions.</p>
+<p>However, such a clear boundary may be a shortcoming as well. For example, the root process needs to store the whole matrices in memory, which is subject to physical limitations. And since the spawned processes are not persistent, solving the same system with different right-hand sides may incur unnecessary data communication.</p>
+<p>If the matrices need to be read from IO in a distributed manner, one may also need a refined control of how the data is prepared, by probably directly using <code>BLACS</code>/<code>ScaLAPACK</code>/<code>MPI</code> functions.</p>
 <h1><a class="anchor" id="autotoc_md1"></a>
 Backbone</h1>
 <p>Here, we use the <code>pgesv</code> solver as the example to illustrate some critical steps used in implementing the above architecture.</p>
