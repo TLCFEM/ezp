@@ -20,6 +20,8 @@
 
 #include <complex>
 
+using int_t = int;
+
 using complex8 = std::complex<float>;
 using complex16 = std::complex<double>;
 
@@ -47,6 +49,8 @@ using complex16 = std::complex<double>;
 #define pcgbtrf EZP(pcgbtrf)
 #define pcgbtrs EZP(pcgbtrs)
 #define pcgemr2d EZP(pcgemr2d)
+#define pcgetrf EZP(pcgetrf)
+#define pcgetrs EZP(pcgetrs)
 #define pddbtrf EZP(pddbtrf)
 #define pddbtrs EZP(pddbtrs)
 #define pdgbsv EZP(pdgbsv)
@@ -78,6 +82,8 @@ using complex16 = std::complex<double>;
 #define pzgbtrf EZP(pzgbtrf)
 #define pzgbtrs EZP(pzgbtrs)
 #define pzgemr2d EZP(pzgemr2d)
+#define pzgetrf EZP(pzgetrf)
+#define pzgetrs EZP(pzgetrs)
 
 #define igamn2d EZP(igamn2d)
 #define igamx2d EZP(igamx2d)
@@ -87,55 +93,59 @@ using complex16 = std::complex<double>;
 extern "C" {
 #endif
 
-int numroc(const int* n, const int* nb, const int* iproc, const int* isrcproc, const int* nprocs);
+int_t numroc(const int_t* n, const int_t* nb, const int_t* iproc, const int_t* isrcproc, const int_t* nprocs);
 
-void blacs_exit(const int* notDone);
-void blacs_get(const int* ConTxt, const int* what, int* val);
-void blacs_gridexit(const int* ConTxt);
-void blacs_gridinfo(const int* ConTxt, int* nprow, int* npcol, int* myrow, int* mycol);
-void blacs_gridinit(int* ConTxt, const char* layout, const int* nprow, const int* npcol);
-void blacs_pinfo(int* mypnum, int* nprocs);
+void blacs_exit(const int_t* notDone);
+void blacs_get(const int_t* ConTxt, const int_t* what, int_t* val);
+void blacs_gridexit(const int_t* ConTxt);
+void blacs_gridinfo(const int_t* ConTxt, int_t* nprow, int_t* npcol, int_t* myrow, int_t* mycol);
+void blacs_gridinit(int_t* ConTxt, const char* layout, const int_t* nprow, const int_t* npcol);
+void blacs_pinfo(int_t* mypnum, int_t* nprocs);
 
-void descinit(int* desc, const int* m, const int* n, const int* mb, const int* nb, const int* irsrc, const int* icsrc, const int* ictxt, const int* lld, int* info);
+void descinit(int_t* desc, const int_t* m, const int_t* n, const int_t* mb, const int_t* nb, const int_t* irsrc, const int_t* icsrc, const int_t* ictxt, const int_t* lld, int_t* info);
 
-void pcgbtrf(const int* n, const int* bwl, const int* bwu, complex8* a, const int* ja, const int* desca, int* ipiv, complex8* af, const int* laf, complex8* work, const int* lwork, int* info);
-void pcgbtrs(const char* trans, const int* n, const int* bwl, const int* bwu, const int* nrhs, complex8* a, const int* ja, const int* desca, int* ipiv, complex8* b, const int* ib, const int* descb, complex8* af, const int* laf, complex8* work, const int* lwork, int* info);
-void pcgemr2d(const int* m, const int* n, const complex8* a, const int* ia, const int* ja, const int* desca, complex8* b, const int* ib, const int* jb, const int* descb, const int* ictxt);
-void pddbtrf(const int* n, const int* bwl, const int* bwu, double* a, const int* ja, const int* desca, double* af, const int* laf, double* work, const int* lwork, int* info);
-void pddbtrs(const char* trans, const int* n, const int* bwl, const int* bwu, const int* nrhs, double* a, const int* ja, const int* desca, double* b, const int* ib, const int* descb, double* af, const int* laf, double* work, const int* lwork, int* info);
-void pdgbsv(const int* n, const int* bwl, const int* bwu, const int* nrhs, double* a, const int* ja, const int* desca, int* ipiv, double* b, const int* ib, const int* descb, double* work, const int* lwork, int* info);
-void pdgbtrf(const int* n, const int* bwl, const int* bwu, double* a, const int* ja, const int* desca, int* ipiv, double* af, const int* laf, double* work, const int* lwork, int* info);
-void pdgbtrs(const char* trans, const int* n, const int* bwl, const int* bwu, const int* nrhs, double* a, const int* ja, const int* desca, int* ipiv, double* b, const int* ib, const int* descb, double* af, const int* laf, double* work, const int* lwork, int* info);
-void pdgemr2d(const int* m, const int* n, const double* a, const int* ia, const int* ja, const int* desca, double* b, const int* ib, const int* jb, const int* descb, const int* ictxt);
-void pdgesv(const int* n, const int* nrhs, double* a, const int* ia, const int* ja, const int* desca, int* ipiv, double* b, const int* ib, const int* jb, const int* descb, int* info);
-void pdgetrf(const int* m, const int* n, double* a, const int* ia, const int* ja, const int* desca, int* ipiv, int* info);
-void pdgetrs(const char* trans, const int* n, const int* nrhs, const double* a, const int* ia, const int* ja, const int* desca, const int* ipiv, double* b, const int* ib, const int* jb, const int* descb, int* info);
-void pdpbtrf(const char* uplo, const int* n, const int* bw, double* a, const int* ja, const int* desca, double* af, const int* laf, double* work, const int* lwork, int* info);
-void pdpbtrs(const char* uplo, const int* n, const int* bw, const int* nrhs, double* a, const int* ja, const int* desca, double* b, const int* ib, const int* descb, double* af, const int* laf, double* work, const int* lwork, int* info);
-void pdposv(const char* uplo, const int* n, const int* nrhs, double* a, const int* ia, const int* ja, const int* desca, double* b, const int* ib, const int* jb, const int* descb, int* info);
-void pdpotrf(const char* uplo, const int* n, double* a, const int* ia, const int* ja, const int* desca, int* info);
-void pdpotrs(const char* uplo, const int* n, const int* nrhs, const double* a, const int* ia, const int* ja, const int* desca, double* b, const int* ib, const int* jb, const int* descb, int* info);
-void psdbtrf(const int* n, const int* bwl, const int* bwu, float* a, const int* ja, const int* desca, float* af, const int* laf, float* work, const int* lwork, int* info);
-void psdbtrs(const char* trans, const int* n, const int* bwl, const int* bwu, const int* nrhs, float* a, const int* ja, const int* desca, float* b, const int* ib, const int* descb, float* af, const int* laf, float* work, const int* lwork, int* info);
-void psgbsv(const int* n, const int* bwl, const int* bwu, const int* nrhs, float* a, const int* ja, const int* desca, int* ipiv, float* b, const int* ib, const int* descb, float* work, const int* lwork, int* info);
-void psgbtrf(const int* n, const int* bwl, const int* bwu, float* a, const int* ja, const int* desca, int* ipiv, float* af, const int* laf, float* work, const int* lwork, int* info);
-void psgbtrs(const char* trans, const int* n, const int* bwl, const int* bwu, const int* nrhs, float* a, const int* ja, const int* desca, int* ipiv, float* b, const int* ib, const int* descb, float* af, const int* laf, float* work, const int* lwork, int* info);
-void psgemr2d(const int* m, const int* n, const float* a, const int* ia, const int* ja, const int* desca, float* b, const int* ib, const int* jb, const int* descb, const int* ictxt);
-void psgesv(const int* n, const int* nrhs, float* a, const int* ia, const int* ja, const int* desca, int* ipiv, float* b, const int* ib, const int* jb, const int* descb, int* info);
-void psgetrf(const int* m, const int* n, float* a, const int* ia, const int* ja, const int* desca, int* ipiv, int* info);
-void psgetrs(const char* trans, const int* n, const int* nrhs, const float* a, const int* ia, const int* ja, const int* desca, const int* ipiv, float* b, const int* ib, const int* jb, const int* descb, int* info);
-void pspbtrf(const char* uplo, const int* n, const int* bw, float* a, const int* ja, const int* desca, float* af, const int* laf, float* work, const int* lwork, int* info);
-void pspbtrs(const char* uplo, const int* n, const int* bw, const int* nrhs, float* a, const int* ja, const int* desca, float* b, const int* ib, const int* descb, float* af, const int* laf, float* work, const int* lwork, int* info);
-void psposv(const char* uplo, const int* n, const int* nrhs, float* a, const int* ia, const int* ja, const int* desca, float* b, const int* ib, const int* jb, const int* descb, int* info);
-void pspotrf(const char* uplo, const int* n, float* a, const int* ia, const int* ja, const int* desca, int* info);
-void pspotrs(const char* uplo, const int* n, const int* nrhs, const float* a, const int* ia, const int* ja, const int* desca, float* b, const int* ib, const int* jb, const int* descb, int* info);
-void pzgbtrf(const int* n, const int* bwl, const int* bwu, complex16* a, const int* ja, const int* desca, int* ipiv, complex16* af, const int* laf, complex16* work, const int* lwork, int* info);
-void pzgbtrs(const char* trans, const int* n, const int* bwl, const int* bwu, const int* nrhs, complex16* a, const int* ja, const int* desca, int* ipiv, complex16* b, const int* ib, const int* descb, complex16* af, const int* laf, complex16* work, const int* lwork, int* info);
-void pzgemr2d(const int* m, const int* n, const complex16* a, const int* ia, const int* ja, const int* desca, complex16* b, const int* ib, const int* jb, const int* descb, const int* ictxt);
+void pcgbtrf(const int_t* n, const int_t* bwl, const int_t* bwu, complex8* a, const int_t* ja, const int_t* desca, int_t* ipiv, complex8* af, const int_t* laf, complex8* work, const int_t* lwork, int_t* info);
+void pcgbtrs(const char* trans, const int_t* n, const int_t* bwl, const int_t* bwu, const int_t* nrhs, complex8* a, const int_t* ja, const int_t* desca, int_t* ipiv, complex8* b, const int_t* ib, const int_t* descb, complex8* af, const int_t* laf, complex8* work, const int_t* lwork, int_t* info);
+void pcgemr2d(const int_t* m, const int_t* n, const complex8* a, const int_t* ia, const int_t* ja, const int_t* desca, complex8* b, const int_t* ib, const int_t* jb, const int_t* descb, const int_t* ictxt);
+void pcgetrf(const int_t* m, const int_t* n, complex8* a, const int_t* ia, const int_t* ja, const int_t* desca, int_t* ipiv, int_t* info);
+void pcgetrs(const char* trans, const int_t* n, const int_t* nrhs, const complex8* a, const int_t* ia, const int_t* ja, const int_t* desca, const int_t* ipiv, complex8* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
+void pddbtrf(const int_t* n, const int_t* bwl, const int_t* bwu, double* a, const int_t* ja, const int_t* desca, double* af, const int_t* laf, double* work, const int_t* lwork, int_t* info);
+void pddbtrs(const char* trans, const int_t* n, const int_t* bwl, const int_t* bwu, const int_t* nrhs, double* a, const int_t* ja, const int_t* desca, double* b, const int_t* ib, const int_t* descb, double* af, const int_t* laf, double* work, const int_t* lwork, int_t* info);
+void pdgbsv(const int_t* n, const int_t* bwl, const int_t* bwu, const int_t* nrhs, double* a, const int_t* ja, const int_t* desca, int_t* ipiv, double* b, const int_t* ib, const int_t* descb, double* work, const int_t* lwork, int_t* info);
+void pdgbtrf(const int_t* n, const int_t* bwl, const int_t* bwu, double* a, const int_t* ja, const int_t* desca, int_t* ipiv, double* af, const int_t* laf, double* work, const int_t* lwork, int_t* info);
+void pdgbtrs(const char* trans, const int_t* n, const int_t* bwl, const int_t* bwu, const int_t* nrhs, double* a, const int_t* ja, const int_t* desca, int_t* ipiv, double* b, const int_t* ib, const int_t* descb, double* af, const int_t* laf, double* work, const int_t* lwork, int_t* info);
+void pdgemr2d(const int_t* m, const int_t* n, const double* a, const int_t* ia, const int_t* ja, const int_t* desca, double* b, const int_t* ib, const int_t* jb, const int_t* descb, const int_t* ictxt);
+void pdgesv(const int_t* n, const int_t* nrhs, double* a, const int_t* ia, const int_t* ja, const int_t* desca, int_t* ipiv, double* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
+void pdgetrf(const int_t* m, const int_t* n, double* a, const int_t* ia, const int_t* ja, const int_t* desca, int_t* ipiv, int_t* info);
+void pdgetrs(const char* trans, const int_t* n, const int_t* nrhs, const double* a, const int_t* ia, const int_t* ja, const int_t* desca, const int_t* ipiv, double* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
+void pdpbtrf(const char* uplo, const int_t* n, const int_t* bw, double* a, const int_t* ja, const int_t* desca, double* af, const int_t* laf, double* work, const int_t* lwork, int_t* info);
+void pdpbtrs(const char* uplo, const int_t* n, const int_t* bw, const int_t* nrhs, double* a, const int_t* ja, const int_t* desca, double* b, const int_t* ib, const int_t* descb, double* af, const int_t* laf, double* work, const int_t* lwork, int_t* info);
+void pdposv(const char* uplo, const int_t* n, const int_t* nrhs, double* a, const int_t* ia, const int_t* ja, const int_t* desca, double* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
+void pdpotrf(const char* uplo, const int_t* n, double* a, const int_t* ia, const int_t* ja, const int_t* desca, int_t* info);
+void pdpotrs(const char* uplo, const int_t* n, const int_t* nrhs, const double* a, const int_t* ia, const int_t* ja, const int_t* desca, double* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
+void psdbtrf(const int_t* n, const int_t* bwl, const int_t* bwu, float* a, const int_t* ja, const int_t* desca, float* af, const int_t* laf, float* work, const int_t* lwork, int_t* info);
+void psdbtrs(const char* trans, const int_t* n, const int_t* bwl, const int_t* bwu, const int_t* nrhs, float* a, const int_t* ja, const int_t* desca, float* b, const int_t* ib, const int_t* descb, float* af, const int_t* laf, float* work, const int_t* lwork, int_t* info);
+void psgbsv(const int_t* n, const int_t* bwl, const int_t* bwu, const int_t* nrhs, float* a, const int_t* ja, const int_t* desca, int_t* ipiv, float* b, const int_t* ib, const int_t* descb, float* work, const int_t* lwork, int_t* info);
+void psgbtrf(const int_t* n, const int_t* bwl, const int_t* bwu, float* a, const int_t* ja, const int_t* desca, int_t* ipiv, float* af, const int_t* laf, float* work, const int_t* lwork, int_t* info);
+void psgbtrs(const char* trans, const int_t* n, const int_t* bwl, const int_t* bwu, const int_t* nrhs, float* a, const int_t* ja, const int_t* desca, int_t* ipiv, float* b, const int_t* ib, const int_t* descb, float* af, const int_t* laf, float* work, const int_t* lwork, int_t* info);
+void psgemr2d(const int_t* m, const int_t* n, const float* a, const int_t* ia, const int_t* ja, const int_t* desca, float* b, const int_t* ib, const int_t* jb, const int_t* descb, const int_t* ictxt);
+void psgesv(const int_t* n, const int_t* nrhs, float* a, const int_t* ia, const int_t* ja, const int_t* desca, int_t* ipiv, float* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
+void psgetrf(const int_t* m, const int_t* n, float* a, const int_t* ia, const int_t* ja, const int_t* desca, int_t* ipiv, int_t* info);
+void psgetrs(const char* trans, const int_t* n, const int_t* nrhs, const float* a, const int_t* ia, const int_t* ja, const int_t* desca, const int_t* ipiv, float* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
+void pspbtrf(const char* uplo, const int_t* n, const int_t* bw, float* a, const int_t* ja, const int_t* desca, float* af, const int_t* laf, float* work, const int_t* lwork, int_t* info);
+void pspbtrs(const char* uplo, const int_t* n, const int_t* bw, const int_t* nrhs, float* a, const int_t* ja, const int_t* desca, float* b, const int_t* ib, const int_t* descb, float* af, const int_t* laf, float* work, const int_t* lwork, int_t* info);
+void psposv(const char* uplo, const int_t* n, const int_t* nrhs, float* a, const int_t* ia, const int_t* ja, const int_t* desca, float* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
+void pspotrf(const char* uplo, const int_t* n, float* a, const int_t* ia, const int_t* ja, const int_t* desca, int_t* info);
+void pspotrs(const char* uplo, const int_t* n, const int_t* nrhs, const float* a, const int_t* ia, const int_t* ja, const int_t* desca, float* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
+void pzgbtrf(const int_t* n, const int_t* bwl, const int_t* bwu, complex16* a, const int_t* ja, const int_t* desca, int_t* ipiv, complex16* af, const int_t* laf, complex16* work, const int_t* lwork, int_t* info);
+void pzgbtrs(const char* trans, const int_t* n, const int_t* bwl, const int_t* bwu, const int_t* nrhs, complex16* a, const int_t* ja, const int_t* desca, int_t* ipiv, complex16* b, const int_t* ib, const int_t* descb, complex16* af, const int_t* laf, complex16* work, const int_t* lwork, int_t* info);
+void pzgemr2d(const int_t* m, const int_t* n, const complex16* a, const int_t* ia, const int_t* ja, const int_t* desca, complex16* b, const int_t* ib, const int_t* jb, const int_t* descb, const int_t* ictxt);
+void pzgetrf(const int_t* m, const int_t* n, complex16* a, const int_t* ia, const int_t* ja, const int_t* desca, int_t* ipiv, int_t* info);
+void pzgetrs(const char* trans, const int_t* n, const int_t* nrhs, const complex16* a, const int_t* ia, const int_t* ja, const int_t* desca, const int_t* ipiv, complex16* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
 
-void igamn2d(const int* ConTxt, const char* scope, const char* top, const int* m, const int* n, int* A, const int* lda, int* rA, int* cA, const int* ldia, const int* rdest, const int* cdest);
-void igamx2d(const int* ConTxt, const char* scope, const char* top, const int* m, const int* n, int* A, const int* lda, int* rA, int* cA, const int* ldia, const int* rdest, const int* cdest);
-void igebr2d(const int* ConTxt, const char* scope, const char* top, const int* m, const int* n, int* A, const int* lda, const int* rsrc, const int* csrc);
+void igamn2d(const int_t* ConTxt, const char* scope, const char* top, const int_t* m, const int_t* n, int_t* A, const int_t* lda, int_t* rA, int_t* cA, const int_t* ldia, const int_t* rdest, const int_t* cdest);
+void igamx2d(const int_t* ConTxt, const char* scope, const char* top, const int_t* m, const int_t* n, int_t* A, const int_t* lda, int_t* rA, int_t* cA, const int_t* ldia, const int_t* rdest, const int_t* cdest);
+void igebr2d(const int_t* ConTxt, const char* scope, const char* top, const int_t* m, const int_t* n, int_t* A, const int_t* lda, const int_t* rsrc, const int_t* csrc);
 
 #ifdef __cplusplus
 }
