@@ -20,7 +20,11 @@
 
 #include <complex>
 
-using int_t = int;
+#ifdef EZP_INT64
+using int_t = std::int64_t;
+#else
+using int_t = std::int32_t;
+#endif
 
 using complex8 = std::complex<float>;
 using complex16 = std::complex<double>;

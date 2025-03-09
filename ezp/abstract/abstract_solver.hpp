@@ -27,10 +27,10 @@
 #include <vector>
 
 namespace ezp {
-    template<typename T> concept floating_t = std::is_floating_point_v<T>;
-    template<typename T> concept complex_t = std::is_same_v<T, std::complex<typename T::value_type>>;
+    template<typename T> concept floating_t = std::is_same_v<T, float> || std::is_same_v<T, double>;
+    template<typename T> concept complex_t = std::is_same_v<T, std::complex<typename T::value_type>> && floating_t<typename T::value_type>;
     template<typename T> concept data_t = floating_t<T> || complex_t<T>;
-    template<typename T> concept index_t = std::is_integral_v<T> && std::is_signed_v<T>;
+    template<typename T> concept index_t = std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::int64_t>;
 
     template<typename T> concept mat_t = requires(T t) {
         requires std::ranges::contiguous_range<T>;
