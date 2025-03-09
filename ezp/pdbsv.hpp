@@ -105,7 +105,7 @@ namespace ezp {
             const IT n, kl, ku;
 
         public:
-            indexer(const band_mat<DT, IT>& A)
+            explicit indexer(const band_mat<DT, IT>& A)
                 : n(A.n)
                 , kl(A.kl)
                 , ku(A.ku) {}

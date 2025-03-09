@@ -296,7 +296,7 @@ namespace ezp {
          *
          * This function takes an integer number, which may be different on each process,
          * and computes the minimum value across all processes.
-         * The result is broadcasted to all processes.
+         * The result is broadcast to all processes.
          *
          * For example, if the input number is 0, 1, 2, 3 on four processes, this function
          * will return 0 on all processes.

@@ -57,10 +57,10 @@ namespace ezp::detail {
             const IT n;
 
         public:
-            indexer(const full_mat<DT, IT>& A)
+            explicit indexer(const full_mat<DT, IT>& A)
                 : n(A.n) {}
 
-            indexer(const IT N)
+            explicit indexer(const IT N)
                 : n(N) {}
 
             auto operator()(const IT i, const IT j) const {
