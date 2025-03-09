@@ -60,7 +60,7 @@ template<data_t DT> auto random_pgbsv() {
 
             std::uniform_real_distribution dist_v(0.f, 1.f);
 
-            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = DT{10.f * dist_v(gen) + 10.f};
+            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = 10.f * dist_v(gen) + 10.f;
         }
 
         const auto info = solver_t().solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});

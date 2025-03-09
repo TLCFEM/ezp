@@ -142,15 +142,23 @@ namespace ezp {
             const IT lwork = loc.max_klu * std::max(2 * B.n_cols - 1, loc.max_klu);
             loc.work.resize(laf + lwork);
 
-            IT info;
+            IT info{-1};
             // ReSharper disable CppCStyleCast
             if(std::is_same_v<DT, double>) {
                 using E = double;
                 pddbtrf(&loc.n, &loc.kl, &loc.ku, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
-            else {
+            else if(std::is_same_v<DT, float>) {
                 using E = float;
                 psdbtrf(&loc.n, &loc.kl, &loc.ku, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
+            }
+            else if(std::is_same_v<DT, complex16>) {
+                using E = complex16;
+                pzdbtrf(&loc.n, &loc.kl, &loc.ku, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
+            }
+            else if(std::is_same_v<DT, complex8>) {
+                using E = complex8;
+                pcdbtrf(&loc.n, &loc.kl, &loc.ku, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
             // ReSharper restore CppCStyleCast
 
@@ -181,15 +189,23 @@ namespace ezp {
 
             desc<IT> desc1d_b{502, this->trans_ctx.context, loc.n, loc.block, 0, lead_b, 0, 0, 0};
 
-            IT info;
+            IT info{-1};
             // ReSharper disable CppCStyleCast
             if(std::is_same_v<DT, double>) {
                 using E = double;
                 pddbtrs(&TRANS, &loc.n, &loc.kl, &loc.ku, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
-            else {
+            else if(std::is_same_v<DT, float>) {
                 using E = float;
                 psdbtrs(&TRANS, &loc.n, &loc.kl, &loc.ku, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
+            }
+            else if(std::is_same_v<DT, complex16>) {
+                using E = complex16;
+                pzdbtrs(&TRANS, &loc.n, &loc.kl, &loc.ku, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
+            }
+            else if(std::is_same_v<DT, complex8>) {
+                using E = complex8;
+                pcdbtrs(&TRANS, &loc.n, &loc.kl, &loc.ku, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
             // ReSharper restore CppCStyleCast
 
@@ -203,6 +219,8 @@ namespace ezp {
 
     template<index_t IT> using par_ddbsv = pdbsv<double, IT>;
     template<index_t IT> using par_sdbsv = pdbsv<float, IT>;
+    template<index_t IT> using par_zdbsv = pdbsv<complex16, IT>;
+    template<index_t IT> using par_cdbsv = pdbsv<complex8, IT>;
 } // namespace ezp
 
 #endif // PDBSV_HPP

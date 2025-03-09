@@ -136,7 +136,7 @@ namespace ezp {
             const IT lwork = std::max(B.n_cols * (loc.block + 2 * loc.kl + 4 * loc.ku), 1);
             loc.work.resize(laf + lwork);
 
-            IT info;
+            IT info{-1};
             // ReSharper disable CppCStyleCast
             if(std::is_same_v<DT, double>) {
                 using E = double;
@@ -183,7 +183,7 @@ namespace ezp {
 
             desc<IT> desc1d_b{502, this->trans_ctx.context, loc.n, loc.block, 0, lead_b, 0, 0, 0};
 
-            IT info;
+            IT info{-1};
             // ReSharper disable CppCStyleCast
             if(std::is_same_v<DT, double>) {
                 using E = double;
