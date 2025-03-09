@@ -36,7 +36,6 @@ int main() {
 
     constexpr auto N = 10, NRHS = 1, KL = 2, KU = 2;
     constexpr auto LDA = KL + KU + 1;
-    constexpr auto OFFSET = KU;
 
     // storage for the matrices A and B
     std::vector<double> A, B;
@@ -133,7 +132,7 @@ int main() {
         X[7] = 0.523065;
         X[8] = 0.253049;
         X[9] = 0.937470;
-        for(auto i = 0; i < B.size(); ++i) std::cout << B[i] << ' ' << X[i] << " abs(diff): " << std::abs(B[i] - X[i]) << '\n';
+        for(auto i = 0u; i < B.size(); ++i) std::cout << B[i] << ' ' << X[i] << " abs(diff): " << std::abs(B[i] - X[i]) << '\n';
     }
 
     return 0;

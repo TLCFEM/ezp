@@ -35,7 +35,6 @@ int main() {
     const auto& env = get_env<int>();
 
     constexpr auto N = 6, NRHS = 2, KLU = 1;
-    constexpr auto LDA = KLU + 1;
 
     // storage for the matrices A and B
     std::vector<double> A, B;
@@ -47,7 +46,7 @@ int main() {
 
     if(0 == env.rank()) {
         // the matrices are only initialized on the root process
-        A.resize(N * LDA, 0.);
+        A.resize(N * (KLU + 1), 0.);
         B.resize(N * NRHS);
 
         A[IDX(0, 0)] = 1.;
@@ -89,7 +88,7 @@ int main() {
         std::cout << "Info: " << info << '\n';
         std::cout << "Solution:\n"
                   << std::setprecision(10);
-        for(auto i = 0; i < B.size(); ++i) std::cout << B[i] << '\n';
+        for(auto i = 0u; i < B.size(); ++i) std::cout << B[i] << '\n';
     }
 
     return 0;

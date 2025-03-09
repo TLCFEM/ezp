@@ -228,13 +228,13 @@ namespace ezp {
         template<data_t DT> auto scatter(const full_mat<DT, IT>& A, const desc<IT>& desc_a, std::vector<DT>& B, const desc<IT>& desc_b) {
             if(!A.distributed) return copy_to(A.data, desc_a.data(), B.data(), desc_b.data());
 
-            for(auto i = 0; i < B.size(); ++i) B[i] = A.data[i];
+            for(auto i = 0u; i < B.size(); ++i) B[i] = A.data[i];
         }
 
         template<data_t DT> auto gather(const std::vector<DT>& A, const desc<IT>& desc_a, const full_mat<DT, IT>& B, const desc<IT>& desc_b) {
             if(!B.distributed) return copy_to(A.data(), desc_a.data(), B.data, desc_b.data());
 
-            for(auto i = 0; i < A.size(); ++i) B.data[i] = A[i];
+            for(auto i = 0u; i < A.size(); ++i) B.data[i] = A[i];
         }
 
         [[nodiscard]] bool is_valid() const { return my_row >= 0 && my_col >= 0; }

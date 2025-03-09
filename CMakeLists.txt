@@ -34,7 +34,7 @@ endif ()
 
 link_libraries(MPI::MPI_C MPI::MPI_CXX)
 
-add_compile_options(-fconcepts-diagnostics-depth=4)
+add_compile_options(-fconcepts-diagnostics-depth=4 -Wall)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_options(-fprofile-arcs -ftest-coverage)

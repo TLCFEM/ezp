@@ -84,7 +84,7 @@ int main() {
     if(0 == env.rank()) {
         std::cout << std::setprecision(10) << "Info: " << info << '\n';
         std::cout << "Solution:\n";
-        for(auto i = 0; i < B.size(); ++i) std::cout << B[i] << '\n';
+        for(auto i = 0u; i < B.size(); ++i) std::cout << B[i] << '\n';
     }
 
     return 0;
