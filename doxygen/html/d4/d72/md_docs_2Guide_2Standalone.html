@@ -108,29 +108,29 @@ $(document).ready(function(){initNavTree('d4/d72/md_docs_2Guide_2Standalone.html
 Backbone</h1>
 <p>Here, we use the <code>pgesv</code> solver as the example to illustrate some critical steps used in implementing the above architecture.</p>
 <p>We are not using the raw <code>MPI</code> functions, instead, the <code>mpl</code> library is used. It is necessary to get the default communicator and the parent inter communicator.</p>
-<div class="fragment"><div class="line"> title=<span class="stringliteral">&quot;solver.pgesv.cpp:46:49&quot;</span> hl_lines=<span class="stringliteral">&quot;3 4&quot;</span></div>
+<div class="fragment"><div class="line"> title=<span class="stringliteral">&quot;solver.pgesv.cpp:52:55&quot;</span> hl_lines=<span class="stringliteral">&quot;3 4&quot;</span></div>
 <div class="line">--8&lt;--</div>
-<div class="line">./standalone/solver.pgesv.cpp:46:49</div>
+<div class="line">./standalone/solver.pgesv.cpp:52:55</div>
 <div class="line">--8&lt;--</div>
 </div><!-- fragment --><p>Since <code>mpl</code> handles <code>MPI</code> environment initialisation and finalisation, it is necessary to tell <code>ezp</code> to ignore finalising the <code>MPI</code> environment. The function <code><a class="el" href="../../da/d77/classezp_1_1blacs__env.html#a3c2b81ae3260e1661f1ec8757a63b473" title="Disables the management of MPI (Message Passing Interface) finalization.">ezp::blacs_env::do_not_manage_mpi()</a></code> must be called if <code>MPI</code> is managed by external tools.</p>
-<div class="fragment"><div class="line"> title=<span class="stringliteral">&quot;solver.pgesv.cpp:77&quot;</span> hl_lines=<span class="stringliteral">&quot;1&quot;</span></div>
+<div class="fragment"><div class="line"> title=<span class="stringliteral">&quot;solver.pgesv.cpp:83&quot;</span> hl_lines=<span class="stringliteral">&quot;1&quot;</span></div>
 <div class="line">--8&lt;--</div>
-<div class="line">./standalone/solver.pgesv.cpp:77:77</div>
+<div class="line">./standalone/solver.pgesv.cpp:83:83</div>
 <div class="line">--8&lt;--</div>
 </div><!-- fragment --><p>The parameters of the linear system will be broadcast over by the main application first.</p>
-<div class="fragment"><div class="line"> title=<span class="stringliteral">&quot;solver.pgesv.cpp:84:92&quot;</span> hl_lines=<span class="stringliteral">&quot;5&quot;</span></div>
+<div class="fragment"><div class="line"> title=<span class="stringliteral">&quot;solver.pgesv.cpp:90:98&quot;</span> hl_lines=<span class="stringliteral">&quot;5&quot;</span></div>
 <div class="line">--8&lt;--</div>
-<div class="line">./standalone/solver.pgesv.cpp:84:92</div>
+<div class="line">./standalone/solver.pgesv.cpp:90:98</div>
 <div class="line">--8&lt;--</div>
 </div><!-- fragment --><p>Knowing the problem sizes <code>N</code> and <code>NRHS</code>, the root process can initialise the containers and receive the contents of two matrices.</p>
-<div class="fragment"><div class="line"> title=<span class="stringliteral">&quot;solver.pgesv.cpp:54:64&quot;</span> hl_lines=<span class="stringliteral">&quot;1-3 7 8&quot;</span></div>
+<div class="fragment"><div class="line"> title=<span class="stringliteral">&quot;solver.pgesv.cpp:60:70&quot;</span> hl_lines=<span class="stringliteral">&quot;1-3 7 8&quot;</span></div>
 <div class="line">--8&lt;--</div>
-<div class="line">./standalone/solver.pgesv.cpp:54:64</div>
+<div class="line">./standalone/solver.pgesv.cpp:60:70</div>
 <div class="line">--8&lt;--</div>
 </div><!-- fragment --><p>Solving the system follows the conventional approach, that is, create a solver object and call the solve method with data wrapped. The solution is sent back to the caller.</p>
-<div class="fragment"><div class="line"> title=<span class="stringliteral">&quot;solver.pgesv.cpp:66:71&quot;</span> hl_lines=<span class="stringliteral">&quot;1 5&quot;</span></div>
+<div class="fragment"><div class="line"> title=<span class="stringliteral">&quot;solver.pgesv.cpp:72:77&quot;</span> hl_lines=<span class="stringliteral">&quot;1 5&quot;</span></div>
 <div class="line">--8&lt;--</div>
-<div class="line">./standalone/solver.pgesv.cpp:66:71</div>
+<div class="line">./standalone/solver.pgesv.cpp:72:77</div>
 <div class="line">--8&lt;--</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md2"></a>
 The Caller</h1>
