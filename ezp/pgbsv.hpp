@@ -142,9 +142,17 @@ namespace ezp {
                 using E = double;
                 pdgbtrf(&loc.n, &loc.kl, &loc.ku, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), loc.ipiv.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
-            else {
+            else if(std::is_same_v<DT, float>) {
                 using E = float;
                 psgbtrf(&loc.n, &loc.kl, &loc.ku, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), loc.ipiv.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
+            }
+            else if(std::is_same_v<DT, complex16>) {
+                using E = complex16;
+                pzgbtrf(&loc.n, &loc.kl, &loc.ku, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), loc.ipiv.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
+            }
+            else if(std::is_same_v<DT, complex8>) {
+                using E = complex8;
+                pcgbtrf(&loc.n, &loc.kl, &loc.ku, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), loc.ipiv.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
             // ReSharper restore CppCStyleCast
 
@@ -181,9 +189,17 @@ namespace ezp {
                 using E = double;
                 pdgbtrs(&TRANS, &loc.n, &loc.kl, &loc.ku, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), loc.ipiv.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
-            else {
+            else if(std::is_same_v<DT, float>) {
                 using E = float;
                 psgbtrs(&TRANS, &loc.n, &loc.kl, &loc.ku, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), loc.ipiv.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
+            }
+            else if(std::is_same_v<DT, complex16>) {
+                using E = complex16;
+                pzgbtrs(&TRANS, &loc.n, &loc.kl, &loc.ku, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), loc.ipiv.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
+            }
+            else if(std::is_same_v<DT, complex8>) {
+                using E = complex8;
+                pcgbtrs(&TRANS, &loc.n, &loc.kl, &loc.ku, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), loc.ipiv.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
             // ReSharper restore CppCStyleCast
 
@@ -197,6 +213,8 @@ namespace ezp {
 
     template<index_t IT> using par_dgbsv = pgbsv<double, IT>;
     template<index_t IT> using par_sgbsv = pgbsv<float, IT>;
+    template<index_t IT> using par_zgbsv = pgbsv<complex16, IT>;
+    template<index_t IT> using par_cgbsv = pgbsv<complex8, IT>;
 } // namespace ezp
 
 #endif // PGBSV_HPP

@@ -15,7 +15,9 @@ Such a form is particularly beneficial if the following holds.
 
 However, such a clear boundary may be a shortcoming as well.
 For example, the root process needs to store the whole matrices in memory, which is subject to physical limitations.
-However, if the matrices need to be read from IO in a distributed manner, one may also need a refined control of how the data is prepared, by probably directly using `BLACS`/`ScaLAPACK`/`MPI` functions.
+And since the spawned processes are not persistent, solving the same system with different right-hand sides may incur unnecessary data communication.
+
+If the matrices need to be read from IO in a distributed manner, one may also need a refined control of how the data is prepared, by probably directly using `BLACS`/`ScaLAPACK`/`MPI` functions.
 
 ## Backbone
 

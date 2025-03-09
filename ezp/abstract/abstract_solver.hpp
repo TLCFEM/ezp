@@ -27,15 +27,17 @@
 #include <vector>
 
 namespace ezp {
-    template<typename T> concept data_t = std::is_floating_point_v<T>;
-    template<typename T> concept index_t = std::is_integral_v<T>;
+    template<typename T> concept floating_t = std::is_floating_point_v<T>;
+    template<typename T> concept complex_t = std::is_same_v<T, std::complex<typename T::value_type>>;
+    template<typename T> concept data_t = floating_t<T> || complex_t<T>;
+    template<typename T> concept index_t = std::is_integral_v<T> && std::is_signed_v<T>;
 
     template<typename T> concept mat_t = requires(T t) {
         requires std::ranges::contiguous_range<T>;
         requires std::floating_point<std::remove_reference_t<decltype(*t.begin())>>;
     };
 
-    template<typename T> concept mem_t = std::floating_point<T> || mat_t<T>;
+    template<typename T> concept mem_t = data_t<T> || mat_t<T>;
 
     template<index_t IT> class blacs_env final {
         static constexpr IT ZERO{0}, ONE{1};
