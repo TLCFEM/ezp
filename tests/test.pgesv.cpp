@@ -53,7 +53,7 @@ template<data_t DT, char ODER = 'R'> auto random_pgesv() {
             A.resize(N * N, DT{0.});
             B.resize(N * NRHS, DT{1.});
 
-            std::uniform_real_distribution dist_v(DT{0.}, DT{1.});
+            std::uniform_real_distribution dist_v(0.f, 1.f);
 
             for(auto I = 0; I < N; ++I)
                 for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = DT(dist_v(gen));
@@ -97,6 +97,38 @@ void random_psgesv_c() {
     random_pgesv<double, 'C'>();
 }
 
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PZGESV", "[Simple Solver]") {
+#else
+void random_pzgesv() {
+#endif
+    random_pgesv<complex16>();
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PZGESVC", "[Simple Solver]") {
+#else
+void random_pzgesv_c() {
+#endif
+    random_pgesv<complex16, 'C'>();
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PCGESV", "[Simple Solver]") {
+#else
+void random_pcgesv() {
+#endif
+    random_pgesv<complex8>();
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PCGESVC", "[Simple Solver]") {
+#else
+void random_pcgesv_c() {
+#endif
+    random_pgesv<complex8, 'C'>();
+}
+
 #ifndef EZP_ENABLE_TEST
 int main(const int argc, const char* argv[]) {
     volatile int i = 0;
@@ -108,6 +140,10 @@ int main(const int argc, const char* argv[]) {
     random_pdgesv_c();
     random_psgesv();
     random_psgesv_c();
+    random_pzgesv();
+    random_pzgesv_c();
+    random_pcgesv();
+    random_pcgesv_c();
 
     return 0;
 }
