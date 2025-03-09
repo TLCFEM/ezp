@@ -1,7 +1,7 @@
 {
     "cmake.configureSettings": {
-        // "MPI_HOME": "/home/theodore/Documents/MPICH",
-        "EZP_TEST": "ON",
+        "MPI_HOME": "/home/theodore/Documents/MPICH",
+        "EZP_TEST": "OFF",
         "EZP_STANDALONE": "ON",
     },
     "files.associations": {
