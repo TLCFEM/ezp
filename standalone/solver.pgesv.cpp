@@ -54,7 +54,7 @@
 const auto& comm_world{mpl::environment::comm_world()};
 const auto& parent = mpl::inter_communicator::parent();
 
-template<ezp::data_t DT> int run(const int N, const int NRHS) {
+template<ezp::data_t DT, ezp::index_t IT> int run(const int N, const int NRHS) {
     std::vector<DT> A, B;
 
     if(0 == comm_world.rank()) {
@@ -69,7 +69,7 @@ template<ezp::data_t DT> int run(const int N, const int NRHS) {
         requests.waitall();
     }
 
-    const auto error = ezp::pgesv<DT, int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
+    const auto error = ezp::pgesv<DT, IT>().solve({N, N, A.data()}, {N, NRHS, B.data()});
 
     if(0 == comm_world.rank()) {
         parent.send(error, 0);
@@ -79,7 +79,7 @@ template<ezp::data_t DT> int run(const int N, const int NRHS) {
     return 0;
 }
 
-int main(int argc, char** argv) {
+int main(int, char**) {
     ezp::blacs_env<int>::do_not_manage_mpi();
 
     if(!parent.is_valid()) {
@@ -97,11 +97,11 @@ int main(int argc, char** argv) {
     const auto NRHS = config[1];
     const auto FLOAT = config[2];
 
-    if(FLOAT >= 10) return run<complex16>(N, NRHS);
-    if(FLOAT >= 0) return run<double>(N, NRHS);
-    if(FLOAT > -10) return run<float>(N, NRHS);
+    if(FLOAT >= 10) return run<complex16, int>(N, NRHS);
+    if(FLOAT >= 0) return run<double, int>(N, NRHS);
+    if(FLOAT > -10) return run<float, int>(N, NRHS);
 
-    return run<complex8>(N, NRHS);
+    return run<complex8, int>(N, NRHS);
 }
 
 //! @}
