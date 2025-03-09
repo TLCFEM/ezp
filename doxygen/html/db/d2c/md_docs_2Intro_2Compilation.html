@@ -100,8 +100,35 @@ $(document).ready(function(){initNavTree('db/d2c/md_docs_2Intro_2Compilation.htm
 <li>an implementation of <code>ScaLAPACK</code>, such as the reference implementation, Intel's implementation, NVIDIA's implementation, etc.</li>
 <li>an implementation of <code>MPI</code>, such as <code>OpenMPI</code>, <code>MPICH</code>, <code>Intel® MPI</code> etc.</li>
 </ol>
-<p>Before compiling the executables, one must ensure those libraries are available. </p>
-</div></div><!-- contents -->
+<p>Before compiling the executables, one must ensure those libraries are available.</p>
+<h1><a class="anchor" id="autotoc_md5"></a>
+oneAPI</h1>
+<p>The easiest approach is to use the <code>Intel® oneAPI</code> toolkit. It provides the <code>Intel® MPI Library</code> and the <code>Intel® oneAPI Math Kernel Library (oneMKL)</code> which contains a complete <code>ScaLAPACK</code> and <code>LAPACK</code>/<code>BLAS</code> implementation.</p>
+<p>The following is a sample workflow that runs on <code>Fedora</code>.</p>
+<div class="fragment"><div class="line">echo -e &quot;[oneAPI]\nname=Intel® oneAPI repository\nbaseurl=https://yum.repos.intel.com/oneapi\nenabled=1\ngpgcheck=1\nrepo_gpgcheck=1\ngpgkey=https://yum.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB&quot; &gt; /etc/yum.repos.d/oneAPI.repo</div>
+<div class="line"> </div>
+<div class="line">sudo dnf install -y intel-oneapi-mkl-devel intel-oneapi-mpi-devel cmake gcc g++ gfortran git ninja-build</div>
+<div class="line"> </div>
+<div class="line">git clone --recurse-submodules --depth 1 https://github.com/TLCFEM/ezp.git</div>
+<div class="line"> </div>
+<div class="line">mkdir /ezp/build &amp;&amp; /ezp/build</div>
+<div class="line"> </div>
+<div class="line">. /opt/intel/oneapi/setvars.sh &amp;&amp; cmake -DEZP_TEST=ON .. &amp;&amp; cmake --build . --config Release</div>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md6"></a>
+System Libraries</h1>
+<p>Using system libraries is possible but most bundled libraries are broken on various distros. One then needs to manually compile all those depedencies before using them. This is cumbersome.</p>
+<p><code>Fedora 41</code> has an environment that is closest to usable. The following is an example that uses system packages.</p>
+<div class="fragment"><div class="line">sudo dnf install -y cmake gcc g++ gfortran git ninja-build scalapack-mpich-devel flexiblas-devel</div>
+<div class="line"># sadly the scalapack package is broken on fedora 41</div>
+<div class="line"># need to provide this link</div>
+<div class="line">sudo ln -s /usr/lib64/mpich/lib/libscalapack.so.2.2.0 /usr/lib64/libscalapack.so.2.2.0</div>
+<div class="line"> </div>
+<div class="line">git clone --recurse-submodules --depth 1 https://github.com/TLCFEM/ezp.git</div>
+<div class="line"> </div>
+<div class="line">mkdir /ezp/build &amp;&amp; /ezp/build</div>
+<div class="line"> </div>
+<div class="line">cmake -DEZP_TEST=ON -DMPI_HOME=/usr/lib64/mpich/ -DEZP_USE_SYSTEM_LIBS=ON .. &amp;&amp; cmake --build . --config Release</div>
+</div><!-- fragment --> </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
 <!-- start footer part -->

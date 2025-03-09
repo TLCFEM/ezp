@@ -96,7 +96,7 @@ $(document).ready(function(){initNavTree('index.html',''); initResizable(); });
 <div class="contents">
 <div class="textblock"><p><a class="anchor" id="md_README"></a> <a href="https://codecov.io/gh/TLCFEM/ezp"><img src="https://codecov.io/gh/TLCFEM/ezp/graph/badge.svg?token=ME0M312F5M" alt="codecov" style="pointer-events: none;" class="inline"/></a></p>
 <p><code>ezp</code> is a lightweight C++ wrapper for selected ScaLAPACK solvers for linear systems.</p>
-<h1><a class="anchor" id="autotoc_md7"></a>
+<h1><a class="anchor" id="autotoc_md9"></a>
 Dependency</h1>
 <p>The <code>ezp</code> library is header only. The following drivers are needed.</p>
 <ol type="1">
@@ -104,7 +104,7 @@ Dependency</h1>
 <li>an implementation of <code>ScaLAPACK</code></li>
 <li>an implementation of <code>MPI</code>, such as <code>OpenMPI</code>, <code>MPICH</code>, etc.</li>
 </ol>
-<h1><a class="anchor" id="autotoc_md8"></a>
+<h1><a class="anchor" id="autotoc_md10"></a>
 Example</h1>
 <p>It is assumed that the root node (rank 0) prepares the left hand side $$A$$ and right hand side $$B$$. The solvers distrbute the matrices to available processes and solve the system, return the solution back to the master node.</p>
 <p>The solvers are designed in such a way that all <code>BLACS</code> and <code>ScaLAPACK</code> details are hidden. One shall prepare the matrices (<b>on the root node</b>) and call the solver. The following is a typical example. It highly resembles the sequential version of how one would typically solve a linear system.</p>
