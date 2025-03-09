@@ -141,9 +141,16 @@ namespace ezp {
                 using E = double;
                 pdgemr2d(desc_a + 2, desc_a + 3, (E*)A, &ONE, &ONE, desc_a, (E*)B, &ONE, &ONE, desc_b, &context);
             }
-            else {
+            else if (std::is_same_v<DT, float>) {
                 using E = float;
                 psgemr2d(desc_a + 2, desc_a + 3, (E*)A, &ONE, &ONE, desc_a, (E*)B, &ONE, &ONE, desc_b, &context);
+            }else if(std::is_same_v<DT, complex16>) {
+                using E = complex16;
+                pzgemr2d(desc_a + 2, desc_a + 3, (E*)A, &ONE, &ONE, desc_a, (E*)B, &ONE, &ONE, desc_b, &context);
+            }
+            else if (std::is_same_v<DT, complex8>) {
+                using E = complex8;
+                pcgemr2d(desc_a + 2, desc_a + 3, (E*)A, &ONE, &ONE, desc_a, (E*)B, &ONE, &ONE, desc_b, &context);
             }
             // ReSharper restore CppCStyleCast
         }
@@ -154,7 +161,7 @@ namespace ezp {
         blacs_context()
             : blacs_context(get_env<IT>().size(), 1) {}
 
-        blacs_context(const char order)
+        explicit blacs_context(const char order)
             : n_rows(-1)
             , n_cols(-1) {
             const auto& env = get_env<IT>();
