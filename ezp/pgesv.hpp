@@ -55,13 +55,22 @@ namespace ezp {
                 using E = double;
                 pdgetrf(&this->loc.n, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &info);
             }
-            else {
+            else if(std::is_same_v<DT, float>) {
                 using E = float;
                 psgetrf(&this->loc.n, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &info);
             }
-            // ReSharper restore CppCStyleCast
+            else if(std::is_same_v<DT, complex16>) {
+                using E = complex16;
+                pzgetrf(&this->loc.n, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &info);
+            }
+            else if(std::is_same_v<DT, complex8>) {
+                using E = complex8;
+                pcgetrf(&this->loc.n, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &info);
+            }
+            else
+                // ReSharper restore CppCStyleCast
 
-            if((info = this->ctx.amx(info)) != 0) return info;
+                if((info = this->ctx.amx(info)) != 0) return info;
 
             return solve(std::move(B));
         }
@@ -86,9 +95,17 @@ namespace ezp {
                 using E = double;
                 pdgetrs(&TRANS, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
             }
-            else {
+            else if(std::is_same_v<DT, float>) {
                 using E = float;
                 psgetrs(&TRANS, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
+            }
+            else if(std::is_same_v<DT, complex16>) {
+                using E = complex16;
+                pzgetrs(&TRANS, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
+            }
+            else if(std::is_same_v<DT, complex8>) {
+                using E = complex8;
+                pcgetrs(&TRANS, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
             }
             // ReSharper restore CppCStyleCast
 
@@ -102,8 +119,12 @@ namespace ezp {
 
     template<index_t IT, char ODER = 'R'> using par_dgesv = pgesv<double, IT, ODER>;
     template<index_t IT, char ODER = 'R'> using par_sgesv = pgesv<float, IT, ODER>;
+    template<index_t IT, char ODER = 'R'> using par_zgesv = pgesv<complex16, IT, ODER>;
+    template<index_t IT, char ODER = 'R'> using par_cgesv = pgesv<complex8, IT, ODER>;
     template<index_t IT> using par_dgesv_c = pgesv<double, IT, 'C'>;
     template<index_t IT> using par_sgesv_c = pgesv<float, IT, 'C'>;
+    template<index_t IT> using par_zgesv_c = pgesv<complex16, IT, 'C'>;
+    template<index_t IT> using par_cgesv_c = pgesv<complex8, IT, 'C'>;
 } // namespace ezp
 
 #endif // PGESV_HPP

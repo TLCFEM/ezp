@@ -57,9 +57,17 @@ namespace ezp {
                 using E = double;
                 pdpotrf(&UPLO, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), &info);
             }
-            else {
+            else if(std::is_same_v<DT, float>) {
                 using E = float;
                 pspotrf(&UPLO, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), &info);
+            }
+            else if(std::is_same_v<DT, complex16>) {
+                using E = complex16;
+                pzpotrf(&UPLO, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), &info);
+            }
+            else if(std::is_same_v<DT, complex8>) {
+                using E = complex8;
+                pcpotrf(&UPLO, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), &info);
             }
             // ReSharper restore CppCStyleCast
 
@@ -86,9 +94,17 @@ namespace ezp {
                 using E = double;
                 pdpotrs(&UPLO, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
             }
-            else {
+            else if(std::is_same_v<DT, float>) {
                 using E = float;
                 pspotrs(&UPLO, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
+            }
+            else if(std::is_same_v<DT, complex16>) {
+                using E = complex16;
+                pzpotrs(&UPLO, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
+            }
+            else if(std::is_same_v<DT, complex8>) {
+                using E = complex8;
+                pcpotrs(&UPLO, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
             }
             // ReSharper restore CppCStyleCast
 
@@ -102,12 +118,20 @@ namespace ezp {
 
     template<index_t IT, char UL = 'L', char ODER = 'R'> using par_dposv = pposv<double, IT, UL, ODER>;
     template<index_t IT, char UL = 'L', char ODER = 'R'> using par_sposv = pposv<float, IT, UL, ODER>;
+    template<index_t IT, char UL = 'L', char ODER = 'R'> using par_zposv = pposv<double, IT, UL, ODER>;
+    template<index_t IT, char UL = 'L', char ODER = 'R'> using par_cposv = pposv<float, IT, UL, ODER>;
     template<index_t IT, char UL = 'L'> using par_dposv_c = pposv<double, IT, UL, 'C'>;
     template<index_t IT, char UL = 'L'> using par_sposv_c = pposv<float, IT, UL, 'C'>;
+    template<index_t IT, char UL = 'L'> using par_zposv_c = pposv<double, IT, UL, 'C'>;
+    template<index_t IT, char UL = 'L'> using par_cposv_c = pposv<float, IT, UL, 'C'>;
     template<index_t IT, char ODER = 'R'> using par_dposv_u = pposv<double, IT, 'U', ODER>;
     template<index_t IT, char ODER = 'R'> using par_sposv_u = pposv<float, IT, 'U', ODER>;
+    template<index_t IT, char ODER = 'R'> using par_zposv_u = pposv<double, IT, 'U', ODER>;
+    template<index_t IT, char ODER = 'R'> using par_cposv_u = pposv<float, IT, 'U', ODER>;
     template<index_t IT> using par_dposv_uc = pposv<double, IT, 'U', 'C'>;
     template<index_t IT> using par_sposv_uc = pposv<float, IT, 'U', 'C'>;
+    template<index_t IT> using par_zposv_uc = pposv<double, IT, 'U', 'C'>;
+    template<index_t IT> using par_cposv_uc = pposv<float, IT, 'U', 'C'>;
 } // namespace ezp
 
 #endif // PPOSV_HPP
