@@ -51,7 +51,7 @@ namespace ezp {
 
             this->ctx.scatter(A, this->ctx.desc_g(A.n_rows, A.n_cols), this->loc.a, this->loc.desc_a);
 
-            IT info;
+            IT info{-1};
             // ReSharper disable CppCStyleCast
             if(std::is_same_v<DT, double>) {
                 using E = double;
@@ -88,7 +88,7 @@ namespace ezp {
 
             this->ctx.scatter(B, full_desc_b, this->loc.b, loc_desc_b);
 
-            IT info;
+            IT info{-1};
             // ReSharper disable CppCStyleCast
             if(std::is_same_v<DT, double>) {
                 using E = double;

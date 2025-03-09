@@ -57,7 +57,7 @@ template<data_t DT, char UL = 'L', char ODER = 'R'> auto random_pposv() {
 
             for(auto I = 0; I < N; ++I) {
                 A[IDX(I, I)] = DT{10.f + 10.f * dist_v(gen)};
-                for(auto J = I + 1; J < std::min(N, I + 5); ++J) A[IDX(I, J)] = A[IDX(J, I)] = DT{dist_v(gen)};
+                for(auto J = I + 1; J < std::min(N, I + 5); ++J) A[IDX(I, J)] = A[IDX(J, I)] = dist_v(gen);
             }
         }
 

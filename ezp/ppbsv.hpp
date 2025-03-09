@@ -160,15 +160,23 @@ namespace ezp {
             const IT lwork = loc.klu * std::max(B.n_cols, loc.klu);
             loc.work.resize(laf + lwork);
 
-            IT info;
+            IT info{-1};
             // ReSharper disable CppCStyleCast
             if(std::is_same_v<DT, double>) {
                 using E = double;
                 pdpbtrf(&UPLO, &loc.n, &loc.klu, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
-            else {
+            else if(std::is_same_v<DT, float>) {
                 using E = float;
                 pspbtrf(&UPLO, &loc.n, &loc.klu, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
+            }
+            else if(std::is_same_v<DT, complex16>) {
+                using E = complex16;
+                pzpbtrf(&UPLO, &loc.n, &loc.klu, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
+            }
+            else if(std::is_same_v<DT, complex8>) {
+                using E = complex8;
+                pcpbtrf(&UPLO, &loc.n, &loc.klu, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
             // ReSharper restore CppCStyleCast
 
@@ -197,15 +205,23 @@ namespace ezp {
 
             desc<IT> desc1d_b{502, this->trans_ctx.context, loc.n, loc.block, 0, lead_b, 0, 0, 0};
 
-            IT info;
+            IT info{-1};
             // ReSharper disable CppCStyleCast
             if(std::is_same_v<DT, double>) {
                 using E = double;
                 pdpbtrs(&UPLO, &loc.n, &loc.klu, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
-            else {
+            else if(std::is_same_v<DT, float>) {
                 using E = float;
                 pspbtrs(&UPLO, &loc.n, &loc.klu, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
+            }
+            else if(std::is_same_v<DT, complex16>) {
+                using E = complex16;
+                pzpbtrs(&UPLO, &loc.n, &loc.klu, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
+            }
+            else if(std::is_same_v<DT, complex8>) {
+                using E = complex8;
+                pcpbtrs(&UPLO, &loc.n, &loc.klu, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
             // ReSharper restore CppCStyleCast
 
@@ -219,8 +235,12 @@ namespace ezp {
 
     template<index_t IT, char UL = 'L'> using par_dpbsv = ppbsv<double, IT, UL>;
     template<index_t IT, char UL = 'L'> using par_spbsv = ppbsv<float, IT, UL>;
+    template<index_t IT, char UL = 'L'> using par_zpbsv = ppbsv<complex16, IT, UL>;
+    template<index_t IT, char UL = 'L'> using par_cpbsv = ppbsv<complex8, IT, UL>;
     template<index_t IT> using par_dpbsv_u = ppbsv<double, IT, 'U'>;
     template<index_t IT> using par_spbsv_u = ppbsv<float, IT, 'U'>;
+    template<index_t IT> using par_zpbsv_u = ppbsv<complex16, IT, 'U'>;
+    template<index_t IT> using par_cpbsv_u = ppbsv<complex8, IT, 'U'>;
 } // namespace ezp
 
 #endif // PPBSV_HPP

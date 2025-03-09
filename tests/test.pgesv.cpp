@@ -56,7 +56,7 @@ template<data_t DT, char ODER = 'R'> auto random_pgesv() {
             std::uniform_real_distribution dist_v(0.f, 1.f);
 
             for(auto I = 0; I < N; ++I)
-                for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = DT(dist_v(gen));
+                for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen);
         }
 
         const auto info = solver_t().solve({N, N, A.data()}, {N, NRHS, B.data()});
