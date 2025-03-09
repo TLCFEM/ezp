@@ -7,8 +7,15 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 set(CMAKE_CXX_STANDARD 20)
 
+option(EZP_USE_64BIT_INT "Use 64-bit integer." OFF)
+
 set(MKL_LINK static)
-set(MKL_INTERFACE lp64)
+if (EZP_USE_64BIT_INT)
+    add_compile_definitions(EZP_INT64)
+    set(MKL_INTERFACE ilp64)
+else ()
+    set(MKL_INTERFACE lp64)
+endif ()
 #set(MKL_MPI openmpi)
 find_package(MKL QUIET)
 if (MKL_FOUND)
@@ -47,9 +54,8 @@ link_libraries(MPI::MPI_C MPI::MPI_CXX)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_options(-fprofile-arcs -ftest-coverage -fconcepts-diagnostics-depth=4 -Wall)
     link_libraries(gcov)
+    option(EZP_ASAN "Enable asan." OFF)
 endif ()
-
-option(EZP_ASAN "Enable asan." OFF)
 
 if (EZP_ASAN)
     add_compile_options(-fsanitize=address)

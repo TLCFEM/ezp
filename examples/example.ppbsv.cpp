@@ -32,7 +32,7 @@ using namespace ezp;
 
 int main() {
     // get the current blacs environment
-    const auto& env = get_env<int>();
+    const auto& env = get_env<int_t>();
 
     constexpr auto N = 6, NRHS = 2, KLU = 1;
 
@@ -42,7 +42,7 @@ int main() {
     // helper function to convert 2D indices to 1D indices
     // the band symmetric matrix used for pbsv subroutine requires the matrix to be stored with a leading dimension of (KLU+1)
     // see Fig. 4.11 https://netlib.org/scalapack/slug/node84.html
-    const auto IDX = par_dpbsv<int>::indexer{N, KLU};
+    const auto IDX = par_dpbsv<int_t>::indexer{N, KLU};
 
     if(0 == env.rank()) {
         // the matrices are only initialized on the root process
@@ -85,10 +85,9 @@ int main() {
     const auto info = solver.solve({N, N, KLU, A.data()}, {N, NRHS, B.data()});
 
     if(0 == env.rank()) {
-        std::cout << "Info: " << info << '\n';
-        std::cout << "Solution:\n"
-                  << std::setprecision(10);
-        for(auto i = 0u; i < B.size(); ++i) std::cout << B[i] << '\n';
+        std::cout << std::setprecision(10)<< "Info: " << info << '\n';
+        std::cout << "Solution:\n"  ;
+        for(const double i : B) std::cout << i << '\n';
     }
 
     return 0;

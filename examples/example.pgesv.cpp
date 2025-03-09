@@ -32,7 +32,7 @@ using namespace ezp;
 
 int main() {
     // get the current blacs environment
-    const auto& env = get_env<int>();
+    const auto& env = get_env<int_t>();
 
     constexpr auto N = 6, NRHS = 2;
 
@@ -40,7 +40,7 @@ int main() {
     std::vector<double> A, B;
 
     // helper function to convert 2D indices to 1D indices
-    const auto IDX = par_dgesv<int>::indexer{N};
+    const auto IDX = par_dgesv<int_t>::indexer{N};
 
     if(0 == env.rank()) {
         // the matrices are only initialized on the root process
@@ -73,7 +73,7 @@ int main() {
 
     // create a parallel solver
     // it takes the number of rows and columns of the process grid as arguments
-    auto solver = par_dgesv<int>();
+    auto solver = par_dgesv<int_t>();
 
     // need to wrap the data in full_mat objects
     // it requires the number of rows and columns of the matrix, and a pointer to the data
@@ -84,7 +84,7 @@ int main() {
     if(0 == env.rank()) {
         std::cout << std::setprecision(10) << "Info: " << info << '\n';
         std::cout << "Solution:\n";
-        for(auto i = 0u; i < B.size(); ++i) std::cout << B[i] << '\n';
+        for(const double i : B) std::cout << i << '\n';
     }
 
     return 0;

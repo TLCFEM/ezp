@@ -32,10 +32,10 @@ using namespace ezp;
 
 int main() {
     // get the current blacs environment
-    const auto& env = get_env<int>();
+    const auto& env = get_env<int_t>();
 
     // estimate the number of rows and columns of the process grid
-    const auto rows = std::max(1, static_cast<int>(std::sqrt(env.size())));
+    const auto rows = std::max(1, static_cast<int_t>(std::sqrt(env.size())));
     const auto cols = env.size() / rows;
 
     constexpr auto N = 6, NRHS = 2;
@@ -44,7 +44,7 @@ int main() {
     std::vector<double> A, B;
 
     // helper function to convert 2D indices to 1D indices
-    const auto IDX = par_dposv<int>::indexer{N};
+    const auto IDX = par_dposv<int_t>::indexer{N};
 
     if(0 == env.rank()) {
         // the matrices are only initialized on the root process
@@ -86,10 +86,9 @@ int main() {
     const auto info = solver.solve({N, N, A.data()}, {N, NRHS, B.data()});
 
     if(0 == env.rank()) {
-        std::cout << "Info: " << info << '\n';
-        std::cout << "Solution:\n"
-                  << std::setprecision(10);
-        for(auto i = 0u; i < B.size(); ++i) std::cout << B[i] << '\n';
+        std::cout << std::setprecision(10) << "Info: " << info << '\n';
+        std::cout << "Solution:\n";
+        for(const double i : B) std::cout << i << '\n';
     }
 
     return 0;

@@ -32,7 +32,7 @@ using namespace ezp;
 
 int main() {
     // get the current blacs environment
-    const auto& env = get_env<int>();
+    const auto& env = get_env<int_t>();
 
     constexpr auto N = 10, NRHS = 1, KL = 2, KU = 2;
     constexpr auto LDA = KL + KU + 1;
@@ -43,7 +43,7 @@ int main() {
     // helper function to convert 2D indices to 1D indices
     // the band symmetric matrix used for dbsv subroutine requires the matrix to be stored with a leading dimension of (KL + KU + 1)
     // see Fig. 4.9 https://netlib.org/scalapack/slug/node84.html
-    const auto IDX = par_ddbsv<int>::indexer{N, KL, KU};
+    const auto IDX = par_ddbsv<int_t>::indexer{N, KL, KU};
 
     if(0 == env.rank()) {
         // the matrices are only initialized on the root process
