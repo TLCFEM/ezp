@@ -124,9 +124,15 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (int argc, ch
 <p>This program is a standalone application that solves a system of linear equations using the <code>pgbsv</code> solver.</p>
 <p>The caller spawns this program as a worker process.</p>
 <p>The caller must send three buffers to the worker process:</p><ul>
-<li>an integer array of size 5 containing the matrix size (<code>N</code>), number of sub-diagonals (<code>KL</code>), number of super-diagonals (<code>KU</code>), number of right-hand sides (<code>NRHS</code>), and the data type (&gt; 0 for <code>double</code>, &lt; 0 for <code>float</code>),</li>
+<li>an integer array of size 5 containing the matrix size (<code>N</code>), number of sub-diagonals (<code>KL</code>), number of super-diagonals (<code>KU</code>), number of right-hand sides (<code>NRHS</code>), and the data type,</li>
 <li>a buffer containing the matrix <code>A</code>, size <code>N x (KL + KU + 1)</code>,</li>
 <li>a buffer containing the right-hand side <code>B</code>, size <code>N x NRHS</code>.</li>
+</ul>
+<p>The data type has the following meaning:</p><ul>
+<li>2-digit positive: complex16,</li>
+<li>1-digit positive: double,</li>
+<li>1-digit negative: float,</li>
+<li>2-digit negative: complex8.</li>
 </ul>
 <dl class="section note"><dt>Note</dt><dd>The <code>pgbsv</code> solver requires the lead dimension of <code>A</code> to be <code>2 * (KL + KU) + 1</code>. The top <code>KL + KU</code> rows do not contain any data. The bottom <code>KL + KU + 1</code> rows contain the matrix <code>A</code>. </dd>
 <dd>

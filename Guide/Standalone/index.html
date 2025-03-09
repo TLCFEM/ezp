@@ -695,14 +695,14 @@ It is necessary to get the default communicator and the parent inter communicato
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">solver.pgesv.cpp:46:49</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
 <span class="normal"><a href="#__codelineno-0-2">2</a></span>
 <span class="normal"><a href="#__codelineno-0-3">3</a></span>
-<span class="normal"><a href="#__codelineno-0-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;mpl/mpl.hpp&gt;</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="hll"><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">comm_world</span><span class="p">{</span><span class="n">mpl</span><span class="o">::</span><span class="n">environment</span><span class="o">::</span><span class="n">comm_world</span><span class="p">()};</span>
-</span><a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="hll"><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">parent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">inter_communicator</span><span class="o">::</span><span class="n">parent</span><span class="p">();</span>
+<span class="normal"><a href="#__codelineno-0-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="err">@</span><span class="n">version</span><span class="w"> </span><span class="mf">1.0.0</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="err">@</span><span class="n">file</span><span class="w"> </span><span class="n">solver</span><span class="p">.</span><span class="n">pgesv</span><span class="p">.</span><span class="n">cpp</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="hll"><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="err">@</span><span class="p">{</span>
+</span><a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="hll"><span class="w"> </span><span class="o">*/</span>
 </span></code></pre></div></td></tr></table></div>
 <p>Since <code>mpl</code> handles <code>MPI</code> environment initialisation and finalisation, it is necessary to tell <code>ezp</code> to ignore finalising the <code>MPI</code> environment.
 The function <code>ezp::blacs_env::do_not_manage_mpi()</code> must be called if <code>MPI</code> is managed by external tools.</p>
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">solver.pgesv.cpp:77</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="hll"><span class="w">    </span><span class="n">ezp</span><span class="o">::</span><span class="n">blacs_env</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;::</span><span class="n">do_not_manage_mpi</span><span class="p">();</span>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">solver.pgesv.cpp:77</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="hll"><span class="w">    </span><span class="p">}</span>
 </span></code></pre></div></td></tr></table></div>
 <p>The parameters of the linear system will be broadcast over by the main application first.</p>
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">solver.pgesv.cpp:84:92</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span>
@@ -712,16 +712,14 @@ The function <code>ezp::blacs_env::do_not_manage_mpi()</code> must be called if 
 <span class="normal"><a href="#__codelineno-2-5">5</a></span>
 <span class="normal"><a href="#__codelineno-2-6">6</a></span>
 <span class="normal"><a href="#__codelineno-2-7">7</a></span>
-<span class="normal"><a href="#__codelineno-2-8">8</a></span>
-<span class="normal"><a href="#__codelineno-2-9">9</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">communicator</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">communicator</span><span class="o">::</span><span class="n">order_high</span><span class="p">);</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">config</span><span class="p">[</span><span class="mi">3</span><span class="p">]{};</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="hll"><span class="w">    </span><span class="n">all</span><span class="p">.</span><span class="n">bcast</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">config</span><span class="p">);</span>
-</span><a id="__codelineno-2-6" name="__codelineno-2-6"></a>
-<a id="__codelineno-2-7" name="__codelineno-2-7"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">NRHS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">FLOAT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="normal"><a href="#__codelineno-2-8">8</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">parent</span><span class="p">.</span><span class="n">is_valid</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;This program must be invoked by the host application.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="hll">
+</span><a id="__codelineno-2-6" name="__codelineno-2-6"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">communicator</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">communicator</span><span class="o">::</span><span class="n">order_high</span><span class="p">);</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">config</span><span class="p">[</span><span class="mi">3</span><span class="p">]{};</span>
 </code></pre></div></td></tr></table></div>
 <p>Knowing the problem sizes <code>N</code> and <code>NRHS</code>, the root process can initialise the containers and receive the contents of two matrices.</p>
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">solver.pgesv.cpp:54:64</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1"> 1</a></span>
@@ -734,17 +732,17 @@ The function <code>ezp::blacs_env::do_not_manage_mpi()</code> must be called if 
 <span class="normal"><a href="#__codelineno-3-8"> 8</a></span>
 <span class="normal"><a href="#__codelineno-3-9"> 9</a></span>
 <span class="normal"><a href="#__codelineno-3-10">10</a></span>
-<span class="normal"><a href="#__codelineno-3-11">11</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="hll"><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">comm_world</span><span class="p">.</span><span class="n">rank</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-</span><a id="__codelineno-3-2" name="__codelineno-3-2"></a><span class="hll"><span class="w">        </span><span class="n">A</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
-</span><a id="__codelineno-3-3" name="__codelineno-3-3"></a><span class="hll"><span class="w">        </span><span class="n">B</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">NRHS</span><span class="p">);</span>
-</span><a id="__codelineno-3-4" name="__codelineno-3-4"></a>
-<a id="__codelineno-3-5" name="__codelineno-3-5"></a><span class="w">        </span><span class="n">mpl</span><span class="o">::</span><span class="n">irequest_pool</span><span class="w"> </span><span class="n">requests</span><span class="p">;</span>
+<span class="normal"><a href="#__codelineno-3-11">11</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="hll"><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">comm_world</span><span class="p">{</span><span class="n">mpl</span><span class="o">::</span><span class="n">environment</span><span class="o">::</span><span class="n">comm_world</span><span class="p">()};</span>
+</span><a id="__codelineno-3-2" name="__codelineno-3-2"></a><span class="hll"><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">parent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">inter_communicator</span><span class="o">::</span><span class="n">parent</span><span class="p">();</span>
+</span><a id="__codelineno-3-3" name="__codelineno-3-3"></a><span class="hll">
+</span><a id="__codelineno-3-4" name="__codelineno-3-4"></a><span class="k">template</span><span class="o">&lt;</span><span class="n">ezp</span><span class="o">::</span><span class="n">data_t</span><span class="w"> </span><span class="n">DT</span><span class="o">&gt;</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">run</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NRHS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">DT</span><span class="o">&gt;</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">;</span>
 <a id="__codelineno-3-6" name="__codelineno-3-6"></a>
-<a id="__codelineno-3-7" name="__codelineno-3-7"></a><span class="hll"><span class="w">        </span><span class="n">requests</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">parent</span><span class="p">.</span><span class="n">irecv</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">tag_t</span><span class="p">{</span><span class="mi">0</span><span class="p">}));</span>
-</span><a id="__codelineno-3-8" name="__codelineno-3-8"></a><span class="hll"><span class="w">        </span><span class="n">requests</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">parent</span><span class="p">.</span><span class="n">irecv</span><span class="p">(</span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">tag_t</span><span class="p">{</span><span class="mi">1</span><span class="p">}));</span>
-</span><a id="__codelineno-3-9" name="__codelineno-3-9"></a>
-<a id="__codelineno-3-10" name="__codelineno-3-10"></a><span class="w">        </span><span class="n">requests</span><span class="p">.</span><span class="n">waitall</span><span class="p">();</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7"></a><span class="hll"><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">comm_world</span><span class="p">.</span><span class="n">rank</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+</span><a id="__codelineno-3-8" name="__codelineno-3-8"></a><span class="hll"><span class="w">        </span><span class="n">A</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
+</span><a id="__codelineno-3-9" name="__codelineno-3-9"></a><span class="w">        </span><span class="n">B</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">NRHS</span><span class="p">);</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10"></a>
+<a id="__codelineno-3-11" name="__codelineno-3-11"></a><span class="w">        </span><span class="n">mpl</span><span class="o">::</span><span class="n">irequest_pool</span><span class="w"> </span><span class="n">requests</span><span class="p">;</span>
 </code></pre></div></td></tr></table></div>
 <p>Solving the system follows the conventional approach, that is, create a solver object and call the solve method with data wrapped.
 The solution is sent back to the caller.</p>
@@ -752,14 +750,12 @@ The solution is sent back to the caller.</p>
 <span class="normal"><a href="#__codelineno-4-2">2</a></span>
 <span class="normal"><a href="#__codelineno-4-3">3</a></span>
 <span class="normal"><a href="#__codelineno-4-4">4</a></span>
-<span class="normal"><a href="#__codelineno-4-5">5</a></span>
-<span class="normal"><a href="#__codelineno-4-6">6</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="hll"><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ezp</span><span class="o">::</span><span class="n">pgesv</span><span class="o">&lt;</span><span class="n">DT</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="p">().</span><span class="n">solve</span><span class="p">({</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">A</span><span class="p">.</span><span class="n">data</span><span class="p">()},</span><span class="w"> </span><span class="p">{</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">.</span><span class="n">data</span><span class="p">()});</span>
-</span><a id="__codelineno-4-2" name="__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">comm_world</span><span class="p">.</span><span class="n">rank</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4"></a><span class="w">        </span><span class="n">parent</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">error</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5"></a><span class="hll"><span class="w">        </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">error</span><span class="p">)</span><span class="w"> </span><span class="n">parent</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
-</span><a id="__codelineno-4-6" name="__codelineno-4-6"></a><span class="w">    </span><span class="p">}</span>
-</code></pre></div></td></tr></table></div>
+<span class="normal"><a href="#__codelineno-4-5">5</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="hll"><span class="w">        </span><span class="n">requests</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">parent</span><span class="p">.</span><span class="n">irecv</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">tag_t</span><span class="p">{</span><span class="mi">0</span><span class="p">}));</span>
+</span><a id="__codelineno-4-2" name="__codelineno-4-2"></a><span class="w">        </span><span class="n">requests</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">parent</span><span class="p">.</span><span class="n">irecv</span><span class="p">(</span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">tag_t</span><span class="p">{</span><span class="mi">1</span><span class="p">}));</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4"></a><span class="w">        </span><span class="n">requests</span><span class="p">.</span><span class="n">waitall</span><span class="p">();</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5"></a><span class="hll"><span class="w">    </span><span class="p">}</span>
+</span></code></pre></div></td></tr></table></div>
 <h2 id="the-caller">The Caller</h2>
 <p>From the above code snippets, one may observe that the caller needs to</p>
 <ol>
@@ -1054,103 +1050,113 @@ The solution is sent back to the caller.</p>
 <a id="__codelineno-8-116" name="__codelineno-8-116"></a>
 <a id="__codelineno-8-117" name="__codelineno-8-117"></a><span class="c1">//! @}</span>
 </code></pre></div></td></tr></table></div>
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">solver.pgesv.cpp</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-9-1"> 1</a></span>
-<span class="normal"><a href="#__codelineno-9-2"> 2</a></span>
-<span class="normal"><a href="#__codelineno-9-3"> 3</a></span>
-<span class="normal"><a href="#__codelineno-9-4"> 4</a></span>
-<span class="normal"><a href="#__codelineno-9-5"> 5</a></span>
-<span class="normal"><a href="#__codelineno-9-6"> 6</a></span>
-<span class="normal"><a href="#__codelineno-9-7"> 7</a></span>
-<span class="normal"><a href="#__codelineno-9-8"> 8</a></span>
-<span class="normal"><a href="#__codelineno-9-9"> 9</a></span>
-<span class="normal"><a href="#__codelineno-9-10">10</a></span>
-<span class="normal"><a href="#__codelineno-9-11">11</a></span>
-<span class="normal"><a href="#__codelineno-9-12">12</a></span>
-<span class="normal"><a href="#__codelineno-9-13">13</a></span>
-<span class="normal"><a href="#__codelineno-9-14">14</a></span>
-<span class="normal"><a href="#__codelineno-9-15">15</a></span>
-<span class="normal"><a href="#__codelineno-9-16">16</a></span>
-<span class="normal"><a href="#__codelineno-9-17">17</a></span>
-<span class="normal"><a href="#__codelineno-9-18">18</a></span>
-<span class="normal"><a href="#__codelineno-9-19">19</a></span>
-<span class="normal"><a href="#__codelineno-9-20">20</a></span>
-<span class="normal"><a href="#__codelineno-9-21">21</a></span>
-<span class="normal"><a href="#__codelineno-9-22">22</a></span>
-<span class="normal"><a href="#__codelineno-9-23">23</a></span>
-<span class="normal"><a href="#__codelineno-9-24">24</a></span>
-<span class="normal"><a href="#__codelineno-9-25">25</a></span>
-<span class="normal"><a href="#__codelineno-9-26">26</a></span>
-<span class="normal"><a href="#__codelineno-9-27">27</a></span>
-<span class="normal"><a href="#__codelineno-9-28">28</a></span>
-<span class="normal"><a href="#__codelineno-9-29">29</a></span>
-<span class="normal"><a href="#__codelineno-9-30">30</a></span>
-<span class="normal"><a href="#__codelineno-9-31">31</a></span>
-<span class="normal"><a href="#__codelineno-9-32">32</a></span>
-<span class="normal"><a href="#__codelineno-9-33">33</a></span>
-<span class="normal"><a href="#__codelineno-9-34">34</a></span>
-<span class="normal"><a href="#__codelineno-9-35">35</a></span>
-<span class="normal"><a href="#__codelineno-9-36">36</a></span>
-<span class="normal"><a href="#__codelineno-9-37">37</a></span>
-<span class="normal"><a href="#__codelineno-9-38">38</a></span>
-<span class="normal"><a href="#__codelineno-9-39">39</a></span>
-<span class="normal"><a href="#__codelineno-9-40">40</a></span>
-<span class="normal"><a href="#__codelineno-9-41">41</a></span>
-<span class="normal"><a href="#__codelineno-9-42">42</a></span>
-<span class="normal"><a href="#__codelineno-9-43">43</a></span>
-<span class="normal"><a href="#__codelineno-9-44">44</a></span>
-<span class="normal"><a href="#__codelineno-9-45">45</a></span>
-<span class="normal"><a href="#__codelineno-9-46">46</a></span>
-<span class="normal"><a href="#__codelineno-9-47">47</a></span>
-<span class="normal"><a href="#__codelineno-9-48">48</a></span>
-<span class="normal"><a href="#__codelineno-9-49">49</a></span>
-<span class="normal"><a href="#__codelineno-9-50">50</a></span>
-<span class="normal"><a href="#__codelineno-9-51">51</a></span>
-<span class="normal"><a href="#__codelineno-9-52">52</a></span>
-<span class="normal"><a href="#__codelineno-9-53">53</a></span>
-<span class="normal"><a href="#__codelineno-9-54">54</a></span>
-<span class="normal"><a href="#__codelineno-9-55">55</a></span>
-<span class="normal"><a href="#__codelineno-9-56">56</a></span>
-<span class="normal"><a href="#__codelineno-9-57">57</a></span>
-<span class="normal"><a href="#__codelineno-9-58">58</a></span>
-<span class="normal"><a href="#__codelineno-9-59">59</a></span>
-<span class="normal"><a href="#__codelineno-9-60">60</a></span>
-<span class="normal"><a href="#__codelineno-9-61">61</a></span>
-<span class="normal"><a href="#__codelineno-9-62">62</a></span>
-<span class="normal"><a href="#__codelineno-9-63">63</a></span>
-<span class="normal"><a href="#__codelineno-9-64">64</a></span>
-<span class="normal"><a href="#__codelineno-9-65">65</a></span>
-<span class="normal"><a href="#__codelineno-9-66">66</a></span>
-<span class="normal"><a href="#__codelineno-9-67">67</a></span>
-<span class="normal"><a href="#__codelineno-9-68">68</a></span>
-<span class="normal"><a href="#__codelineno-9-69">69</a></span>
-<span class="normal"><a href="#__codelineno-9-70">70</a></span>
-<span class="normal"><a href="#__codelineno-9-71">71</a></span>
-<span class="normal"><a href="#__codelineno-9-72">72</a></span>
-<span class="normal"><a href="#__codelineno-9-73">73</a></span>
-<span class="normal"><a href="#__codelineno-9-74">74</a></span>
-<span class="normal"><a href="#__codelineno-9-75">75</a></span>
-<span class="normal"><a href="#__codelineno-9-76">76</a></span>
-<span class="normal"><a href="#__codelineno-9-77">77</a></span>
-<span class="normal"><a href="#__codelineno-9-78">78</a></span>
-<span class="normal"><a href="#__codelineno-9-79">79</a></span>
-<span class="normal"><a href="#__codelineno-9-80">80</a></span>
-<span class="normal"><a href="#__codelineno-9-81">81</a></span>
-<span class="normal"><a href="#__codelineno-9-82">82</a></span>
-<span class="normal"><a href="#__codelineno-9-83">83</a></span>
-<span class="normal"><a href="#__codelineno-9-84">84</a></span>
-<span class="normal"><a href="#__codelineno-9-85">85</a></span>
-<span class="normal"><a href="#__codelineno-9-86">86</a></span>
-<span class="normal"><a href="#__codelineno-9-87">87</a></span>
-<span class="normal"><a href="#__codelineno-9-88">88</a></span>
-<span class="normal"><a href="#__codelineno-9-89">89</a></span>
-<span class="normal"><a href="#__codelineno-9-90">90</a></span>
-<span class="normal"><a href="#__codelineno-9-91">91</a></span>
-<span class="normal"><a href="#__codelineno-9-92">92</a></span>
-<span class="normal"><a href="#__codelineno-9-93">93</a></span>
-<span class="normal"><a href="#__codelineno-9-94">94</a></span>
-<span class="normal"><a href="#__codelineno-9-95">95</a></span>
-<span class="normal"><a href="#__codelineno-9-96">96</a></span>
-<span class="normal"><a href="#__codelineno-9-97">97</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1"></a><span class="cm">/*******************************************************************************</span>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">solver.pgesv.cpp</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-9-1">  1</a></span>
+<span class="normal"><a href="#__codelineno-9-2">  2</a></span>
+<span class="normal"><a href="#__codelineno-9-3">  3</a></span>
+<span class="normal"><a href="#__codelineno-9-4">  4</a></span>
+<span class="normal"><a href="#__codelineno-9-5">  5</a></span>
+<span class="normal"><a href="#__codelineno-9-6">  6</a></span>
+<span class="normal"><a href="#__codelineno-9-7">  7</a></span>
+<span class="normal"><a href="#__codelineno-9-8">  8</a></span>
+<span class="normal"><a href="#__codelineno-9-9">  9</a></span>
+<span class="normal"><a href="#__codelineno-9-10"> 10</a></span>
+<span class="normal"><a href="#__codelineno-9-11"> 11</a></span>
+<span class="normal"><a href="#__codelineno-9-12"> 12</a></span>
+<span class="normal"><a href="#__codelineno-9-13"> 13</a></span>
+<span class="normal"><a href="#__codelineno-9-14"> 14</a></span>
+<span class="normal"><a href="#__codelineno-9-15"> 15</a></span>
+<span class="normal"><a href="#__codelineno-9-16"> 16</a></span>
+<span class="normal"><a href="#__codelineno-9-17"> 17</a></span>
+<span class="normal"><a href="#__codelineno-9-18"> 18</a></span>
+<span class="normal"><a href="#__codelineno-9-19"> 19</a></span>
+<span class="normal"><a href="#__codelineno-9-20"> 20</a></span>
+<span class="normal"><a href="#__codelineno-9-21"> 21</a></span>
+<span class="normal"><a href="#__codelineno-9-22"> 22</a></span>
+<span class="normal"><a href="#__codelineno-9-23"> 23</a></span>
+<span class="normal"><a href="#__codelineno-9-24"> 24</a></span>
+<span class="normal"><a href="#__codelineno-9-25"> 25</a></span>
+<span class="normal"><a href="#__codelineno-9-26"> 26</a></span>
+<span class="normal"><a href="#__codelineno-9-27"> 27</a></span>
+<span class="normal"><a href="#__codelineno-9-28"> 28</a></span>
+<span class="normal"><a href="#__codelineno-9-29"> 29</a></span>
+<span class="normal"><a href="#__codelineno-9-30"> 30</a></span>
+<span class="normal"><a href="#__codelineno-9-31"> 31</a></span>
+<span class="normal"><a href="#__codelineno-9-32"> 32</a></span>
+<span class="normal"><a href="#__codelineno-9-33"> 33</a></span>
+<span class="normal"><a href="#__codelineno-9-34"> 34</a></span>
+<span class="normal"><a href="#__codelineno-9-35"> 35</a></span>
+<span class="normal"><a href="#__codelineno-9-36"> 36</a></span>
+<span class="normal"><a href="#__codelineno-9-37"> 37</a></span>
+<span class="normal"><a href="#__codelineno-9-38"> 38</a></span>
+<span class="normal"><a href="#__codelineno-9-39"> 39</a></span>
+<span class="normal"><a href="#__codelineno-9-40"> 40</a></span>
+<span class="normal"><a href="#__codelineno-9-41"> 41</a></span>
+<span class="normal"><a href="#__codelineno-9-42"> 42</a></span>
+<span class="normal"><a href="#__codelineno-9-43"> 43</a></span>
+<span class="normal"><a href="#__codelineno-9-44"> 44</a></span>
+<span class="normal"><a href="#__codelineno-9-45"> 45</a></span>
+<span class="normal"><a href="#__codelineno-9-46"> 46</a></span>
+<span class="normal"><a href="#__codelineno-9-47"> 47</a></span>
+<span class="normal"><a href="#__codelineno-9-48"> 48</a></span>
+<span class="normal"><a href="#__codelineno-9-49"> 49</a></span>
+<span class="normal"><a href="#__codelineno-9-50"> 50</a></span>
+<span class="normal"><a href="#__codelineno-9-51"> 51</a></span>
+<span class="normal"><a href="#__codelineno-9-52"> 52</a></span>
+<span class="normal"><a href="#__codelineno-9-53"> 53</a></span>
+<span class="normal"><a href="#__codelineno-9-54"> 54</a></span>
+<span class="normal"><a href="#__codelineno-9-55"> 55</a></span>
+<span class="normal"><a href="#__codelineno-9-56"> 56</a></span>
+<span class="normal"><a href="#__codelineno-9-57"> 57</a></span>
+<span class="normal"><a href="#__codelineno-9-58"> 58</a></span>
+<span class="normal"><a href="#__codelineno-9-59"> 59</a></span>
+<span class="normal"><a href="#__codelineno-9-60"> 60</a></span>
+<span class="normal"><a href="#__codelineno-9-61"> 61</a></span>
+<span class="normal"><a href="#__codelineno-9-62"> 62</a></span>
+<span class="normal"><a href="#__codelineno-9-63"> 63</a></span>
+<span class="normal"><a href="#__codelineno-9-64"> 64</a></span>
+<span class="normal"><a href="#__codelineno-9-65"> 65</a></span>
+<span class="normal"><a href="#__codelineno-9-66"> 66</a></span>
+<span class="normal"><a href="#__codelineno-9-67"> 67</a></span>
+<span class="normal"><a href="#__codelineno-9-68"> 68</a></span>
+<span class="normal"><a href="#__codelineno-9-69"> 69</a></span>
+<span class="normal"><a href="#__codelineno-9-70"> 70</a></span>
+<span class="normal"><a href="#__codelineno-9-71"> 71</a></span>
+<span class="normal"><a href="#__codelineno-9-72"> 72</a></span>
+<span class="normal"><a href="#__codelineno-9-73"> 73</a></span>
+<span class="normal"><a href="#__codelineno-9-74"> 74</a></span>
+<span class="normal"><a href="#__codelineno-9-75"> 75</a></span>
+<span class="normal"><a href="#__codelineno-9-76"> 76</a></span>
+<span class="normal"><a href="#__codelineno-9-77"> 77</a></span>
+<span class="normal"><a href="#__codelineno-9-78"> 78</a></span>
+<span class="normal"><a href="#__codelineno-9-79"> 79</a></span>
+<span class="normal"><a href="#__codelineno-9-80"> 80</a></span>
+<span class="normal"><a href="#__codelineno-9-81"> 81</a></span>
+<span class="normal"><a href="#__codelineno-9-82"> 82</a></span>
+<span class="normal"><a href="#__codelineno-9-83"> 83</a></span>
+<span class="normal"><a href="#__codelineno-9-84"> 84</a></span>
+<span class="normal"><a href="#__codelineno-9-85"> 85</a></span>
+<span class="normal"><a href="#__codelineno-9-86"> 86</a></span>
+<span class="normal"><a href="#__codelineno-9-87"> 87</a></span>
+<span class="normal"><a href="#__codelineno-9-88"> 88</a></span>
+<span class="normal"><a href="#__codelineno-9-89"> 89</a></span>
+<span class="normal"><a href="#__codelineno-9-90"> 90</a></span>
+<span class="normal"><a href="#__codelineno-9-91"> 91</a></span>
+<span class="normal"><a href="#__codelineno-9-92"> 92</a></span>
+<span class="normal"><a href="#__codelineno-9-93"> 93</a></span>
+<span class="normal"><a href="#__codelineno-9-94"> 94</a></span>
+<span class="normal"><a href="#__codelineno-9-95"> 95</a></span>
+<span class="normal"><a href="#__codelineno-9-96"> 96</a></span>
+<span class="normal"><a href="#__codelineno-9-97"> 97</a></span>
+<span class="normal"><a href="#__codelineno-9-98"> 98</a></span>
+<span class="normal"><a href="#__codelineno-9-99"> 99</a></span>
+<span class="normal"><a href="#__codelineno-9-100">100</a></span>
+<span class="normal"><a href="#__codelineno-9-101">101</a></span>
+<span class="normal"><a href="#__codelineno-9-102">102</a></span>
+<span class="normal"><a href="#__codelineno-9-103">103</a></span>
+<span class="normal"><a href="#__codelineno-9-104">104</a></span>
+<span class="normal"><a href="#__codelineno-9-105">105</a></span>
+<span class="normal"><a href="#__codelineno-9-106">106</a></span>
+<span class="normal"><a href="#__codelineno-9-107">107</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1"></a><span class="cm">/*******************************************************************************</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2"></a><span class="cm"> * Copyright (C) 2025 Theodore Chang</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3"></a><span class="cm"> *</span>
 <a id="__codelineno-9-4" name="__codelineno-9-4"></a><span class="cm"> * This program is free software: you can redistribute it and/or modify</span>
@@ -1176,77 +1182,87 @@ The solution is sent back to the caller.</p>
 <a id="__codelineno-9-24" name="__codelineno-9-24"></a><span class="cm"> *</span>
 <a id="__codelineno-9-25" name="__codelineno-9-25"></a><span class="cm"> * The caller must send three buffers to the worker process:</span>
 <a id="__codelineno-9-26" name="__codelineno-9-26"></a><span class="cm"> * - an integer array of size 3 containing the matrix size (`N`),</span>
-<a id="__codelineno-9-27" name="__codelineno-9-27"></a><span class="cm"> *   number of right-hand sides (`NRHS`), and the data type (&gt; 0 for `double`, &lt; 0 for `float`),</span>
+<a id="__codelineno-9-27" name="__codelineno-9-27"></a><span class="cm"> *   number of right-hand sides (`NRHS`), and the data type,</span>
 <a id="__codelineno-9-28" name="__codelineno-9-28"></a><span class="cm"> * - a buffer containing the matrix `A`, size `N x N`,</span>
 <a id="__codelineno-9-29" name="__codelineno-9-29"></a><span class="cm"> * - a buffer containing the right-hand side `B`, size `N x NRHS`.</span>
 <a id="__codelineno-9-30" name="__codelineno-9-30"></a><span class="cm"> *</span>
-<a id="__codelineno-9-31" name="__codelineno-9-31"></a><span class="cm"> * The error code (0 for success) will be sent back to the root process of the caller.</span>
-<a id="__codelineno-9-32" name="__codelineno-9-32"></a><span class="cm"> * If error code is 0, the solution will be sent back as well.</span>
-<a id="__codelineno-9-33" name="__codelineno-9-33"></a><span class="cm"> *</span>
-<a id="__codelineno-9-34" name="__codelineno-9-34"></a><span class="cm"> * The example caller logic can be seen as follows.</span>
-<a id="__codelineno-9-35" name="__codelineno-9-35"></a><span class="cm"> *</span>
-<a id="__codelineno-9-36" name="__codelineno-9-36"></a><span class="cm"> * @include runner.cpp</span>
-<a id="__codelineno-9-37" name="__codelineno-9-37"></a><span class="cm"> *</span>
-<a id="__codelineno-9-38" name="__codelineno-9-38"></a><span class="cm"> * @author tlc</span>
-<a id="__codelineno-9-39" name="__codelineno-9-39"></a><span class="cm"> * @date 07/03/2025</span>
-<a id="__codelineno-9-40" name="__codelineno-9-40"></a><span class="cm"> * @version 1.0.0</span>
-<a id="__codelineno-9-41" name="__codelineno-9-41"></a><span class="cm"> * @file solver.pgesv.cpp</span>
-<a id="__codelineno-9-42" name="__codelineno-9-42"></a><span class="cm"> * @{</span>
-<a id="__codelineno-9-43" name="__codelineno-9-43"></a><span class="cm"> */</span>
-<a id="__codelineno-9-44" name="__codelineno-9-44"></a>
-<a id="__codelineno-9-45" name="__codelineno-9-45"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ezp/pgesv.hpp&gt;</span>
-<a id="__codelineno-9-46" name="__codelineno-9-46"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;mpl/mpl.hpp&gt;</span>
-<a id="__codelineno-9-47" name="__codelineno-9-47"></a>
-<a id="__codelineno-9-48" name="__codelineno-9-48"></a><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">comm_world</span><span class="p">{</span><span class="n">mpl</span><span class="o">::</span><span class="n">environment</span><span class="o">::</span><span class="n">comm_world</span><span class="p">()};</span>
-<a id="__codelineno-9-49" name="__codelineno-9-49"></a><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">parent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">inter_communicator</span><span class="o">::</span><span class="n">parent</span><span class="p">();</span>
+<a id="__codelineno-9-31" name="__codelineno-9-31"></a><span class="cm"> * The data type has the following meaning:</span>
+<a id="__codelineno-9-32" name="__codelineno-9-32"></a><span class="cm"> * - 2-digit positive: complex16,</span>
+<a id="__codelineno-9-33" name="__codelineno-9-33"></a><span class="cm"> * - 1-digit positive: double,</span>
+<a id="__codelineno-9-34" name="__codelineno-9-34"></a><span class="cm"> * - 1-digit negative: float,</span>
+<a id="__codelineno-9-35" name="__codelineno-9-35"></a><span class="cm"> * - 2-digit negative: complex8.</span>
+<a id="__codelineno-9-36" name="__codelineno-9-36"></a><span class="cm"> *</span>
+<a id="__codelineno-9-37" name="__codelineno-9-37"></a><span class="cm"> * The error code (0 for success) will be sent back to the root process of the caller.</span>
+<a id="__codelineno-9-38" name="__codelineno-9-38"></a><span class="cm"> * If error code is 0, the solution will be sent back as well.</span>
+<a id="__codelineno-9-39" name="__codelineno-9-39"></a><span class="cm"> *</span>
+<a id="__codelineno-9-40" name="__codelineno-9-40"></a><span class="cm"> * The example caller logic can be seen as follows.</span>
+<a id="__codelineno-9-41" name="__codelineno-9-41"></a><span class="cm"> *</span>
+<a id="__codelineno-9-42" name="__codelineno-9-42"></a><span class="cm"> * @include runner.cpp</span>
+<a id="__codelineno-9-43" name="__codelineno-9-43"></a><span class="cm"> *</span>
+<a id="__codelineno-9-44" name="__codelineno-9-44"></a><span class="cm"> * @author tlc</span>
+<a id="__codelineno-9-45" name="__codelineno-9-45"></a><span class="cm"> * @date 07/03/2025</span>
+<a id="__codelineno-9-46" name="__codelineno-9-46"></a><span class="cm"> * @version 1.0.0</span>
+<a id="__codelineno-9-47" name="__codelineno-9-47"></a><span class="cm"> * @file solver.pgesv.cpp</span>
+<a id="__codelineno-9-48" name="__codelineno-9-48"></a><span class="cm"> * @{</span>
+<a id="__codelineno-9-49" name="__codelineno-9-49"></a><span class="cm"> */</span>
 <a id="__codelineno-9-50" name="__codelineno-9-50"></a>
-<a id="__codelineno-9-51" name="__codelineno-9-51"></a><span class="k">template</span><span class="o">&lt;</span><span class="n">ezp</span><span class="o">::</span><span class="n">data_t</span><span class="w"> </span><span class="n">DT</span><span class="o">&gt;</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">run</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NRHS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-52" name="__codelineno-9-52"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">DT</span><span class="o">&gt;</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">;</span>
+<a id="__codelineno-9-51" name="__codelineno-9-51"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ezp/pgesv.hpp&gt;</span>
+<a id="__codelineno-9-52" name="__codelineno-9-52"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;mpl/mpl.hpp&gt;</span>
 <a id="__codelineno-9-53" name="__codelineno-9-53"></a>
-<a id="__codelineno-9-54" name="__codelineno-9-54"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">comm_world</span><span class="p">.</span><span class="n">rank</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-55" name="__codelineno-9-55"></a><span class="w">        </span><span class="n">A</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
-<a id="__codelineno-9-56" name="__codelineno-9-56"></a><span class="w">        </span><span class="n">B</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">NRHS</span><span class="p">);</span>
-<a id="__codelineno-9-57" name="__codelineno-9-57"></a>
-<a id="__codelineno-9-58" name="__codelineno-9-58"></a><span class="w">        </span><span class="n">mpl</span><span class="o">::</span><span class="n">irequest_pool</span><span class="w"> </span><span class="n">requests</span><span class="p">;</span>
+<a id="__codelineno-9-54" name="__codelineno-9-54"></a><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">comm_world</span><span class="p">{</span><span class="n">mpl</span><span class="o">::</span><span class="n">environment</span><span class="o">::</span><span class="n">comm_world</span><span class="p">()};</span>
+<a id="__codelineno-9-55" name="__codelineno-9-55"></a><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">parent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">inter_communicator</span><span class="o">::</span><span class="n">parent</span><span class="p">();</span>
+<a id="__codelineno-9-56" name="__codelineno-9-56"></a>
+<a id="__codelineno-9-57" name="__codelineno-9-57"></a><span class="k">template</span><span class="o">&lt;</span><span class="n">ezp</span><span class="o">::</span><span class="n">data_t</span><span class="w"> </span><span class="n">DT</span><span class="o">&gt;</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">run</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NRHS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-58" name="__codelineno-9-58"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">DT</span><span class="o">&gt;</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">;</span>
 <a id="__codelineno-9-59" name="__codelineno-9-59"></a>
-<a id="__codelineno-9-60" name="__codelineno-9-60"></a><span class="w">        </span><span class="n">requests</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">parent</span><span class="p">.</span><span class="n">irecv</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">tag_t</span><span class="p">{</span><span class="mi">0</span><span class="p">}));</span>
-<a id="__codelineno-9-61" name="__codelineno-9-61"></a><span class="w">        </span><span class="n">requests</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">parent</span><span class="p">.</span><span class="n">irecv</span><span class="p">(</span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">tag_t</span><span class="p">{</span><span class="mi">1</span><span class="p">}));</span>
-<a id="__codelineno-9-62" name="__codelineno-9-62"></a>
-<a id="__codelineno-9-63" name="__codelineno-9-63"></a><span class="w">        </span><span class="n">requests</span><span class="p">.</span><span class="n">waitall</span><span class="p">();</span>
-<a id="__codelineno-9-64" name="__codelineno-9-64"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-9-60" name="__codelineno-9-60"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">comm_world</span><span class="p">.</span><span class="n">rank</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-61" name="__codelineno-9-61"></a><span class="w">        </span><span class="n">A</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
+<a id="__codelineno-9-62" name="__codelineno-9-62"></a><span class="w">        </span><span class="n">B</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">NRHS</span><span class="p">);</span>
+<a id="__codelineno-9-63" name="__codelineno-9-63"></a>
+<a id="__codelineno-9-64" name="__codelineno-9-64"></a><span class="w">        </span><span class="n">mpl</span><span class="o">::</span><span class="n">irequest_pool</span><span class="w"> </span><span class="n">requests</span><span class="p">;</span>
 <a id="__codelineno-9-65" name="__codelineno-9-65"></a>
-<a id="__codelineno-9-66" name="__codelineno-9-66"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ezp</span><span class="o">::</span><span class="n">pgesv</span><span class="o">&lt;</span><span class="n">DT</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="p">().</span><span class="n">solve</span><span class="p">({</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">A</span><span class="p">.</span><span class="n">data</span><span class="p">()},</span><span class="w"> </span><span class="p">{</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">.</span><span class="n">data</span><span class="p">()});</span>
-<a id="__codelineno-9-67" name="__codelineno-9-67"></a>
-<a id="__codelineno-9-68" name="__codelineno-9-68"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">comm_world</span><span class="p">.</span><span class="n">rank</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-69" name="__codelineno-9-69"></a><span class="w">        </span><span class="n">parent</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">error</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
-<a id="__codelineno-9-70" name="__codelineno-9-70"></a><span class="w">        </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">error</span><span class="p">)</span><span class="w"> </span><span class="n">parent</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
-<a id="__codelineno-9-71" name="__codelineno-9-71"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-9-72" name="__codelineno-9-72"></a>
-<a id="__codelineno-9-73" name="__codelineno-9-73"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<a id="__codelineno-9-74" name="__codelineno-9-74"></a><span class="p">}</span>
-<a id="__codelineno-9-75" name="__codelineno-9-75"></a>
-<a id="__codelineno-9-76" name="__codelineno-9-76"></a><span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="w"> </span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-77" name="__codelineno-9-77"></a><span class="w">    </span><span class="n">ezp</span><span class="o">::</span><span class="n">blacs_env</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;::</span><span class="n">do_not_manage_mpi</span><span class="p">();</span>
+<a id="__codelineno-9-66" name="__codelineno-9-66"></a><span class="w">        </span><span class="n">requests</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">parent</span><span class="p">.</span><span class="n">irecv</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">tag_t</span><span class="p">{</span><span class="mi">0</span><span class="p">}));</span>
+<a id="__codelineno-9-67" name="__codelineno-9-67"></a><span class="w">        </span><span class="n">requests</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">parent</span><span class="p">.</span><span class="n">irecv</span><span class="p">(</span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">tag_t</span><span class="p">{</span><span class="mi">1</span><span class="p">}));</span>
+<a id="__codelineno-9-68" name="__codelineno-9-68"></a>
+<a id="__codelineno-9-69" name="__codelineno-9-69"></a><span class="w">        </span><span class="n">requests</span><span class="p">.</span><span class="n">waitall</span><span class="p">();</span>
+<a id="__codelineno-9-70" name="__codelineno-9-70"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-9-71" name="__codelineno-9-71"></a>
+<a id="__codelineno-9-72" name="__codelineno-9-72"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ezp</span><span class="o">::</span><span class="n">pgesv</span><span class="o">&lt;</span><span class="n">DT</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="p">().</span><span class="n">solve</span><span class="p">({</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">A</span><span class="p">.</span><span class="n">data</span><span class="p">()},</span><span class="w"> </span><span class="p">{</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">.</span><span class="n">data</span><span class="p">()});</span>
+<a id="__codelineno-9-73" name="__codelineno-9-73"></a>
+<a id="__codelineno-9-74" name="__codelineno-9-74"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">comm_world</span><span class="p">.</span><span class="n">rank</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-75" name="__codelineno-9-75"></a><span class="w">        </span><span class="n">parent</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">error</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<a id="__codelineno-9-76" name="__codelineno-9-76"></a><span class="w">        </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">error</span><span class="p">)</span><span class="w"> </span><span class="n">parent</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<a id="__codelineno-9-77" name="__codelineno-9-77"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-9-78" name="__codelineno-9-78"></a>
-<a id="__codelineno-9-79" name="__codelineno-9-79"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">parent</span><span class="p">.</span><span class="n">is_valid</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-80" name="__codelineno-9-80"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;This program must be invoked by the host application.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-<a id="__codelineno-9-81" name="__codelineno-9-81"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<a id="__codelineno-9-82" name="__codelineno-9-82"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-9-83" name="__codelineno-9-83"></a>
-<a id="__codelineno-9-84" name="__codelineno-9-84"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">communicator</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">communicator</span><span class="o">::</span><span class="n">order_high</span><span class="p">);</span>
-<a id="__codelineno-9-85" name="__codelineno-9-85"></a>
-<a id="__codelineno-9-86" name="__codelineno-9-86"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">config</span><span class="p">[</span><span class="mi">3</span><span class="p">]{};</span>
-<a id="__codelineno-9-87" name="__codelineno-9-87"></a>
-<a id="__codelineno-9-88" name="__codelineno-9-88"></a><span class="w">    </span><span class="n">all</span><span class="p">.</span><span class="n">bcast</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">config</span><span class="p">);</span>
+<a id="__codelineno-9-79" name="__codelineno-9-79"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-9-80" name="__codelineno-9-80"></a><span class="p">}</span>
+<a id="__codelineno-9-81" name="__codelineno-9-81"></a>
+<a id="__codelineno-9-82" name="__codelineno-9-82"></a><span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="w"> </span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-83" name="__codelineno-9-83"></a><span class="w">    </span><span class="n">ezp</span><span class="o">::</span><span class="n">blacs_env</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;::</span><span class="n">do_not_manage_mpi</span><span class="p">();</span>
+<a id="__codelineno-9-84" name="__codelineno-9-84"></a>
+<a id="__codelineno-9-85" name="__codelineno-9-85"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">parent</span><span class="p">.</span><span class="n">is_valid</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-86" name="__codelineno-9-86"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;This program must be invoked by the host application.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-9-87" name="__codelineno-9-87"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-9-88" name="__codelineno-9-88"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-9-89" name="__codelineno-9-89"></a>
-<a id="__codelineno-9-90" name="__codelineno-9-90"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
-<a id="__codelineno-9-91" name="__codelineno-9-91"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">NRHS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-<a id="__codelineno-9-92" name="__codelineno-9-92"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">FLOAT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<a id="__codelineno-9-90" name="__codelineno-9-90"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">communicator</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">communicator</span><span class="o">::</span><span class="n">order_high</span><span class="p">);</span>
+<a id="__codelineno-9-91" name="__codelineno-9-91"></a>
+<a id="__codelineno-9-92" name="__codelineno-9-92"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">config</span><span class="p">[</span><span class="mi">3</span><span class="p">]{};</span>
 <a id="__codelineno-9-93" name="__codelineno-9-93"></a>
-<a id="__codelineno-9-94" name="__codelineno-9-94"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">FLOAT</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">run</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">run</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="p">);</span>
-<a id="__codelineno-9-95" name="__codelineno-9-95"></a><span class="p">}</span>
-<a id="__codelineno-9-96" name="__codelineno-9-96"></a>
-<a id="__codelineno-9-97" name="__codelineno-9-97"></a><span class="c1">//! @}</span>
+<a id="__codelineno-9-94" name="__codelineno-9-94"></a><span class="w">    </span><span class="n">all</span><span class="p">.</span><span class="n">bcast</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">config</span><span class="p">);</span>
+<a id="__codelineno-9-95" name="__codelineno-9-95"></a>
+<a id="__codelineno-9-96" name="__codelineno-9-96"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<a id="__codelineno-9-97" name="__codelineno-9-97"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">NRHS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<a id="__codelineno-9-98" name="__codelineno-9-98"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">FLOAT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<a id="__codelineno-9-99" name="__codelineno-9-99"></a>
+<a id="__codelineno-9-100" name="__codelineno-9-100"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">FLOAT</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">run</span><span class="o">&lt;</span><span class="n">complex16</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="p">);</span>
+<a id="__codelineno-9-101" name="__codelineno-9-101"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">FLOAT</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">run</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="p">);</span>
+<a id="__codelineno-9-102" name="__codelineno-9-102"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">FLOAT</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">-10</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">run</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="p">);</span>
+<a id="__codelineno-9-103" name="__codelineno-9-103"></a>
+<a id="__codelineno-9-104" name="__codelineno-9-104"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">run</span><span class="o">&lt;</span><span class="n">complex8</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="p">);</span>
+<a id="__codelineno-9-105" name="__codelineno-9-105"></a><span class="p">}</span>
+<a id="__codelineno-9-106" name="__codelineno-9-106"></a>
+<a id="__codelineno-9-107" name="__codelineno-9-107"></a><span class="c1">//! @}</span>
 </code></pre></div></td></tr></table></div>
 
 
