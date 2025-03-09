@@ -100,9 +100,9 @@ void random_psgbsv() {
             A.resize(N * LDA, 0.);
             B.resize(N * NRHS, 1.);
 
-            std::uniform_real_distribution dist_v(0., 1.);
+            std::uniform_real_distribution dist_v(0.f, 1.f);
 
-            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = 10. * dist_v(gen) + 10.;
+            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = 10.f * dist_v(gen) + 10.f;
         }
 
         const auto info = par_sgbsv<int>().solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
@@ -137,8 +137,8 @@ void random_pzgbsv() {
         std::vector<complex16> A, B;
 
         if(0 == env.rank()) {
-            A.resize(N * LDA, 0.);
-            B.resize(N * NRHS, 1.);
+            A.resize(N * LDA, {0., 0.});
+            B.resize(N * NRHS, {1., 0.});
 
             std::uniform_real_distribution dist_v(0., 1.);
 
@@ -177,8 +177,8 @@ void random_pcgbsv() {
         std::vector<complex8> A, B;
 
         if(0 == env.rank()) {
-            A.resize(N * LDA, 0.);
-            B.resize(N * NRHS, 1.);
+            A.resize(N * LDA, {0.f, 0.f});
+            B.resize(N * NRHS, {1.f, 0.f});
 
             std::uniform_real_distribution dist_v(0.f, 1.f);
 
