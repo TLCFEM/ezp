@@ -25,9 +25,15 @@
  * The caller must send three buffers to the worker process:
  * - an integer array of size 5 containing the matrix size (`N`), number of sub-diagonals (`KL`),
  *   number of super-diagonals (`KU`), number of right-hand sides (`NRHS`),
- *   and the data type (> 0 for `double`, < 0 for `float`),
+ *   and the data type,
  * - a buffer containing the matrix `A`, size `N x (KL + KU + 1)`,
  * - a buffer containing the right-hand side `B`, size `N x NRHS`.
+ *
+ * The data type has the following meaning:
+ * - 2-digit positive: complex16,
+ * - 1-digit positive: double,
+ * - 1-digit negative: float,
+ * - 2-digit negative: complex8.
  *
  * The error code (0 for success) will be sent back to the root process of the caller.
  * If error code is 0, the solution will be sent back as well.
@@ -94,7 +100,11 @@ int main(int argc, char** argv) {
     const auto NRHS = config[3];
     const auto FLOAT = config[4];
 
-    return FLOAT > 0 ? run<double>(N, KL, KU, NRHS) : run<float>(N, KL, KU, NRHS);
+    if(FLOAT >= 10) return run<complex16>(N, KL, KU, NRHS);
+    if(FLOAT >= 0) return run<double>(N, KL, KU, NRHS);
+    if(FLOAT > -10) return run<float>(N, KL, KU, NRHS);
+
+    return run<complex8>(N, KL, KU, NRHS);
 }
 
 //! @}
