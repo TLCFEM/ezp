@@ -19,6 +19,7 @@
 #define EZP_H
 
 #include <complex>
+#include <cstdint>
 
 #ifdef EZP_INT64
 using int_t = std::int64_t;
