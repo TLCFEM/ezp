@@ -64,6 +64,8 @@
 
 namespace ezp {
     template<data_t DT, index_t IT> class pgbsv final : public detail::band_solver<IT> {
+        using base_t = detail::band_solver<IT>;
+
         struct band_system {
             IT n{-1}, kl{-1}, ku{-1}, lead{-1}, block{-1}, lines{-1};
             desc<IT> desc1d_a;
@@ -89,11 +91,8 @@ namespace ezp {
         }
 
     public:
-        pgbsv()
-            : detail::band_solver<IT>() {}
-
-        explicit pgbsv(const IT rows)
-            : detail::band_solver<IT>(rows) {}
+        explicit pgbsv(const IT rows = get_env<IT>().size())
+            : base_t(rows) {}
 
         class indexer {
             const IT n, kl, ku;

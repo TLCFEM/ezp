@@ -33,12 +33,14 @@ namespace ezp {
     template<data_t DT, index_t IT, char UL = 'L', char ODER = 'R'> class pposv final : public detail::full_solver<DT, IT, ODER> {
         static constexpr char UPLO = UL;
 
+        using base_t = detail::full_solver<DT, IT, ODER>;
+
     public:
         pposv()
-            : detail::full_solver<DT, IT, ODER>() {}
+            : base_t() {}
 
         pposv(const IT rows, const IT cols)
-            : detail::full_solver<DT, IT, ODER>(rows, cols) {}
+            : base_t(rows, cols) {}
 
         IT solve(full_mat<DT, IT>&& A, full_mat<DT, IT>&& B) override {
             if(!this->ctx.is_valid()) return 0;

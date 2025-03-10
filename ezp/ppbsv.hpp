@@ -86,6 +86,8 @@ namespace ezp {
     template<data_t DT, index_t IT, char UL = 'L'> class ppbsv final : public detail::band_solver<IT> {
         static constexpr char UPLO = UL;
 
+        using base_t = detail::band_solver<IT>;
+
         struct band_system {
             IT n{-1}, klu{-1}, lead{-1}, block{-1}, lines{-1};
             desc<IT> desc1d_a;
@@ -107,11 +109,8 @@ namespace ezp {
         }
 
     public:
-        ppbsv()
-            : detail::band_solver<IT>() {}
-
-        explicit ppbsv(const IT rows)
-            : detail::band_solver<IT>(rows) {}
+        explicit ppbsv(const IT rows = get_env<IT>().size())
+            : base_t(rows) {}
 
         class indexer {
             const IT n, klu;

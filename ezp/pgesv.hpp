@@ -31,12 +31,14 @@
 
 namespace ezp {
     template<data_t DT, index_t IT, char ODER = 'R'> class pgesv final : public detail::full_solver<DT, IT, ODER> {
+        using base_t = detail::full_solver<DT, IT, ODER>;
+
     public:
         pgesv()
-            : detail::full_solver<DT, IT, ODER>() {}
+            : base_t() {}
 
         pgesv(const IT rows, const IT cols)
-            : detail::full_solver<DT, IT, ODER>(rows, cols) {}
+            : base_t(rows, cols) {}
 
         IT solve(full_mat<DT, IT>&& A, full_mat<DT, IT>&& B) override {
             if(!this->ctx.is_valid()) return 0;
