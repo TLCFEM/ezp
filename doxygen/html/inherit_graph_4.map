@@ -1,21 +1,15 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$d0/df0/classezp_1_1detail_1_1abstract__solver.html" title=" " alt="" coords="5,89,156,129"/>
-<area shape="rect" id="Node000001" href="$df/df0/classezp_1_1detail_1_1full__solver.html" title=" " alt="" coords="209,25,376,65"/>
-<area shape="poly" id="edge2_Node000000_Node000001" title=" " alt="" coords="160,82,225,62,227,67,162,87"/>
-<area shape="rect" id="Node000002" href="$d0/db0/classezp_1_1detail_1_1band__solver.html" title=" " alt="" coords="204,89,381,129"/>
-<area shape="poly" id="edge3_Node000000_Node000002" title=" " alt="" coords="170,106,204,106,204,111,170,111"/>
-<area shape="rect" id="Node000006" href="$df/df0/classezp_1_1detail_1_1full__solver.html" title=" " alt="" coords="209,178,376,218"/>
-<area shape="poly" id="edge7_Node000000_Node000006" title=" " alt="" coords="143,132,245,175,243,180,140,137"/>
-<area shape="rect" id="Node000003" href="$de/d4c/classezp_1_1pdbsv.html" title=" " alt="" coords="429,5,589,31"/>
-<area shape="poly" id="edge4_Node000002_Node000003" title=" " alt="" coords="367,81,380,74,404,57,428,40,457,28,459,33,431,44,407,61,383,79,369,86"/>
-<area shape="rect" id="Node000004" href="$d1/d7e/classezp_1_1pgbsv.html" title=" " alt="" coords="429,55,589,80"/>
-<area shape="poly" id="edge5_Node000002_Node000004" title=" " alt="" coords="394,87,441,78,442,83,395,92"/>
-<area shape="rect" id="Node000005" href="$d3/df1/classezp_1_1ppbsv.html" title=" " alt="" coords="435,105,584,145"/>
-<area shape="poly" id="edge6_Node000002_Node000005" title=" " alt="" coords="396,114,435,117,434,122,395,119"/>
-<area shape="rect" id="Node000007" href="$de/d12/classezp_1_1pposv.html" title=" " alt="" coords="434,169,585,195"/>
-<area shape="poly" id="edge8_Node000006_Node000007" title=" " alt="" coords="389,188,434,185,434,190,390,194"/>
-<area shape="rect" id="Node000008" href="$d5/d48/classezp_1_1pgesv.html" title=" " alt="" coords="435,219,584,259"/>
-<area shape="poly" id="edge9_Node000006_Node000008" title=" " alt="" coords="390,214,435,223,434,228,389,219"/>
-<area shape="rect" id="Node000009" href="$de/d12/classezp_1_1pposv.html" title=" " alt="" coords="435,283,584,323"/>
-<area shape="poly" id="edge10_Node000006_Node000009" title=" " alt="" coords="341,222,430,269,458,281,455,286,428,274,339,227"/>
+<area shape="rect" id="Node000000" href="$d0/df0/classezp_1_1detail_1_1abstract__solver.html" title=" " alt="" coords="5,115,172,155"/>
+<area shape="rect" id="Node000001" href="$d0/db0/classezp_1_1detail_1_1band__solver.html" title=" " alt="" coords="225,29,411,84"/>
+<area shape="poly" id="edge10_Node000000_Node000001" title=" " alt="" coords="160,108,237,82,238,87,161,113"/>
+<area shape="rect" id="Node000004" href="$d0/db0/classezp_1_1detail_1_1band__solver.html" title=" " alt="" coords="220,108,416,163"/>
+<area shape="poly" id="edge13_Node000000_Node000004" title=" " alt="" coords="186,133,220,133,220,138,186,138"/>
+<area shape="rect" id="Node000006" href="$d0/db0/classezp_1_1detail_1_1band__solver.html" title=" " alt="" coords="229,187,407,227"/>
+<area shape="poly" id="edge15_Node000000_Node000006" title=" " alt="" coords="167,157,254,185,253,190,165,162"/>
+<area shape="rect" id="Node000002" href="$de/d4c/classezp_1_1pdbsv.html" title=" " alt="" coords="464,5,624,31"/>
+<area shape="poly" id="edge11_Node000001_Node000002" title=" " alt="" coords="424,36,469,28,470,33,425,41"/>
+<area shape="rect" id="Node000003" href="$d1/d7e/classezp_1_1pgbsv.html" title=" " alt="" coords="464,55,624,80"/>
+<area shape="poly" id="edge12_Node000001_Node000003" title=" " alt="" coords="425,59,464,61,464,66,424,64"/>
+<area shape="rect" id="Node000005" href="$d3/df1/classezp_1_1ppbsv.html" title=" " alt="" coords="469,115,619,155"/>
+<area shape="poly" id="edge14_Node000004_Node000005" title=" " alt="" coords="430,133,469,133,469,138,430,138"/>
 </map>

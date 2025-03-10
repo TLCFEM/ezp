@@ -8,6 +8,7 @@ var annotated_dup =
       ] ],
       [ "band_mat", "d9/d24/structezp_1_1band__mat.html", null ],
       [ "band_symm_mat", "d8/d3f/structezp_1_1band__symm__mat.html", null ],
+      [ "base_mat", "d3/d46/structezp_1_1base__mat.html", null ],
       [ "blacs_base", "d6/d56/classezp_1_1blacs__base.html", null ],
       [ "blacs_context", "df/dc0/classezp_1_1blacs__context.html", "df/dc0/classezp_1_1blacs__context" ],
       [ "blacs_env", "da/d77/classezp_1_1blacs__env.html", null ],
