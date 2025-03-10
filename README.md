@@ -1,6 +1,7 @@
 # ezp
 
 [![codecov](https://codecov.io/gh/TLCFEM/ezp/graph/badge.svg?token=ME0M312F5M)](https://codecov.io/gh/TLCFEM/ezp)
+[![master](https://github.com/TLCFEM/ezp/actions/workflows/master.yml/badge.svg?branch=master)](https://github.com/TLCFEM/ezp/actions/workflows/master.yml)
 
 `ezp` is a lightweight C++ wrapper for selected ScaLAPACK solvers for linear systems.
 
