@@ -9,6 +9,5 @@ var searchData=
   ['ppbsv_6',['ppbsv',['../d3/df1/classezp_1_1ppbsv.html',1,'ezp::ppbsv&lt; DT, IT, UL &gt;'],['../d8/dba/classppbsv.html',1,'ppbsv']]],
   ['ppbsv_2ehpp_7',['ppbsv.hpp',['../d0/daf/ppbsv_8hpp.html',1,'']]],
   ['pposv_8',['pposv',['../de/d12/classezp_1_1pposv.html',1,'ezp::pposv&lt; DT, IT, UL, ODER &gt;'],['../db/db1/classpposv.html',1,'pposv']]],
-  ['pposv_2ehpp_9',['pposv.hpp',['../d4/d53/pposv_8hpp.html',1,'']]],
-  ['pposv_3c_20int_5ft_20_3e_10',['pposv&lt; int_t &gt;',['../de/d12/classezp_1_1pposv.html',1,'ezp']]]
+  ['pposv_2ehpp_9',['pposv.hpp',['../d4/d53/pposv_8hpp.html',1,'']]]
 ];

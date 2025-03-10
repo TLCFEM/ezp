@@ -1,5 +1,5 @@
-<map id="ezp::detail::abstract_solver&lt; DT, IT, WT &gt;" name="ezp::detail::abstract_solver&lt; DT, IT, WT &gt;">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,108,172,148"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="69,5,108,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="91,45,91,108,86,108,86,45"/>
+<map id="ezp::detail::abstract_solver&lt; IT &gt;" name="ezp::detail::abstract_solver&lt; IT &gt;">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,108,156,148"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="61,5,100,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="83,45,83,108,78,108,78,45"/>
 </map>

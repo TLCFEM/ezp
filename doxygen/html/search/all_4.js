@@ -16,6 +16,5 @@ var searchData=
   ['ezp_3a_3ahas_5fmem_13',['has_mem',['../df/d8d/conceptezp_1_1has__mem.html',1,'ezp']]],
   ['ezp_3a_3ahas_5fmemptr_14',['has_memptr',['../df/d7d/conceptezp_1_1has__memptr.html',1,'ezp']]],
   ['ezp_3a_3aindex_5ft_15',['index_t',['../db/dfc/conceptezp_1_1index__t.html',1,'ezp']]],
-  ['ezp_3a_3amem_5ft_16',['mem_t',['../d1/dc8/conceptezp_1_1mem__t.html',1,'ezp']]],
-  ['ezp_3a_3awrapper_5ft_17',['wrapper_t',['../df/df5/conceptezp_1_1wrapper__t.html',1,'ezp']]]
+  ['ezp_3a_3amem_5ft_16',['mem_t',['../d1/dc8/conceptezp_1_1mem__t.html',1,'ezp']]]
 ];

@@ -8,7 +8,6 @@ var annotated_dup =
       ] ],
       [ "band_mat", "d9/d24/structezp_1_1band__mat.html", null ],
       [ "band_symm_mat", "d8/d3f/structezp_1_1band__symm__mat.html", null ],
-      [ "base_mat", "d3/d46/structezp_1_1base__mat.html", null ],
       [ "blacs_base", "d6/d56/classezp_1_1blacs__base.html", null ],
       [ "blacs_context", "df/dc0/classezp_1_1blacs__context.html", "df/dc0/classezp_1_1blacs__context" ],
       [ "blacs_env", "da/d77/classezp_1_1blacs__env.html", null ],
@@ -19,7 +18,6 @@ var annotated_dup =
       [ "ppbsv", "d3/df1/classezp_1_1ppbsv.html", "d3/df1/classezp_1_1ppbsv" ],
       [ "pposv", "de/d12/classezp_1_1pposv.html", null ]
     ] ],
-    [ "mat", "d0/d36/classmat.html", null ],
     [ "pdbsv", "d0/de4/classpdbsv.html", null ],
     [ "pgbsv", "d4/d10/classpgbsv.html", null ],
     [ "pgesv", "dc/d13/classpgesv.html", null ],
