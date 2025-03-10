@@ -70,7 +70,7 @@ jobs:
           cache: 'pip'
       - name: Deploy
         run: |
-          sudo apt-get install doxygen graphviz
+          sudo apt-get install doxygen graphviz libmpich-dev
           doxygen
           cp README.md docs/README.md
           cp -r doxygen/ docs/
