@@ -45,22 +45,50 @@ namespace ezp {
 
     template<typename T> concept mem_t = data_t<T> || container_t<T>;
 
-    template<data_t DT, index_t IT> struct full_mat {
-        const IT n_rows, n_cols;
-        DT* const data;
-        const bool distributed = false;
+    template<data_t DT, index_t IT> struct base_mat {
+        using data_type = DT;
+        using index_type = IT;
+
+        IT n_rows, n_cols;
+        DT* data;
+        bool distributed = false;
+
+        base_mat() = default;
+
+        base_mat(const IT rows, const IT cols, DT* const ptr, const bool dist = false)
+            : n_rows(rows)
+            , n_cols(cols)
+            , data(ptr)
+            , distributed(dist) {}
     };
 
-    template<data_t DT, index_t IT> struct band_mat {
-        const IT n_rows, n_cols, kl, ku;
-        DT* const data;
-        const bool distributed = false;
+    template<data_t DT, index_t IT> struct full_mat : base_mat<DT, IT> {
+        using base_mat<DT, IT>::base_mat;
     };
 
-    template<data_t DT, index_t IT> struct band_symm_mat {
-        const IT n_rows, n_cols, klu;
-        DT* const data;
-        const bool distributed = false;
+    template<data_t DT, index_t IT> struct band_mat : base_mat<DT, IT> {
+        IT kl, ku;
+
+        band_mat() = default;
+
+        band_mat(const IT rows, const IT cols, const IT kl, const IT ku, DT* const ptr, const bool dist = false)
+            : base_mat<DT, IT>(rows, cols, ptr, dist)
+            , kl(kl)
+            , ku(ku) {}
+    };
+
+    template<data_t DT, index_t IT> struct band_symm_mat : base_mat<DT, IT> {
+        IT klu;
+
+        band_symm_mat() = default;
+
+        band_symm_mat(const IT rows, const IT cols, const IT klu, DT* const ptr, const bool dist = false)
+            : base_mat<DT, IT>(rows, cols, ptr, dist)
+            , klu(klu) {}
+    };
+
+    template<typename T> concept wrapper_t = requires(T t) {
+        requires std::is_same_v<T, full_mat<typename T::data_type, typename T::index_type>> || std::is_same_v<T, band_mat<typename T::data_type, typename T::index_type>> || std::is_same_v<T, band_symm_mat<typename T::data_type, typename T::index_type>>;
     };
 
     template<index_t IT> using desc = std::array<IT, 9>;
