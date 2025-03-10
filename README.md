@@ -31,8 +31,6 @@ It highly resembles the sequential version of how one would typically solve a li
 
 The following is a working example.
 
-<details>
-<summary>`dgesv` Example</summary>
 ```cpp
 #include <ezp/pgesv.hpp>
 #include <iomanip>
@@ -78,4 +76,3 @@ int main() {
     return 0;
 }
 ```
-</details>
