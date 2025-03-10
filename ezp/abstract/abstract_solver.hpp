@@ -44,15 +44,13 @@ namespace ezp {
     };
     template<typename T> concept container_t = requires(T t) { requires index_t<decltype(t.n_rows)> && index_t<decltype(t.n_cols)> && (has_mem<T> || has_memptr<T> || has_data_method<T> || has_data_member<T> || has_iterator<T>); };
 
-    template<typename T> concept mem_t = data_t<T> || container_t<T>;
-
     template<data_t DT, index_t IT> struct base_mat {
         using data_type = DT;
         using index_type = IT;
 
         IT n_rows, n_cols;
         DT* data;
-        bool distributed;
+        bool distributed{};
 
         base_mat() = default;
 
@@ -331,7 +329,7 @@ namespace ezp {
          *
          * This function takes an integer number, which may be different on each process,
          * and computes the maximum value across all processes.
-         * The result is broadcasted to all processes.
+         * The result is broadcast to all processes.
          *
          * For example, if the input number is 0, 1, 2, 3 on four processes, this function
          * will return 3 on all processes.
