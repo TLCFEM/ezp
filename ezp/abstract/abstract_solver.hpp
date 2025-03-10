@@ -45,7 +45,19 @@ namespace ezp {
 
     template<typename T> concept mem_t = data_t<T> || container_t<T>;
 
-    template<index_t IT> class blacs_env final {
+    class blacs_base {
+#ifdef EZP_RELEASE_ONCE
+    protected:
+        static std::atomic_bool RELEASED;
+#endif
+    };
+
+#ifdef EZP_RELEASE_ONCE
+#define EZP_ENSURE_SAFE_EXIT std::atomic_bool ezp::blacs_base::RELEASED = false;
+#endif
+
+    template<index_t IT>
+    class blacs_env final : blacs_base {
         static constexpr IT ZERO{0}, ONE{1};
 
         static std::atomic_bool FINALIZE;
@@ -54,7 +66,12 @@ namespace ezp {
 
     public:
         blacs_env() { blacs_pinfo(&_rank, &_size); }
-        ~blacs_env() { blacs_exit(FINALIZE ? &ZERO : &ONE); }
+        ~blacs_env() {
+#ifdef EZP_RELEASE_ONCE
+            if(RELEASED.exchange(true)) return;
+#endif
+            blacs_exit(FINALIZE ? &ZERO : &ONE);
+        }
 
         /**
          * @brief Disables the management of MPI (Message Passing Interface) finalization.
@@ -147,14 +164,15 @@ namespace ezp {
                 using E = double;
                 pdgemr2d(desc_a + 2, desc_a + 3, (E*)A, &ONE, &ONE, desc_a, (E*)B, &ONE, &ONE, desc_b, &context);
             }
-            else if (std::is_same_v<DT, float>) {
+            else if(std::is_same_v<DT, float>) {
                 using E = float;
                 psgemr2d(desc_a + 2, desc_a + 3, (E*)A, &ONE, &ONE, desc_a, (E*)B, &ONE, &ONE, desc_b, &context);
-            }else if(std::is_same_v<DT, complex16>) {
+            }
+            else if(std::is_same_v<DT, complex16>) {
                 using E = complex16;
                 pzgemr2d(desc_a + 2, desc_a + 3, (E*)A, &ONE, &ONE, desc_a, (E*)B, &ONE, &ONE, desc_b, &context);
             }
-            else if (std::is_same_v<DT, complex8>) {
+            else if(std::is_same_v<DT, complex8>) {
                 using E = complex8;
                 pcgemr2d(desc_a + 2, desc_a + 3, (E*)A, &ONE, &ONE, desc_a, (E*)B, &ONE, &ONE, desc_b, &context);
             }
