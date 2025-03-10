@@ -85,8 +85,8 @@ int main() {
     const auto info = solver.solve({N, N, KLU, A.data()}, {N, NRHS, B.data()});
 
     if(0 == env.rank()) {
-        std::cout << std::setprecision(10)<< "Info: " << info << '\n';
-        std::cout << "Solution:\n"  ;
+        std::cout << std::setprecision(10) << "Info: " << info << '\n';
+        std::cout << "Solution:\n";
         for(const double i : B) std::cout << i << '\n';
     }
 
