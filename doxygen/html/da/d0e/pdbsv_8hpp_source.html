@@ -167,9 +167,9 @@ $(document).ready(function(){initNavTree('da/d0e/pdbsv_8hpp_source.html','../../
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>                , kl(KL)</div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>                , ku(KU) {}</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>            IT operator()(<span class="keyword">const</span> IT i, <span class="keyword">const</span> IT j)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>                <span class="keywordflow">if</span>(i &lt; 0 || i &gt;= n || j &lt; 0 || j &gt;= n) <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>                <span class="keywordflow">if</span>(i - j &gt; kl || j - i &gt; ku) <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>            <span class="keyword">auto</span> operator()(<span class="keyword">const</span> IT i, <span class="keyword">const</span> IT j)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>                <span class="keywordflow">if</span>(i &lt; 0 || i &gt;= n || j &lt; 0 || j &gt;= n) <span class="keywordflow">return</span> IT{-1};</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>                <span class="keywordflow">if</span>(i - j &gt; kl || j - i &gt; ku) <span class="keywordflow">return</span> IT{-1};</div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>                <span class="keywordflow">return</span> ku + i + j * (kl + ku);</div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>            }</div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>        };</div>
@@ -283,8 +283,8 @@ $(document).ready(function(){initNavTree('da/d0e/pdbsv_8hpp_source.html','../../
 <div class="ttc" id="aclassezp_1_1pdbsv_1_1indexer_html"><div class="ttname"><a href="../../d1/ddf/classezp_1_1pdbsv_1_1indexer.html">ezp::pdbsv::indexer</a></div><div class="ttdef"><b>Definition</b> pdbsv.hpp:104</div></div>
 <div class="ttc" id="aclassezp_1_1pdbsv_html"><div class="ttname"><a href="../../de/d4c/classezp_1_1pdbsv.html">ezp::pdbsv</a></div><div class="ttdef"><b>Definition</b> pdbsv.hpp:63</div></div>
 <div class="ttc" id="aclasspdbsv_html"><div class="ttname"><a href="../../d0/de4/classpdbsv.html">pdbsv</a></div><div class="ttdoc">Solver for general band matrices.</div></div>
-<div class="ttc" id="astructezp_1_1band__mat_html"><div class="ttname"><a href="../../d9/d24/structezp_1_1band__mat.html">ezp::band_mat</a></div><div class="ttdef"><b>Definition</b> abstract_solver.hpp:114</div></div>
-<div class="ttc" id="astructezp_1_1full__mat_html"><div class="ttname"><a href="../../d0/d58/structezp_1_1full__mat.html">ezp::full_mat</a></div><div class="ttdef"><b>Definition</b> abstract_solver.hpp:108</div></div>
+<div class="ttc" id="astructezp_1_1band__mat_html"><div class="ttname"><a href="../../d9/d24/structezp_1_1band__mat.html">ezp::band_mat</a></div><div class="ttdef"><b>Definition</b> abstract_solver.hpp:54</div></div>
+<div class="ttc" id="astructezp_1_1full__mat_html"><div class="ttname"><a href="../../d0/d58/structezp_1_1full__mat.html">ezp::full_mat</a></div><div class="ttdef"><b>Definition</b> abstract_solver.hpp:48</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
