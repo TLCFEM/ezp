@@ -1,6 +1,11 @@
 [
     {
         "name": "intel",
-        "environmentSetupScript": "/opt/intel/oneapi/setvars.sh"
+        "environmentSetupScript": "/opt/intel/oneapi/setvars.sh",
+        "compilers": {
+            "C": "icx",
+            "CXX": "icpx",
+            "Fortran": "ifx"
+        }
     }
 ]

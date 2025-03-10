@@ -34,7 +34,17 @@ It's likely the bundled system libraries do not work for various compatibility i
 To circumvent, one then needs to manually compile all those dependencies before using them.
 This is cumbersome.
 
-`Fedora 41` has an environment that is closest to usable.
+`openSUSE` has a functioning toolset.
+Simply install the library and you are ready to go.
+
+```bash
+sudo zypper in -y libscalapack2_2_2_0-gnu-mpich-hpc-devel-static git cmake
+git clone --recurse-submodules --depth 1 https://github.com/TLCFEM/ezp.git
+mkdir /ezp/build && /ezp/build
+cmake -DEZP_TEST=ON -DMPI_HOME=/usr/lib/hpc/gnu14/mpi/mpich/4.3.0/ .. && cmake --build . --config Release
+```
+
+`Fedora 41` has an environment that is close to usable.
 The following is an example that uses system packages.
 
 ```bash
@@ -44,12 +54,11 @@ sudo dnf install -y cmake gcc g++ gfortran git ninja-build scalapack-mpich-devel
 sudo ln -s /usr/lib64/mpich/lib/libscalapack.so.2.2.0 /usr/lib64/libscalapack.so.2.2.0
 
 git clone --recurse-submodules --depth 1 https://github.com/TLCFEM/ezp.git
-
 mkdir /ezp/build && /ezp/build
-
 cmake -DEZP_TEST=ON -DMPI_HOME=/usr/lib64/mpich/ -DEZP_USE_SYSTEM_LIBS=ON .. && cmake --build . --config Release
 ```
 
+Other mainstream distros require more fixes.
 Still, it is not recommended due to the lack of flexibility.
 It may not be possible/feasible to switch to another implementation of any of those libraries.
 
