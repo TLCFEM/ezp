@@ -137,7 +137,7 @@ $(document).ready(function(){initNavTree('d0/daf/ppbsv_8hpp_source.html','../../
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>            loc.n = n;</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>            loc.klu = klu;</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>            loc.lead = loc.klu + 1;</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>            loc.block = std::max(loc.n / std::max(1, this-&gt;ctx.n_rows - 1) + 1, std::max(2 * loc.klu, this-&gt;ctx.row_block(loc.n)));</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>            loc.block = std::max(loc.n / std::max(IT{1}, this-&gt;ctx.n_rows - 1) + 1, std::max(2 * loc.klu, this-&gt;ctx.row_block(loc.n)));</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>            loc.block = std::min(loc.block, loc.n);</div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>            loc.lines = this-&gt;ctx.rows(loc.n, loc.block);</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>            loc.desc1d_a = {501, this-&gt;trans_ctx.context, loc.n, loc.block, 0, loc.lead, 0, 0, 0};</div>
@@ -165,7 +165,7 @@ $(document).ready(function(){initNavTree('d0/daf/ppbsv_8hpp_source.html','../../
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>                : n(N)</div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>                , klu(KLU) {}</div>
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>            <span class="keyword">auto</span> operator()(IT i, IT j)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>            IT operator()(IT i, IT j)<span class="keyword"> const </span>{</div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>                <span class="keywordflow">if</span>(i &lt; 0 || i &gt;= n || j &lt; 0 || j &gt;= n) <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>                <span class="keywordflow">if</span>(<span class="charliteral">&#39;L&#39;</span> == UL) {</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>                    <span class="keywordflow">if</span>(i &lt; j) std::swap(i, j);</div>
@@ -291,9 +291,9 @@ $(document).ready(function(){initNavTree('d0/daf/ppbsv_8hpp_source.html','../../
 <div class="ttc" id="aclassezp_1_1ppbsv_1_1indexer_html"><div class="ttname"><a href="../../da/d2f/classezp_1_1ppbsv_1_1indexer.html">ezp::ppbsv::indexer</a></div><div class="ttdef"><b>Definition</b> ppbsv.hpp:116</div></div>
 <div class="ttc" id="aclassezp_1_1ppbsv_html"><div class="ttname"><a href="../../d3/df1/classezp_1_1ppbsv.html">ezp::ppbsv</a></div><div class="ttdef"><b>Definition</b> ppbsv.hpp:86</div></div>
 <div class="ttc" id="aclassppbsv_html"><div class="ttname"><a href="../../d8/dba/classppbsv.html">ppbsv</a></div><div class="ttdoc">Solver for symmetric band positive definite matrices.</div></div>
-<div class="ttc" id="astructezp_1_1band__mat_html"><div class="ttname"><a href="../../d9/d24/structezp_1_1band__mat.html">ezp::band_mat</a></div><div class="ttdef"><b>Definition</b> abstract_solver.hpp:91</div></div>
-<div class="ttc" id="astructezp_1_1band__symm__mat_html"><div class="ttname"><a href="../../d8/d3f/structezp_1_1band__symm__mat.html">ezp::band_symm_mat</a></div><div class="ttdef"><b>Definition</b> abstract_solver.hpp:97</div></div>
-<div class="ttc" id="astructezp_1_1full__mat_html"><div class="ttname"><a href="../../d0/d58/structezp_1_1full__mat.html">ezp::full_mat</a></div><div class="ttdef"><b>Definition</b> abstract_solver.hpp:85</div></div>
+<div class="ttc" id="astructezp_1_1band__mat_html"><div class="ttname"><a href="../../d9/d24/structezp_1_1band__mat.html">ezp::band_mat</a></div><div class="ttdef"><b>Definition</b> abstract_solver.hpp:114</div></div>
+<div class="ttc" id="astructezp_1_1band__symm__mat_html"><div class="ttname"><a href="../../d8/d3f/structezp_1_1band__symm__mat.html">ezp::band_symm_mat</a></div><div class="ttdef"><b>Definition</b> abstract_solver.hpp:120</div></div>
+<div class="ttc" id="astructezp_1_1full__mat_html"><div class="ttname"><a href="../../d0/d58/structezp_1_1full__mat.html">ezp::full_mat</a></div><div class="ttdef"><b>Definition</b> abstract_solver.hpp:108</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
