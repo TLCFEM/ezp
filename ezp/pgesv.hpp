@@ -16,7 +16,7 @@
  ******************************************************************************/
 /**
  * @class pgesv
- * @brief General matrix.
+ * @brief Solver for general full matrices.
  * @author tlc
  * @date 07/03/2025
  * @version 1.0.0

@@ -16,7 +16,7 @@
  ******************************************************************************/
 /**
  * @class pposv
- * @brief General full matrix.
+ * @brief Solver for symmetric positive definite full matrices.
  * @author tlc
  * @date 07/03/2025
  * @version 1.0.0
