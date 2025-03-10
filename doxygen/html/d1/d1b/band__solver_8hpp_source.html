@@ -128,20 +128,15 @@ $(document).ready(function(){initNavTree('d1/d1b/band__solver_8hpp_source.html',
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>        <a class="code hl_class" href="../../df/dc0/classezp_1_1blacs__context.html">blacs_context&lt;IT&gt;</a> ctx, trans_ctx;</div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    <span class="keyword">public</span>:</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>        <a class="code hl_class" href="../../d0/db0/classezp_1_1detail_1_1band__solver.html">band_solver</a>()</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>        <span class="keyword">explicit</span> <a class="code hl_class" href="../../d0/db0/classezp_1_1detail_1_1band__solver.html">band_solver</a>(<span class="keyword">const</span> IT rows)</div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>            : <a class="code hl_class" href="../../d0/df0/classezp_1_1detail_1_1abstract__solver.html">abstract_solver&lt;IT&gt;</a>()</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>            , ctx(get_env&lt;IT&gt;().size(), 1, <span class="charliteral">&#39;R&#39;</span>)</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>            , trans_ctx(1, get_env&lt;IT&gt;().size(), <span class="charliteral">&#39;R&#39;</span>) {}</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>        <span class="keyword">explicit</span> <a class="code hl_class" href="../../d0/db0/classezp_1_1detail_1_1band__solver.html">band_solver</a>(<span class="keyword">const</span> IT rows)</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>            : <a class="code hl_class" href="../../d0/df0/classezp_1_1detail_1_1abstract__solver.html">abstract_solver&lt;IT&gt;</a>()</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>            , ctx(rows, 1, <span class="charliteral">&#39;R&#39;</span>)</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>            , trans_ctx(1, rows, <span class="charliteral">&#39;R&#39;</span>) {}</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>    };</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>            , ctx(rows, 1, <span class="charliteral">&#39;R&#39;</span>)</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>            , trans_ctx(1, rows, <span class="charliteral">&#39;R&#39;</span>) {}</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    };</div>
 </div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>} <span class="comment">// namespace ezp::detail</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="preprocessor">#endif </span><span class="comment">// BAND_SOLVER_HPP</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>} <span class="comment">// namespace ezp::detail</span></div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="preprocessor">#endif </span><span class="comment">// BAND_SOLVER_HPP</span></div>
 <div class="ttc" id="aclassezp_1_1blacs__context_html"><div class="ttname"><a href="../../df/dc0/classezp_1_1blacs__context.html">ezp::blacs_context</a></div><div class="ttdef"><b>Definition</b> abstract_solver.hpp:128</div></div>
 <div class="ttc" id="aclassezp_1_1detail_1_1abstract__solver_html"><div class="ttname"><a href="../../d0/df0/classezp_1_1detail_1_1abstract__solver.html">ezp::detail::abstract_solver</a></div><div class="ttdef"><b>Definition</b> abstract_solver.hpp:338</div></div>
 <div class="ttc" id="aclassezp_1_1detail_1_1band__solver_html"><div class="ttname"><a href="../../d0/db0/classezp_1_1detail_1_1band__solver.html">ezp::detail::band_solver</a></div><div class="ttdef"><b>Definition</b> band_solver.hpp:24</div></div>
