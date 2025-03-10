@@ -3,4 +3,5 @@ mkdocs
 mkdocs-awesome-pages-plugin
 mkdocs-material
 mpi4py
+numpy
 pymdown-extensions
