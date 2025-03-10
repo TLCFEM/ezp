@@ -38,8 +38,6 @@ namespace ezp {
         pgesv(const IT rows, const IT cols)
             : detail::full_solver<DT, IT, ODER>(rows, cols) {}
 
-        using detail::full_solver<DT, IT, ODER>::indexer;
-
         IT solve(full_mat<DT, IT>&& A, full_mat<DT, IT>&& B) override {
             if(!this->ctx.is_valid()) return 0;
 
@@ -67,10 +65,9 @@ namespace ezp {
                 using E = complex8;
                 pcgetrf(&this->loc.n, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &info);
             }
-            else
-                // ReSharper restore CppCStyleCast
+            // ReSharper restore CppCStyleCast
 
-                if((info = this->ctx.amx(info)) != 0) return info;
+            if((info = this->ctx.amx(info)) != 0) return info;
 
             return solve(std::move(B));
         }

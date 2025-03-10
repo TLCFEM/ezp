@@ -125,16 +125,16 @@ namespace ezp {
                 : n(N)
                 , klu(KLU) {}
 
-            IT operator()(IT i, IT j) const {
-                if(i < 0 || i >= n || j < 0 || j >= n) return -1;
+            auto operator()(IT i, IT j) const {
+                if(i < 0 || i >= n || j < 0 || j >= n) return IT{-1};
                 if('L' == UL) {
                     if(i < j) std::swap(i, j);
-                    if(i - j > klu) return -1;
+                    if(i - j > klu) return IT{-1};
                     return i + j * klu;
                 }
                 else {
                     if(i > j) std::swap(i, j);
-                    if(j - i > klu) return -1;
+                    if(j - i > klu) return IT{-1};
                     return 2 * j - i + (j + 1) * klu;
                 }
             }

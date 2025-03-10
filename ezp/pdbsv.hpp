@@ -115,9 +115,9 @@ namespace ezp {
                 , kl(KL)
                 , ku(KU) {}
 
-            IT operator()(const IT i, const IT j) const {
-                if(i < 0 || i >= n || j < 0 || j >= n) return -1;
-                if(i - j > kl || j - i > ku) return -1;
+            auto operator()(const IT i, const IT j) const {
+                if(i < 0 || i >= n || j < 0 || j >= n) return IT{-1};
+                if(i - j > kl || j - i > ku) return IT{-1};
                 return ku + i + j * (kl + ku);
             }
         };

@@ -45,6 +45,26 @@ namespace ezp {
 
     template<typename T> concept mem_t = data_t<T> || container_t<T>;
 
+    template<data_t DT, index_t IT> struct full_mat {
+        const IT n_rows, n_cols;
+        DT* const data;
+        const bool distributed = false;
+    };
+
+    template<data_t DT, index_t IT> struct band_mat {
+        const IT n_rows, n_cols, kl, ku;
+        DT* const data;
+        const bool distributed = false;
+    };
+
+    template<data_t DT, index_t IT> struct band_symm_mat {
+        const IT n_rows, n_cols, klu;
+        DT* const data;
+        const bool distributed = false;
+    };
+
+    template<index_t IT> using desc = std::array<IT, 9>;
+
     class blacs_base {
 #ifdef EZP_RELEASE_ONCE
     protected:
@@ -104,26 +124,6 @@ namespace ezp {
 
         return scoped_env;
     }
-
-    template<mem_t DT, index_t IT> struct full_mat {
-        const IT n_rows, n_cols;
-        DT* const data;
-        const bool distributed = false;
-    };
-
-    template<mem_t DT, index_t IT> struct band_mat {
-        const IT n_rows, n_cols, kl, ku;
-        DT* const data;
-        const bool distributed = false;
-    };
-
-    template<mem_t DT, index_t IT> struct band_symm_mat {
-        const IT n_rows, n_cols, klu;
-        DT* const data;
-        const bool distributed = false;
-    };
-
-    template<index_t IT> using desc = std::array<IT, 9>;
 
     template<index_t IT> class blacs_context final {
         static constexpr IT ZERO{0}, ONE{1}, NEGONE{-1};
