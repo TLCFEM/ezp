@@ -22,6 +22,8 @@
 
 namespace ezp::detail {
     template<data_t DT, index_t IT, char ODER = 'R'> class full_solver : public abstract_solver<IT> {
+        using base_t = abstract_solver<IT>;
+
         struct full_system {
             IT n{-1}, block{-1}, rows{-1};
             desc<IT> desc_a;
@@ -46,15 +48,15 @@ namespace ezp::detail {
 
     public:
         full_solver()
-            : abstract_solver<IT>()
+            : base_t()
             , ctx(ODER) {}
 
         full_solver(const IT rows, const IT cols)
-            : abstract_solver<IT>()
+            : base_t()
             , ctx(rows, cols, ODER) {}
 
         class indexer {
-            const IT n;
+            IT n;
 
         public:
             explicit indexer(const full_mat<DT, IT>& A)

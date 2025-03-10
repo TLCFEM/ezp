@@ -101,7 +101,7 @@ namespace ezp {
             : base_t(rows) {}
 
         class indexer {
-            const IT n, kl, ku;
+            IT n, kl, ku;
 
         public:
             explicit indexer(const band_mat<DT, IT>& A)
