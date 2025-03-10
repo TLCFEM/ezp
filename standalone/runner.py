@@ -29,8 +29,6 @@ def run(nprocs: int, N: int, NRHS: int):
     # broadcast the problem configuration
     all.Bcast(array("i", [N, NRHS, 1]), root=0)
 
-    req_pool: list[MPI.Request] = []
-
     # send the matrices
     # ! numpy arrays are row-major by default
     # ! column-major order is required by (Sca)LAPACK
@@ -39,15 +37,13 @@ def run(nprocs: int, N: int, NRHS: int):
     for i in range(N):
         A[i, i] = i + 1
     print("A:\n", A)
-    req_pool.append(worker.Isend(A, dest=0, tag=0))
+    worker.Send(A, dest=0, tag=0)
 
     B = numpy.ones((N, NRHS), dtype=numpy.float64, order="F")
     for i in range(NRHS):
         B[:, i] = i + 1
     print("B:\n", B)
-    req_pool.append(worker.Isend(B, dest=0, tag=1))
-
-    MPI.Request.Waitall(req_pool)
+    worker.Send(B, dest=0, tag=1)
 
     # receive the error code and the solution if no error
     error = array("i", [-1])

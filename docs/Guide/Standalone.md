@@ -106,7 +106,7 @@ For example, one can use [`mpi4py`](https://github.com/mpi4py/mpi4py) to call th
 
 It has to be pointed out that, the ***column-major*** memory layout shall be kept.
 
-```py title="runner.py" hl_lines="15 27 33 35 42"
+```py title="runner.py" hl_lines="15 25 31 35 37 38"
 --8<--
 ./standalone/runner.py:16
 --8<--

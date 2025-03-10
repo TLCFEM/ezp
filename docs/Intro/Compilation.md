@@ -29,8 +29,9 @@ mkdir /ezp/build && /ezp/build
 
 ## System Libraries
 
-Using system libraries is possible but most bundled libraries are broken on various distros.
-One then needs to manually compile all those depedencies before using them.
+Using system libraries is possible but most bundled libraries are broken/outdated on various distros.
+It's likely the bundled system libraries do not work for various compatibility issues.
+To circumvent, one then needs to manually compile all those dependencies before using them.
 This is cumbersome.
 
 `Fedora 41` has an environment that is closest to usable.
@@ -48,3 +49,8 @@ mkdir /ezp/build && /ezp/build
 
 cmake -DEZP_TEST=ON -DMPI_HOME=/usr/lib64/mpich/ -DEZP_USE_SYSTEM_LIBS=ON .. && cmake --build . --config Release
 ```
+
+Still, it is not recommended due to the lack of flexibility.
+It may not be possible/feasible to switch to another implementation of any of those libraries.
+
+## Compilation Options
