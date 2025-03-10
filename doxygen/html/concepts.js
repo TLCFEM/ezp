@@ -7,10 +7,10 @@ var concepts =
       [ "index_t", "db/dfc/conceptezp_1_1index__t.html", null ],
       [ "has_mem", "df/d8d/conceptezp_1_1has__mem.html", null ],
       [ "has_memptr", "df/d7d/conceptezp_1_1has__memptr.html", null ],
-      [ "has_data", "dd/dda/conceptezp_1_1has__data.html", null ],
+      [ "has_data_method", "d9/dcb/conceptezp_1_1has__data__method.html", null ],
+      [ "has_data_member", "d1/d19/conceptezp_1_1has__data__member.html", null ],
       [ "has_iterator", "dd/d80/conceptezp_1_1has__iterator.html", null ],
       [ "container_t", "da/dd5/conceptezp_1_1container__t.html", null ],
-      [ "mem_t", "d1/dc8/conceptezp_1_1mem__t.html", null ],
       [ "wrapper_t", "df/df5/conceptezp_1_1wrapper__t.html", null ]
     ] ]
 ];
