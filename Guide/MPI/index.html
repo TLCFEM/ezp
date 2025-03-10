@@ -11,21 +11,25 @@
       
       
       
+        <link rel="prev" href="../../Intro/Compilation/">
       
       
-      <link rel="icon" href="/assets/images/favicon.png">
+        <link rel="next" href="../Standalone/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.7">
     
     
       
-        <title>ezp</title>
+        <title>MPI Environment Management - ezp</title>
       
     
     
-      <link rel="stylesheet" href="/assets/stylesheets/main.8608ea7d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.8608ea7d.min.css">
       
         
-        <link rel="stylesheet" href="/assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -44,9 +48,9 @@
       
     
     
-      <link rel="stylesheet" href="/color_scheme.css">
+      <link rel="stylesheet" href="../../color_scheme.css">
     
-    <script>__md_scope=new URL("/",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -71,6 +75,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#mpi-environment-management" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -81,7 +90,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/." title="ezp" class="md-header__button md-logo" aria-label="ezp" data-md-component="logo">
+    <a href="../.." title="ezp" class="md-header__button md-logo" aria-label="ezp" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -101,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              MPI Environment Management
             
           </span>
         </div>
@@ -208,7 +217,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="/." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
     
@@ -227,7 +236,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="/Intro/Motivation/" class="md-tabs__link">
+        <a href="../../Intro/Motivation/" class="md-tabs__link">
           
   
   Intro
@@ -241,11 +250,13 @@
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="/Guide/MPI/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
           
   
   Guide
@@ -261,7 +272,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="/doxygen/html/index.html" class="md-tabs__link">
+      <a href="../../doxygen/html/index.html" class="md-tabs__link">
         
   
     
@@ -295,7 +306,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/." title="ezp" class="md-nav__button md-logo" aria-label="ezp" data-md-component="logo">
+    <a href="../.." title="ezp" class="md-nav__button md-logo" aria-label="ezp" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -325,7 +336,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -385,7 +396,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/Intro/Motivation/" class="md-nav__link">
+      <a href="../../Intro/Motivation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -407,7 +418,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/Intro/Compilation/" class="md-nav__link">
+      <a href="../../Intro/Compilation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -433,23 +444,28 @@
       
   
   
+    
   
   
+  
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -461,7 +477,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Guide
@@ -472,10 +488,31 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="/Guide/MPI/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    MPI Environment Management
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -485,6 +522,44 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#initialisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Initialisation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#finalisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Finalisation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -497,7 +572,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/Guide/Standalone/" class="md-nav__link">
+      <a href="../Standalone/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -526,7 +601,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/doxygen/html/index.html" class="md-nav__link">
+      <a href="../../doxygen/html/index.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -557,6 +632,34 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#initialisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Initialisation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#finalisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Finalisation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -568,8 +671,47 @@
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+                  
 
+
+  
+  
+
+
+<h1 id="mpi-environment-management">MPI Environment Management</h1>
+<h2 id="initialisation">Initialisation</h2>
+<p>It is <strong><em>not</em></strong> required to explicitly initialise either the <code>MPI</code> environment via <code>MPI_Init</code> or the <code>BLACS</code> environment via <code>blacs_gridinit</code>.
+All those operations are automatically done via <a href="https://en.cppreference.com/w/cpp/language/raii"><code>RAII</code></a>.</p>
+<p>Use the following to get the rank and size of the current <code>BLACS</code> environment if needed.</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">C++</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
+<span class="normal"><a href="#__codelineno-0-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="n">ezp</span><span class="o">::</span><span class="n">get_env</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">().</span><span class="n">rank</span><span class="p">();</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="n">ezp</span><span class="o">::</span><span class="n">get_env</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">().</span><span class="n">size</span><span class="p">();</span>
+</code></pre></div></td></tr></table></div>
+<h2 id="finalisation">Finalisation</h2>
+<p>Finalisation is a bit more complex.
+When several MPI based libraries are used together, each may have its own initialisation and finalisation processes.
+Then who is in charge of finalising the <code>MPI</code> resources matters.
+And the order of calling different finalisation functions matters.
+Unfortunately, with <code>RAII</code>, there is no reliable way to explicitly assign an order such that, for example, <code>blacs_exit</code> is guaranteed to be called before <code>MPI_Finalize</code>.</p>
+<p>However, it is possible to tell <code>ezp</code> to skip finalising <code>MPI</code>.
+To do so, call the following function anywhere in your application.</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">C++</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="n">ezp</span><span class="o">::</span><span class="n">blacs_env</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;::</span><span class="n">do_not_manage_mpi</span><span class="p">();</span>
+</code></pre></div></td></tr></table></div>
+<p>Once this is called, <code>ezp</code> will memorise the setting and call <code>blacs_exit(1)</code> instead of <code>blacs_exit(0)</code> on destruction, the latter not only releases <code>blacs</code> resources but also further calls <code>MPI_Finalize</code>.</p>
+<p>By such, you shall manually call <code>MPI_Finalize</code>, or probably let other libraries to finalise the <code>MPI</code> environment for you.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
               </article>
             </div>
           
@@ -581,6 +723,44 @@
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../Intro/Compilation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Compilation">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Compilation
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../Standalone/" class="md-footer__link md-footer__link--next" aria-label="Next: Standalone Solver">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Standalone Solver
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
     
   
   <div class="md-footer-meta md-typeset">
@@ -609,12 +789,12 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "/", "features": ["navigation.tabs", "navigation.footer"], "search": "/assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.footer"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="/assets/javascripts/bundle.c8b220af.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>
       
-        <script src="/javascripts/mathjax.js"></script>
+        <script src="../../javascripts/mathjax.js"></script>
       
         <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
       
