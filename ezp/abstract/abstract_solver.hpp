@@ -27,17 +27,23 @@
 #include <vector>
 
 namespace ezp {
+    template<typename T> constexpr auto always_false_v = false;
+
     template<typename T> concept floating_t = std::is_same_v<T, float> || std::is_same_v<T, double>;
     template<typename T> concept complex_t = std::is_same_v<T, std::complex<typename T::value_type>> && floating_t<typename T::value_type>;
     template<typename T> concept data_t = floating_t<T> || complex_t<T>;
     template<typename T> concept index_t = std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::int64_t>;
 
-    template<typename T> concept mat_t = requires(T t) {
+    template<typename T> concept has_mem = requires(T t) { requires data_t<std::remove_pointer_t<decltype(t.mem())>>; };
+    template<typename T> concept has_memptr = requires(T t) { requires data_t<std::remove_pointer_t<decltype(t.memptr())>>; };
+    template<typename T> concept has_data = requires(T t) { requires data_t<std::remove_pointer_t<decltype(t.data())>>; };
+    template<typename T> concept has_iterator = requires(T t) {
         requires std::ranges::contiguous_range<T>;
-        requires std::floating_point<std::remove_reference_t<decltype(*t.begin())>>;
+        requires data_t<std::remove_reference_t<decltype(*t.begin())>>;
     };
+    template<typename T> concept container_t = requires(T t) { requires index_t<decltype(t.n_rows)> && index_t<decltype(t.n_cols)> && (has_mem<T> || has_memptr<T> || has_data<T> || has_iterator<T>); };
 
-    template<typename T> concept mem_t = data_t<T> || mat_t<T>;
+    template<typename T> concept mem_t = data_t<T> || container_t<T>;
 
     template<index_t IT> class blacs_env final {
         static constexpr IT ZERO{0}, ONE{1};

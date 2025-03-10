@@ -69,6 +69,16 @@ namespace ezp::detail {
             }
         };
 
+        template<container_t CT> IT solve(full_mat<CT, IT>&& B) {
+            if constexpr(has_mem<CT>) return solve({B.n_rows, B.n_cols, B.mem()});
+            if constexpr(has_memptr<CT>) return solve({B.n_rows, B.n_cols, B.memptr()});
+            if constexpr(has_data<CT>) return solve({B.n_rows, B.n_cols, B.data()});
+            if constexpr(has_iterator<CT>) return solve({B.n_rows, B.n_cols, B.begin()});
+
+            // should never reach here
+            static_assert(always_false_v<CT>, "invalid container type");
+        }
+
         virtual IT solve(full_mat<DT, IT>&&, full_mat<DT, IT>&&) = 0;
         virtual IT solve(full_mat<DT, IT>&&) = 0;
     };
