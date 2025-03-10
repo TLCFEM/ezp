@@ -98,18 +98,66 @@ Now since all the data is ready to be communicated, the actual communication is 
 --8<--
 ```
 
+## Python Caller
+
+Since there is a clear boundary between the main application and the solver, it is possible to use other MPI compatible to send/receive the problem.
+
+For example, one can use [`mpi4py`](https://github.com/mpi4py/mpi4py) to call the solvers.
+
+It has to be pointed out that, the ***column-major*** memory layout shall be kept.
+
+```py title="runner.py" hl_lines="15 27 33 35 42"
+--8<--
+./standalone/runner.py:16
+--8<--
+```
+
+Calling the above script with
+
+```bash
+./runner.py 2 6 2
+```
+
+yields the following is the solution, which is correct.
+
+```text
+A:
+ [[1. 0. 0. 0. 0. 0.]
+ [0. 2. 0. 0. 0. 0.]
+ [0. 0. 3. 0. 0. 0.]
+ [0. 0. 0. 4. 0. 0.]
+ [0. 0. 0. 0. 5. 0.]
+ [0. 0. 0. 0. 0. 6.]]
+B:
+ [[1. 2.]
+ [1. 2.]
+ [1. 2.]
+ [1. 2.]
+ [1. 2.]
+ [1. 2.]]
+Solution:
+ [[1.         2.        ]
+ [0.5        1.        ]
+ [0.33333333 0.66666667]
+ [0.25       0.5       ]
+ [0.2        0.4       ]
+ [0.16666667 0.33333333]]
+```
+
 ## Full Reference Implementation
 
 The following is a full reference implementation of a standalone solver and the corresponding caller logic.
 
-```cpp title="runner.cpp"
---8<--
-./standalone/runner.cpp
---8<--
-```
+??? note "runner.cpp"
+    ```cpp title="runner.cpp"
+    --8<--
+    ./standalone/runner.cpp:27:115
+    --8<--
+    ```
 
-```cpp title="solver.pgesv.cpp"
---8<--
-./standalone/solver.pgesv.cpp
---8<--
-```
+??? note "solver.pgesv.cpp"
+    ```cpp title="solver.pgesv.cpp"
+    --8<--
+    ./standalone/solver.pgesv.cpp:51:105
+    --8<--
+    ```

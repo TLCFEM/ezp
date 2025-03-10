@@ -4,9 +4,15 @@
 
 `ezp` is a lightweight C++ wrapper for selected ScaLAPACK solvers for linear systems.
 
+## Features
+
+1. easy to use interface
+2. drop-in header-only library
+3. standalone solver binaries that can be invoked by various callers
+
 ## Dependency
 
-The `ezp` library is header only.
+The `ezp` library requires C++ 20 compatible compiler.
 The following drivers are needed.
 
 1. an implementation of `LAPACK` and `BLAS`, such as `OpenBLAS`, `MKL`, etc.
@@ -23,6 +29,10 @@ One shall prepare the matrices (**on the root node**) and call the solver.
 The following is a typical example.
 It highly resembles the sequential version of how one would typically solve a linear system.
 
+The following is a working example.
+
+<details>
+<summary>`dgesv` Example</summary>
 ```cpp
 #include <ezp/pgesv.hpp>
 #include <iomanip>
@@ -45,6 +55,7 @@ int main() {
         B.resize(N * NRHS, 1.);
 
         // helper functor to convert 2D indices to 1D indices
+        // it's likely the matrices are provided by some other subsystem
         const auto IDX = par_dgesv<int>::indexer{N};
 
         for(auto I = 0; I < N; ++I) A[IDX(I, I)] = static_cast<double>(I);
@@ -67,3 +78,4 @@ int main() {
     return 0;
 }
 ```
+</details>
