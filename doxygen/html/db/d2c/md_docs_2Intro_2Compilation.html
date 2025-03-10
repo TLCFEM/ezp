@@ -94,14 +94,14 @@ $(document).ready(function(){initNavTree('db/d2c/md_docs_2Intro_2Compilation.htm
   <div class="headertitle"><div class="title">Compilation</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md4"></a> As <code>ezp</code> is wrapper library of <code>ScaLAPACK</code>, the following dependencies are necessary to compile any executables that use <code>ezp</code>.</p>
+<div class="textblock"><p><a class="anchor" id="autotoc_md5"></a> As <code>ezp</code> is wrapper library of <code>ScaLAPACK</code>, the following dependencies are necessary to compile any executables that use <code>ezp</code>.</p>
 <ol type="1">
 <li>an implementation of <code>LAPACK</code> and <code>BLAS</code>, such as <code>OpenBLAS</code>, <code>Intel® oneAPI Math Kernel Library (oneMKL)</code>, <code>AMD Optimizing CPU Libraries (AOCL)</code>, etc.</li>
 <li>an implementation of <code>ScaLAPACK</code>, such as the reference implementation, Intel's implementation, NVIDIA's implementation, etc.</li>
 <li>an implementation of <code>MPI</code>, such as <code>OpenMPI</code>, <code>MPICH</code>, <code>Intel® MPI</code> etc.</li>
 </ol>
 <p>Before compiling the executables, one must ensure those libraries are available.</p>
-<h1><a class="anchor" id="autotoc_md5"></a>
+<h1><a class="anchor" id="autotoc_md6"></a>
 oneAPI</h1>
 <p>The easiest approach is to use the <code>Intel® oneAPI</code> toolkit. It provides the <code>Intel® MPI Library</code> and the <code>Intel® oneAPI Math Kernel Library (oneMKL)</code> which contains a complete <code>ScaLAPACK</code> and <code>LAPACK</code>/<code>BLAS</code> implementation.</p>
 <p>The following is a sample workflow that runs on <code>Fedora</code>.</p>
@@ -114,7 +114,7 @@ oneAPI</h1>
 <div class="line">mkdir /ezp/build &amp;&amp; /ezp/build</div>
 <div class="line"> </div>
 <div class="line">. /opt/intel/oneapi/setvars.sh &amp;&amp; cmake -DEZP_TEST=ON .. &amp;&amp; cmake --build . --config Release</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md6"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md7"></a>
 System Libraries</h1>
 <p>Using system libraries is possible but most bundled libraries are broken on various distros. One then needs to manually compile all those depedencies before using them. This is cumbersome.</p>
 <p><code>Fedora 41</code> has an environment that is closest to usable. The following is an example that uses system packages.</p>

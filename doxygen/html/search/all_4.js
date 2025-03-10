@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['example_0',['Example',['../index.html#autotoc_md10',1,'']]],
+  ['example_0',['Example',['../index.html#autotoc_md12',1,'']]],
   ['example_2epdbsv_2ecpp_1',['example.pdbsv.cpp',['../dd/dfc/example_8pdbsv_8cpp.html',1,'']]],
   ['example_2epgbsv_2ecpp_2',['example.pgbsv.cpp',['../d5/d86/example_8pgbsv_8cpp.html',1,'']]],
   ['example_2epgesv_2ecpp_3',['example.pgesv.cpp',['../d2/dde/example_8pgesv_8cpp.html',1,'']]],

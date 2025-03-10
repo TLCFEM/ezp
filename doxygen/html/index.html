@@ -94,20 +94,28 @@ $(document).ready(function(){initNavTree('index.html',''); initResizable(); });
   <div class="headertitle"><div class="title">ezp </div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="md_README"></a> <a href="https://codecov.io/gh/TLCFEM/ezp"><img src="https://codecov.io/gh/TLCFEM/ezp/graph/badge.svg?token=ME0M312F5M" alt="codecov" style="pointer-events: none;" class="inline"/></a></p>
+<div class="textblock"><p><a class="anchor" id="md_README"></a> <a href="https://codecov.io/gh/TLCFEM/ezp"><img src="https://codecov.io/gh/TLCFEM/ezp/graph/badge.svg?token=ME0M312F5M" alt="codecov" style="pointer-events: none;" class="inline"/></a> <a href="https://github.com/TLCFEM/ezp/actions/workflows/master.yml"><img src="https://github.com/TLCFEM/ezp/actions/workflows/master.yml/badge.svg?branch=master" alt="master" style="pointer-events: none;" class="inline"/></a></p>
 <p><code>ezp</code> is a lightweight C++ wrapper for selected ScaLAPACK solvers for linear systems.</p>
-<h1><a class="anchor" id="autotoc_md9"></a>
+<h1><a class="anchor" id="autotoc_md10"></a>
+Features</h1>
+<ol type="1">
+<li>easy to use interface</li>
+<li>drop-in header-only library</li>
+<li>standalone solver binaries that can be invoked by various callers</li>
+</ol>
+<h1><a class="anchor" id="autotoc_md11"></a>
 Dependency</h1>
-<p>The <code>ezp</code> library is header only. The following drivers are needed.</p>
+<p>The <code>ezp</code> library requires C++ 20 compatible compiler. The following drivers are needed.</p>
 <ol type="1">
 <li>an implementation of <code>LAPACK</code> and <code>BLAS</code>, such as <code>OpenBLAS</code>, <code>MKL</code>, etc.</li>
 <li>an implementation of <code>ScaLAPACK</code></li>
 <li>an implementation of <code>MPI</code>, such as <code>OpenMPI</code>, <code>MPICH</code>, etc.</li>
 </ol>
-<h1><a class="anchor" id="autotoc_md10"></a>
+<h1><a class="anchor" id="autotoc_md12"></a>
 Example</h1>
 <p>It is assumed that the root node (rank 0) prepares the left hand side $$A$$ and right hand side $$B$$. The solvers distrbute the matrices to available processes and solve the system, return the solution back to the master node.</p>
 <p>The solvers are designed in such a way that all <code>BLACS</code> and <code>ScaLAPACK</code> details are hidden. One shall prepare the matrices (<b>on the root node</b>) and call the solver. The following is a typical example. It highly resembles the sequential version of how one would typically solve a linear system.</p>
+<p>The following is a working example.</p>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="df/d21/pgesv_8hpp.html">ezp/pgesv.hpp</a>&gt;</span></div>
 <div class="line"><span class="preprocessor">#include &lt;iomanip&gt;</span></div>
 <div class="line"><span class="preprocessor">#include &lt;iostream&gt;</span></div>
@@ -129,6 +137,7 @@ Example</h1>
 <div class="line">        B.resize(N * NRHS, 1.);</div>
 <div class="line"> </div>
 <div class="line">        <span class="comment">// helper functor to convert 2D indices to 1D indices</span></div>
+<div class="line">        <span class="comment">// it&#39;s likely the matrices are provided by some other subsystem</span></div>
 <div class="line">        <span class="keyword">const</span> <span class="keyword">auto</span> IDX = <a class="code hl_class" href="d5/d06/classezp_1_1detail_1_1full__solver_1_1indexer.html">par_dgesv&lt;int&gt;::indexer</a>{N};</div>
 <div class="line"> </div>
 <div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[IDX(I, I)] = static_cast&lt;double&gt;(I);</div>
