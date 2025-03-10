@@ -10,6 +10,7 @@ var concepts =
       [ "has_data", "dd/dda/conceptezp_1_1has__data.html", null ],
       [ "has_iterator", "dd/d80/conceptezp_1_1has__iterator.html", null ],
       [ "container_t", "da/dd5/conceptezp_1_1container__t.html", null ],
-      [ "mem_t", "d1/dc8/conceptezp_1_1mem__t.html", null ]
+      [ "mem_t", "d1/dc8/conceptezp_1_1mem__t.html", null ],
+      [ "wrapper_t", "df/df5/conceptezp_1_1wrapper__t.html", null ]
     ] ]
 ];

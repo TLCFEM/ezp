@@ -12,13 +12,15 @@ var hierarchy =
         [ "ezp::pposv< DT, IT, UL, ODER >", "de/d12/classezp_1_1pposv.html", null ]
       ] ]
     ] ],
-    [ "ezp::band_mat< DT, IT >", "d9/d24/structezp_1_1band__mat.html", null ],
-    [ "ezp::band_symm_mat< DT, IT >", "d8/d3f/structezp_1_1band__symm__mat.html", null ],
+    [ "ezp::base_mat< DT, IT >", "d3/d46/structezp_1_1base__mat.html", [
+      [ "ezp::band_mat< DT, IT >", "d9/d24/structezp_1_1band__mat.html", null ],
+      [ "ezp::band_symm_mat< DT, IT >", "d8/d3f/structezp_1_1band__symm__mat.html", null ],
+      [ "ezp::full_mat< DT, IT >", "d0/d58/structezp_1_1full__mat.html", null ]
+    ] ],
     [ "ezp::blacs_base", "d6/d56/classezp_1_1blacs__base.html", [
       [ "ezp::blacs_env< IT >", "da/d77/classezp_1_1blacs__env.html", null ]
     ] ],
     [ "ezp::blacs_context< IT >", "df/dc0/classezp_1_1blacs__context.html", null ],
-    [ "ezp::full_mat< DT, IT >", "d0/d58/structezp_1_1full__mat.html", null ],
     [ "ezp::detail::full_solver< DT, IT, ODER >::indexer", "d5/d06/classezp_1_1detail_1_1full__solver_1_1indexer.html", null ],
     [ "ezp::pdbsv< DT, IT >::indexer", "d1/ddf/classezp_1_1pdbsv_1_1indexer.html", null ],
     [ "ezp::pgbsv< DT, IT >::indexer", "d4/d94/classezp_1_1pgbsv_1_1indexer.html", null ],

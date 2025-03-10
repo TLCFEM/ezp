@@ -1,3 +1,19 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$df/dc0/classezp_1_1blacs__context.html" title=" " alt="" coords="5,5,148,45"/>
+<area shape="rect" id="Node000000" href="$d0/df0/classezp_1_1detail_1_1abstract__solver.html" title=" " alt="" coords="5,77,156,117"/>
+<area shape="rect" id="Node000001" href="$df/df0/classezp_1_1detail_1_1full__solver.html" title=" " alt="" coords="209,13,376,53"/>
+<area shape="poly" id="edge5_Node000000_Node000001" title=" " alt="" coords="160,70,225,50,227,55,162,75"/>
+<area shape="rect" id="Node000002" href="$d0/db0/classezp_1_1detail_1_1band__solver.html" title=" " alt="" coords="204,77,381,117"/>
+<area shape="poly" id="edge6_Node000000_Node000002" title=" " alt="" coords="170,94,204,94,204,99,170,99"/>
+<area shape="rect" id="Node000006" href="$df/df0/classezp_1_1detail_1_1full__solver.html" title=" " alt="" coords="209,169,376,209"/>
+<area shape="poly" id="edge10_Node000000_Node000006" title=" " alt="" coords="141,120,247,166,244,171,139,125"/>
+<area shape="rect" id="Node000003" href="$de/d4c/classezp_1_1pdbsv.html" title=" " alt="" coords="429,5,589,31"/>
+<area shape="poly" id="edge7_Node000002_Node000003" title=" " alt="" coords="363,69,380,62,428,40,461,28,463,33,430,44,382,67,365,74"/>
+<area shape="rect" id="Node000004" href="$d1/d7e/classezp_1_1pgbsv.html" title=" " alt="" coords="429,55,589,80"/>
+<area shape="poly" id="edge8_Node000002_Node000004" title=" " alt="" coords="395,80,429,76,429,81,395,85"/>
+<area shape="rect" id="Node000005" href="$d3/df1/classezp_1_1ppbsv.html" title=" " alt="" coords="435,105,584,145"/>
+<area shape="poly" id="edge9_Node000002_Node000005" title=" " alt="" coords="395,107,435,112,434,118,395,113"/>
+<area shape="rect" id="Node000007" href="$d5/d48/classezp_1_1pgesv.html" title=" " alt="" coords="435,169,584,209"/>
+<area shape="poly" id="edge11_Node000006_Node000007" title=" " alt="" coords="390,186,434,186,434,191,390,191"/>
+<area shape="rect" id="Node000008" href="$de/d12/classezp_1_1pposv.html" title=" " alt="" coords="435,233,584,273"/>
+<area shape="poly" id="edge12_Node000006_Node000008" title=" " alt="" coords="375,210,442,230,440,235,373,215"/>
 </map>
