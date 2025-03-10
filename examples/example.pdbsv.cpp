@@ -118,7 +118,7 @@ int main() {
     // solver.solve(band_mat{N, N, KL, KU, A.data()}, full_mat{N, NRHS, B.data()});
     const auto info = solver.solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
 
-    if(0 == env.rank()) {
+    if(0 == env.rank() && 0 == info) {
         std::cout << std::setprecision(6) << std::fixed << "Info: " << info << '\n';
         std::cout << "Solution:\n";
         std::vector<double> X(N * NRHS);
@@ -135,7 +135,7 @@ int main() {
         for(auto i = 0u; i < B.size(); ++i) std::cout << B[i] << ' ' << X[i] << " abs(diff): " << std::abs(B[i] - X[i]) << '\n';
     }
 
-    return 0;
+    return info;
 }
 
 //! @}
