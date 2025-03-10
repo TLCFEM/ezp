@@ -78,7 +78,7 @@ namespace ezp {
             loc.kl = kl;
             loc.ku = ku;
             loc.lead = 2 * (loc.kl + loc.ku) + 1;
-            loc.block = std::max(loc.n / std::max(1, this->ctx.n_rows - 1) + 1, std::max(loc.kl + loc.ku + 1, this->ctx.row_block(loc.n)));
+            loc.block = std::max(loc.n / std::max(IT{1}, this->ctx.n_rows - 1) + 1, std::max(loc.kl + loc.ku + 1, this->ctx.row_block(loc.n)));
             loc.block = std::min(loc.block, loc.n);
             loc.lines = this->ctx.rows(loc.n, loc.block);
             loc.desc1d_a = {501, this->trans_ctx.context, loc.n, loc.block, 0, loc.lead, 0, 0, 0};
@@ -109,7 +109,7 @@ namespace ezp {
                 , kl(KL)
                 , ku(KU) {}
 
-            auto operator()(const IT i, const IT j) const {
+            IT operator()(const IT i, const IT j) const {
                 if(i < 0 || i >= n || j < 0 || j >= n) return -1;
                 if(i - j > kl || j - i > ku) return -1;
                 return 2 * ku + kl + i + 2 * j * (kl + ku);
@@ -133,7 +133,7 @@ namespace ezp {
             );
 
             const IT laf = (loc.block + 6 * loc.kl + 13 * loc.ku) * (loc.kl + loc.ku);
-            const IT lwork = std::max(B.n_cols * (loc.block + 2 * loc.kl + 4 * loc.ku), 1);
+            const IT lwork = std::max(B.n_cols * (loc.block + 2 * loc.kl + 4 * loc.ku), IT{1});
             loc.work.resize(laf + lwork);
 
             IT info{-1};
@@ -178,7 +178,7 @@ namespace ezp {
             this->ctx.scatter(B, full_desc_b, loc.b, local_desc_b);
 
             const IT laf = (loc.block + 6 * loc.kl + 13 * loc.ku) * (loc.kl + loc.ku);
-            const IT lwork = std::max(B.n_cols * (loc.block + 2 * loc.kl + 4 * loc.ku), 1);
+            const IT lwork = std::max(B.n_cols * (loc.block + 2 * loc.kl + 4 * loc.ku), IT{1});
             loc.work.resize(laf + lwork);
 
             desc<IT> desc1d_b{502, this->trans_ctx.context, loc.n, loc.block, 0, lead_b, 0, 0, 0};

@@ -35,7 +35,7 @@ int main() {
     const auto& env = get_env<int_t>();
 
     // estimate the number of rows and columns of the process grid
-    const auto rows = std::max(1, static_cast<int_t>(std::sqrt(env.size())));
+    const auto rows = std::max(int_t{1}, static_cast<int_t>(std::sqrt(env.size())));
     const auto cols = env.size() / rows;
 
     constexpr auto N = 6, NRHS = 2;

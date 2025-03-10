@@ -189,7 +189,7 @@ namespace ezp {
             : n_rows(-1)
             , n_cols(-1) {
             const auto& env = get_env<IT>();
-            n_rows = std::max(1, static_cast<IT>(std::sqrt(env.size())));
+            n_rows = std::max(IT{1}, static_cast<IT>(std::sqrt(env.size())));
             n_cols = env.size() / n_rows;
             init(order);
         };
@@ -241,7 +241,7 @@ namespace ezp {
         auto desc_l(const IT num_rows, const IT num_cols, const IT row_block, const IT col_block, const IT lead) {
             desc<IT> desc_t{};
 
-            const auto loc_lead = std::max(1, lead);
+            const auto loc_lead = std::max(IT{1}, lead);
             descinit(desc_t.data(), &num_rows, &num_cols, &row_block, &col_block, &ZERO, &ZERO, &context, &loc_lead, &info);
 
             return desc_t;
@@ -266,12 +266,12 @@ namespace ezp {
         /**
          * @brief Computes the row block size.
          */
-        auto row_block(const IT n) const { return std::max(1, n / n_rows); }
+        auto row_block(const IT n) const { return std::max(IT{1}, n / n_rows); }
 
         /**
          * @brief Computes the column block size.
          */
-        auto col_block(const IT n) const { return std::max(1, n / n_cols); }
+        auto col_block(const IT n) const { return std::max(IT{1}, n / n_cols); }
 
         /**
          * @brief Computes the number of local rows of the current process.

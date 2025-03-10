@@ -32,14 +32,14 @@ using namespace std::chrono;
 static auto N = 10;
 
 template<data_t DT, char ODER = 'R'> auto random_pgesv() {
-    using solver_t = pgesv<DT, int, ODER>;
+    using solver_t = pgesv<DT, int_t, ODER>;
 
-    const auto& env = get_env<int>();
+    const auto& env = get_env<int_t>();
 
-    const auto context = blacs_context<int>();
+    const auto context = blacs_context<int_t>();
 
     for(auto K = 0; K < N; ++K) {
-        const auto seed = context.amx(static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
+        const auto seed = context.amx(static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
         std::mt19937 gen(seed);
 
         const auto NRHS = std::uniform_int_distribution(1, 20)(gen);

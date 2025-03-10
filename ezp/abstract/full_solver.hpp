@@ -63,7 +63,7 @@ namespace ezp::detail {
             explicit indexer(const IT N)
                 : n(N) {}
 
-            auto operator()(const IT i, const IT j) const {
+            IT operator()(const IT i, const IT j) const {
                 if(i < 0 || i >= n || j < 0 || j >= n) return -1;
                 return i + j * n;
             }

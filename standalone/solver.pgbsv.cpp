@@ -112,11 +112,11 @@ int main(int, char**) {
     const auto NRHS = config[3];
     const auto FLOAT = config[4];
 
-    if(FLOAT >= 10) return run<complex16, int>(N, KL, KU, NRHS);
-    if(FLOAT >= 0) return run<double, int>(N, KL, KU, NRHS);
-    if(FLOAT > -10) return run<float, int>(N, KL, KU, NRHS);
+    if(FLOAT >= 10) return run<complex16, int_t>(N, KL, KU, NRHS);
+    if(FLOAT >= 0) return run<double, int_t>(N, KL, KU, NRHS);
+    if(FLOAT > -10) return run<float, int_t>(N, KL, KU, NRHS);
 
-    return run<complex8, int>(N, KL, KU, NRHS);
+    return run<complex8, int_t>(N, KL, KU, NRHS);
 }
 
 //! @}

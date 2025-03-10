@@ -86,7 +86,7 @@ namespace ezp {
             loc.ku = ku;
             loc.max_klu = std::max(loc.kl, loc.ku);
             loc.lead = loc.kl + loc.ku + 1;
-            loc.block = std::max(loc.n / std::max(1, this->ctx.n_rows - 1) + 1, std::max(2 * loc.max_klu, this->ctx.row_block(loc.n)));
+            loc.block = std::max(loc.n / std::max(IT{1}, this->ctx.n_rows - 1) + 1, std::max(2 * loc.max_klu, this->ctx.row_block(loc.n)));
             loc.block = std::min(loc.block, loc.n);
             loc.lines = this->ctx.rows(loc.n, loc.block);
             loc.desc1d_a = {501, this->trans_ctx.context, loc.n, loc.block, 0, loc.lead, 0, 0, 0};
@@ -115,7 +115,7 @@ namespace ezp {
                 , kl(KL)
                 , ku(KU) {}
 
-            auto operator()(const IT i, const IT j) const {
+            IT operator()(const IT i, const IT j) const {
                 if(i < 0 || i >= n || j < 0 || j >= n) return -1;
                 if(i - j > kl || j - i > ku) return -1;
                 return ku + i + j * (kl + ku);
