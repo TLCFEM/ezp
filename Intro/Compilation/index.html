@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../..">
+        <link rel="prev" href="../Motivation/">
       
       
-        <link rel="next" href="../Motivation/">
+        <link rel="next" href="../../Guide/Standalone/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -238,7 +238,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+        <a href="../Motivation/" class="md-tabs__link">
           
   
   Intro
@@ -398,6 +398,28 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../Motivation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Motivation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -466,32 +488,19 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#compilation-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Compilation Options
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Motivation/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Motivation
-    
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -637,6 +646,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#compilation-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Compilation Options
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -687,8 +705,9 @@ It provides the <code>Intel® MPI Library</code> and the <code>Intel® oneAPI Ma
 <a id="__codelineno-0-9" name="__codelineno-0-9"></a>.<span class="w"> </span>/opt/intel/oneapi/setvars.sh<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cmake<span class="w"> </span>-DEZP_TEST<span class="o">=</span>ON<span class="w"> </span>..<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cmake<span class="w"> </span>--build<span class="w"> </span>.<span class="w"> </span>--config<span class="w"> </span>Release
 </code></pre></div></td></tr></table></div>
 <h2 id="system-libraries">System Libraries</h2>
-<p>Using system libraries is possible but most bundled libraries are broken on various distros.
-One then needs to manually compile all those depedencies before using them.
+<p>Using system libraries is possible but most bundled libraries are broken/outdated on various distros.
+It's likely the bundled system libraries do not work for various compatibility issues.
+To circumvent, one then needs to manually compile all those dependencies before using them.
 This is cumbersome.</p>
 <p><code>Fedora 41</code> has an environment that is closest to usable.
 The following is an example that uses system packages.</p>
@@ -712,6 +731,9 @@ The following is an example that uses system packages.</p>
 <a id="__codelineno-1-9" name="__codelineno-1-9"></a>
 <a id="__codelineno-1-10" name="__codelineno-1-10"></a>cmake<span class="w"> </span>-DEZP_TEST<span class="o">=</span>ON<span class="w"> </span>-DMPI_HOME<span class="o">=</span>/usr/lib64/mpich/<span class="w"> </span>-DEZP_USE_SYSTEM_LIBS<span class="o">=</span>ON<span class="w"> </span>..<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cmake<span class="w"> </span>--build<span class="w"> </span>.<span class="w"> </span>--config<span class="w"> </span>Release
 </code></pre></div></td></tr></table></div>
+<p>Still, it is not recommended due to the lack of flexibility.
+It may not be possible/feasible to switch to another implementation of any of those libraries.</p>
+<h2 id="compilation-options">Compilation Options</h2>
 
 
 
@@ -741,7 +763,7 @@ The following is an example that uses system packages.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../.." class="md-footer__link md-footer__link--prev" aria-label="Previous: ezp">
+          <a href="../Motivation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Motivation">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -751,20 +773,20 @@ The following is an example that uses system packages.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                ezp
+                Motivation
               </div>
             </div>
           </a>
         
         
           
-          <a href="../Motivation/" class="md-footer__link md-footer__link--next" aria-label="Next: Motivation">
+          <a href="../../Guide/Standalone/" class="md-footer__link md-footer__link--next" aria-label="Next: Standalone Solver">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Motivation
+                Standalone Solver
               </div>
             </div>
             <div class="md-footer__button md-icon">

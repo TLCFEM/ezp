@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../Compilation/">
+        <link rel="prev" href="../..">
       
       
-        <link rel="next" href="../../Guide/Standalone/">
+        <link rel="next" href="../Compilation/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -238,7 +238,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../Compilation/" class="md-tabs__link">
+        <a href="./" class="md-tabs__link">
           
   
   Intro
@@ -398,28 +398,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../Compilation/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Compilation
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -443,6 +421,28 @@
 
       </a>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compilation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Compilation
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -582,6 +582,62 @@
 
 
 <h1 id="motivation">Motivation</h1>
+<p>As of this writing, it is necessary to directly call <code>ScaLAPACK</code> subroutines via the <code>C</code> interface if one wants to solve linear systems using <code>ScaLAPACK</code>.
+Since both <code>MPI</code> and <code>LAPACK</code>/<code>BLAS</code> have fabulous <code>C++</code> wrappers (see <a href="https://github.com/rabauke/mpl"><code>mpl</code></a> and <a href="https://arma.sourceforge.net/download.html"><code>Armadillo</code></a>), it would be nice if <code>ScaLAPACK</code> can be used in a similar OO manner.</p>
+<p>Such a wrapper is advantageous and beneficial in the context of <code>C++</code> applications due to the following reasons.</p>
+<ol>
+<li>It avoids direct interactions with the <code>C</code> API, which requires manual memory management.
+   The caller has to follow pretty much the same procedural style.</li>
+<li>A well designed OO approach can significantly reduce the code size.</li>
+</ol>
+<p><code>ezp</code> is designed to provide an intuitive interface that resembles the non-MPI version of linear systems solvers.
+The majority of <code>ScaLAPACK</code>, <code>BLACS</code> and <code>MPI</code> communication details shall be well hidden from the caller so that solving a system can be as simple as <code>solver.solve(A, B)</code>.
+Of course, a complete, working example would be longer than a single line of code, due to the distributed-memory nature of MPI.
+However, as shown in the front page, a minimum example spans merely a few lines of code.</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">C++</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-0-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-0-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-0-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-0-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-0-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-0-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-0-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-0-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-0-10">10</a></span>
+<span class="normal"><a href="#__codelineno-0-11">11</a></span>
+<span class="normal"><a href="#__codelineno-0-12">12</a></span>
+<span class="normal"><a href="#__codelineno-0-13">13</a></span>
+<span class="normal"><a href="#__codelineno-0-14">14</a></span>
+<span class="normal"><a href="#__codelineno-0-15">15</a></span>
+<span class="normal"><a href="#__codelineno-0-16">16</a></span>
+<span class="normal"><a href="#__codelineno-0-17">17</a></span>
+<span class="normal"><a href="#__codelineno-0-18">18</a></span>
+<span class="normal"><a href="#__codelineno-0-19">19</a></span>
+<span class="normal"><a href="#__codelineno-0-20">20</a></span>
+<span class="normal"><a href="#__codelineno-0-21">21</a></span>
+<span class="normal"><a href="#__codelineno-0-22">22</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ezp/pgesv.hpp&gt;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="w">    </span><span class="k">constexpr</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">;</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">ezp</span><span class="o">::</span><span class="n">get_env</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">().</span><span class="n">rank</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="w">        </span><span class="n">A</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="mf">0.</span><span class="p">);</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="w">        </span><span class="n">B</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">NRHS</span><span class="p">,</span><span class="w"> </span><span class="mf">1.</span><span class="p">);</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">IDX</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ezp</span><span class="o">::</span><span class="n">par_dgesv</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;::</span><span class="n">indexer</span><span class="p">{</span><span class="n">N</span><span class="p">};</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="w">        </span><span class="k">for</span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="n">A</span><span class="p">[</span><span class="n">IDX</span><span class="p">(</span><span class="n">I</span><span class="p">,</span><span class="w"> </span><span class="n">I</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">I</span><span class="p">);</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="w">    </span><span class="n">ezp</span><span class="o">::</span><span class="n">par_dgesv</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">().</span><span class="n">solve</span><span class="p">({</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">A</span><span class="p">.</span><span class="n">data</span><span class="p">()},</span><span class="w"> </span><span class="p">{</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">.</span><span class="n">data</span><span class="p">()});</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">ezp</span><span class="o">::</span><span class="n">get_env</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">().</span><span class="n">rank</span><span class="p">())</span><span class="w"> </span><span class="k">for</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="sc">&#39;\n&#39;</span><span class="p">;</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="p">}</span>
+</code></pre></div></td></tr></table></div>
 
 
 
@@ -611,7 +667,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../Compilation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Compilation">
+          <a href="../.." class="md-footer__link md-footer__link--prev" aria-label="Previous: ezp">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -621,20 +677,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Compilation
+                ezp
               </div>
             </div>
           </a>
         
         
           
-          <a href="../../Guide/Standalone/" class="md-footer__link md-footer__link--next" aria-label="Next: Standalone Solver">
+          <a href="../Compilation/" class="md-footer__link md-footer__link--next" aria-label="Next: Compilation">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Standalone Solver
+                Compilation
               </div>
             </div>
             <div class="md-footer__button md-icon">
