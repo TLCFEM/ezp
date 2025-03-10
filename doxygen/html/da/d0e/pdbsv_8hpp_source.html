@@ -154,7 +154,7 @@ $(document).ready(function(){initNavTree('da/d0e/pdbsv_8hpp_source.html','../../
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
 <div class="foldopen" id="foldopen00104" data-start="{" data-end="};">
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno"><a class="line" href="../../d1/ddf/classezp_1_1pdbsv_1_1indexer.html">  104</a></span>        <span class="keyword">class </span><a class="code hl_class" href="../../d1/ddf/classezp_1_1pdbsv_1_1indexer.html">indexer</a> {</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>            <span class="keyword">const</span> IT n, kl, ku;</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>            IT n, kl, ku;</div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>        <span class="keyword">public</span>:</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>            <span class="keyword">explicit</span> <a class="code hl_class" href="../../d1/ddf/classezp_1_1pdbsv_1_1indexer.html">indexer</a>(<span class="keyword">const</span> <a class="code hl_struct" href="../../d9/d24/structezp_1_1band__mat.html">band_mat&lt;DT, IT&gt;</a>&amp; A)</div>
@@ -167,9 +167,9 @@ $(document).ready(function(){initNavTree('da/d0e/pdbsv_8hpp_source.html','../../
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>                , kl(KL)</div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>                , ku(KU) {}</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>            IT operator()(<span class="keyword">const</span> IT i, <span class="keyword">const</span> IT j)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>                <span class="keywordflow">if</span>(i &lt; 0 || i &gt;= n || j &lt; 0 || j &gt;= n) <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>                <span class="keywordflow">if</span>(i - j &gt; kl || j - i &gt; ku) <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>            <span class="keyword">auto</span> operator()(<span class="keyword">const</span> IT i, <span class="keyword">const</span> IT j)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>                <span class="keywordflow">if</span>(i &lt; 0 || i &gt;= n || j &lt; 0 || j &gt;= n) <span class="keywordflow">return</span> IT{-1};</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>                <span class="keywordflow">if</span>(i - j &gt; kl || j - i &gt; ku) <span class="keywordflow">return</span> IT{-1};</div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>                <span class="keywordflow">return</span> ku + i + j * (kl + ku);</div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>            }</div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>        };</div>
