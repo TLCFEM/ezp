@@ -135,7 +135,7 @@ int main() {
         for(auto i = 0u; i < B.size(); ++i) std::cout << B[i] << ' ' << X[i] << " abs(diff): " << std::abs(B[i] - X[i]) << '\n';
     }
 
-    return 0;
+    return info;
 }
 
 //! @}

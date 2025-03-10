@@ -36,12 +36,13 @@ namespace ezp {
 
     template<typename T> concept has_mem = requires(T t) { requires data_t<std::remove_pointer_t<decltype(t.mem())>>; };
     template<typename T> concept has_memptr = requires(T t) { requires data_t<std::remove_pointer_t<decltype(t.memptr())>>; };
-    template<typename T> concept has_data = requires(T t) { requires data_t<std::remove_pointer_t<decltype(t.data())>>; };
+    template<typename T> concept has_data_method = requires(T t) { requires data_t<std::remove_pointer_t<decltype(t.data())>>; };
+    template<typename T> concept has_data_member = requires(T t) { requires data_t<std::remove_pointer_t<decltype(t.data)>>; };
     template<typename T> concept has_iterator = requires(T t) {
         requires std::ranges::contiguous_range<T>;
         requires data_t<std::remove_reference_t<decltype(*t.begin())>>;
     };
-    template<typename T> concept container_t = requires(T t) { requires index_t<decltype(t.n_rows)> && index_t<decltype(t.n_cols)> && (has_mem<T> || has_memptr<T> || has_data<T> || has_iterator<T>); };
+    template<typename T> concept container_t = requires(T t) { requires index_t<decltype(t.n_rows)> && index_t<decltype(t.n_cols)> && (has_mem<T> || has_memptr<T> || has_data_method<T> || has_data_member<T> || has_iterator<T>); };
 
     template<typename T> concept mem_t = data_t<T> || container_t<T>;
 

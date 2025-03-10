@@ -90,7 +90,7 @@ int main() {
         for(const double i : B) std::cout << i << '\n';
     }
 
-    return 0;
+    return info;
 }
 
 //! @}
