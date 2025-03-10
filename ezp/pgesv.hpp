@@ -108,9 +108,7 @@ namespace ezp {
             }
             // ReSharper restore CppCStyleCast
 
-            info = this->ctx.amx(info);
-
-            if(0 == info) this->ctx.gather(this->loc.b, loc_desc_b, B, full_desc_b);
+            if((info = this->ctx.amx(info)) == 0) this->ctx.gather(this->loc.b, loc_desc_b, B, full_desc_b);
 
             return info;
         }

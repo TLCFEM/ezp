@@ -51,7 +51,7 @@ namespace ezp {
 
         IT n_rows, n_cols;
         DT* data;
-        bool distributed = false;
+        bool distributed;
 
         base_mat() = default;
 
