@@ -42,6 +42,8 @@ namespace ezp {
         pposv(const IT rows, const IT cols)
             : base_t(rows, cols) {}
 
+        using base_t::solve;
+
         IT solve(full_mat<DT, IT>&& A, full_mat<DT, IT>&& B) override {
             if(!this->ctx.is_valid()) return 0;
 

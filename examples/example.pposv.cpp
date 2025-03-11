@@ -18,7 +18,7 @@
  * @brief Example caller to the `pposv` solver.
  *
  * @author tlc
- * @date 07/03/2025
+ * @date 11/03/2025
  * @version 1.0.0
  * @file example.pposv.cpp
  * @{
@@ -30,65 +30,60 @@
 
 using namespace ezp;
 
+class mat {
+public:
+    int_t n_rows, n_cols;
+
+private:
+    std::vector<double> storage;
+
+public:
+    auto init(const int_t rows, const int cols) {
+        n_rows = rows;
+        n_cols = cols;
+        storage.resize(rows * cols);
+    }
+
+    explicit mat(const int_t rows = 0, const int cols = 0) { init(rows, cols); }
+
+    auto& operator()(const int_t i, const int_t j) { return storage[i * n_cols + j]; }
+
+    auto& operator[](const int_t i) { return storage[i]; }
+
+    auto begin() { return storage.begin(); }
+
+    auto end() { return storage.end(); }
+};
+
 int main() {
     // get the current blacs environment
     const auto& env = get_env<int_t>();
 
-    // estimate the number of rows and columns of the process grid
-    const auto rows = std::max(int_t{1}, static_cast<int_t>(std::sqrt(env.size())));
-    const auto cols = env.size() / rows;
-
     constexpr auto N = 6, NRHS = 2;
 
-    // storage for the matrices A and B
-    std::vector<double> A, B;
-
-    // helper function to convert 2D indices to 1D indices
-    const auto IDX = par_dposv<int_t>::indexer{N};
+    // storage for the matrices A and B using the custom class
+    // acceptable objects shall have members `.n_rows` and `.n_cols`
+    // and have any of the following methods `.mem()`, `.memptr()`, `.data()`
+    // or contiguous iterators
+    // all of above methods shall return a pointer to the first element
+    mat A, B;
 
     if(0 == env.rank()) {
         // the matrices are only initialized on the root process
-        A.resize(N * N, 0.);
-        B.resize(N * NRHS);
+        A.init(N, N);
+        B.init(N, NRHS);
 
-        A[IDX(0, 0)] = 1.;
-        A[IDX(1, 1)] = 2.;
-        A[IDX(2, 2)] = 3.;
-        A[IDX(3, 3)] = 4.;
-        A[IDX(4, 4)] = 5.;
-        A[IDX(5, 5)] = 6.;
-
-        B[0] = 1.;
-        B[1] = 2.;
-        B[2] = 3.;
-        B[3] = 4.;
-        B[4] = 5.;
-        B[5] = 6.;
-
-        static constexpr auto M = 5.10156648;
-
-        B[6] = 1. * M;
-        B[7] = 2. * M;
-        B[8] = 3. * M;
-        B[9] = 4. * M;
-        B[10] = 5. * M;
-        B[11] = 6. * M;
+        for(auto I = 0; I < N; ++I) B[I] = A(I, I) = I + 1;
     }
 
     // create a parallel solver
-    // it takes the number of rows and columns of the process grid as arguments
-    auto solver = par_dposv(rows, cols);
-
-    // need to wrap the data in full_mat objects
-    // it requires the number of rows and columns of the matrix, and a pointer to the data
-    // on non-root processes, the data pointer is nullptr as the vector is empty
-    // solver.solve(full_mat{N, N, A.data()}, full_mat{N, NRHS, B.data()});
-    const auto info = solver.solve({N, N, A.data()}, {N, NRHS, B.data()});
+    // and send custom matrix objects to the solver
+    const auto info = par_dposv<int_t>().solve(A, B);
 
     if(0 == env.rank() && 0 == info) {
         std::cout << std::setprecision(10) << "Info: " << info << '\n';
         std::cout << "Solution:\n";
-        for(const double i : B) std::cout << i << '\n';
+        for(const auto i : B) std::cout << i << '\n';
     }
 
     return info;

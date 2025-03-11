@@ -42,7 +42,11 @@ namespace ezp {
         requires std::ranges::contiguous_range<T>;
         requires data_t<std::remove_reference_t<decltype(*t.begin())>>;
     };
-    template<typename T> concept container_t = requires(T t) { requires index_t<decltype(t.n_rows)> && index_t<decltype(t.n_cols)> && (has_mem<T> || has_memptr<T> || has_data_method<T> || has_data_member<T> || has_iterator<T>); };
+    template<typename T> concept has_data_pointer = has_mem<T> || has_memptr<T> || has_data_method<T> || has_iterator<T>;
+
+    template<typename T> concept full_container_t = requires(T t) { requires index_t<decltype(t.n_rows)> && index_t<decltype(t.n_cols)> && has_data_pointer<T>; };
+    template<typename T> concept band_container_t = requires(T t) { requires index_t<decltype(t.kl)> && index_t<decltype(t.ku)> && full_container_t<T>; };
+    template<typename T> concept band_symm_container_t = requires(T t) { requires index_t<decltype(t.klu)> && full_container_t<T>; };
 
     template<data_t DT, index_t IT> struct base_mat {
         using data_type = DT;

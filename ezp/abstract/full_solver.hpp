@@ -71,6 +71,18 @@ namespace ezp::detail {
             }
         };
 
+        template<full_container_t CT> auto to_full(CT&& custom) {
+            if constexpr(has_mem<CT>) return full_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.mem()};
+            else if constexpr(has_memptr<CT>) return full_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.memptr()};
+            else if constexpr(has_data_method<CT>) return full_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.data()};
+            else if constexpr(has_iterator<CT>) return full_mat<DT, IT>{custom.n_rows, custom.n_cols, &(*custom.begin())};
+            else static_assert(always_false_v<CT>, "invalid container type");
+        }
+
+        template<full_container_t AT, full_container_t BT> IT solve(AT&& A, BT&& B) { return solve(to_full(A), to_full(B)); }
+
+        template<full_container_t CT> IT solve(CT&& B) { return solve(to_full(B)); }
+
         virtual IT solve(full_mat<DT, IT>&&, full_mat<DT, IT>&&) = 0;
         virtual IT solve(full_mat<DT, IT>&&) = 0;
     };
