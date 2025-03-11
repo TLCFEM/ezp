@@ -25,6 +25,7 @@ var hierarchy =
     [ "ezp::pdbsv< DT, IT >::indexer", "d1/ddf/classezp_1_1pdbsv_1_1indexer.html", null ],
     [ "ezp::pgbsv< DT, IT >::indexer", "d4/d94/classezp_1_1pgbsv_1_1indexer.html", null ],
     [ "ezp::ppbsv< DT, IT, UL >::indexer", "da/d2f/classezp_1_1ppbsv_1_1indexer.html", null ],
+    [ "mat", "d0/d36/classmat.html", null ],
     [ "pdbsv", "d0/de4/classpdbsv.html", null ],
     [ "pgbsv", "d4/d10/classpgbsv.html", null ],
     [ "pgesv", "dc/d13/classpgesv.html", null ],
