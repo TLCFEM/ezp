@@ -21,13 +21,13 @@
 #include "abstract_solver.hpp"
 
 namespace ezp::detail {
-    template<index_t IT> class band_solver : public abstract_solver<IT> {
+    template<data_t DT, index_t IT, wrapper_t WT> class band_solver : public abstract_solver<DT, IT, WT> {
     protected:
         blacs_context<IT> ctx, trans_ctx;
 
     public:
         explicit band_solver(const IT rows)
-            : abstract_solver<IT>()
+            : abstract_solver<DT, IT, WT>()
             , ctx(rows, 1, 'R')
             , trans_ctx(1, rows, 'R') {}
     };

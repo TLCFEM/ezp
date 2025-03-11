@@ -60,8 +60,8 @@
 #include "abstract/band_solver.hpp"
 
 namespace ezp {
-    template<data_t DT, index_t IT> class pdbsv final : public detail::band_solver<IT> {
-        using base_t = detail::band_solver<IT>;
+    template<data_t DT, index_t IT> class pdbsv final : public detail::band_solver<DT, IT, band_mat<DT, IT>> {
+        using base_t = detail::band_solver<DT, IT, band_mat<DT, IT>>;
 
         struct band_system {
             IT n{-1}, kl{-1}, ku{-1}, max_klu{-1}, lead{-1}, block{-1}, lines{-1};
@@ -120,6 +120,8 @@ namespace ezp {
                 return ku + i + j * (kl + ku);
             }
         };
+
+        template<band_container_t AT, full_container_t BT> IT solve(AT&& A, BT&& B) { return solve(to_band(A), to_full(B)); }
 
         IT solve(band_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(!this->ctx.is_valid() || !this->trans_ctx.is_valid()) return 0;

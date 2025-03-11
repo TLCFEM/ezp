@@ -83,10 +83,10 @@
 #include "abstract/band_solver.hpp"
 
 namespace ezp {
-    template<data_t DT, index_t IT, char UL = 'L'> class ppbsv final : public detail::band_solver<IT> {
+    template<data_t DT, index_t IT, char UL = 'L'> class ppbsv final : public detail::band_solver<DT, IT, band_symm_mat<DT, IT>> {
         static constexpr char UPLO = UL;
 
-        using base_t = detail::band_solver<IT>;
+        using base_t = detail::band_solver<DT, IT, band_symm_mat<DT, IT>>;
 
         struct band_system {
             IT n{-1}, klu{-1}, lead{-1}, block{-1}, lines{-1};
@@ -138,6 +138,8 @@ namespace ezp {
                 }
             }
         };
+
+        template<band_symm_container_t AT, full_container_t BT> IT solve(AT&& A, BT&& B) { return solve(to_band_symm(A), to_full(B)); }
 
         IT solve(band_symm_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(!this->ctx.is_valid() || !this->trans_ctx.is_valid()) return 0;

@@ -21,8 +21,8 @@
 #include "abstract_solver.hpp"
 
 namespace ezp::detail {
-    template<data_t DT, index_t IT, char ODER = 'R'> class full_solver : public abstract_solver<IT> {
-        using base_t = abstract_solver<IT>;
+    template<data_t DT, index_t IT, char ODER = 'R'> class full_solver : public abstract_solver<DT, IT, full_mat<DT, IT>> {
+        using base_t = abstract_solver<DT, IT, full_mat<DT, IT>>;
 
         struct full_system {
             IT n{-1}, block{-1}, rows{-1};
@@ -45,6 +45,8 @@ namespace ezp::detail {
             loc.a.resize(loc.rows * ctx.cols(loc.n, loc.block));
             loc.ipiv.resize(loc.rows + loc.block);
         }
+
+        using base_t::to_full;
 
     public:
         full_solver()
@@ -71,20 +73,9 @@ namespace ezp::detail {
             }
         };
 
-        template<full_container_t CT> auto to_full(CT&& custom) {
-            if constexpr(has_mem<CT>) return full_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.mem()};
-            else if constexpr(has_memptr<CT>) return full_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.memptr()};
-            else if constexpr(has_data_method<CT>) return full_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.data()};
-            else if constexpr(has_iterator<CT>) return full_mat<DT, IT>{custom.n_rows, custom.n_cols, &(*custom.begin())};
-            else static_assert(always_false_v<CT>, "invalid container type");
-        }
+        using base_t::solve;
 
         template<full_container_t AT, full_container_t BT> IT solve(AT&& A, BT&& B) { return solve(to_full(A), to_full(B)); }
-
-        template<full_container_t CT> IT solve(CT&& B) { return solve(to_full(B)); }
-
-        virtual IT solve(full_mat<DT, IT>&&, full_mat<DT, IT>&&) = 0;
-        virtual IT solve(full_mat<DT, IT>&&) = 0;
     };
 } // namespace ezp::detail
 

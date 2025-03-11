@@ -366,14 +366,46 @@ namespace ezp {
     };
 
     namespace detail {
-        template<index_t IT> class abstract_solver {
+        template<data_t DT, index_t IT, wrapper_t WT> class abstract_solver {
+            using wrapper_type = WT;
+
         protected:
             static constexpr IT ZERO{0}, ONE{1};
+
+            template<full_container_t CT> auto to_full(CT&& custom) {
+                if constexpr(has_mem<CT>) return full_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.mem()};
+                else if constexpr(has_memptr<CT>) return full_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.memptr()};
+                else if constexpr(has_data_method<CT>) return full_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.data()};
+                else if constexpr(has_iterator<CT>) return full_mat<DT, IT>{custom.n_rows, custom.n_cols, &(*custom.begin())};
+                else static_assert(always_false_v<CT>, "invalid container type");
+            }
+
+            template<band_container_t CT> auto to_band(CT&& custom) {
+                if constexpr(has_mem<CT>) return band_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.kl, custom.ku, custom.mem()};
+                else if constexpr(has_memptr<CT>) return band_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.kl, custom.ku, custom.memptr()};
+                else if constexpr(has_data_method<CT>) return band_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.kl, custom.ku, custom.data()};
+                else if constexpr(has_iterator<CT>) return band_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.kl, custom.ku, &(*custom.begin())};
+                else static_assert(always_false_v<CT>, "invalid container type");
+            }
+
+            template<band_symm_container_t CT> auto to_band_symm(CT&& custom) {
+                if constexpr(has_mem<CT>) return band_symm_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.klu, custom.mem()};
+                else if constexpr(has_memptr<CT>) return band_symm_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.klu, custom.memptr()};
+                else if constexpr(has_data_method<CT>) return band_symm_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.klu, custom.data()};
+                else if constexpr(has_iterator<CT>) return band_symm_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.klu, &(*custom.begin())};
+                else static_assert(always_false_v<CT>, "invalid container type");
+            }
 
         public:
             abstract_solver() = default;
 
             virtual ~abstract_solver() = default;
+
+            template<full_container_t CT> IT solve(CT&& B) { return solve(to_full(B)); }
+
+            virtual IT solve(WT&&, full_mat<DT, IT>&&) = 0;
+
+            virtual IT solve(full_mat<DT, IT>&&) = 0;
         };
     } // namespace detail
 } // namespace ezp
