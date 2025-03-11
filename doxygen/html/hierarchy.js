@@ -1,12 +1,17 @@
 var hierarchy =
 [
-    [ "ezp::detail::abstract_solver< IT >", "d0/df0/classezp_1_1detail_1_1abstract__solver.html", [
-      [ "ezp::detail::full_solver< DT, IT, 'R' >", "df/df0/classezp_1_1detail_1_1full__solver.html", null ],
-      [ "ezp::detail::band_solver< IT >", "d0/db0/classezp_1_1detail_1_1band__solver.html", [
+    [ "ezp::detail::abstract_solver< DT, IT, WT >", "d0/df0/classezp_1_1detail_1_1abstract__solver.html", [
+      [ "ezp::detail::band_solver< DT, IT, band_mat< DT, IT > >", "d0/db0/classezp_1_1detail_1_1band__solver.html", [
         [ "ezp::pdbsv< DT, IT >", "de/d4c/classezp_1_1pdbsv.html", null ],
-        [ "ezp::pgbsv< DT, IT >", "d1/d7e/classezp_1_1pgbsv.html", null ],
+        [ "ezp::pgbsv< DT, IT >", "d1/d7e/classezp_1_1pgbsv.html", null ]
+      ] ],
+      [ "ezp::detail::band_solver< DT, IT, band_symm_mat< DT, IT > >", "d0/db0/classezp_1_1detail_1_1band__solver.html", [
         [ "ezp::ppbsv< DT, IT, UL >", "d3/df1/classezp_1_1ppbsv.html", null ]
       ] ],
+      [ "ezp::detail::band_solver< DT, IT, WT >", "d0/db0/classezp_1_1detail_1_1band__solver.html", null ]
+    ] ],
+    [ "ezp::detail::abstract_solver< DT, IT, full_mat< DT, IT > >", "d0/df0/classezp_1_1detail_1_1abstract__solver.html", [
+      [ "ezp::detail::full_solver< DT, IT, 'R' >", "df/df0/classezp_1_1detail_1_1full__solver.html", null ],
       [ "ezp::detail::full_solver< DT, IT, ODER >", "df/df0/classezp_1_1detail_1_1full__solver.html", [
         [ "ezp::pgesv< DT, IT, ODER >", "d5/d48/classezp_1_1pgesv.html", null ],
         [ "ezp::pposv< DT, IT, UL, ODER >", "de/d12/classezp_1_1pposv.html", null ]
