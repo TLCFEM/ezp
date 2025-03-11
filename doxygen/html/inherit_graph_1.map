@@ -1,5 +1,9 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$d6/d56/classezp_1_1blacs__base.html" title=" " alt="" coords="5,5,131,31"/>
-<area shape="rect" id="Node000001" href="$da/d77/classezp_1_1blacs__env.html" title=" " alt="" coords="179,5,339,31"/>
-<area shape="poly" id="edge4_Node000000_Node000001" title=" " alt="" coords="144,15,178,15,178,21,144,21"/>
+<area shape="rect" id="Node000000" href="$d3/d46/structezp_1_1base__mat.html" title=" " alt="" coords="5,63,191,88"/>
+<area shape="rect" id="Node000001" href="$d9/d24/structezp_1_1band__mat.html" title=" " alt="" coords="239,5,425,31"/>
+<area shape="poly" id="edge1_Node000000_Node000001" title=" " alt="" coords="163,57,279,28,280,33,164,62"/>
+<area shape="rect" id="Node000002" href="$d8/d3f/structezp_1_1band__symm__mat.html" title=" " alt="" coords="249,55,415,95"/>
+<area shape="poly" id="edge2_Node000000_Node000002" title=" " alt="" coords="204,73,249,73,249,78,204,78"/>
+<area shape="rect" id="Node000003" href="$d0/d58/structezp_1_1full__mat.html" title=" " alt="" coords="245,120,419,145"/>
+<area shape="poly" id="edge3_Node000000_Node000003" title=" " alt="" coords="164,89,280,117,279,123,163,94"/>
 </map>

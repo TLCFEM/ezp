@@ -626,6 +626,22 @@
 
 
 <h1 id="custom-matrix-class">Custom Matrix Class</h1>
+<p><code>ezp</code> supports customised matrix objects.</p>
+<p>Apart from using the provided wrappers such as <code>full_mat</code>, <code>band_mat</code> and <code>band_symm_mat</code>, one can also define or use customised matrix classes to call the solver.</p>
+<p>All custom matrix classes shall have the public member <code>.n_rows</code> and <code>.n_cols</code>.
+The band matrix further requires the public member <code>.kl</code> and <code>.ku</code> which are the numbers of sub-diagonals (lower bandwidth) and super-diagonals (upper bandwidth).
+The band symmetric matrix requires the additional public member <code>.klu</code> which is the bandwidth.</p>
+<p>All custom classes must define at least one of the following public methods, that return a pointer to the first element.
+It is assumed the memory layout is <a href="https://en.cppreference.com/w/cpp/named_req/ContiguousContainer">contiguous</a>, thus, one can use <code>std::vector&lt;T&gt;</code>, <code>std::array&lt;T&gt;</code>, <code>std::unique_ptr&lt;T[]&gt;</code> as the storage.</p>
+<ol>
+<li><code>.mem()</code> -&gt; <code>T*</code></li>
+<li><code>.memptr()</code> -&gt; <code>T*</code></li>
+<li><code>.data()</code> -&gt; <code>T*</code></li>
+<li>contiguous iterator pair <code>.begin()</code> and <code>.end()</code>, and <code>&amp;(*begin())</code> -&gt; <code>T*</code></li>
+</ol>
+<p>The possibility is unlimited.
+The simplest is to subclass <code>std::vector&lt;T&gt;</code> with additional public members.
+In the example of <code>posv</code> solver, a custom matrix class is used.</p>
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">example.pposv.cpp</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1"> 1</a></span>
 <span class="normal"><a href="#__codelineno-0-2"> 2</a></span>
 <span class="normal"><a href="#__codelineno-0-3"> 3</a></span>
@@ -699,8 +715,8 @@
 <a id="__codelineno-0-6" name="__codelineno-0-6"></a>
 <a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="k">class</span><span class="w"> </span><span class="nc">mat</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="k">public</span><span class="o">:</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="w">    </span><span class="n">int_t</span><span class="w"> </span><span class="n">n_rows</span><span class="p">,</span><span class="w"> </span><span class="n">n_cols</span><span class="p">;</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="hll"><span class="w">    </span><span class="n">int_t</span><span class="w"> </span><span class="n">n_rows</span><span class="p">,</span><span class="w"> </span><span class="n">n_cols</span><span class="p">;</span>
+</span><a id="__codelineno-0-10" name="__codelineno-0-10"></a>
 <a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="k">private</span><span class="o">:</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">storage</span><span class="p">;</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13"></a>
@@ -717,10 +733,10 @@
 <a id="__codelineno-0-24" name="__codelineno-0-24"></a>
 <a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="w">    </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="k">operator</span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">int_t</span><span class="w"> </span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">storage</span><span class="p">[</span><span class="n">i</span><span class="p">];</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-0-26" name="__codelineno-0-26"></a>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">storage</span><span class="p">.</span><span class="n">begin</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">end</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">storage</span><span class="p">.</span><span class="n">end</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="p">};</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="hll"><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">storage</span><span class="p">.</span><span class="n">begin</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+</span><a id="__codelineno-0-28" name="__codelineno-0-28"></a>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="hll"><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">end</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">storage</span><span class="p">.</span><span class="n">end</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+</span><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="p">};</span>
 <a id="__codelineno-0-31" name="__codelineno-0-31"></a>
 <a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="w">    </span><span class="c1">// get the current blacs environment</span>
