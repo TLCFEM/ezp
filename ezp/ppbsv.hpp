@@ -108,6 +108,9 @@ namespace ezp {
             loc.a.resize(loc.lead * loc.lines);
         }
 
+        using base_t::to_band_symm;
+        using base_t::to_full;
+
     public:
         explicit ppbsv(const IT rows = get_env<IT>().size())
             : base_t(rows) {}

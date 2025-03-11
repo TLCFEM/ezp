@@ -90,6 +90,9 @@ namespace ezp {
             loc.ipiv.resize(std::min(loc.n, loc.lines + loc.kl + loc.ku), -987654);
         }
 
+        using base_t::to_band;
+        using base_t::to_full;
+
     public:
         explicit pgbsv(const IT rows = get_env<IT>().size())
             : base_t(rows) {}

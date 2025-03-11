@@ -18,7 +18,7 @@
  * @brief Example caller to the `ppbsv` solver.
  *
  * @author tlc
- * @date 07/03/2025
+ * @date 11/03/2025
  * @version 1.0.0
  * @file example.ppbsv.cpp
  * @{
@@ -30,6 +30,54 @@
 
 using namespace ezp;
 
+class general_mat {
+public:
+    int_t n_rows, n_cols;
+
+private:
+    std::vector<double> storage;
+
+public:
+    auto init(const int_t rows, const int cols) {
+        n_rows = rows;
+        n_cols = cols;
+        storage.resize(rows * cols);
+    }
+
+    explicit general_mat(const int_t rows = 0, const int cols = 0) { init(rows, cols); }
+
+    auto& operator[](const int_t i) { return storage[i]; }
+
+    auto begin() { return storage.begin(); }
+
+    auto end() { return storage.end(); }
+};
+
+class bandsymm_mat {
+public:
+    int_t n_rows, n_cols, klu;
+
+private:
+    std::vector<double> storage;
+
+    ezp::ppbsv<double, int_t>::indexer indexer{0, 0};
+
+public:
+    auto init(const int_t n, const int bandwidth) {
+        n_rows = n;
+        n_cols = n;
+        klu = bandwidth;
+        storage.resize(n * (klu + 1));
+        indexer = {n, klu};
+    }
+
+    explicit bandsymm_mat(const int_t n = 0, const int bandwidth = 0) { init(n, bandwidth); }
+
+    auto& operator()(const int_t i, const int_t j) { return storage[indexer(i, j)]; }
+
+    auto data() { return storage.data(); }
+};
+
 int main() {
     // get the current blacs environment
     const auto& env = get_env<int_t>();
@@ -37,40 +85,20 @@ int main() {
     constexpr auto N = 6, NRHS = 2, KLU = 1;
 
     // storage for the matrices A and B
-    std::vector<double> A, B;
-
-    // helper function to convert 2D indices to 1D indices
-    // the band symmetric matrix used for pbsv subroutine requires the matrix to be stored with a leading dimension of (KLU+1)
-    // see Fig. 4.11 https://netlib.org/scalapack/slug/node84.html
-    const auto IDX = par_dpbsv<int_t>::indexer{N, KLU};
+    bandsymm_mat A;
+    general_mat B;
 
     if(0 == env.rank()) {
         // the matrices are only initialized on the root process
-        A.resize(N * (KLU + 1), 0.);
-        B.resize(N * NRHS);
-
-        A[IDX(0, 0)] = 1.;
-        A[IDX(1, 1)] = 2.;
-        A[IDX(2, 2)] = 3.;
-        A[IDX(3, 3)] = 4.;
-        A[IDX(4, 4)] = 5.;
-        A[IDX(5, 5)] = 6.;
-
-        B[0] = 1.;
-        B[1] = 2.;
-        B[2] = 3.;
-        B[3] = 4.;
-        B[4] = 5.;
-        B[5] = 6.;
+        A.init(N, KLU);
+        B.init(N, NRHS);
 
         static constexpr auto M = 5.10156648;
 
-        B[6] = 1. * M;
-        B[7] = 2. * M;
-        B[8] = 3. * M;
-        B[9] = 4. * M;
-        B[10] = 5. * M;
-        B[11] = 6. * M;
+        for(auto I = 0; I < N; ++I) {
+            B[I] = A(I, I) = I + 1;
+            B[N + I] = (I + 1) * M;
+        }
     }
 
     // create a parallel solver
@@ -78,11 +106,8 @@ int main() {
     // it takes the number of processes as arguments
     auto solver = par_dpbsv(env.size());
 
-    // need to wrap the data in full_mat objects
-    // it requires the number of rows and columns of the matrix, and a pointer to the data
-    // on non-root processes, the data pointer is nullptr as the vector is empty
-    // solver.solve(band_symm_mat{N, N, KLU, A.data()}, full_mat{N, NRHS, B.data()});
-    const auto info = solver.solve({N, N, KLU, A.data()}, {N, NRHS, B.data()});
+    // use custom matrix objects
+    const auto info = solver.solve(A, B);
 
     if(0 == env.rank() && 0 == info) {
         std::cout << std::setprecision(10) << "Info: " << info << '\n';
