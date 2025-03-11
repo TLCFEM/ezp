@@ -53,19 +53,19 @@ namespace ezp {
 
             IT info{-1};
             // ReSharper disable CppCStyleCast
-            if(std::is_same_v<DT, double>) {
+            if constexpr(std::is_same_v<DT, double>) {
                 using E = double;
                 pdgetrf(&this->loc.n, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &info);
             }
-            else if(std::is_same_v<DT, float>) {
+            else if constexpr(std::is_same_v<DT, float>) {
                 using E = float;
                 psgetrf(&this->loc.n, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &info);
             }
-            else if(std::is_same_v<DT, complex16>) {
+            else if constexpr(std::is_same_v<DT, complex16>) {
                 using E = complex16;
                 pzgetrf(&this->loc.n, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &info);
             }
-            else if(std::is_same_v<DT, complex8>) {
+            else if constexpr(std::is_same_v<DT, complex8>) {
                 using E = complex8;
                 pcgetrf(&this->loc.n, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &info);
             }
@@ -92,19 +92,19 @@ namespace ezp {
 
             IT info{-1};
             // ReSharper disable CppCStyleCast
-            if(std::is_same_v<DT, double>) {
+            if constexpr(std::is_same_v<DT, double>) {
                 using E = double;
                 pdgetrs(&TRANS, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
             }
-            else if(std::is_same_v<DT, float>) {
+            else if constexpr(std::is_same_v<DT, float>) {
                 using E = float;
                 psgetrs(&TRANS, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
             }
-            else if(std::is_same_v<DT, complex16>) {
+            else if constexpr(std::is_same_v<DT, complex16>) {
                 using E = complex16;
                 pzgetrs(&TRANS, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
             }
-            else if(std::is_same_v<DT, complex8>) {
+            else if constexpr(std::is_same_v<DT, complex8>) {
                 using E = complex8;
                 pcgetrs(&TRANS, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
             }

@@ -55,19 +55,19 @@ namespace ezp {
 
             IT info{-1};
             // ReSharper disable CppCStyleCast
-            if(std::is_same_v<DT, double>) {
+            if constexpr(std::is_same_v<DT, double>) {
                 using E = double;
                 pdpotrf(&UPLO, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), &info);
             }
-            else if(std::is_same_v<DT, float>) {
+            else if constexpr(std::is_same_v<DT, float>) {
                 using E = float;
                 pspotrf(&UPLO, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), &info);
             }
-            else if(std::is_same_v<DT, complex16>) {
+            else if constexpr(std::is_same_v<DT, complex16>) {
                 using E = complex16;
                 pzpotrf(&UPLO, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), &info);
             }
-            else if(std::is_same_v<DT, complex8>) {
+            else if constexpr(std::is_same_v<DT, complex8>) {
                 using E = complex8;
                 pcpotrf(&UPLO, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), &info);
             }
@@ -92,19 +92,19 @@ namespace ezp {
 
             IT info{-1};
             // ReSharper disable CppCStyleCast
-            if(std::is_same_v<DT, double>) {
+            if constexpr(std::is_same_v<DT, double>) {
                 using E = double;
                 pdpotrs(&UPLO, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
             }
-            else if(std::is_same_v<DT, float>) {
+            else if constexpr(std::is_same_v<DT, float>) {
                 using E = float;
                 pspotrs(&UPLO, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
             }
-            else if(std::is_same_v<DT, complex16>) {
+            else if constexpr(std::is_same_v<DT, complex16>) {
                 using E = complex16;
                 pzpotrs(&UPLO, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
             }
-            else if(std::is_same_v<DT, complex8>) {
+            else if constexpr(std::is_same_v<DT, complex8>) {
                 using E = complex8;
                 pcpotrs(&UPLO, &this->loc.n, &B.n_cols, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), &info);
             }

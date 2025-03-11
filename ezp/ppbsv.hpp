@@ -163,19 +163,19 @@ namespace ezp {
 
             IT info{-1};
             // ReSharper disable CppCStyleCast
-            if(std::is_same_v<DT, double>) {
+            if constexpr(std::is_same_v<DT, double>) {
                 using E = double;
                 pdpbtrf(&UPLO, &loc.n, &loc.klu, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
-            else if(std::is_same_v<DT, float>) {
+            else if constexpr(std::is_same_v<DT, float>) {
                 using E = float;
                 pspbtrf(&UPLO, &loc.n, &loc.klu, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
-            else if(std::is_same_v<DT, complex16>) {
+            else if constexpr(std::is_same_v<DT, complex16>) {
                 using E = complex16;
                 pzpbtrf(&UPLO, &loc.n, &loc.klu, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
-            else if(std::is_same_v<DT, complex8>) {
+            else if constexpr(std::is_same_v<DT, complex8>) {
                 using E = complex8;
                 pcpbtrf(&UPLO, &loc.n, &loc.klu, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
@@ -208,19 +208,19 @@ namespace ezp {
 
             IT info{-1};
             // ReSharper disable CppCStyleCast
-            if(std::is_same_v<DT, double>) {
+            if constexpr(std::is_same_v<DT, double>) {
                 using E = double;
                 pdpbtrs(&UPLO, &loc.n, &loc.klu, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
-            else if(std::is_same_v<DT, float>) {
+            else if constexpr(std::is_same_v<DT, float>) {
                 using E = float;
                 pspbtrs(&UPLO, &loc.n, &loc.klu, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
-            else if(std::is_same_v<DT, complex16>) {
+            else if constexpr(std::is_same_v<DT, complex16>) {
                 using E = complex16;
                 pzpbtrs(&UPLO, &loc.n, &loc.klu, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
-            else if(std::is_same_v<DT, complex8>) {
+            else if constexpr(std::is_same_v<DT, complex8>) {
                 using E = complex8;
                 pcpbtrs(&UPLO, &loc.n, &loc.klu, &B.n_cols, (E*)loc.a.data(), &this->ONE, loc.desc1d_a.data(), (E*)loc.b.data(), &this->ONE, desc1d_b.data(), (E*)loc.work.data(), &laf, (E*)(loc.work.data() + laf), &lwork, &info);
             }
