@@ -5,6 +5,11 @@ project(ezp)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+    add_compile_options(-Rno-debug-disables-optimization)
+    add_link_options(-Rno-debug-disables-optimization)
+endif ()
+
 set(CMAKE_CXX_STANDARD 20)
 
 option(EZP_USE_64BIT_INT "Use 64-bit integer." OFF)
@@ -52,8 +57,13 @@ endif ()
 link_libraries(MPI::MPI_C MPI::MPI_CXX)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_options(-fprofile-arcs -ftest-coverage -fconcepts-diagnostics-depth=4 -Wall)
-    link_libraries(gcov)
+    add_compile_options(-Wall)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        add_compile_options(-fprofile-arcs -ftest-coverage -fconcepts-diagnostics-depth=4)
+        link_libraries(gcov)
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+        add_compile_options(-fprofile-instr-generate -fcoverage-mapping)
+    endif ()
     option(EZP_ASAN "Enable asan." OFF)
 endif ()
 
