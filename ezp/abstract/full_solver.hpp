@@ -25,7 +25,7 @@ namespace ezp::detail {
         using base_t = abstract_solver<DT, IT, full_mat<DT, IT>>;
 
         struct full_system {
-            IT n{-1}, block{-1}, rows{-1};
+            IT n{-1}, block{-1}, rows{-1}, cols{-1};
             desc<IT> desc_a;
             std::vector<DT> a, b;
             std::vector<IT> ipiv;
@@ -40,9 +40,10 @@ namespace ezp::detail {
             loc.n = n;
             loc.block = std::max(IT{1}, static_cast<IT>(std::sqrt(ctx.row_block(loc.n) * ctx.col_block(loc.n))));
             loc.rows = ctx.rows(loc.n, loc.block);
+            loc.cols = ctx.cols(loc.n, loc.block);
             loc.desc_a = ctx.desc_l(loc.n, loc.n, loc.block, loc.rows);
 
-            loc.a.resize(loc.rows * ctx.cols(loc.n, loc.block));
+            loc.a.resize(loc.rows * loc.cols);
             loc.ipiv.resize(loc.rows + loc.block);
         }
 

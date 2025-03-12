@@ -30,7 +30,11 @@
 #include "abstract/full_solver.hpp"
 
 namespace ezp {
-    template<data_t DT, index_t IT, char ODER = 'R'> class pgesvx final : public detail::full_solver<DT, IT, ODER> {
+    template<data_t DT, index_t IT, char FCT = 'E', char EQD = 'B', char ODER = 'R'> class pgesvx final : public detail::full_solver<DT, IT, ODER> {
+        static constexpr char FACT = FCT;
+        static constexpr char EQUED = EQD;
+        static constexpr char TRANS = 'N';
+
         using base_t = detail::full_solver<DT, IT, ODER>;
 
     public:
@@ -49,25 +53,53 @@ namespace ezp {
 
             this->init_storage(A.n_rows);
 
-            this->ctx.scatter(A, this->ctx.desc_g(A.n_rows, A.n_cols), this->loc.a, this->loc.desc_a);
+            std::vector<DT> af(this->loc.a.size());
+
+            this->ctx.scatter(A, this->ctx.desc_g(A.n_rows, A.n_cols), af, this->loc.desc_a);
+
+            this->loc.b.resize(this->loc.rows * this->ctx.cols(B.n_cols, this->loc.block));
+
+            const auto full_desc_b = this->ctx.desc_g(B.n_rows, B.n_cols);
+            const auto loc_desc_b = this->ctx.desc_l(B.n_rows, B.n_cols, this->loc.block, this->loc.rows);
+
+            this->ctx.scatter(B, full_desc_b, this->loc.b, loc_desc_b);
+
+            auto equed = EQUED;
+
+            std::vector<DT> r(this->loc.rows), c(this->loc.cols);
+            std::vector<DT> x(this->loc.b.size());
+
+            const auto ceil = [](const IT a, const IT b) { return (a + b - 1) / b; };
+            const auto ceil_a = std::max(IT{1}, ceil(this->ctx.n_rows - 1, this->ctx.n_cols));
+            const auto ceil_b = std::max(IT{1}, ceil(this->ctx.n_cols - 1, this->ctx.n_rows));
+
+            const auto pgecon_lwork = 2 * (this->loc.rows + this->loc.cols) + std::max(IT{2}, std::max(this->loc.block * ceil_a, this->loc.cols + this->loc.block * ceil_b));
+            const auto pgerfs_lwork = 3 * this->loc.rows;
+            const auto lwork = this->loc.cols + std::max(pgecon_lwork, pgerfs_lwork);
+            std::vector<DT> work(lwork);
+
+            auto liwork = this->loc.cols;
+            std::vector<IT> iwork(liwork);
+
+            DT rcond, ferr, berr;
 
             IT info{-1};
             // ReSharper disable CppCStyleCast
             if constexpr(std::is_same_v<DT, double>) {
                 using E = double;
-                pdgetrf(&this->loc.n, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &info);
+                pdgesvx(&FACT, &TRANS, &this->loc.n, &B.n_cols, (E*)af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &equed, (E*)r.data(), (E*)c.data(), (E*)B.data, &this->ONE, &this->ONE, loc_desc_b.data(), (E*)x.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)&rcond, (E*)&ferr, (E*)&berr, (E*)work.data(), &lwork, iwork.data(), &liwork, &info);
             }
             else if constexpr(std::is_same_v<DT, float>) {
                 using E = float;
-                psgetrf(&this->loc.n, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &info);
+                psgesvx(&FACT, &TRANS, &this->loc.n, &B.n_cols, (E*)af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &equed, (E*)r.data(), (E*)c.data(), (E*)B.data, &this->ONE, &this->ONE, loc_desc_b.data(), (E*)x.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)&rcond, (E*)&ferr, (E*)&berr, (E*)work.data(), &lwork, iwork.data(), &liwork, &info);
             }
             else if constexpr(std::is_same_v<DT, complex16>) {
                 using E = complex16;
-                pzgetrf(&this->loc.n, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &info);
+                pzgesvx(&FACT, &TRANS, &this->loc.n, &B.n_cols, (E*)af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &equed, (E*)r.data(), (E*)c.data(), (E*)B.data, &this->ONE, &this->ONE, loc_desc_b.data(), (E*)x.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)&rcond, (E*)&ferr, (E*)&berr, (E*)work.data(), &lwork, iwork.data(), &liwork, &info);
             }
             else if constexpr(std::is_same_v<DT, complex8>) {
                 using E = complex8;
-                pcgetrf(&this->loc.n, &this->loc.n, (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &info);
+                pcgesvx(&FACT, &TRANS, &this->loc.n, &B.n_cols, (E*)af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &equed, (E*)r.data(), (E*)c.data(), (E*)B.data, &this->ONE, &this->ONE, loc_desc_b.data(), (E*)x.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)&rcond, (E*)&ferr, (E*)&berr, (E*)work.data(), &lwork, iwork.data(), &liwork, &info);
             }
             // ReSharper restore CppCStyleCast
 
@@ -82,14 +114,10 @@ namespace ezp {
         }
     };
 
-    template<index_t IT, char ODER = 'R'> using par_dgesvx = pgesvx<double, IT, ODER>;
-    template<index_t IT, char ODER = 'R'> using par_sgesvx = pgesvx<float, IT, ODER>;
-    template<index_t IT, char ODER = 'R'> using par_zgesvx = pgesvx<complex16, IT, ODER>;
-    template<index_t IT, char ODER = 'R'> using par_cgesvx = pgesvx<complex8, IT, ODER>;
-    template<index_t IT> using par_dgesvx_c = pgesvx<double, IT, 'C'>;
-    template<index_t IT> using par_sgesvx_c = pgesvx<float, IT, 'C'>;
-    template<index_t IT> using par_zgesvx_c = pgesvx<complex16, IT, 'C'>;
-    template<index_t IT> using par_cgesvx_c = pgesvx<complex8, IT, 'C'>;
+    template<index_t IT, char FCT = 'E', char EQD = 'B', char ODER = 'R'> using par_dgesvx = pgesvx<double, IT, FCT, EQD, ODER>;
+    template<index_t IT, char FCT = 'E', char EQD = 'B', char ODER = 'R'> using par_sgesvx = pgesvx<float, IT, FCT, EQD, ODER>;
+    template<index_t IT, char FCT = 'E', char EQD = 'B', char ODER = 'R'> using par_zgesvx = pgesvx<complex16, IT, FCT, EQD, ODER>;
+    template<index_t IT, char FCT = 'E', char EQD = 'B', char ODER = 'R'> using par_cgesvx = pgesvx<complex8, IT, FCT, EQD, ODER>;
 } // namespace ezp
 
 #endif // PGESVX_HPP
