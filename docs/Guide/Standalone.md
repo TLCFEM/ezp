@@ -26,43 +26,43 @@ Here, we use the `pgesv` solver as the example to illustrate some critical steps
 We are not using the raw `MPI` functions, instead, the `mpl` library is used.
 It is necessary to get the default communicator and the parent inter communicator.
 
-```cpp title="solver.pgesv.cpp:52:55" hl_lines="3 4"
+```cpp title="solver.full.hpp:28:29"
 --8<--
-./standalone/solver.pgesv.cpp:52:55
+./standalone/solver.full.hpp:28:29
 --8<--
 ```
 
 Since `mpl` handles `MPI` environment initialisation and finalisation, it is necessary to tell `ezp` to ignore finalising the `MPI` environment.
 The function `ezp::blacs_env::do_not_manage_mpi()` must be called if `MPI` is managed by external tools.
 
-```cpp title="solver.pgesv.cpp:83" hl_lines="1"
+```cpp title="solver.pgesv.cpp:54" hl_lines="1"
 --8<--
-./standalone/solver.pgesv.cpp:83:83
+./standalone/solver.pgesv.cpp:54:55
 --8<--
 ```
 
 The parameters of the linear system will be broadcast over by the main application first.
 
-```cpp title="solver.pgesv.cpp:90:98" hl_lines="5"
+```cpp title="solver.pgesv.cpp:61:65" hl_lines="5"
 --8<--
-./standalone/solver.pgesv.cpp:90:98
+./standalone/solver.pgesv.cpp:61:65
 --8<--
 ```
 
 Knowing the problem sizes `N` and `NRHS`, the root process can initialise the containers and receive the contents of two matrices.
 
-```cpp title="solver.pgesv.cpp:60:70" hl_lines="1-3 7 8"
+```cpp title="solver.full.hpp:32:44" hl_lines="3-5 9 10"
 --8<--
-./standalone/solver.pgesv.cpp:60:70
+./standalone/solver.full.hpp:32:44
 --8<--
 ```
 
 Solving the system follows the conventional approach, that is, create a solver object and call the solve method with data wrapped.
 The solution is sent back to the caller.
 
-```cpp title="solver.pgesv.cpp:72:77" hl_lines="1 5"
+```cpp title="solver.full.hpp:46:51" hl_lines="1 5"
 --8<--
-./standalone/solver.pgesv.cpp:72:77
+./standalone/solver.full.hpp:46:51
 --8<--
 ```
 
@@ -92,9 +92,9 @@ The following creates a diagonal matrix for illustration.
 
 Now since all the data is ready to be communicated, the actual communication is very concise and straightforward.
 
-```cpp title="runner.cpp:95:110" hl_lines="2 5 9 10 15 16"
+```cpp title="runner.cpp:103:118" hl_lines="2 5 9 10 15 16"
 --8<--
-./standalone/runner.cpp:95:110
+./standalone/runner.cpp:103:118
 --8<--
 ```
 

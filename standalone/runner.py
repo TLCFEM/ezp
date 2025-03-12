@@ -13,10 +13,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from array import array
-import sys
-from mpi4py import MPI
 import numpy
+import sys
+from array import array
+from mpi4py import MPI
 
 
 def run(nprocs: int, N: int, NRHS: int):
