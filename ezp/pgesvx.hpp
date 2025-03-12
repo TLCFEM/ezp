@@ -80,8 +80,7 @@ namespace ezp {
 
             this->ctx.scatter(B, full_desc_b, this->loc.b, loc_desc_b);
 
-            std::vector<work_t<DT>> r(this->loc.rows), c(this->loc.cols);
-            std::vector<work_t<DT>> ferr(loc_cols_b), berr(loc_cols_b);
+            std::vector<work_t<DT>> r(this->loc.rows), c(this->loc.cols), ferr(loc_cols_b), berr(loc_cols_b);
             work_t<DT> rcond;
 
             const auto lwork = compute_lwork();
