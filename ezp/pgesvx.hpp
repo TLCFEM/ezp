@@ -98,7 +98,7 @@ namespace ezp {
             std::vector<work_t<DT>> ferr(loc_cols_b), berr(loc_cols_b);
             work_t<DT> rcond;
 
-            auto equed = 'N';
+            auto equed = 'X';
 
             IT info{-1};
             // ReSharper disable CppCStyleCast
@@ -108,7 +108,7 @@ namespace ezp {
                 const auto liwork = this->loc.rows;
                 std::vector<IT> iwork(liwork);
 
-                pdgesvx(&FACT, &TRANS, &this->loc.n, &B.n_cols, (E*)exp.af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &equed, (E*)exp.r.data(), (E*)exp.c.data(), (E*)B.data, &this->ONE, &this->ONE, loc_desc_b.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)&rcond, (E*)ferr.data(), (E*)berr.data(), (E*)exp.work.data(), &exp.lwork, iwork.data(), &liwork, &info);
+                pdgesvx(&FACT, &TRANS, &this->loc.n, &B.n_cols, (E*)exp.af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &equed, (E*)exp.r.data(), (E*)exp.c.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)&rcond, (E*)ferr.data(), (E*)berr.data(), (E*)exp.work.data(), &exp.lwork, iwork.data(), &liwork, &info);
             }
             else if constexpr(std::is_same_v<DT, float>) {
                 using E = float;
@@ -116,7 +116,7 @@ namespace ezp {
                 const auto liwork = this->loc.rows;
                 std::vector<IT> iwork(liwork);
 
-                psgesvx(&FACT, &TRANS, &this->loc.n, &B.n_cols, (E*)exp.af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &equed, (E*)exp.r.data(), (E*)exp.c.data(), (E*)B.data, &this->ONE, &this->ONE, loc_desc_b.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)&rcond, (E*)ferr.data(), (E*)berr.data(), (E*)exp.work.data(), &exp.lwork, iwork.data(), &liwork, &info);
+                psgesvx(&FACT, &TRANS, &this->loc.n, &B.n_cols, (E*)exp.af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &equed, (E*)exp.r.data(), (E*)exp.c.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)&rcond, (E*)ferr.data(), (E*)berr.data(), (E*)exp.work.data(), &exp.lwork, iwork.data(), &liwork, &info);
             }
             else if constexpr(std::is_same_v<DT, complex16>) {
                 using E = complex16;
@@ -125,7 +125,7 @@ namespace ezp {
                 const auto lrwork = std::max(this->loc.rows, 2 * this->loc.cols);
                 std::vector<BE> rwork(lrwork);
 
-                pzgesvx(&FACT, &TRANS, &this->loc.n, &B.n_cols, (E*)exp.af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &equed, (BE*)exp.r.data(), (BE*)exp.c.data(), (E*)B.data, &this->ONE, &this->ONE, loc_desc_b.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (BE*)&rcond, (BE*)ferr.data(), (BE*)berr.data(), (E*)exp.work.data(), &exp.lwork, (BE*)rwork.data(), &lrwork, &info);
+                pzgesvx(&FACT, &TRANS, &this->loc.n, &B.n_cols, (E*)exp.af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &equed, (BE*)exp.r.data(), (BE*)exp.c.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (BE*)&rcond, (BE*)ferr.data(), (BE*)berr.data(), (E*)exp.work.data(), &exp.lwork, rwork.data(), &lrwork, &info);
             }
             else if constexpr(std::is_same_v<DT, complex8>) {
                 using E = complex8;
@@ -134,7 +134,7 @@ namespace ezp {
                 const auto lrwork = std::max(this->loc.rows, 2 * this->loc.cols);
                 std::vector<BE> rwork(lrwork);
 
-                pcgesvx(&FACT, &TRANS, &this->loc.n, &B.n_cols, (E*)exp.af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &equed, (BE*)exp.r.data(), (BE*)exp.c.data(), (E*)B.data, &this->ONE, &this->ONE, loc_desc_b.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (BE*)&rcond, (BE*)ferr.data(), (BE*)berr.data(), (E*)exp.work.data(), &exp.lwork, (BE*)rwork.data(), &lrwork, &info);
+                pcgesvx(&FACT, &TRANS, &this->loc.n, &B.n_cols, (E*)exp.af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), this->loc.ipiv.data(), &equed, (BE*)exp.r.data(), (BE*)exp.c.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (BE*)&rcond, (BE*)ferr.data(), (BE*)berr.data(), (E*)exp.work.data(), &exp.lwork, rwork.data(), &lrwork, &info);
             }
             // ReSharper restore CppCStyleCast
 
