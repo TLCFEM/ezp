@@ -48,6 +48,23 @@ namespace ezp {
     template<typename T> concept band_container_t = requires(T t) { requires index_t<decltype(t.kl)> && index_t<decltype(t.ku)> && full_container_t<T>; };
     template<typename T> concept band_symm_container_t = requires(T t) { requires index_t<decltype(t.klu)> && full_container_t<T>; };
 
+    template<typename T> struct WorkType {
+        static_assert(!std::is_same_v<T, T>, "not defined");
+    };
+    template<> struct WorkType<double> {
+        using type = double;
+    };
+    template<> struct WorkType<float> {
+        using type = float;
+    };
+    template<> struct WorkType<complex8> {
+        using type = float;
+    };
+    template<> struct WorkType<complex16> {
+        using type = double;
+    };
+    template<typename T> using work_t = typename WorkType<T>::type;
+
     template<data_t DT, index_t IT> struct base_mat {
         using data_type = DT;
         using index_type = IT;
