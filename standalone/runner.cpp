@@ -29,7 +29,7 @@
 
 int main(int argc, char** argv) {
     if(argc < 2) {
-        std::cout << "Usage: runner ge|po|gb|db|pb [n]\n";
+        std::cout << "Usage: runner ge|gex|po|gb|db|pb [n]\n";
         std::cout << "Example: runner ge 3\n";
         return 0;
     }
@@ -43,6 +43,14 @@ int main(int argc, char** argv) {
 
     if("ge" == type) {
         solver = "solver.pgesv";
+
+        config = {N, NRHS, 1};
+
+        A.resize(N * N, 0.);
+        for(auto I = 0; I < N; ++I) A[I * N + I] = I + 1.;
+    }
+    else if("gex" == type) {
+        solver = "solver.pgesvx";
 
         config = {N, NRHS, 1};
 

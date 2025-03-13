@@ -15,10 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 /**
- * @brief Standalone `pposv` solver.
+ * @brief Standalone `pgesvx` solver.
  *
  * This program is a standalone application that solves a system of linear equations
- * using the `pposv` solver.
+ * using the `pgesvx` solver.
+ * The solver always tries to equilibrate the system.
  *
  * The caller spawns this program as a worker process.
  *
@@ -42,9 +43,9 @@
  * @include runner.cpp
  *
  * @author tlc
- * @date 07/03/2025
+ * @date 12/03/2025
  * @version 1.0.0
- * @file solver.pposv.cpp
+ * @file solver.pgesvx.cpp
  * @{
  */
 
@@ -68,11 +69,11 @@ int main(int, char**) {
     const auto NRHS = config[1];
     const auto FLOAT = config[2];
 
-    if(FLOAT >= 10) return run<complex16, int_t, ezp::pposv<complex16, int_t>>(N, NRHS);
-    if(FLOAT >= 0) return run<double, int_t, ezp::pposv<double, int_t>>(N, NRHS);
-    if(FLOAT > -10) return run<float, int_t, ezp::pposv<float, int_t>>(N, NRHS);
+    if(FLOAT >= 10) return run<complex16, int_t, ezp::pgesvx<complex16, int_t>>(N, NRHS);
+    if(FLOAT >= 0) return run<double, int_t, ezp::pgesvx<double, int_t>>(N, NRHS);
+    if(FLOAT > -10) return run<float, int_t, ezp::pgesvx<float, int_t>>(N, NRHS);
 
-    return run<complex8, int_t, ezp::pposv<complex8, int_t>>(N, NRHS);
+    return run<complex8, int_t, ezp::pgesvx<complex8, int_t>>(N, NRHS);
 }
 
 //! @}
