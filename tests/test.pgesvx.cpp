@@ -39,11 +39,14 @@ template<data_t DT, char ODER = 'R'> auto random_pgesvx() {
     const auto context = blacs_context<int_t>();
 
     for(auto K = 0; K < N; ++K) {
-        const auto seed = context.amx(static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
+        auto seed = context.amx(static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
+        // seed = -1056556118;
         std::mt19937 gen(seed);
 
         const auto NRHS = std::uniform_int_distribution(1, 2)(gen);
         const auto N = std::uniform_int_distribution(5, 100)(gen);
+
+        printf("Seed: %d, N: %d, NRHS: %d\n", seed, N, NRHS);
 
         const auto IDX = typename solver_t::indexer{N};
 
@@ -138,14 +141,14 @@ int main(const int argc, const char* argv[]) {
         while(0 == i) std::this_thread::sleep_for(seconds(10));
     else N = std::atoi(argv[1]);
 
-    random_pdgesvx();
-    random_pdgesvx_c();
-    random_psgesvx();
-    random_psgesvx_c();
+    // random_pdgesvx();
+    // random_pdgesvx_c();
+    // random_psgesvx();
+    // random_psgesvx_c();
     random_pzgesvx();
-    random_pzgesvx_c();
-    random_pcgesvx();
-    random_pcgesvx_c();
+    // random_pzgesvx_c();
+    // random_pcgesvx();
+    // random_pcgesvx_c();
 
     return 0;
 }
