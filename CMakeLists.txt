@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.12)
 
 project(ezp)
 
+if (NOT CMAKE_SYSTEM_NAME MATCHES "Linux")
+    message(FATAL_ERROR "Only Linux is supported.")
+endif ()
+
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
@@ -11,6 +15,11 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
 endif ()
 
 set(CMAKE_CXX_STANDARD 20)
+
+option(EZP_ADD_UNDERSCORE "Use lowercase with appended underscore subroutine names." ON)
+if (EZP_ADD_UNDERSCORE)
+    add_compile_definitions(EZP_UNDERSCORE)
+endif ()
 
 option(EZP_USE_64BIT_INT "Use 64-bit integer." OFF)
 

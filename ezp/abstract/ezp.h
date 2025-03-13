@@ -30,8 +30,6 @@ using int_t = std::int32_t;
 using complex8 = std::complex<float>;
 using complex16 = std::complex<double>;
 
-#define EZP_UNDERSCORE
-
 #ifdef EZP_UNDERSCORE
 #define EZP_APPEND_UNDERSCORE(name) name##_
 #else
