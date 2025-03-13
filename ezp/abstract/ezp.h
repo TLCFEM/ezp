@@ -61,6 +61,7 @@ using complex16 = std::complex<double>;
 #define pcgetrs EZP(pcgetrs)
 #define pcpbtrf EZP(pcpbtrf)
 #define pcpbtrs EZP(pcpbtrs)
+#define pcposvx EZP(pcposvx)
 #define pcpotrf EZP(pcpotrf)
 #define pcpotrs EZP(pcpotrs)
 #define pddbtrf EZP(pddbtrf)
@@ -76,6 +77,7 @@ using complex16 = std::complex<double>;
 #define pdpbtrf EZP(pdpbtrf)
 #define pdpbtrs EZP(pdpbtrs)
 #define pdposv EZP(pdposv)
+#define pdposvx EZP(pdposvx)
 #define pdpotrf EZP(pdpotrf)
 #define pdpotrs EZP(pdpotrs)
 #define psdbtrf EZP(psdbtrf)
@@ -91,6 +93,7 @@ using complex16 = std::complex<double>;
 #define pspbtrf EZP(pspbtrf)
 #define pspbtrs EZP(pspbtrs)
 #define psposv EZP(psposv)
+#define psposvx EZP(psposvx)
 #define pspotrf EZP(pspotrf)
 #define pspotrs EZP(pspotrs)
 #define pzdbtrf EZP(pzdbtrf)
@@ -103,6 +106,7 @@ using complex16 = std::complex<double>;
 #define pzgetrs EZP(pzgetrs)
 #define pzpbtrf EZP(pzpbtrf)
 #define pzpbtrs EZP(pzpbtrs)
+#define pzposvx EZP(pzposvx)
 #define pzpotrf EZP(pzpotrf)
 #define pzpotrs EZP(pzpotrs)
 
@@ -135,6 +139,7 @@ void pcgetrf(const int_t* m, const int_t* n, complex8* a, const int_t* ia, const
 void pcgetrs(const char* trans, const int_t* n, const int_t* nrhs, const complex8* a, const int_t* ia, const int_t* ja, const int_t* desca, const int_t* ipiv, complex8* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
 void pcpbtrf(const char* uplo, const int_t* n, const int_t* bw, complex8* a, const int_t* ja, const int_t* desca, complex8* af, const int_t* laf, complex8* work, const int_t* lwork, int_t* info);
 void pcpbtrs(const char* uplo, const int_t* n, const int_t* bw, const int_t* nrhs, complex8* a, const int_t* ja, const int_t* desca, complex8* b, const int_t* ib, const int_t* descb, complex8* af, const int_t* laf, complex8* work, const int_t* lwork, int_t* info);
+void pcposvx(const char* fact, const char* uplo, const int_t* n, const int_t* nrhs, complex8* a, const int_t* ia, const int_t* ja, const int_t* desca, complex8* af, const int_t* iaf, const int_t* jaf, const int_t* descaf, char* equed, float* sr, float* sc, complex8* b, const int_t* ib, const int_t* jb, const int_t* descb, complex8* x, const int_t* ix, const int_t* jx, const int_t* descx, float* rcond, float* ferr, float* berr, complex8* work, const int_t* lwork, float* rwork, const int_t* lrwork, int_t* info);
 void pcpotrf(const char* uplo, const int_t* n, complex8* a, const int_t* ia, const int_t* ja, const int_t* desca, int_t* info);
 void pcpotrs(const char* uplo, const int_t* n, const int_t* nrhs, const complex8* a, const int_t* ia, const int_t* ja, const int_t* desca, complex8* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
 void pddbtrf(const int_t* n, const int_t* bwl, const int_t* bwu, double* a, const int_t* ja, const int_t* desca, double* af, const int_t* laf, double* work, const int_t* lwork, int_t* info);
@@ -150,6 +155,7 @@ void pdgetrs(const char* trans, const int_t* n, const int_t* nrhs, const double*
 void pdpbtrf(const char* uplo, const int_t* n, const int_t* bw, double* a, const int_t* ja, const int_t* desca, double* af, const int_t* laf, double* work, const int_t* lwork, int_t* info);
 void pdpbtrs(const char* uplo, const int_t* n, const int_t* bw, const int_t* nrhs, double* a, const int_t* ja, const int_t* desca, double* b, const int_t* ib, const int_t* descb, double* af, const int_t* laf, double* work, const int_t* lwork, int_t* info);
 void pdposv(const char* uplo, const int_t* n, const int_t* nrhs, double* a, const int_t* ia, const int_t* ja, const int_t* desca, double* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
+void pdposvx(const char* fact, const char* uplo, const int_t* n, const int_t* nrhs, double* a, const int_t* ia, const int_t* ja, const int_t* desca, double* af, const int_t* iaf, const int_t* jaf, const int_t* descaf, char* equed, double* sr, double* sc, double* b, const int_t* ib, const int_t* jb, const int_t* descb, double* x, const int_t* ix, const int_t* jx, const int_t* descx, double* rcond, double* ferr, double* berr, double* work, const int_t* lwork, int_t* iwork, const int_t* liwork, int_t* info);
 void pdpotrf(const char* uplo, const int_t* n, double* a, const int_t* ia, const int_t* ja, const int_t* desca, int_t* info);
 void pdpotrs(const char* uplo, const int_t* n, const int_t* nrhs, const double* a, const int_t* ia, const int_t* ja, const int_t* desca, double* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
 void psdbtrf(const int_t* n, const int_t* bwl, const int_t* bwu, float* a, const int_t* ja, const int_t* desca, float* af, const int_t* laf, float* work, const int_t* lwork, int_t* info);
@@ -165,6 +171,7 @@ void psgetrs(const char* trans, const int_t* n, const int_t* nrhs, const float* 
 void pspbtrf(const char* uplo, const int_t* n, const int_t* bw, float* a, const int_t* ja, const int_t* desca, float* af, const int_t* laf, float* work, const int_t* lwork, int_t* info);
 void pspbtrs(const char* uplo, const int_t* n, const int_t* bw, const int_t* nrhs, float* a, const int_t* ja, const int_t* desca, float* b, const int_t* ib, const int_t* descb, float* af, const int_t* laf, float* work, const int_t* lwork, int_t* info);
 void psposv(const char* uplo, const int_t* n, const int_t* nrhs, float* a, const int_t* ia, const int_t* ja, const int_t* desca, float* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
+void psposvx(const char* fact, const char* uplo, const int_t* n, const int_t* nrhs, float* a, const int_t* ia, const int_t* ja, const int_t* desca, float* af, const int_t* iaf, const int_t* jaf, const int_t* descaf, char* equed, float* sr, float* sc, float* b, const int_t* ib, const int_t* jb, const int_t* descb, float* x, const int_t* ix, const int_t* jx, const int_t* descx, float* rcond, float* ferr, float* berr, float* work, const int_t* lwork, int_t* iwork, const int_t* liwork, int_t* info);
 void pspotrf(const char* uplo, const int_t* n, float* a, const int_t* ia, const int_t* ja, const int_t* desca, int_t* info);
 void pspotrs(const char* uplo, const int_t* n, const int_t* nrhs, const float* a, const int_t* ia, const int_t* ja, const int_t* desca, float* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
 void pzdbtrf(const int_t* n, const int_t* bwl, const int_t* bwu, complex16* a, const int_t* ja, const int_t* desca, complex16* af, const int_t* laf, complex16* work, const int_t* lwork, int_t* info);
@@ -177,6 +184,7 @@ void pzgetrf(const int_t* m, const int_t* n, complex16* a, const int_t* ia, cons
 void pzgetrs(const char* trans, const int_t* n, const int_t* nrhs, const complex16* a, const int_t* ia, const int_t* ja, const int_t* desca, const int_t* ipiv, complex16* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
 void pzpbtrf(const char* uplo, const int_t* n, const int_t* bw, complex16* a, const int_t* ja, const int_t* desca, complex16* af, const int_t* laf, complex16* work, const int_t* lwork, int_t* info);
 void pzpbtrs(const char* uplo, const int_t* n, const int_t* bw, const int_t* nrhs, complex16* a, const int_t* ja, const int_t* desca, complex16* b, const int_t* ib, const int_t* descb, complex16* af, const int_t* laf, complex16* work, const int_t* lwork, int_t* info);
+void pzposvx(const char* fact, const char* uplo, const int_t* n, const int_t* nrhs, complex16* a, const int_t* ia, const int_t* ja, const int_t* desca, complex16* af, const int_t* iaf, const int_t* jaf, const int_t* descaf, char* equed, double* sr, double* sc, complex16* b, const int_t* ib, const int_t* jb, const int_t* descb, complex16* x, const int_t* ix, const int_t* jx, const int_t* descx, double* rcond, double* ferr, double* berr, complex16* work, const int_t* lwork, double* rwork, const int_t* lrwork, int_t* info);
 void pzpotrf(const char* uplo, const int_t* n, complex16* a, const int_t* ia, const int_t* ja, const int_t* desca, int_t* info);
 void pzpotrs(const char* uplo, const int_t* n, const int_t* nrhs, const complex16* a, const int_t* ia, const int_t* ja, const int_t* desca, complex16* b, const int_t* ib, const int_t* jb, const int_t* descb, int_t* info);
 

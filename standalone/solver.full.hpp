@@ -20,9 +20,12 @@
 
 // ReSharper disable once CppUnusedIncludeDirective
 #include <ezp/pgesv.hpp>
+// ReSharper disable once CppUnusedIncludeDirective
 #include <ezp/pgesvx.hpp>
 // ReSharper disable once CppUnusedIncludeDirective
 #include <ezp/pposv.hpp>
+// ReSharper disable once CppUnusedIncludeDirective
+#include <ezp/pposvx.hpp>
 #include <mpl/mpl.hpp>
 
 inline const auto& comm_world{mpl::environment::comm_world()};

@@ -16,7 +16,7 @@
  ******************************************************************************/
 
 #include <chrono>
-#include <ezp/pgesvx.hpp>
+#include <ezp/pposvx.hpp>
 #include <random>
 #include <thread>
 
@@ -31,22 +31,19 @@ using namespace std::chrono;
 
 static auto N = 100;
 
-template<data_t DT, char ODER = 'R'> auto random_pgesvx() {
-    using solver_t = pgesvx<DT, int_t, ODER>;
+template<data_t DT, char ODER = 'R'> auto random_pposvx() {
+    using solver_t = pposvx<DT, int_t, 'L', ODER>;
 
     const auto& env = get_env<int_t>();
 
     const auto context = blacs_context<int_t>();
 
     for(auto K = 0; K < N; ++K) {
-        auto seed = context.amx(static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
-        // seed = -1056556118;
+        const auto seed = context.amx(static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
         std::mt19937 gen(seed);
 
         const auto NRHS = std::uniform_int_distribution(1, 2)(gen);
         const auto N = std::uniform_int_distribution(5, 100)(gen);
-
-        printf("Seed: %d, N: %d, NRHS: %d\n", seed, N, NRHS);
 
         const auto IDX = typename solver_t::indexer{N};
 
@@ -56,11 +53,11 @@ template<data_t DT, char ODER = 'R'> auto random_pgesvx() {
             A.resize(N * N, DT{0.});
             B.resize(N * NRHS, DT{1.});
 
-            std::uniform_real_distribution dist_v(0.f, 1.f);
+            std::uniform_real_distribution dist_v(1.f, 2.f);
 
             for(auto I = 0; I < N; ++I) {
                 A[IDX(I, I)] = 10.f * dist_v(gen);
-                for(auto J = I + 1; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen);
+                for(auto J = I + 1; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = A[IDX(J, I)] = dist_v(gen);
             }
         }
 
@@ -71,67 +68,67 @@ template<data_t DT, char ODER = 'R'> auto random_pgesvx() {
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PDGESVX", "[Expert Solver]") {
+TEST_CASE("Random PDPOSVX", "[Expert Solver]") {
 #else
-void random_pdgesvx() {
+void random_pdposvx() {
 #endif
-    random_pgesvx<double>();
+    random_pposvx<double>();
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PDGESVXC", "[Expert Solver]") {
+TEST_CASE("Random PDPOSVXC", "[Expert Solver]") {
 #else
-void random_pdgesvx_c() {
+void random_pdposvx_c() {
 #endif
-    random_pgesvx<double, 'C'>();
+    random_pposvx<double, 'C'>();
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PSGESVX", "[Expert Solver]") {
+TEST_CASE("Random PSPOSVX", "[Expert Solver]") {
 #else
-void random_psgesvx() {
+void random_psposvx() {
 #endif
-    random_pgesvx<float>();
+    random_pposvx<float>();
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PSGESVXC", "[Expert Solver]") {
+TEST_CASE("Random PSPOSVXC", "[Expert Solver]") {
 #else
-void random_psgesvx_c() {
+void random_psposvx_c() {
 #endif
-    random_pgesvx<double, 'C'>();
+    random_pposvx<double, 'C'>();
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PZGESVX", "[Expert Solver]") {
+TEST_CASE("Random PZPOSVX", "[Expert Solver]") {
 #else
-void random_pzgesvx() {
+void random_pzposvx() {
 #endif
-    random_pgesvx<complex16>();
+    random_pposvx<complex16>();
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PZGESVXC", "[Expert Solver]") {
+TEST_CASE("Random PZPOSVXC", "[Expert Solver]") {
 #else
-void random_pzgesvx_c() {
+void random_pzposvx_c() {
 #endif
-    random_pgesvx<complex16, 'C'>();
+    random_pposvx<complex16, 'C'>();
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PCGESVX", "[Expert Solver]") {
+TEST_CASE("Random PCPOSVX", "[Expert Solver]") {
 #else
-void random_pcgesvx() {
+void random_pcposvx() {
 #endif
-    random_pgesvx<complex8>();
+    random_pposvx<complex8>();
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random PCGESVXC", "[Expert Solver]") {
+TEST_CASE("Random PCPOSVXC", "[Expert Solver]") {
 #else
-void random_pcgesvx_c() {
+void random_pcposvx_c() {
 #endif
-    random_pgesvx<complex8, 'C'>();
+    random_pposvx<complex8, 'C'>();
 }
 
 #ifndef EZP_ENABLE_TEST
@@ -141,14 +138,14 @@ int main(const int argc, const char* argv[]) {
         while(0 == i) std::this_thread::sleep_for(seconds(10));
     else N = std::atoi(argv[1]);
 
-    // random_pdgesvx();
-    // random_pdgesvx_c();
-    // random_psgesvx();
-    // random_psgesvx_c();
-    random_pzgesvx();
-    // random_pzgesvx_c();
-    // random_pcgesvx();
-    // random_pcgesvx_c();
+    random_pdposvx();
+    random_pdposvx_c();
+    random_psposvx();
+    random_psposvx_c();
+    random_pzposvx();
+    random_pzposvx_c();
+    random_pcposvx();
+    random_pcposvx_c();
 
     return 0;
 }

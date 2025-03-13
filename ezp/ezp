@@ -21,3 +21,4 @@
 #include "pgesvx.hpp"
 #include "ppbsv.hpp"
 #include "pposv.hpp"
+#include "pposvx.hpp"
