@@ -29,6 +29,8 @@
 
 #include "abstract/full_solver.hpp"
 
+#include <numeric>
+
 namespace ezp {
     template<data_t DT, index_t IT, char UL = 'L', char ODER = 'R'> class pposvx final : public detail::full_solver<DT, IT, ODER> {
         static constexpr char FACT = 'E';
@@ -36,9 +38,9 @@ namespace ezp {
 
         using base_t = detail::full_solver<DT, IT, ODER>;
 
-        auto compute_lwork() {
-            const auto ceil = [](const IT a, const IT b) { return (a + b - 1) / b; };
+        static auto ceil(const IT a, const IT b) { return (a + b - 1) / b; }
 
+        auto compute_lwork() {
             const auto ceil_a = std::max(IT{1}, ceil(this->ctx.n_rows - 1, this->ctx.n_cols));
             const auto ceil_b = std::max(IT{1}, ceil(this->ctx.n_cols - 1, this->ctx.n_rows));
             const auto ppocon_lwork = 2 * (this->loc.rows + this->loc.cols) + std::max(IT{2}, std::max(this->loc.block * ceil_a, this->loc.cols + this->loc.block * ceil_b));
@@ -46,6 +48,12 @@ namespace ezp {
             const auto pporfs_lwork = 3 * this->loc.rows;
 
             return std::max(ppocon_lwork, pporfs_lwork);
+        }
+
+        auto compute_lrwork() {
+            const auto lcmp = std::lcm(this->ctx.n_rows, this->ctx.n_cols) / this->ctx.n_rows;
+
+            return this->loc.rows + 2 * this->loc.cols + this->loc.block * ceil(ceil(this->loc.rows, this->loc.block), lcmp);
         }
 
         struct expert_system {
@@ -120,7 +128,7 @@ namespace ezp {
                 using E = complex16;
                 using BE = work_t<complex16>;
 
-                const auto lrwork = std::max(this->loc.rows, 2 * this->loc.cols);
+                const auto lrwork = compute_lrwork();
                 std::vector<BE> rwork(lrwork);
 
                 pzposvx(&FACT, &UPLO, &this->loc.n, &B.n_cols, (E*)exp.af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), &equed, (BE*)exp.sr.data(), (BE*)exp.sc.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)x.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (BE*)&rcond, (BE*)ferr.data(), (BE*)berr.data(), (E*)exp.work.data(), &exp.lwork, rwork.data(), &lrwork, &info);
@@ -129,7 +137,7 @@ namespace ezp {
                 using E = complex8;
                 using BE = work_t<complex8>;
 
-                const auto lrwork = std::max(this->loc.rows, 2 * this->loc.cols);
+                const auto lrwork = compute_lrwork();
                 std::vector<BE> rwork(lrwork);
 
                 pcposvx(&FACT, &UPLO, &this->loc.n, &B.n_cols, (E*)exp.af.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), (E*)this->loc.a.data(), &this->ONE, &this->ONE, this->loc.desc_a.data(), &equed, (BE*)exp.sr.data(), (BE*)exp.sc.data(), (E*)this->loc.b.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (E*)x.data(), &this->ONE, &this->ONE, loc_desc_b.data(), (BE*)&rcond, (BE*)ferr.data(), (BE*)berr.data(), (E*)exp.work.data(), &exp.lwork, rwork.data(), &lrwork, &info);
