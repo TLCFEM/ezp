@@ -754,7 +754,7 @@ And since the spawned processes are not persistent, solving the same system with
 <p>Here, we use the <code>pgesv</code> solver as the example to illustrate some critical steps used in implementing the above architecture.</p>
 <p>We are not using the raw <code>MPI</code> functions, instead, the <code>mpl</code> library is used.
 It is necessary to get the default communicator and the parent inter communicator.</p>
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">solver.full.hpp:31:32</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">solver.full.hpp:24:25</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
 <span class="normal"><a href="#__codelineno-0-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="kr">inline</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">comm_world</span><span class="p">{</span><span class="n">mpl</span><span class="o">::</span><span class="n">environment</span><span class="o">::</span><span class="n">comm_world</span><span class="p">()};</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="kr">inline</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">parent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mpl</span><span class="o">::</span><span class="n">inter_communicator</span><span class="o">::</span><span class="n">parent</span><span class="p">();</span>
 </code></pre></div></td></tr></table></div>
@@ -774,7 +774,7 @@ The function <code>ezp::blacs_env::do_not_manage_mpi()</code> must be called if 
 <a id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="hll"><span class="w">    </span><span class="n">all</span><span class="p">.</span><span class="n">bcast</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">config</span><span class="p">);</span>
 </span></code></pre></div></td></tr></table></div>
 <p>Knowing the problem sizes <code>N</code> and <code>NRHS</code>, the root process can initialise the containers and receive the contents of two matrices.</p>
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">solver.full.hpp:35:47</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1"> 1</a></span>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">solver.full.hpp:28:40</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1"> 1</a></span>
 <span class="normal"><a href="#__codelineno-3-2"> 2</a></span>
 <span class="normal"><a href="#__codelineno-3-3"> 3</a></span>
 <span class="normal"><a href="#__codelineno-3-4"> 4</a></span>
@@ -802,7 +802,7 @@ The function <code>ezp::blacs_env::do_not_manage_mpi()</code> must be called if 
 </code></pre></div></td></tr></table></div>
 <p>Solving the system follows the conventional approach, that is, create a solver object and call the solve method with data wrapped.
 The solution is sent back to the caller.</p>
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">solver.full.hpp:49:54</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">solver.full.hpp:42:47</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span>
 <span class="normal"><a href="#__codelineno-4-2">2</a></span>
 <span class="normal"><a href="#__codelineno-4-3">3</a></span>
 <span class="normal"><a href="#__codelineno-4-4">4</a></span>

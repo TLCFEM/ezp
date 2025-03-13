@@ -16,7 +16,6 @@ var annotated_dup =
       [ "pdbsv", "de/d4c/classezp_1_1pdbsv.html", "de/d4c/classezp_1_1pdbsv" ],
       [ "pgbsv", "d1/d7e/classezp_1_1pgbsv.html", "d1/d7e/classezp_1_1pgbsv" ],
       [ "pgesv", "d5/d48/classezp_1_1pgesv.html", null ],
-      [ "pgesvx", "d5/d6a/classezp_1_1pgesvx.html", null ],
       [ "ppbsv", "d3/df1/classezp_1_1ppbsv.html", "d3/df1/classezp_1_1ppbsv" ],
       [ "pposv", "de/d12/classezp_1_1pposv.html", null ],
       [ "pposvx", "d0/d05/classezp_1_1pposvx.html", null ],
@@ -32,7 +31,6 @@ var annotated_dup =
     [ "pdbsv", "d0/de4/classpdbsv.html", null ],
     [ "pgbsv", "d4/d10/classpgbsv.html", null ],
     [ "pgesv", "dc/d13/classpgesv.html", null ],
-    [ "pgesvx", "df/d1a/classpgesvx.html", null ],
     [ "ppbsv", "d8/dba/classppbsv.html", null ],
     [ "pposv", "db/db1/classpposv.html", null ],
     [ "pposvx", "d4/d47/classpposvx.html", null ]
