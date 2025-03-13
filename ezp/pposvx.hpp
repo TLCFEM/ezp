@@ -32,7 +32,6 @@
 namespace ezp {
     template<data_t DT, index_t IT, char UL = 'L', char ODER = 'R'> class pposvx final : public detail::full_solver<DT, IT, ODER> {
         static constexpr char FACT = 'E';
-        static constexpr char TRANS = 'N';
         static constexpr char UPLO = UL;
 
         using base_t = detail::full_solver<DT, IT, ODER>;

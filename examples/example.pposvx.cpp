@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 /**
- * @brief Example caller to the `pgesvx` solver.
+ * @brief Example caller to the `pposvx` solver.
  *
  * @author tlc
- * @date 12/03/2025
+ * @date 13/03/2025
  * @version 1.0.0
- * @file example.pgesvx.cpp
+ * @file example.pposvx.cpp
  * @{
  */
 
-#include <ezp/pgesvx.hpp>
+#include <ezp/pposvx.hpp>
 #include <iomanip>
 #include <iostream>
 
@@ -40,7 +40,7 @@ int main() {
     std::vector<double> A, B;
 
     // helper function to convert 2D indices to 1D indices
-    const auto IDX = par_dgesvx<int_t>::indexer{N};
+    const auto IDX = par_dposvx<int_t>::indexer{N};
 
     if(0 == env.rank()) {
         // the matrices are only initialized on the root process
@@ -57,7 +57,7 @@ int main() {
 
     // create a parallel solver
     // it takes the number of rows and columns of the process grid as arguments
-    auto solver = par_dgesvx<int_t>();
+    auto solver = par_dposvx<int_t>();
 
     // need to wrap the data in full_mat objects
     // it requires the number of rows and columns of the matrix, and a pointer to the data
