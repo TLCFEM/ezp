@@ -49,6 +49,8 @@ template<data_t DT, char UL = 'L'> auto random_ppbsv() {
         const auto N = std::uniform_int_distribution(KLU + 1, 400)(gen);
         const auto LDA = KLU + 1;
 
+        printf("Seed: %d, N: %d, KLU: %d, NRHS: %d\n", seed, N, KLU, NRHS);
+
         const auto IDX = typename solver_t::indexer{N, KLU};
 
         std::vector<DT> A, B;

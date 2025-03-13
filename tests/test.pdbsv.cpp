@@ -48,6 +48,8 @@ template<data_t DT> auto random_pdbsv() {
         const auto NRHS = band(gen);
         const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 400)(gen);
 
+        printf("Seed: %d, N: %d, KL: %d, KU: %d, NRHS: %d\n", seed, N, KL, KU, NRHS);
+
         const auto LDA = KL + KU + 1;
 
         const auto IDX = typename solver_t::indexer{N, KL, KU};

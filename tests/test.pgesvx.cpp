@@ -29,7 +29,7 @@ using namespace std::chrono;
 #define REQUIRE(...)
 #endif
 
-static auto N = 100;
+static auto N = 10;
 
 template<data_t DT, char ODER = 'R'> auto random_pgesvx() {
     using solver_t = pgesvx<DT, int_t, ODER>;
@@ -43,7 +43,7 @@ template<data_t DT, char ODER = 'R'> auto random_pgesvx() {
         // seed = -1056556118;
         std::mt19937 gen(seed);
 
-        const auto NRHS = std::uniform_int_distribution(1, 2)(gen);
+        const auto NRHS = std::uniform_int_distribution(1, 10)(gen);
         const auto N = std::uniform_int_distribution(5, 100)(gen);
 
         printf("Seed: %d, N: %d, NRHS: %d\n", seed, N, NRHS);
