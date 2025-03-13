@@ -1,13 +1,11 @@
 <map id="examples/example.pgesvx.cpp" name="examples/example.pgesvx.cpp">
-<area shape="rect" id="Node000001" title="Example caller to the pgesvx solver." alt="" coords="440,5,665,31"/>
+<area shape="rect" id="Node000001" title="Example caller to the pgesvx solver." alt="" coords="389,5,615,31"/>
 <area shape="rect" id="Node000002" href="$d8/d17/pgesvx_8hpp.html" title=" " alt="" coords="316,79,440,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="526,33,420,76,418,71,524,28"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="483,33,411,74,409,69,481,28"/>
 <area shape="rect" id="Node000014" title=" " alt="" coords="465,79,539,104"/>
-<area shape="poly" id="edge13_Node000001_Node000014" title=" " alt="" coords="546,33,520,69,516,66,542,29"/>
+<area shape="poly" id="edge13_Node000001_Node000014" title=" " alt="" coords="505,31,505,65,499,65,499,31"/>
 <area shape="rect" id="Node000015" title=" " alt="" coords="563,79,643,104"/>
-<area shape="poly" id="edge14_Node000001_Node000015" title=" " alt="" coords="563,29,589,66,585,69,559,33"/>
-<area shape="rect" id="Node000016" title=" " alt="" coords="667,79,731,104"/>
-<area shape="poly" id="edge15_Node000001_Node000016" title=" " alt="" coords="577,28,664,70,662,75,575,33"/>
+<area shape="poly" id="edge14_Node000001_Node000015" title=" " alt="" coords="520,28,577,68,574,73,517,33"/>
 <area shape="rect" id="Node000003" href="$d0/dec/full__solver_8hpp_source.html" title=" " alt="" coords="216,152,391,177"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="368,106,327,144,324,141,364,102"/>
 <area shape="rect" id="Node000013" title=" " alt="" coords="415,152,490,177"/>

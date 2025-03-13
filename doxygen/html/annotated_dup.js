@@ -19,6 +19,7 @@ var annotated_dup =
       [ "pgesvx", "d5/d6a/classezp_1_1pgesvx.html", null ],
       [ "ppbsv", "d3/df1/classezp_1_1ppbsv.html", "d3/df1/classezp_1_1ppbsv" ],
       [ "pposv", "de/d12/classezp_1_1pposv.html", null ],
+      [ "pposvx", "d0/d05/classezp_1_1pposvx.html", null ],
       [ "WorkType", "da/d62/structezp_1_1WorkType.html", null ],
       [ "WorkType< complex16 >", "d2/dac/structezp_1_1WorkType_3_01complex16_01_4.html", null ],
       [ "WorkType< complex8 >", "d1/d01/structezp_1_1WorkType_3_01complex8_01_4.html", null ],
@@ -33,5 +34,6 @@ var annotated_dup =
     [ "pgesv", "dc/d13/classpgesv.html", null ],
     [ "pgesvx", "df/d1a/classpgesvx.html", null ],
     [ "ppbsv", "d8/dba/classppbsv.html", null ],
-    [ "pposv", "db/db1/classpposv.html", null ]
+    [ "pposv", "db/db1/classpposv.html", null ],
+    [ "pposvx", "d4/d47/classpposvx.html", null ]
 ];
