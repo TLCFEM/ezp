@@ -33,7 +33,7 @@
 
 namespace ezp {
     template<data_t DT, index_t IT, char ODER = 'R'> class pgesvx final : public detail::full_solver<DT, IT, ODER> {
-        static constexpr char FACT = 'E';
+        static constexpr char FACT = 'N';
         static constexpr char TRANS = 'N';
 
         using base_t = detail::full_solver<DT, IT, ODER>;
