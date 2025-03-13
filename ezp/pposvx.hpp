@@ -155,10 +155,7 @@ namespace ezp {
             return info;
         }
 
-        IT solve(full_mat<DT, IT>&& B) override {
-            IT info{-1};
-            return info;
-        }
+        IT solve(full_mat<DT, IT>&& B) override { return IT{-1}; }
     };
 
     template<index_t IT, char UL = 'L', char ODER = 'R'> using par_dposvx = pposvx<double, IT, UL, ODER>;
