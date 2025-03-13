@@ -26,9 +26,9 @@ Here, we use the `pgesv` solver as the example to illustrate some critical steps
 We are not using the raw `MPI` functions, instead, the `mpl` library is used.
 It is necessary to get the default communicator and the parent inter communicator.
 
-```cpp title="solver.full.hpp:31:32"
+```cpp title="solver.full.hpp:24:25"
 --8<--
-./standalone/solver.full.hpp:31:32
+./standalone/solver.full.hpp:24:25
 --8<--
 ```
 
@@ -51,18 +51,18 @@ The parameters of the linear system will be broadcast over by the main applicati
 
 Knowing the problem sizes `N` and `NRHS`, the root process can initialise the containers and receive the contents of two matrices.
 
-```cpp title="solver.full.hpp:35:47" hl_lines="3-5 9 10"
+```cpp title="solver.full.hpp:28:40" hl_lines="3-5 9 10"
 --8<--
-./standalone/solver.full.hpp:35:47
+./standalone/solver.full.hpp:28:40
 --8<--
 ```
 
 Solving the system follows the conventional approach, that is, create a solver object and call the solve method with data wrapped.
 The solution is sent back to the caller.
 
-```cpp title="solver.full.hpp:49:54" hl_lines="1 5"
+```cpp title="solver.full.hpp:42:47" hl_lines="1 5"
 --8<--
-./standalone/solver.full.hpp:49:54
+./standalone/solver.full.hpp:42:47
 --8<--
 ```
 
