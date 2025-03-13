@@ -97,24 +97,16 @@ $(document).ready(function(){initNavTree('d3/db5/solver_8pgesv_8cpp.html','../..
 
 <p>Standalone <code>pgesv</code> solver.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &lt;<a class="el" href="../../df/d21/pgesv_8hpp_source.html">ezp/pgesv.hpp</a>&gt;</code><br />
-<code>#include &lt;mpl/mpl.hpp&gt;</code><br />
+<div class="textblock"><code>#include &quot;solver.full.hpp&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for solver.pgesv.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="../../d3/dba/solver_8pgesv_8cpp__incl.svg" width="564" height="403"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="../../d3/dba/solver_8pgesv_8cpp__incl.svg" width="647" height="476"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><table class="memberdecls">
-<tr class="memitem:a554a8850b09ff16e64e5e2ff48685525" id="r_a554a8850b09ff16e64e5e2ff48685525"><td class="memItemLeft" align="right" valign="top"><a id="a554a8850b09ff16e64e5e2ff48685525" name="a554a8850b09ff16e64e5e2ff48685525"></a>
-const auto &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>comm_world</b> {mpl::environment::comm_world()}</td></tr>
-<tr class="separator:a554a8850b09ff16e64e5e2ff48685525"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2b8ea5a152a04fde388ab321ac0bf168" id="r_a2b8ea5a152a04fde388ab321ac0bf168"><td class="memItemLeft" align="right" valign="top"><a id="a2b8ea5a152a04fde388ab321ac0bf168" name="a2b8ea5a152a04fde388ab321ac0bf168"></a>
-const auto &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>parent</b> = mpl::inter_communicator::parent()</td></tr>
-<tr class="separator:a2b8ea5a152a04fde388ab321ac0bf168"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aba13feaa97c3e96507681ef56b8647f5" id="r_aba13feaa97c3e96507681ef56b8647f5"><td class="memTemplParams" colspan="2"><a id="aba13feaa97c3e96507681ef56b8647f5" name="aba13feaa97c3e96507681ef56b8647f5"></a>
-template&lt;<a class="el" href="../../d3/dde/conceptezp_1_1data__t.html">ezp::data_t</a> DT, <a class="el" href="../../db/dfc/conceptezp_1_1index__t.html">ezp::index_t</a> IT&gt; </td></tr>
-<tr class="memitem:aba13feaa97c3e96507681ef56b8647f5"><td class="memTemplItemLeft" align="right" valign="top">int&#160;</td><td class="memTemplItemRight" valign="bottom"><b>run</b> (const int N, const int NRHS)</td></tr>
-<tr class="separator:aba13feaa97c3e96507681ef56b8647f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr><td colspan="2"><div class="groupHeader"></div></td></tr>
 <tr class="memitem:a2c3f6775325c30275d11c6abee2db6a0" id="r_a2c3f6775325c30275d11c6abee2db6a0"><td class="memItemLeft" align="right" valign="top"><a id="a2c3f6775325c30275d11c6abee2db6a0" name="a2c3f6775325c30275d11c6abee2db6a0"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (int, char **)</td></tr>
 <tr class="separator:a2c3f6775325c30275d11c6abee2db6a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -157,7 +149,7 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (int, char **
 <div class="line"> </div>
 <div class="line"><span class="keywordtype">int</span> main(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span>** argv) {</div>
 <div class="line">    <span class="keywordflow">if</span>(argc &lt; 2) {</div>
-<div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Usage: runner ge|po|gb|db|pb [n]\n&quot;</span>;</div>
+<div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Usage: runner ge|gex|po|gb|db|pb [n]\n&quot;</span>;</div>
 <div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Example: runner ge 3\n&quot;</span>;</div>
 <div class="line">        <span class="keywordflow">return</span> 0;</div>
 <div class="line">    }</div>
@@ -171,6 +163,14 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (int, char **
 <div class="line"> </div>
 <div class="line">    <span class="keywordflow">if</span>(<span class="stringliteral">&quot;ge&quot;</span> == type) {</div>
 <div class="line">        solver = <span class="stringliteral">&quot;solver.pgesv&quot;</span>;</div>
+<div class="line"> </div>
+<div class="line">        config = {N, NRHS, 1};</div>
+<div class="line"> </div>
+<div class="line">        A.resize(N * N, 0.);</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[I * N + I] = I + 1.;</div>
+<div class="line">    }</div>
+<div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;gex&quot;</span> == type) {</div>
+<div class="line">        solver = <span class="stringliteral">&quot;solver.pgesvx&quot;</span>;</div>
 <div class="line"> </div>
 <div class="line">        config = {N, NRHS, 1};</div>
 <div class="line"> </div>

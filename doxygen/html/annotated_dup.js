@@ -16,8 +16,14 @@ var annotated_dup =
       [ "pdbsv", "de/d4c/classezp_1_1pdbsv.html", "de/d4c/classezp_1_1pdbsv" ],
       [ "pgbsv", "d1/d7e/classezp_1_1pgbsv.html", "d1/d7e/classezp_1_1pgbsv" ],
       [ "pgesv", "d5/d48/classezp_1_1pgesv.html", null ],
+      [ "pgesvx", "d5/d6a/classezp_1_1pgesvx.html", null ],
       [ "ppbsv", "d3/df1/classezp_1_1ppbsv.html", "d3/df1/classezp_1_1ppbsv" ],
-      [ "pposv", "de/d12/classezp_1_1pposv.html", null ]
+      [ "pposv", "de/d12/classezp_1_1pposv.html", null ],
+      [ "WorkType", "da/d62/structezp_1_1WorkType.html", null ],
+      [ "WorkType< complex16 >", "d2/dac/structezp_1_1WorkType_3_01complex16_01_4.html", null ],
+      [ "WorkType< complex8 >", "d1/d01/structezp_1_1WorkType_3_01complex8_01_4.html", null ],
+      [ "WorkType< double >", "d0/d47/structezp_1_1WorkType_3_01double_01_4.html", null ],
+      [ "WorkType< float >", "d6/d6b/structezp_1_1WorkType_3_01float_01_4.html", null ]
     ] ],
     [ "bandsymm_mat", "d0/d33/classbandsymm__mat.html", null ],
     [ "general_mat", "d8/d10/classgeneral__mat.html", null ],
@@ -25,6 +31,7 @@ var annotated_dup =
     [ "pdbsv", "d0/de4/classpdbsv.html", null ],
     [ "pgbsv", "d4/d10/classpgbsv.html", null ],
     [ "pgesv", "dc/d13/classpgesv.html", null ],
+    [ "pgesvx", "df/d1a/classpgesvx.html", null ],
     [ "ppbsv", "d8/dba/classppbsv.html", null ],
     [ "pposv", "db/db1/classpposv.html", null ]
 ];
