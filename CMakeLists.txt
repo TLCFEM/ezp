@@ -105,12 +105,6 @@ else ()
     endforeach ()
 endif ()
 
-file(GLOB EXAMPLES "tests/*.cxx")
-foreach (EXAMPLE ${EXAMPLES})
-    get_filename_component(EXAMPLE_NAME ${EXAMPLE} NAME_WLE)
-    add_executable(${EXAMPLE_NAME} ${EXAMPLE})
-endforeach ()
-
 option(EZP_STANDALONE "Enable standalone solver." OFF)
 
 if (EZP_STANDALONE)
