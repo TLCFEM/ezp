@@ -57,8 +57,10 @@ template<data_t DT, char FCT = 'N', char ODER = 'R'> auto random_pgesvx() {
 
             std::uniform_real_distribution dist_v(1.f, 2.f);
 
-            for(auto I = 0; I < N; ++I)
-                for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen);
+            for(auto I = 0; I < N; ++I) {
+                A[IDX(I, I)] = 2.f * dist_v(gen) + 2.f;
+                for(auto J = I + 1; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen);
+            }
         }
 
         const auto info = solver_t().solve({N, N, A.data()}, {N, NRHS, B.data()});
