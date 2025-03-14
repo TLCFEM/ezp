@@ -146,10 +146,6 @@ namespace ezp {
 
             if((info = this->ctx.amx(info)) != 0) return info;
 
-            if(equed == 'C' || equed == 'B')
-                for(auto i = 0; i < loc_cols_b; ++i)
-                    for(auto j = 0; j < this->loc.rows; ++j) x[j * loc_cols_b + i] /= exp.sc[j];
-
             this->ctx.gather(x, loc_desc_b, B, full_desc_b);
 
             return info;
