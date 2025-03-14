@@ -160,7 +160,7 @@ The caller is expected to send the bottom <code>KL + KU + 1</code> rows of <code
 <div class="line"> </div>
 <div class="line"><span class="keywordtype">int</span> main(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span>** argv) {</div>
 <div class="line">    <span class="keywordflow">if</span>(argc &lt; 2) {</div>
-<div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Usage: runner ge|gex|po|gb|db|pb [n]\n&quot;</span>;</div>
+<div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Usage: runner ge|gex|po|pox|gb|db|pb [n]\n&quot;</span>;</div>
 <div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Example: runner ge 3\n&quot;</span>;</div>
 <div class="line">        <span class="keywordflow">return</span> 0;</div>
 <div class="line">    }</div>
@@ -190,6 +190,14 @@ The caller is expected to send the bottom <code>KL + KU + 1</code> rows of <code
 <div class="line">    }</div>
 <div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;po&quot;</span> == type) {</div>
 <div class="line">        solver = <span class="stringliteral">&quot;solver.pposv&quot;</span>;</div>
+<div class="line"> </div>
+<div class="line">        config = {N, NRHS, 1};</div>
+<div class="line"> </div>
+<div class="line">        A.resize(N * N, 0.);</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[I * N + I] = I + 1.;</div>
+<div class="line">    }</div>
+<div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;pox&quot;</span> == type) {</div>
+<div class="line">        solver = <span class="stringliteral">&quot;solver.pposvx&quot;</span>;</div>
 <div class="line"> </div>
 <div class="line">        config = {N, NRHS, 1};</div>
 <div class="line"> </div>
@@ -227,7 +235,7 @@ The caller is expected to send the bottom <code>KL + KU + 1</code> rows of <code
 <div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[I + I * KLU] = I + 1.;</div>
 <div class="line">    }</div>
 <div class="line">    <span class="keywordflow">else</span> {</div>
-<div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Usage: runner ge|po|gb|db|pb [n]\n&quot;</span>;</div>
+<div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Usage: runner ge|gex|po|pox|gb|db|pb [n]\n&quot;</span>;</div>
 <div class="line">        <span class="keywordflow">return</span> 0;</div>
 <div class="line">    }</div>
 <div class="line"> </div>
