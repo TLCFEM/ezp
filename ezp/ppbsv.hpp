@@ -18,7 +18,7 @@
  * @class ppbsv
  * @brief Solver for symmetric band positive definite matrices.
  *
- * @note Although the `ppbsv` solver supports KLU, a zero (half) bandwidth
+ * @note Although the `ppbsv` solver supports `KLU=0`, a zero (half) bandwidth
  * would lead to unwanted warning message from ScaLAPACK.
  * @note See: https://github.com/Reference-ScaLAPACK/scalapack/issues/116
  *

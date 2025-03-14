@@ -18,7 +18,7 @@
  * @class pgbsv
  * @brief Solver for general band matrices.
  *
- * @note Although the `pgbsv` solver supports KL=0 and/or KU=0, a zero (half) bandwidth
+ * @note Although the `pgbsv` solver supports `KL=0` and/or `KU=0`, a zero (half) bandwidth
  * would lead to unwanted warning message from ScaLAPACK.
  * @note See: https://github.com/Reference-ScaLAPACK/scalapack/issues/116
  *

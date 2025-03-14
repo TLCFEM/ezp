@@ -19,8 +19,8 @@
  * @brief Solver for general full matrices.
  *
  * It solves the system of linear equations `A*X=B` with a full general matrix `A`.
- * The matrix `A` is stored in a `N x N` block.
- * The matrix `B` is stored in a `N x NRHS` block.
+ * The matrix `A` is stored in a `NxN` block.
+ * The matrix `B` is stored in a `NxNRHS` block.
  *
  * The example usage can be seen as follows.
  *
