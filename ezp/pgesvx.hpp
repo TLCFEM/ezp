@@ -38,9 +38,9 @@ namespace ezp {
 
         using base_t = detail::full_solver<DT, IT, ODER>;
 
-        auto compute_lwork() {
-            const auto ceil = [](const IT a, const IT b) { return (a + b - 1) / b; };
+        static auto ceil(const IT a, const IT b) { return (a + b - 1) / b; }
 
+        auto compute_lwork() {
             const auto ceil_a = std::max(IT{1}, ceil(this->ctx.n_rows - 1, this->ctx.n_cols));
             const auto ceil_b = std::max(IT{1}, ceil(this->ctx.n_cols - 1, this->ctx.n_rows));
             const auto pgecon_lwork = 2 * (this->loc.rows + this->loc.cols) + std::max(IT{2}, std::max(this->loc.block * ceil_a, this->loc.cols + this->loc.block * ceil_b));
@@ -147,10 +147,7 @@ namespace ezp {
             return info;
         }
 
-        IT solve(full_mat<DT, IT>&& B) override {
-            IT info{-1};
-            return info;
-        }
+        IT solve(full_mat<DT, IT>&& B) override { return IT{-1}; }
     };
 
     template<index_t IT, char FCT = 'E', char ODER = 'R'> using par_dgesvx = pgesvx<double, IT, FCT, ODER>;
