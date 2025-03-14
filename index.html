@@ -720,7 +720,63 @@
 <li>easy to use interface</li>
 <li>drop-in header-only library</li>
 <li>standalone solver binaries that can be invoked by various callers</li>
+<li>random tested implementation</li>
 </ol>
+<p>The following solvers are implemented.</p>
+<table>
+<thead>
+<tr>
+<th>type of matrix</th>
+<th>operation</th>
+<th>solver</th>
+<th>availability</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>general (partial pivoting)</td>
+<td>simple driver</td>
+<td>PxGESV</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td>general (partial pivoting)</td>
+<td>expert driver</td>
+<td>PxGESVX</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td>SPD</td>
+<td>simple driver</td>
+<td>PxPOSV</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td>SPD</td>
+<td>expert driver</td>
+<td>PxPOSVX</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td>general band (partial pivoting)</td>
+<td>simple driver</td>
+<td>PxGBSV</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td>general band (no pivoting)</td>
+<td>simple driver</td>
+<td>PxDBSV</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td>SPD band</td>
+<td>simple driver</td>
+<td>PxPBSV</td>
+<td>✔️</td>
+</tr>
+</tbody>
+</table>
 <h2 id="dependency">Dependency</h2>
 <p>The <code>ezp</code> library requires C++ 20 compatible compiler.
 The following drivers are needed.</p>
