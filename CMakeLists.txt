@@ -59,7 +59,7 @@ if (NOT MKL_FOUND)
             message(STATUS "Using MPICH")
             link_libraries(scalapack-mpich)
         endif ()
-        link_libraries(openblas gfortran gomp)
+        link_libraries(lapack blas gfortran)
     endif ()
 endif ()
 
