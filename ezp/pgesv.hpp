@@ -17,6 +17,15 @@
 /**
  * @class pgesv
  * @brief Solver for general full matrices.
+ *
+ * It solves the system of linear equations `A*X=B` with a full general matrix `A`.
+ * The matrix `A` is stored in a `N x N` block.
+ * The matrix `B` is stored in a `N x NRHS` block.
+ *
+ * The example usage can be seen as follows.
+ *
+ * @include ../examples/example.pgesv.cpp
+ *
  * @author tlc
  * @date 07/03/2025
  * @version 1.0.0

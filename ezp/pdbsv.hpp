@@ -47,6 +47,10 @@
    };
  * @endcode
  *
+ * The example usage can be seen as follows.
+ *
+ * @include ../examples/example.pdbsv.cpp
+ *
  * @author tlc
  * @date 07/03/2025
  * @version 1.0.0
