@@ -495,6 +495,39 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Compilation Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#64-bit-integer" class="md-nav__link">
+    <span class="md-ellipsis">
+      64-bit Integer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#name-mangling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Name Mangling
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#standalone-solvers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Standalone Solvers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -697,6 +730,39 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Compilation Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#64-bit-integer" class="md-nav__link">
+    <span class="md-ellipsis">
+      64-bit Integer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#name-mangling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Name Mangling
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#standalone-solvers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Standalone Solvers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -785,6 +851,12 @@ The following is an example that uses system packages.</p>
 Still, it is not recommended due to the lack of flexibility.
 It may not be possible/feasible to switch to another implementation of any of those libraries.</p>
 <h2 id="compilation-options">Compilation Options</h2>
+<h3 id="64-bit-integer">64-bit Integer</h3>
+<p>Use <code>-DEZP_USE_64BIT_INT=ON</code> flag in CMake, or define the macro <code>EZP_INT64</code>.</p>
+<h3 id="name-mangling">Name Mangling</h3>
+<p>Use <code>-DEZP_ADD_UNDERSCORE=ON</code> flag in CMake, or define the macro <code>EZP_UNDERSCORE</code>.</p>
+<h3 id="standalone-solvers">Standalone Solvers</h3>
+<p>Use <code>-DEZP_STANDALONE=ON</code> flag in CMake to compile standalone solver.</p>
 
 
 

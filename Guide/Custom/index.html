@@ -642,7 +642,7 @@ It is assumed the memory layout is <a href="https://en.cppreference.com/w/cpp/na
 <p>The possibility is unlimited.
 The simplest is to subclass <code>std::vector&lt;T&gt;</code> with additional public members.
 In the example of <code>posv</code> solver, a custom matrix class is used.</p>
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">example.pposv.cpp</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1"> 1</a></span>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">example.pposv.cpp:27:54</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1"> 1</a></span>
 <span class="normal"><a href="#__codelineno-0-2"> 2</a></span>
 <span class="normal"><a href="#__codelineno-0-3"> 3</a></span>
 <span class="normal"><a href="#__codelineno-0-4"> 4</a></span>
@@ -669,45 +669,7 @@ In the example of <code>posv</code> solver, a custom matrix class is used.</p>
 <span class="normal"><a href="#__codelineno-0-25">25</a></span>
 <span class="normal"><a href="#__codelineno-0-26">26</a></span>
 <span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span>
-<span class="normal"><a href="#__codelineno-0-29">29</a></span>
-<span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span>
-<span class="normal"><a href="#__codelineno-0-32">32</a></span>
-<span class="normal"><a href="#__codelineno-0-33">33</a></span>
-<span class="normal"><a href="#__codelineno-0-34">34</a></span>
-<span class="normal"><a href="#__codelineno-0-35">35</a></span>
-<span class="normal"><a href="#__codelineno-0-36">36</a></span>
-<span class="normal"><a href="#__codelineno-0-37">37</a></span>
-<span class="normal"><a href="#__codelineno-0-38">38</a></span>
-<span class="normal"><a href="#__codelineno-0-39">39</a></span>
-<span class="normal"><a href="#__codelineno-0-40">40</a></span>
-<span class="normal"><a href="#__codelineno-0-41">41</a></span>
-<span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span>
-<span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span>
-<span class="normal"><a href="#__codelineno-0-47">47</a></span>
-<span class="normal"><a href="#__codelineno-0-48">48</a></span>
-<span class="normal"><a href="#__codelineno-0-49">49</a></span>
-<span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span>
-<span class="normal"><a href="#__codelineno-0-52">52</a></span>
-<span class="normal"><a href="#__codelineno-0-53">53</a></span>
-<span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span>
-<span class="normal"><a href="#__codelineno-0-56">56</a></span>
-<span class="normal"><a href="#__codelineno-0-57">57</a></span>
-<span class="normal"><a href="#__codelineno-0-58">58</a></span>
-<span class="normal"><a href="#__codelineno-0-59">59</a></span>
-<span class="normal"><a href="#__codelineno-0-60">60</a></span>
-<span class="normal"><a href="#__codelineno-0-61">61</a></span>
-<span class="normal"><a href="#__codelineno-0-62">62</a></span>
-<span class="normal"><a href="#__codelineno-0-63">63</a></span>
-<span class="normal"><a href="#__codelineno-0-64">64</a></span>
-<span class="normal"><a href="#__codelineno-0-65">65</a></span>
-<span class="normal"><a href="#__codelineno-0-66">66</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ezp/pposv.hpp&gt;</span>
+<span class="normal"><a href="#__codelineno-0-28">28</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ezp/pposv.hpp&gt;</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iomanip&gt;</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4"></a>
@@ -721,58 +683,95 @@ In the example of <code>posv</code> solver, a custom matrix class is used.</p>
 <a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">storage</span><span class="p">;</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13"></a>
 <a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="k">public</span><span class="o">:</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">init</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">int_t</span><span class="w"> </span><span class="n">rows</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cols</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="w">        </span><span class="n">n_rows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rows</span><span class="p">;</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="w">        </span><span class="n">n_cols</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cols</span><span class="p">;</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="w">        </span><span class="n">storage</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">rows</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cols</span><span class="p">);</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="w">    </span><span class="n">mat</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">int_t</span><span class="w"> </span><span class="n">rows</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cols</span><span class="p">)</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="n">n_rows</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="w">        </span><span class="p">,</span><span class="w"> </span><span class="n">n_cols</span><span class="p">(</span><span class="n">cols</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">init</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">storage</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">n_rows</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n_cols</span><span class="p">);</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-0-20" name="__codelineno-0-20"></a>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="w">    </span><span class="k">explicit</span><span class="w"> </span><span class="n">mat</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">int_t</span><span class="w"> </span><span class="n">rows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cols</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">init</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span><span class="w"> </span><span class="n">cols</span><span class="p">);</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="w">    </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="k">operator</span><span class="p">()(</span><span class="k">const</span><span class="w"> </span><span class="n">int_t</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">int_t</span><span class="w"> </span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">storage</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n_cols</span><span class="p">];</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-0-22" name="__codelineno-0-22"></a>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="w">    </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="k">operator</span><span class="p">()(</span><span class="k">const</span><span class="w"> </span><span class="n">int_t</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">int_t</span><span class="w"> </span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">storage</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n_cols</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="p">];</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="w">    </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="k">operator</span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">int_t</span><span class="w"> </span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">storage</span><span class="p">[</span><span class="n">i</span><span class="p">];</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-0-24" name="__codelineno-0-24"></a>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="w">    </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="k">operator</span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">int_t</span><span class="w"> </span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">storage</span><span class="p">[</span><span class="n">i</span><span class="p">];</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="hll"><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">storage</span><span class="p">.</span><span class="n">begin</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
-</span><a id="__codelineno-0-28" name="__codelineno-0-28"></a>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="hll"><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">end</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">storage</span><span class="p">.</span><span class="n">end</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
-</span><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="p">};</span>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="w">    </span><span class="c1">// get the current blacs environment</span>
-<a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_env</span><span class="o">&lt;</span><span class="n">int_t</span><span class="o">&gt;</span><span class="p">();</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a>
-<a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="w">    </span><span class="k">constexpr</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="w">    </span><span class="c1">// storage for the matrices A and B using the custom class</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="w">    </span><span class="c1">// acceptable objects shall have members `.n_rows` and `.n_cols`</span>
-<a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="w">    </span><span class="c1">// and have any of the following methods `.mem()`, `.memptr()`, `.data()`</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="w">    </span><span class="c1">// or contiguous iterators</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="w">    </span><span class="c1">// all of above methods shall return a pointer to the first element</span>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="w">    </span><span class="n">mat</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">;</span>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">env</span><span class="p">.</span><span class="n">rank</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="w">        </span><span class="c1">// the matrices are only initialized on the root process</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="w">        </span><span class="n">A</span><span class="p">.</span><span class="n">init</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
-<a id="__codelineno-0-48" name="__codelineno-0-48"></a><span class="w">        </span><span class="n">B</span><span class="p">.</span><span class="n">init</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="p">);</span>
-<a id="__codelineno-0-49" name="__codelineno-0-49"></a>
-<a id="__codelineno-0-50" name="__codelineno-0-50"></a><span class="w">        </span><span class="k">for</span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="n">B</span><span class="p">[</span><span class="n">I</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">,</span><span class="w"> </span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="w">    </span><span class="c1">// create a parallel solver</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="w">    </span><span class="c1">// and send custom matrix objects to the solver</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">info</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">par_dposv</span><span class="o">&lt;</span><span class="n">int_t</span><span class="o">&gt;</span><span class="p">().</span><span class="n">solve</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">);</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">env</span><span class="p">.</span><span class="n">rank</span><span class="p">()</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">info</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">setprecision</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Info: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">info</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="sc">&#39;\n&#39;</span><span class="p">;</span>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Solution:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
-<a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="w">        </span><span class="k">for</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="sc">&#39;\n&#39;</span><span class="p">;</span>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-62" name="__codelineno-0-62"></a>
-<a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">info</span><span class="p">;</span>
-<a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="p">}</span>
-<a id="__codelineno-0-65" name="__codelineno-0-65"></a>
-<a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="c1">//! @}</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="hll"><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">storage</span><span class="p">.</span><span class="n">begin</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+</span><a id="__codelineno-0-26" name="__codelineno-0-26"></a>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="hll"><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">end</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">storage</span><span class="p">.</span><span class="n">end</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+</span><a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="p">};</span>
+</code></pre></div></td></tr></table></div>
+<p>It shall be noted that, all processes need to have the same dimensional inputs.
+Thus, <code>.n_rows</code> and <code>.n_cols</code> shall be valid.
+However, the actual storage is only initialised on the root process.</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">example.pposv.cpp:56:91</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-1-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-1-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-1-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-1-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-1-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-1-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-1-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-1-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-1-10">10</a></span>
+<span class="normal"><a href="#__codelineno-1-11">11</a></span>
+<span class="normal"><a href="#__codelineno-1-12">12</a></span>
+<span class="normal"><a href="#__codelineno-1-13">13</a></span>
+<span class="normal"><a href="#__codelineno-1-14">14</a></span>
+<span class="normal"><a href="#__codelineno-1-15">15</a></span>
+<span class="normal"><a href="#__codelineno-1-16">16</a></span>
+<span class="normal"><a href="#__codelineno-1-17">17</a></span>
+<span class="normal"><a href="#__codelineno-1-18">18</a></span>
+<span class="normal"><a href="#__codelineno-1-19">19</a></span>
+<span class="normal"><a href="#__codelineno-1-20">20</a></span>
+<span class="normal"><a href="#__codelineno-1-21">21</a></span>
+<span class="normal"><a href="#__codelineno-1-22">22</a></span>
+<span class="normal"><a href="#__codelineno-1-23">23</a></span>
+<span class="normal"><a href="#__codelineno-1-24">24</a></span>
+<span class="normal"><a href="#__codelineno-1-25">25</a></span>
+<span class="normal"><a href="#__codelineno-1-26">26</a></span>
+<span class="normal"><a href="#__codelineno-1-27">27</a></span>
+<span class="normal"><a href="#__codelineno-1-28">28</a></span>
+<span class="normal"><a href="#__codelineno-1-29">29</a></span>
+<span class="normal"><a href="#__codelineno-1-30">30</a></span>
+<span class="normal"><a href="#__codelineno-1-31">31</a></span>
+<span class="normal"><a href="#__codelineno-1-32">32</a></span>
+<span class="normal"><a href="#__codelineno-1-33">33</a></span>
+<span class="normal"><a href="#__codelineno-1-34">34</a></span>
+<span class="normal"><a href="#__codelineno-1-35">35</a></span>
+<span class="normal"><a href="#__codelineno-1-36">36</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="w">    </span><span class="c1">// get the current blacs environment</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_env</span><span class="o">&lt;</span><span class="n">int_t</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5"></a><span class="w">    </span><span class="k">constexpr</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7"></a><span class="w">    </span><span class="c1">// storage for the matrices A and B using the custom class</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8"></a><span class="w">    </span><span class="c1">// acceptable objects shall have members `.n_rows` and `.n_cols`</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9"></a><span class="w">    </span><span class="c1">// and have any of the following methods `.mem()`, `.memptr()`, `.data()`</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10"></a><span class="w">    </span><span class="c1">// or contiguous iterators</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11"></a><span class="w">    </span><span class="c1">// all of above methods shall return a pointer to the first element</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12"></a><span class="hll"><span class="w">    </span><span class="n">mat</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">),</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="p">);</span>
+</span><a id="__codelineno-1-13" name="__codelineno-1-13"></a>
+<a id="__codelineno-1-14" name="__codelineno-1-14"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">env</span><span class="p">.</span><span class="n">rank</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15"></a><span class="w">        </span><span class="c1">// the matrices are only initialized on the root process</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16"></a><span class="hll"><span class="w">        </span><span class="n">A</span><span class="p">.</span><span class="n">init</span><span class="p">();</span>
+</span><a id="__codelineno-1-17" name="__codelineno-1-17"></a><span class="hll"><span class="w">        </span><span class="n">B</span><span class="p">.</span><span class="n">init</span><span class="p">();</span>
+</span><a id="__codelineno-1-18" name="__codelineno-1-18"></a>
+<a id="__codelineno-1-19" name="__codelineno-1-19"></a><span class="w">        </span><span class="k">for</span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20"></a><span class="w">            </span><span class="n">B</span><span class="p">[</span><span class="n">I</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">,</span><span class="w"> </span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21"></a><span class="w">            </span><span class="n">B</span><span class="p">[</span><span class="n">I</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">N</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24"></a>
+<a id="__codelineno-1-25" name="__codelineno-1-25"></a><span class="w">    </span><span class="c1">// create a parallel solver</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26"></a><span class="w">    </span><span class="c1">// and send custom matrix objects to the solver</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27"></a><span class="hll"><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">info</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">par_dposv</span><span class="o">&lt;</span><span class="n">int_t</span><span class="o">&gt;</span><span class="p">().</span><span class="n">solve</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">);</span>
+</span><a id="__codelineno-1-28" name="__codelineno-1-28"></a>
+<a id="__codelineno-1-29" name="__codelineno-1-29"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">env</span><span class="p">.</span><span class="n">rank</span><span class="p">()</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">info</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-30" name="__codelineno-1-30"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">setprecision</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Info: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">info</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="sc">&#39;\n&#39;</span><span class="p">;</span>
+<a id="__codelineno-1-31" name="__codelineno-1-31"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Solution:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32"></a><span class="w">        </span><span class="k">for</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="sc">&#39;\n&#39;</span><span class="p">;</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-34" name="__codelineno-1-34"></a>
+<a id="__codelineno-1-35" name="__codelineno-1-35"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">info</span><span class="p">;</span>
+<a id="__codelineno-1-36" name="__codelineno-1-36"></a><span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 
 
