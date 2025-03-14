@@ -25,20 +25,19 @@ using namespace std::chrono;
 
 static auto N = 10;
 
-template<data_t DT, char ODER = 'R'> auto random_pgesvx() {
-    using solver_t = pgesvx<DT, int_t, ODER>;
+template<data_t DT, char FCT = 'E', char ODER = 'R'> auto random_pgesvx() {
+    using solver_t = pgesvx<DT, int_t, FCT, ODER>;
 
     const auto& env = get_env<int_t>();
 
     const auto context = blacs_context<int_t>();
 
     for(auto K = 0; K < N; ++K) {
-        auto seed = context.amx(static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
-        seed = 125582354;
+        const auto seed = context.amx(static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
         std::mt19937 gen(seed);
 
-        const auto NRHS = std::uniform_int_distribution(1, 1)(gen);
-        const auto N = std::uniform_int_distribution(2, 3)(gen);
+        const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
+        const auto N = std::uniform_int_distribution(2, 300)(gen);
 
         printf("Seed: %d, N: %d, NRHS: %d\n", seed, N, NRHS);
 

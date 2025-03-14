@@ -32,9 +32,9 @@
 #include <numeric>
 
 namespace ezp {
-    template<data_t DT, index_t IT, char ODER = 'R'> class pgesvx final : public detail::full_solver<DT, IT, ODER> {
-        static constexpr char FACT = 'N';
+    template<data_t DT, index_t IT, char FCT = 'E', char ODER = 'R'> class pgesvx final : public detail::full_solver<DT, IT, ODER> {
         static constexpr char TRANS = 'N';
+        static constexpr char FACT = FCT;
 
         using base_t = detail::full_solver<DT, IT, ODER>;
 
@@ -153,10 +153,10 @@ namespace ezp {
         }
     };
 
-    template<index_t IT, char ODER = 'R'> using par_dgesvx = pgesvx<double, IT, ODER>;
-    template<index_t IT, char ODER = 'R'> using par_sgesvx = pgesvx<float, IT, ODER>;
-    template<index_t IT, char ODER = 'R'> using par_zgesvx = pgesvx<complex16, IT, ODER>;
-    template<index_t IT, char ODER = 'R'> using par_cgesvx = pgesvx<complex8, IT, ODER>;
+    template<index_t IT, char FCT = 'E', char ODER = 'R'> using par_dgesvx = pgesvx<double, IT, FCT, ODER>;
+    template<index_t IT, char FCT = 'E', char ODER = 'R'> using par_sgesvx = pgesvx<float, IT, FCT, ODER>;
+    template<index_t IT, char FCT = 'E', char ODER = 'R'> using par_zgesvx = pgesvx<complex16, IT, FCT, ODER>;
+    template<index_t IT, char FCT = 'E', char ODER = 'R'> using par_cgesvx = pgesvx<complex8, IT, FCT, ODER>;
 } // namespace ezp
 
 #endif // PGESVX_HPP
