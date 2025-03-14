@@ -55,7 +55,7 @@ template<data_t DT, char FCT = 'N', char ODER = 'R'> auto random_pgesvx() {
             A.resize(N * N, DT{0.});
             B.resize(N * NRHS, DT{1.});
 
-            std::uniform_real_distribution dist_v(0.f, 1.f);
+            std::uniform_real_distribution dist_v(1.f, 2.f);
 
             for(auto I = 0; I < N; ++I)
                 for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen);
