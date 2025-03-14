@@ -10,6 +10,19 @@
 1. easy to use interface
 2. drop-in header-only library
 3. standalone solver binaries that can be invoked by various callers
+4. random tested implementation
+
+The following solvers are implemented.
+
+| type of matrix                  | operation     | solver  | availability |
+|---------------------------------|---------------|---------|--------------|
+| general (partial pivoting)      | simple driver | PxGESV  | ✔️           |
+| general (partial pivoting)      | expert driver | PxGESVX | ✔️           |
+| SPD                             | simple driver | PxPOSV  | ✔️           |
+| SPD                             | expert driver | PxPOSVX | ✔️           |
+| general band (partial pivoting) | simple driver | PxGBSV  | ✔️           |
+| general band (no pivoting)      | simple driver | PxDBSV  | ✔️           |
+| SPD band                        | simple driver | PxPBSV  | ✔️           |
 
 ## Dependency
 
