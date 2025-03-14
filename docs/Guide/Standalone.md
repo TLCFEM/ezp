@@ -92,9 +92,9 @@ The following creates a diagonal matrix for illustration.
 
 Now since all the data is ready to be communicated, the actual communication is very concise and straightforward.
 
-```cpp title="runner.cpp:103:118" hl_lines="2 5 9 10 15 16"
+```cpp title="runner.cpp:111:126" hl_lines="2 5 9 10 15 16"
 --8<--
-./standalone/runner.cpp:103:118
+./standalone/runner.cpp:111:126
 --8<--
 ```
 
@@ -151,13 +151,13 @@ The following is a full reference implementation of a standalone solver and the 
 ??? note "runner.cpp"
     ```cpp title="runner.cpp"
     --8<--
-    ./standalone/runner.cpp:27:115
+    ./standalone/runner.cpp:27:131
     --8<--
     ```
 
 ??? note "solver.pgesv.cpp"
     ```cpp title="solver.pgesv.cpp"
     --8<--
-    ./standalone/solver.pgesv.cpp:51:105
+    ./standalone/solver.pgesv.cpp:51:76
     --8<--
     ```
