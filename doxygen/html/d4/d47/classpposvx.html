@@ -95,13 +95,15 @@ $(document).ready(function(){initNavTree('d4/d47/classpposvx.html','../../'); in
 </div><!--header-->
 <div class="contents">
 
-<p>Solver for general full matrices (expert driver).  
+<p>Solver for general full symmetric positive definite matrices (expert driver).  
  <a href="../../d4/d47/classpposvx.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="../../d5/d33/pposvx_8hpp_source.html">pposvx.hpp</a>&gt;</code></p>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Solver for general full matrices (expert driver). </p>
-<dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
+<div class="textblock"><p>Solver for general full symmetric positive definite matrices (expert driver). </p>
+<p>It solves the system of linear equations <code>A*X=B</code> with a full symmetric positive definite matrix <code>A</code>. The matrix <code>A</code> is stored in a <code>NxN</code> block. The matrix <code>B</code> is stored in a <code>NxNRHS</code> block.</p>
+<p>The example usage can be seen as follows.</p>
+<div class="fragment"></div><!-- fragment --><dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>12/03/2025 </dd></dl>
 <dl class="section version"><dt>Version</dt><dd>1.0.0 </dd></dl>
 </div><hr/>The documentation for this class was generated from the following file:<ul>

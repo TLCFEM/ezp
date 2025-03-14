@@ -1,13 +1,15 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$d0/df0/classezp_1_1detail_1_1abstract__solver.html" title=" " alt="" coords="5,30,156,85"/>
-<area shape="rect" id="Node000001" href="$df/df0/classezp_1_1detail_1_1full__solver.html" title=" " alt="" coords="204,5,371,45"/>
-<area shape="poly" id="edge5_Node000000_Node000001" title=" " alt="" coords="169,41,203,36,204,41,170,46"/>
-<area shape="rect" id="Node000002" href="$df/df0/classezp_1_1detail_1_1full__solver.html" title=" " alt="" coords="204,69,371,109"/>
-<area shape="poly" id="edge6_Node000000_Node000002" title=" " alt="" coords="170,68,204,74,203,79,169,74"/>
+<area shape="rect" id="Node000000" href="$d0/df0/classezp_1_1detail_1_1abstract__solver.html" title=" " alt="" coords="5,62,156,117"/>
+<area shape="rect" id="Node000001" href="$df/df0/classezp_1_1detail_1_1full__solver.html" title=" " alt="" coords="204,37,371,77"/>
+<area shape="poly" id="edge5_Node000000_Node000001" title=" " alt="" coords="169,73,203,68,204,73,170,78"/>
+<area shape="rect" id="Node000002" href="$df/df0/classezp_1_1detail_1_1full__solver.html" title=" " alt="" coords="204,101,371,141"/>
+<area shape="poly" id="edge6_Node000000_Node000002" title=" " alt="" coords="170,100,204,106,203,111,169,106"/>
 <area shape="rect" id="Node000003" href="$d5/d48/classezp_1_1pgesv.html" title=" " alt="" coords="423,5,572,45"/>
-<area shape="poly" id="edge7_Node000002_Node000003" title=" " alt="" coords="366,63,430,43,432,48,367,68"/>
-<area shape="rect" id="Node000004" href="$de/d12/classezp_1_1pposv.html" title=" " alt="" coords="423,69,572,109"/>
-<area shape="poly" id="edge8_Node000002_Node000004" title=" " alt="" coords="385,87,422,87,422,92,385,92"/>
-<area shape="rect" id="Node000005" href="$d0/d05/classezp_1_1pposvx.html" title=" " alt="" coords="419,133,576,173"/>
-<area shape="poly" id="edge9_Node000002_Node000005" title=" " alt="" coords="367,111,432,131,430,136,366,116"/>
+<area shape="poly" id="edge7_Node000002_Node000003" title=" " alt="" coords="356,93,369,87,393,71,417,55,442,43,445,48,420,60,396,76,372,92,358,98"/>
+<area shape="rect" id="Node000004" href="$d5/d6a/classezp_1_1pgesvx.html" title=" " alt="" coords="419,69,576,109"/>
+<area shape="poly" id="edge8_Node000002_Node000004" title=" " alt="" coords="384,104,418,99,419,104,385,109"/>
+<area shape="rect" id="Node000005" href="$de/d12/classezp_1_1pposv.html" title=" " alt="" coords="423,133,572,173"/>
+<area shape="poly" id="edge9_Node000002_Node000005" title=" " alt="" coords="385,133,423,139,422,145,384,139"/>
+<area shape="rect" id="Node000006" href="$d0/d05/classezp_1_1pposvx.html" title=" " alt="" coords="419,197,576,237"/>
+<area shape="poly" id="edge10_Node000002_Node000006" title=" " alt="" coords="341,145,420,183,447,195,445,200,418,188,339,150"/>
 </map>

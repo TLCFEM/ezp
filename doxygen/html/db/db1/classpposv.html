@@ -95,13 +95,15 @@ $(document).ready(function(){initNavTree('db/db1/classpposv.html','../../'); ini
 </div><!--header-->
 <div class="contents">
 
-<p>Solver for symmetric positive definite full matrices.  
+<p>Solver for general full symmetric positive definite matrices.  
  <a href="../../db/db1/classpposv.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="../../d4/d53/pposv_8hpp_source.html">pposv.hpp</a>&gt;</code></p>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Solver for symmetric positive definite full matrices. </p>
-<dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
+<div class="textblock"><p>Solver for general full symmetric positive definite matrices. </p>
+<p>It solves the system of linear equations <code>A*X=B</code> with a full symmetric positive definite matrix <code>A</code>. The matrix <code>A</code> is stored in a <code>NxN</code> block. The matrix <code>B</code> is stored in a <code>NxNRHS</code> block.</p>
+<p>The example usage can be seen as follows.</p>
+<div class="fragment"></div><!-- fragment --><dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>07/03/2025 </dd></dl>
 <dl class="section version"><dt>Version</dt><dd>1.0.0 </dd></dl>
 </div><hr/>The documentation for this class was generated from the following file:<ul>
