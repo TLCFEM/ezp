@@ -14,15 +14,15 @@
 
 The following solvers are implemented.
 
-| type of matrix                             | operation     | solver  | availability |
-|--------------------------------------------|---------------|---------|--------------|
-| general (partial pivoting)                 | simple driver | PxGESV  | ✔️           |
-| general (partial pivoting)                 | expert driver | PxGESVX | ✔️           |
-| symmetric/Hermitian positive definite      | simple driver | PxPOSV  | ✔️           |
-| symmetric/Hermitian positive definite      | expert driver | PxPOSVX | ✔️           |
-| general band (partial pivoting)            | simple driver | PxGBSV  | ✔️           |
-| general band (no pivoting)                 | simple driver | PxDBSV  | ✔️           |
-| symmetric/Hermitian positive definite band | simple driver | PxPBSV  | ✔️           |
+| availability | type of matrix                             | operation | solver  |
+|:------------:|--------------------------------------------|-----------|---------|
+|      ✔️      | general (partial pivoting)                 | simple    | PxGESV  |
+|      ✔️      | general (partial pivoting)                 | expert    | PxGESVX |
+|      ✔️      | symmetric/Hermitian positive definite      | simple    | PxPOSV  |
+|      ✔️      | symmetric/Hermitian positive definite      | expert    | PxPOSVX |
+|      ✔️      | general band (partial pivoting)            | simple    | PxGBSV  |
+|      ✔️      | general band (no pivoting)                 | simple    | PxDBSV  |
+|      ✔️      | symmetric/Hermitian positive definite band | simple    | PxPBSV  |
 
 ## Dependency
 
