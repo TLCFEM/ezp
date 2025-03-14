@@ -20,8 +20,18 @@ The possibility is unlimited.
 The simplest is to subclass `std::vector<T>` with additional public members.
 In the example of `posv` solver, a custom matrix class is used.
 
-```cpp title="example.pposv.cpp" hl_lines="9 27 29"
+```cpp title="example.pposv.cpp:27:54" hl_lines="9 25 27"
 --8<--
-./examples/example.pposv.cpp:27
+./examples/example.pposv.cpp:27:54
+--8<--
+```
+
+It shall be noted that, all processes need to have the same dimensional inputs.
+Thus, `.n_rows` and `.n_cols` shall be valid.
+However, the actual storage is only initialised on the root process.
+
+```cpp title="example.pposv.cpp:56:91" hl_lines="12 16 17 27"
+--8<--
+./examples/example.pposv.cpp:56:91
 --8<--
 ```

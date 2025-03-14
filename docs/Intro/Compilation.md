@@ -63,3 +63,15 @@ Still, it is not recommended due to the lack of flexibility.
 It may not be possible/feasible to switch to another implementation of any of those libraries.
 
 ## Compilation Options
+
+### 64-bit Integer
+
+Use `-DEZP_USE_64BIT_INT=ON` flag in CMake, or define the macro `EZP_INT64`.
+
+### Name Mangling
+
+Use `-DEZP_ADD_UNDERSCORE=ON` flag in CMake, or define the macro `EZP_UNDERSCORE`.
+
+### Standalone Solvers
+
+Use `-DEZP_STANDALONE=ON` flag in CMake to compile standalone solver.

@@ -38,15 +38,13 @@ private:
     std::vector<double> storage;
 
 public:
-    auto init(const int_t rows, const int cols) {
-        n_rows = rows;
-        n_cols = cols;
-        storage.resize(rows * cols);
-    }
+    mat(const int_t rows, const int cols)
+        : n_rows(rows)
+        , n_cols(cols) {}
 
-    explicit mat(const int_t rows = 0, const int cols = 0) { init(rows, cols); }
+    auto init() { storage.resize(n_rows * n_cols); }
 
-    auto& operator()(const int_t i, const int_t j) { return storage[i * n_cols + j]; }
+    auto& operator()(const int_t i, const int_t j) { return storage[i + j * n_cols]; }
 
     auto& operator[](const int_t i) { return storage[i]; }
 
@@ -66,14 +64,17 @@ int main() {
     // and have any of the following methods `.mem()`, `.memptr()`, `.data()`
     // or contiguous iterators
     // all of above methods shall return a pointer to the first element
-    mat A, B;
+    mat A(N, N), B(N, NRHS);
 
     if(0 == env.rank()) {
         // the matrices are only initialized on the root process
-        A.init(N, N);
-        B.init(N, NRHS);
+        A.init();
+        B.init();
 
-        for(auto I = 0; I < N; ++I) B[I] = A(I, I) = I + 1;
+        for(auto I = 0; I < N; ++I) {
+            B[I] = A(I, I) = I + 1;
+            B[I + N] = I + 4;
+        }
     }
 
     // create a parallel solver

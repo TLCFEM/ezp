@@ -28,7 +28,7 @@ int main() {
         B.resize(N * NRHS, 1.);
 
         const auto IDX = ezp::par_dgesv<int>::indexer{N};
-        for(auto I = 0; I < N; ++I) A[IDX(I, I)] = static_cast<double>(I);
+        for(auto I = 0; I < N; ++I) A[IDX(I, I)] = I;
     }
 
     ezp::par_dgesv<int>().solve({N, N, A.data()}, {N, NRHS, B.data()});
