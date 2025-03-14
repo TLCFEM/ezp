@@ -18,7 +18,7 @@
  * @class ppbsv
  * @brief Solver for symmetric band positive definite matrices.
  *
- * @note Although the `ppbsv` solver supports KLU, a zero (half) bandwidth
+ * @note Although the `ppbsv` solver supports `KLU=0`, a zero (half) bandwidth
  * would lead to unwanted warning message from ScaLAPACK.
  * @note See: https://github.com/Reference-ScaLAPACK/scalapack/issues/116
  *
@@ -69,6 +69,10 @@
         return 2 * j - i + (j + 1) * KLU;
     };
  * @endcode
+ *
+ * The example usage can be seen as follows.
+ *
+ * @include ../examples/example.ppbsv.cpp
  *
  * @author tlc
  * @date 07/03/2025

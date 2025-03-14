@@ -16,7 +16,16 @@
  ******************************************************************************/
 /**
  * @class pposv
- * @brief Solver for symmetric positive definite full matrices.
+ * @brief Solver for general full symmetric positive definite matrices.
+ *
+ * It solves the system of linear equations `A*X=B` with a full symmetric positive definite matrix `A`.
+ * The matrix `A` is stored in a `NxN` block.
+ * The matrix `B` is stored in a `NxNRHS` block.
+ *
+ * The example usage can be seen as follows.
+ *
+ * @include ../examples/example.pposv.cpp
+ *
  * @author tlc
  * @date 07/03/2025
  * @version 1.0.0

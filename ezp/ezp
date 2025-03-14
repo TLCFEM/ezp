@@ -18,6 +18,7 @@
 #include "pdbsv.hpp"
 #include "pgbsv.hpp"
 #include "pgesv.hpp"
+#include "pgesvx.hpp"
 #include "ppbsv.hpp"
 #include "pposv.hpp"
 #include "pposvx.hpp"

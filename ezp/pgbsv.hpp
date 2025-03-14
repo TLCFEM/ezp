@@ -18,7 +18,7 @@
  * @class pgbsv
  * @brief Solver for general band matrices.
  *
- * @note Although the `pgbsv` solver supports KL=0 and/or KU=0, a zero (half) bandwidth
+ * @note Although the `pgbsv` solver supports `KL=0` and/or `KU=0`, a zero (half) bandwidth
  * would lead to unwanted warning message from ScaLAPACK.
  * @note See: https://github.com/Reference-ScaLAPACK/scalapack/issues/116
  *
@@ -49,6 +49,10 @@
         return 2 * KU + KL + i + 2 * j * (KL + KU);
     };
  * @endcode
+ *
+ * The example usage can be seen as follows.
+ *
+ * @include ../examples/example.pgbsv.cpp
  *
  * @author tlc
  * @date 07/03/2025
