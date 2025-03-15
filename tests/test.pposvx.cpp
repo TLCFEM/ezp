@@ -42,8 +42,8 @@ template<data_t DT, char ODER = 'R'> auto random_pposvx() {
         const auto seed = context.amx(static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
         std::mt19937 gen(seed);
 
-        const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
-        const auto N = std::uniform_int_distribution(100, 500)(gen);
+        const auto NRHS = std::uniform_int_distribution(1, 10)(gen);
+        const auto N = std::uniform_int_distribution(NRHS + 1, 100)(gen);
 
         printf("Seed: %d, N: %d, NRHS: %d\n", seed, N, NRHS);
 

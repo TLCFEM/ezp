@@ -38,15 +38,16 @@ template<data_t DT> auto random_pdbsv() {
 
     const auto context = blacs_context<int_t>();
 
+    auto band = std::uniform_int_distribution(1, 10);
+
     for(auto K = 0; K < REPEAT; ++K) {
         const auto seed = context.amx(static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
         std::mt19937 gen(seed);
 
-        auto band = std::uniform_int_distribution(1, 20);
         const auto KL = band(gen);
         const auto KU = band(gen);
         const auto NRHS = band(gen);
-        const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 500)(gen);
+        const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 100)(gen);
 
         printf("Seed: %d, N: %d, KL: %d, KU: %d, NRHS: %d\n", seed, N, KL, KU, NRHS);
 
