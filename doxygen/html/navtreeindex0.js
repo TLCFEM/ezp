@@ -82,6 +82,7 @@ var NAVTREEINDEX0 =
 "df/d1a/classpgesvx.html":[4,0,7],
 "df/d21/pgesv_8hpp.html":[5,0,1,3],
 "df/d21/pgesv_8hpp_source.html":[5,0,1,3],
+"df/d73/traits_8hpp_source.html":[5,0,1,0,4],
 "df/d7d/conceptezp_1_1has__memptr.html":[3,0,5],
 "df/d8d/conceptezp_1_1has__mem.html":[3,0,4],
 "df/dc0/classezp_1_1blacs__context.html":[4,0,0,5],
