@@ -29,7 +29,7 @@ using namespace std::chrono;
 #define REQUIRE(...)
 #endif
 
-static auto N = 10;
+static auto REPEAT = 10;
 
 template<data_t DT, char ODER = 'R'> auto random_pposvx() {
     using solver_t = pposvx<DT, int_t, 'L', ODER>;
@@ -38,7 +38,7 @@ template<data_t DT, char ODER = 'R'> auto random_pposvx() {
 
     const auto context = blacs_context<int_t>();
 
-    for(auto K = 0; K < N; ++K) {
+    for(auto K = 0; K < REPEAT; ++K) {
         const auto seed = context.amx(static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
         std::mt19937 gen(seed);
 
@@ -138,7 +138,7 @@ int main(const int argc, const char* argv[]) {
     volatile int i = 0;
     if(argc <= 1)
         while(0 == i) std::this_thread::sleep_for(seconds(10));
-    else N = std::atoi(argv[1]);
+    else REPEAT = std::atoi(argv[1]);
 
     random_pdposvx();
     random_pdposvx_c();

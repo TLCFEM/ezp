@@ -54,7 +54,7 @@ namespace ezp {
         IT solve(full_mat<DT, IT>&& A, full_mat<DT, IT>&& B) override {
             if(!this->ctx.is_valid()) return 0;
 
-            if(A.n_rows != A.n_cols || A.n_rows != B.n_rows) return -1;
+            if(A.n_rows != A.n_cols || A.n_cols != B.n_rows) return -1;
 
             this->init_storage(A.n_rows);
 
