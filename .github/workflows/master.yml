@@ -44,7 +44,7 @@ jobs:
           for SRC in `find . -type f -executable -iname "*example*"`; do $SRC; done
           # export PATH=$(pwd):$PATH
           # for SRC in `find . -type f -executable -iname "*runner*"`; do $SRC; done
-          ./catch2
+          mpiexec.hydra -n 2 ./catch2
           lcov --capture --directory . --output-file coverage.info
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
           lcov --list coverage.info
