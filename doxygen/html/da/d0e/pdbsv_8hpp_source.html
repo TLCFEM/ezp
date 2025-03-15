@@ -182,7 +182,7 @@ $(document).ready(function(){initNavTree('da/d0e/pdbsv_8hpp_source.html','../../
 <div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>        IT solve(<a class="code hl_struct" href="../../d9/d24/structezp_1_1band__mat.html">band_mat&lt;DT, IT&gt;</a>&amp;&amp; A, <a class="code hl_struct" href="../../d0/d58/structezp_1_1full__mat.html">full_mat&lt;DT, IT&gt;</a>&amp;&amp; B) {</div>
 <div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>            <span class="keywordflow">if</span>(!this-&gt;ctx.is_valid() || !this-&gt;trans_ctx.is_valid()) <span class="keywordflow">return</span> 0;</div>
 <div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>            <span class="keywordflow">if</span>(A.n_rows != A.n_cols || A.n_rows != B.n_rows) <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>            <span class="keywordflow">if</span>(A.n_rows != A.n_cols || A.n_cols != B.n_rows) <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span> </div>
 <div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>            init_storage(A.n_cols, A.kl, A.ku);</div>
 <div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span> </div>
