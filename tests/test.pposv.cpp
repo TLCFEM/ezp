@@ -43,7 +43,7 @@ template<data_t DT, char UL = 'L', char ODER = 'R'> auto random_pposv() {
         std::mt19937 gen(seed);
 
         const auto NRHS = std::uniform_int_distribution(1, 20)(gen);
-        const auto N = std::uniform_int_distribution(100, 400)(gen);
+        const auto N = std::uniform_int_distribution(100, 500)(gen);
 
         printf("Seed: %d, N: %d, NRHS: %d\n", seed, N, NRHS);
 

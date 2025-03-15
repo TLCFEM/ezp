@@ -46,7 +46,7 @@ template<data_t DT> auto random_pdbsv() {
         const auto KL = band(gen);
         const auto KU = band(gen);
         const auto NRHS = band(gen);
-        const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 400)(gen);
+        const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 500)(gen);
 
         printf("Seed: %d, N: %d, KL: %d, KU: %d, NRHS: %d\n", seed, N, KL, KU, NRHS);
 

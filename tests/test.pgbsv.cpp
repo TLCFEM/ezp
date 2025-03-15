@@ -42,11 +42,11 @@ template<data_t DT> auto random_pgbsv() {
         const auto seed = context.amn(static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count()));
         std::mt19937 gen(seed);
 
-        auto band = std::uniform_int_distribution(1, 4);
+        auto band = std::uniform_int_distribution(1, 20);
         const auto KL = band(gen);
         const auto KU = band(gen);
         const auto NRHS = band(gen);
-        const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 10)(gen);
+        const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 500)(gen);
 
         printf("Seed: %d, N: %d, KL: %d, KU: %d, NRHS: %d\n", seed, N, KL, KU, NRHS);
 

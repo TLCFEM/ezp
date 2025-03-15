@@ -46,7 +46,7 @@ template<data_t DT, char UL = 'L'> auto random_ppbsv() {
 
         const auto KLU = band(gen);
         const auto NRHS = band(gen);
-        const auto N = std::uniform_int_distribution(KLU + 1, 400)(gen);
+        const auto N = std::uniform_int_distribution(KLU + 1, 500)(gen);
         const auto LDA = KLU + 1;
 
         printf("Seed: %d, N: %d, KLU: %d, NRHS: %d\n", seed, N, KLU, NRHS);
