@@ -49,7 +49,7 @@ template<data_t DT> auto random_pgbsv() {
         const auto NRHS = band(gen);
         const auto N = std::uniform_int_distribution(std::max(KL, KU) + 1, 100)(gen);
 
-        printf("Seed: %d, N: %d, KL: %d, KU: %d, NRHS: %d\n", seed, N, KL, KU, NRHS);
+        if(0 == env.rank()) printf("Seed: %d, N: %d, KL: %d, KU: %d, NRHS: %d\n", seed, N, KL, KU, NRHS);
 
         const auto LDA = 2 * (KL + KU) + 1;
 

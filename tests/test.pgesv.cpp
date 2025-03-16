@@ -45,7 +45,7 @@ template<data_t DT, char ODER = 'R'> auto random_pgesv() {
         const auto NRHS = std::uniform_int_distribution(1, 10)(gen);
         const auto N = std::uniform_int_distribution(NRHS + 1, 100)(gen);
 
-        printf("Seed: %d, N: %d, NRHS: %d\n", seed, N, NRHS);
+        if(0 == env.rank()) printf("Seed: %d, N: %d, NRHS: %d\n", seed, N, NRHS);
 
         const auto IDX = typename solver_t::indexer{N};
 
