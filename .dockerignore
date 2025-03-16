@@ -1,0 +1,15 @@
+.devcontainer/
+.github/
+.venv/
+.vscode/
+build/
+docs/
+libs/
+misc/
+
+.clangformat
+.git*
+Doxfile
+mkdocs.yml
+README.md
+requirements.txt
