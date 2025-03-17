@@ -86,6 +86,14 @@ void random_pdposv_c() {
 }
 
 #ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PDPOSVUC", "[Simple Solver]") {
+#else
+void random_pdposv_uc() {
+#endif
+    random_pposv<double, 'U', 'C'>();
+}
+
+#ifdef EZP_ENABLE_TEST
 TEST_CASE("Random PSPOSV", "[Simple Solver]") {
 #else
 void random_psposv() {
@@ -99,6 +107,14 @@ TEST_CASE("Random PSPOSVC", "[Simple Solver]") {
 void random_psposv_c() {
 #endif
     random_pposv<float, 'L', 'C'>();
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PSPOSVUC", "[Simple Solver]") {
+#else
+void random_psposv_uc() {
+#endif
+    random_pposv<float, 'U', 'C'>();
 }
 
 #ifdef EZP_ENABLE_TEST
@@ -118,6 +134,14 @@ void random_pzposv_c() {
 }
 
 #ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PZPOSVUC", "[Simple Solver]") {
+#else
+void random_pzposv_uc() {
+#endif
+    random_pposv<complex16, 'U', 'C'>();
+}
+
+#ifdef EZP_ENABLE_TEST
 TEST_CASE("Random PCPOSV", "[Simple Solver]") {
 #else
 void random_pcposv() {
@@ -134,6 +158,14 @@ void random_pcposv_c() {
 }
 
 #ifdef EZP_ENABLE_TEST
+TEST_CASE("Random PCPOSVUC", "[Simple Solver]") {
+#else
+void random_pcposv_uc() {
+#endif
+    random_pposv<complex8, 'U', 'C'>();
+}
+
+#ifdef EZP_ENABLE_TEST
 #else
 int main(const int argc, const char* argv[]) {
     volatile int i = 0;
@@ -143,12 +175,16 @@ int main(const int argc, const char* argv[]) {
 
     random_pdposv();
     random_pdposv_c();
+    random_pdposv_uc();
     random_psposv();
     random_psposv_c();
+    random_psposv_uc();
     random_pzposv();
     random_pzposv_c();
+    random_pzposv_uc();
     random_pcposv();
     random_pcposv_c();
+    random_pcposv_uc();
 
     return 0;
 }
