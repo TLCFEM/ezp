@@ -16,7 +16,6 @@
  ******************************************************************************/
 
 #ifdef EZP_MKL
-
 #include <ezp/abstract/ezp.h>
 #include <mpl/mpl.hpp>
 
@@ -110,12 +109,11 @@ int main(int argc, char** argv) {
 
     return prepare<int>();
 }
-
 #else
+#include <iostream>
 
 int main(int, char**) {
-    printf("This program must be compiled with the EZP_MKL macro defined.\n");
+    std::cout << "This program must be compiled with the EZP_MKL macro defined.\n";
     return 0;
 }
-
 #endif
