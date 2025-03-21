@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2017-2025 Theodore Chang
+ * Copyright (C) 2025 Theodore Chang
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,27 +17,27 @@
 
 #include <mpl/mpl.hpp>
 
-void run() {
+int main(int, char**) {
     constexpr int NUM_NODE = 2;
 
     const auto& comm_world{mpl::environment::comm_world()};
     const auto worker = comm_world.spawn(0, NUM_NODE, {"solver.pardiso"});
     const auto all = mpl::communicator(worker, mpl::communicator::order_low);
 
-    int iparm[64]{};
     int config[7]{};
+    int iparm[64]{};
 
-    iparm[0] = 1;   /* Solver default parameters overriden with provided by iparm */
-    iparm[1] = 3;   /* Use METIS for fill-in reordering */
-    iparm[5] = 0;   /* Write solution into x */
-    iparm[7] = 2;   /* Max number of iterative refinement steps */
-    iparm[9] = 13;  /* Perturb the pivot elements with 1E-13 */
-    iparm[10] = 1;  /* Use nonsymmetric permutation and scaling MPS */
-    iparm[12] = 1;  /* Switch on Maximum Weighted Matching algorithm (default for non-symmetric) */
-    iparm[17] = -1; /* Output: Number of nonzeros in the factor LU */
-    iparm[18] = -1; /* Output: Mflops for LU factorization */
-    iparm[26] = 0;  /* Check input data for correctness */
-    iparm[39] = 0;  /* Input: matrix/rhs/solution stored on master */
+    iparm[0] = 1;   // Solver default parameters overriden with provided by iparm
+    iparm[1] = 3;   // Use METIS for fill-in reordering
+    iparm[5] = 0;   // Write solution into x
+    iparm[7] = 2;   // Max number of iterative refinement steps
+    iparm[9] = 13;  // Perturb the pivot elements with 1E-13
+    iparm[10] = 1;  // Use nonsymmetric permutation and scaling MPS
+    iparm[12] = 1;  // Switch on Maximum Weighted Matching algorithm (default for non-symmetric)
+    iparm[17] = -1; // Output: Number of nonzeros in the factor LU
+    iparm[18] = -1; // Output: Mflops for LU factorization
+    iparm[26] = 0;  // Check input data for correctness
+    iparm[39] = 0;  // Input: matrix/rhs/solution stored on master
 
     config[0] = 11; // mtype
     config[1] = 1;  // nrhs
@@ -103,13 +103,6 @@ void run() {
     if(0 == error) worker.recv(b, 0);
 
     for(int i = 0; i < n; i++) printf("x[%d] = %+.6f\n", i, b[i]);
-}
-
-int main(int argc, char* argv[]) {
-    for(auto I = 0; I < 4; ++I) {
-        printf("run %d\n", I);
-        run();
-    }
 
     return 0;
 }
