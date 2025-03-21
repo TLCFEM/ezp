@@ -27,17 +27,17 @@ int main(int, char**) {
     int config[7]{};
     int iparm[64]{};
 
-    iparm[0] = 1;   // Solver default parameters overriden with provided by iparm
-    iparm[1] = 3;   // Use METIS for fill-in reordering
-    iparm[5] = 0;   // Write solution into x
-    iparm[7] = 2;   // Max number of iterative refinement steps
-    iparm[9] = 13;  // Perturb the pivot elements with 1E-13
-    iparm[10] = 1;  // Use nonsymmetric permutation and scaling MPS
-    iparm[12] = 1;  // Switch on Maximum Weighted Matching algorithm (default for non-symmetric)
-    iparm[17] = -1; // Output: Number of nonzeros in the factor LU
-    iparm[18] = -1; // Output: Mflops for LU factorization
-    iparm[26] = 0;  // Check input data for correctness
-    iparm[39] = 0;  // Input: matrix/rhs/solution stored on master
+    iparm[0] = 1;   // solver default parameters overriden with provided by iparm
+    iparm[1] = 3;   // use METIS for fill-in reordering
+    iparm[5] = 0;   // write solution into x
+    iparm[7] = 2;   // max number of iterative refinement steps
+    iparm[9] = 13;  // perturb the pivot elements with 1E-13
+    iparm[10] = 1;  // use nonsymmetric permutation and scaling MPS
+    iparm[12] = 1;  // switch on Maximum Weighted Matching algorithm (default for non-symmetric)
+    iparm[17] = -1; // output: Number of nonzeros in the factor LU
+    iparm[18] = -1; // output: Mflops for LU factorization
+    iparm[26] = 0;  // check input data for correctness
+    iparm[39] = 0;  // input: matrix/rhs/solution stored on master
 
     config[0] = 11; // mtype
     config[1] = 1;  // nrhs
