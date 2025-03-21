@@ -35,6 +35,7 @@ find_package(MKL QUIET)
 if (MKL_FOUND)
     message(STATUS "Using MKL.")
     link_libraries(MKL::MKL_SCALAPACK)
+    add_compile_definitions(EZP_MKL)
 endif ()
 
 find_package(MPI REQUIRED)
