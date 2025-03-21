@@ -17,7 +17,7 @@
 
 #ifdef EZP_MKL
 
-#include <ezp/abstract/traits.hpp>
+#include <ezp/abstract/ezp.h>
 #include <mpl/mpl.hpp>
 
 const auto& comm_world{mpl::environment::comm_world()};
@@ -82,16 +82,11 @@ template<typename DT, typename IT> int run(const IT (&config)[7], IT (&iparm)[64
     return 0;
 }
 
-int main(int argc, char** argv) {
-    if(!parent.is_valid()) {
-        printf("This program must be invoked by the host application.\n");
-        return 0;
-    }
-
+template<typename IT> auto prepare() {
     const auto all = mpl::communicator(parent, mpl::communicator::order_high);
 
-    int_t config[7]{};
-    int_t iparm[64]{};
+    IT config[7]{};
+    IT iparm[64]{};
 
     all.bcast(0, config);
     all.bcast(0, iparm);
@@ -103,6 +98,17 @@ int main(int argc, char** argv) {
 
     if(0 == iparm[27]) return run<complex16>(config, iparm);
     return run<complex8>(config, iparm);
+}
+
+int main(int argc, char** argv) {
+    if(!parent.is_valid()) {
+        printf("This program must be invoked by the host application.\n");
+        return 0;
+    }
+
+    if(argc > 1) return prepare<long long int>();
+
+    return prepare<int>();
 }
 
 #endif
