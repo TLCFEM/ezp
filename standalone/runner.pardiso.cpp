@@ -34,57 +34,26 @@ int main(int, char**) {
     iparm[9] = 13;  // perturb the pivot elements with 1E-13
     iparm[10] = 1;  // use nonsymmetric permutation and scaling MPS
     iparm[12] = 1;  // switch on Maximum Weighted Matching algorithm (default for non-symmetric)
-    iparm[17] = -1; // output: Number of nonzeros in the factor LU
-    iparm[18] = -1; // output: Mflops for LU factorization
+    // iparm[17] = -1; // output: Number of nonzeros in the factor LU
+    // iparm[18] = -1; // output: Mflops for LU factorization
     iparm[26] = 0;  // check input data for correctness
     iparm[39] = 0;  // input: matrix/rhs/solution stored on master
 
-    config[0] = 11; // mtype
-    config[1] = 1;  // nrhs
-    config[2] = 1;  // maxfct
-    config[3] = 1;  // mnum
-    config[4] = 0;  // msglvl
-    config[5] = 5;  // n
-    config[6] = 13; // nnz
+    constexpr int N = 100, NRHS = 1;
 
-    const auto n = config[5];
-    const auto nnz = config[6];
+    config[0] = 11;   // mtype
+    config[1] = NRHS; // nrhs
+    config[2] = 1;    // maxfct
+    config[3] = 1;    // mnum
+    config[4] = 0;    // msglvl
+    config[5] = N;    // n
+    config[6] = N;    // nnz
 
-    std::vector<int> ia(n + 1), ja(nnz);
-    std::vector<double> a(nnz), b(n, 1.);
+    std::vector<int> ia(N + 1), ja(N);
+    std::vector<double> a(N), b(N * NRHS, 1.);
 
-    ia[0] = 1;
-    ia[1] = 4;
-    ia[2] = 6;
-    ia[3] = 9;
-    ia[4] = 12;
-    ia[5] = 14;
-    ja[0] = 1;
-    ja[1] = 2;
-    ja[2] = 4;
-    ja[3] = 1;
-    ja[4] = 2;
-    ja[5] = 3;
-    ja[6] = 4;
-    ja[7] = 5;
-    ja[8] = 1;
-    ja[9] = 3;
-    ja[10] = 4;
-    ja[11] = 2;
-    ja[12] = 5;
-    a[0] = 1.0;
-    a[1] = -1.0;
-    a[2] = -3.0;
-    a[3] = -2.0;
-    a[4] = 5.0;
-    a[5] = 4.0;
-    a[6] = 6.0;
-    a[7] = 4.0;
-    a[8] = -4.0;
-    a[9] = 2.0;
-    a[10] = 7.0;
-    a[11] = 8.0;
-    a[12] = -5.0;
+    for(auto i = 0; i < N; i++) ia[i] = ja[i] = a[i] = i + 1;
+    ia[N] = N + 1;
 
     all.bcast(0, config);
     all.bcast(0, iparm);
@@ -102,7 +71,7 @@ int main(int, char**) {
     worker.recv(error, 0);
     if(0 == error) worker.recv(b, 0);
 
-    for(int i = 0; i < n; i++) printf("x[%d] = %+.6f\n", i, b[i]);
+    for(auto i = 0; i < b.size(); i++) printf("x[%ld] = %+.8f\n", i, b[i]);
 
     return 0;
 }

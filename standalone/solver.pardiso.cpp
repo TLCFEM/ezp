@@ -90,6 +90,8 @@ template<typename IT> auto prepare() {
     all.bcast(0, config);
     all.bcast(0, iparm);
 
+    iparm[5] = 0; // write solution into x because x is sent back
+
     if(config[0] == 1 || config[0] == 1 || config[0] == 2 || config[0] == -2 || config[0] == 11) {
         if(0 == iparm[27]) return run<double>(config, iparm);
         return run<float>(config, iparm);
