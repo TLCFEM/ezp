@@ -7,5 +7,14 @@
             "CXX": "icpx",
             "Fortran": "ifx"
         }
+    },
+    {
+        "name": "mkl",
+        "environmentSetupScript": "/opt/intel/oneapi/setvars.sh",
+        "compilers": {
+            "C": "gcc",
+            "CXX": "g++",
+            "Fortran": "gfortran"
+        }
     }
 ]
