@@ -13,10 +13,10 @@ if (MKL_FOUND)
 endif ()
 
 if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-    add_compile_options(-cpp -fopenmp)
-    add_compile_options(-w -fallow-argument-mismatch --param=max-vartrack-size=500000000)
+    add_compile_options(-w)
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp -fopenmp -fallow-argument-mismatch --param=max-vartrack-size=500000000")
 elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-    add_compile_options(-fpp -qopenmp)
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpp -qopenmp")
 endif ()
 
 file(GLOB mumps_f "*.F")
@@ -129,10 +129,8 @@ endforeach ()
 set_source_files_properties(dmumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARITH=MUMPS_ARITH_d")
 set_source_files_properties(smumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARITH=MUMPS_ARITH_s")
 
-add_library(mumps_f_lib OBJECT ${mumps_mod} ${mumps_f})
-add_library(mumps_c_lib OBJECT ${mumps_c})
+add_library(${PROJECT_NAME} ${mumps_c} ${mumps_f} ${mumps_mod})
 
-add_library(${PROJECT_NAME}
-        $<TARGET_OBJECTS:mumps_f_lib>
-        $<TARGET_OBJECTS:mumps_c_lib>
-)
+get_filename_component(MPI_LIB_DIR ${MPI_mpi_LIBRARY} DIRECTORY)
+target_link_directories(${PROJECT_NAME} PUBLIC ${MPI_LIB_DIR})
+target_link_libraries(${PROJECT_NAME} gomp mpifort)
