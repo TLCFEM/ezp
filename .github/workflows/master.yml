@@ -40,6 +40,9 @@ jobs:
       - name: Test
         if: matrix.build == 'Debug' && matrix.mpi == 'impi'
         run: |
+          if [ "${{ matrix.mpi }}" == "impi" ]; then
+            source /opt/intel/oneapi/setvars.sh
+          fi
           cd build
           for SRC in `find . -type f -executable -iname "*example*"`; do $SRC; done
           ./catch2
