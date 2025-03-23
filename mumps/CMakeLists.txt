@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.18)
 
 project(mumps C Fortran)
 
-include_directories(.)
-
 add_compile_definitions(Add_)
 add_compile_definitions(pord)
 # add_compile_definitions(metis)
@@ -131,6 +129,4 @@ set_source_files_properties(smumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARI
 
 add_library(${PROJECT_NAME} ${mumps_c} ${mumps_f} ${mumps_mod})
 
-get_filename_component(MPI_LIB_DIR ${MPI_mpi_LIBRARY} DIRECTORY)
-target_link_directories(${PROJECT_NAME} PUBLIC ${MPI_LIB_DIR})
-target_link_libraries(${PROJECT_NAME} gomp mpifort)
+target_link_libraries(${PROJECT_NAME} gfortran gomp ${MPI_FORT_LIB})

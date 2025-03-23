@@ -54,6 +54,11 @@ endif ()
 find_package(MPI REQUIRED)
 message(STATUS ${MPIEXEC_EXECUTABLE})
 
+get_filename_component(MPI_ROOT_DIR ${MPIEXEC_EXECUTABLE} DIRECTORY)
+get_filename_component(MPI_ROOT_DIR ${MPI_ROOT_DIR} DIRECTORY)
+find_library(MPI_FORT_LIB mpifort mpi_mpifh HINTS ${MPI_ROOT_DIR}/lib NO_CACHE REQUIRED)
+message(STATUS "MPI_FORT_LIB: ${MPI_FORT_LIB}")
+
 if (NOT MKL_FOUND)
     option(EZP_USE_SYSTEM_LIBS "Use system libraries." OFF)
     if (EZP_USE_SYSTEM_LIBS)
