@@ -55,7 +55,7 @@ find_package(MPI REQUIRED)
 message(STATUS ${MPIEXEC_EXECUTABLE})
 
 get_filename_component(MPI_ROOT_DIR ${MPI_C_INCLUDE_DIRS} DIRECTORY)
-find_library(MPI_FORT_LIB mpifort mpi_mpifh HINTS ${MPI_ROOT_DIR}/lib NO_CACHE REQUIRED)
+find_library(MPI_FORT_LIB mpifort mpichfort mpi_mpifh HINTS ${MPI_ROOT_DIR}/lib NO_CACHE REQUIRED)
 message(STATUS "MPI_FORT_LIB: ${MPI_FORT_LIB}")
 
 if (NOT MKL_FOUND)
