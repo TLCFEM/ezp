@@ -39,11 +39,13 @@ jobs:
           elif [ "${{ matrix.mpi }}" == "mpich" ]; then
             wget -q https://github.com/TLCFEM/prebuilds/releases/download/latest/MPICH-linux.tar.gz
             tar -xzf MPICH-linux.tar.gz
-            export MPI_HOME=$(pwd)/MPICH
+            sudo mv MPICH /MPICH
+            export MPI_HOME=/MPICH
           elif [ "${{ matrix.mpi }}" == "openmpi" ]; then
             wget -q https://github.com/TLCFEM/prebuilds/releases/download/latest/OpenMPI-linux.tar.gz
             tar -xzf OpenMPI-linux.tar.gz
-            export MPI_HOME=$(pwd)/OpenMPI
+            sudo mv OpenMPI /OpenMPI
+            export MPI_HOME=/OpenMPI
           fi
           echo "MPI_HOME=$MPI_HOME" >> "$GITHUB_ENV"
           echo $MPI_HOME
