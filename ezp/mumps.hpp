@@ -21,8 +21,6 @@
  * It solves the system of linear equations `A * X = B` with a general sparse matrix `A`.
  * The RHS matrix `B` is a dense matrix.
  *
- * The solver automatically detects whether `A` is distributed on many processes or
- * centralized on the root process.
  * The matrix `A` should be stored in the Compressed Sparse Row (CSR) format with one-based indexing.
  *
  * To set control parameters, use the overloaded function call operator, which allows access to the `icntl` array.
@@ -120,22 +118,10 @@ namespace ezp {
         IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(A.n != B.n_rows) return -1;
 
-            int has_data = A.is_valid() ? 1 : 0;
-            comm_world.allreduce(mpl::plus<int>(), has_data);
-            if(has_data > 1) {
-                id.icntl[17] = 3;
-
-                id.nnz_loc = A.nnz;
-                id.irn_loc = A.irn;
-                id.jcn_loc = A.jcn;
-                id.a_loc = (entry_t*)A.data;
-            }
-            else {
-                id.nnz = A.nnz;
-                id.irn = A.irn;
-                id.jcn = A.jcn;
-                id.a = (entry_t*)A.data;
-            }
+            id.nnz = A.nnz;
+            id.irn = A.irn;
+            id.jcn = A.jcn;
+            id.a = (entry_t*)A.data;
 
             id.n = A.n;
             id.lrhs = B.n_rows;
