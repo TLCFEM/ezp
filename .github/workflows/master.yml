@@ -47,7 +47,7 @@ jobs:
           fi
           echo "MPI_HOME=$MPI_HOME" >> "$GITHUB_ENV"
           echo $MPI_HOME
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=$MPI_HOME ..
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=${{ env.MPI_HOME }} ..
           cmake --build . --target all
       - name: Test
         if: matrix.build == 'Debug' && matrix.mpi == 'mpich'
