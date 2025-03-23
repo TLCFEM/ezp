@@ -13,3 +13,4 @@ ignore:
   - "include"
   - "misc"
   - "standalone"
+  - "mumps"

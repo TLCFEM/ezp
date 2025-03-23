@@ -34,13 +34,14 @@ using namespace ezp;
 int main() {
     const auto& comm_world{mpl::environment::comm_world()};
 
-    constexpr int N = 10, NRHS = 1;
+    int N = 10, NRHS = 1;
 
     std::vector<int_t> ia, ja;
     std::vector<double> a, b;
 
-    // initialise one-based CSR matrix on the root process
-    if(0 == comm_world.rank()) {
+    const auto populate = [&]() {
+        if(0 != comm_world.rank()) return;
+
         ia.resize(N + 1);
         ja.resize(N);
         a.resize(N);
@@ -50,19 +51,32 @@ int main() {
         ia[N] = N + 1;
 
         std::fill(b.begin(), b.end(), 1.);
-    }
+    };
+
+    // initialise one-based CSR matrix on the root process
+    populate();
 
     auto solver = mumps<double, int_t>();
     solver(3) = 0; // msglvl
 
     // need to wrap the data in sparse_csr_mat objects
-    const auto info = solver.solve({N, N + 1, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
+    auto info = solver.solve({N, N + 1, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
 
-    if(0 == comm_world.rank()) {
-        std::cout << std::setprecision(10) << "Info: " << info << '\n';
+    const auto print = [&]() {
+        if(0 != comm_world.rank()) return;
+
+        std::cout << std::fixed << std::setprecision(10) << "Info: " << info << '\n';
         std::cout << "Solution:\n";
         for(const double i : b) std::cout << i << '\n';
-    }
+    };
+
+    print();
+
+    N = 20;
+
+    populate();
+    info = solver.solve({N, N + 1, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
+    print();
 
     return info;
 }
