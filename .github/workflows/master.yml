@@ -38,7 +38,7 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON ..
           cmake --build . --target all
       - name: Test
-        if: matrix.build == 'Debug' && matrix.mpi == 'mpich'
+        if: matrix.build == 'Debug' && matrix.mpi == 'impi'
         run: |
           cd build
           for SRC in `find . -type f -executable -iname "*example*"`; do $SRC; done
@@ -47,7 +47,7 @@ jobs:
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
           lcov --list coverage.info
       - name: Report
-        if: matrix.build == 'Debug' && matrix.mpi == 'mpich'
+        if: matrix.build == 'Debug' && matrix.mpi == 'impi'
         uses: codecov/codecov-action@v5
         with:
           plugins: gcov
