@@ -16,15 +16,15 @@ The following solvers are implemented.
 
 | availability | type of matrix                             | operation | solver  | package   |
 |:------------:|--------------------------------------------|-----------|---------|-----------|
-|      🗹      | general (partial pivoting)                 | simple    | PxGESV  | ScaLAPACK |
-|      🗹      | general (partial pivoting)                 | expert    | PxGESVX | ScaLAPACK |
-|      🗹      | symmetric/Hermitian positive definite      | simple    | PxPOSV  | ScaLAPACK |
-|      🗹      | symmetric/Hermitian positive definite      | expert    | PxPOSVX | ScaLAPACK |
-|      🗹      | general band (partial pivoting)            | simple    | PxGBSV  | ScaLAPACK |
-|      🗹      | general band (no pivoting)                 | simple    | PxDBSV  | ScaLAPACK |
-|      🗹      | symmetric/Hermitian positive definite band | simple    | PxPBSV  | ScaLAPACK |
-|      🗹      | sparse                                     |           | PARDISO | MKL       |
-|      🗹      | sparse                                     |           | MUMPS   | MUMPS     |
+|      ✅       | general (partial pivoting)                 | simple    | PxGESV  | ScaLAPACK |
+|      ✅       | general (partial pivoting)                 | expert    | PxGESVX | ScaLAPACK |
+|      ✅       | symmetric/Hermitian positive definite      | simple    | PxPOSV  | ScaLAPACK |
+|      ✅       | symmetric/Hermitian positive definite      | expert    | PxPOSVX | ScaLAPACK |
+|      ✅       | general band (partial pivoting)            | simple    | PxGBSV  | ScaLAPACK |
+|      ✅       | general band (no pivoting)                 | simple    | PxDBSV  | ScaLAPACK |
+|      ✅       | symmetric/Hermitian positive definite band | simple    | PxPBSV  | ScaLAPACK |
+|      ✅       | sparse                                     |           | PARDISO | MKL       |
+|      ✅       | sparse                                     |           | MUMPS   | MUMPS     |
 
 ## Dependency
 
