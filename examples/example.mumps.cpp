@@ -53,10 +53,7 @@ int main() {
 
     auto solver = mumps<double, int_t>();
 
-    // need to wrap the data in full_mat objects
-    // it requires the number of rows and columns of the matrix, and a pointer to the data
-    // on non-root processes, the data pointer is nullptr as the vector is empty
-    // solver.solve(band_mat{N, N, KL, KU, A.data()}, full_mat{N, NRHS, B.data()});
+    // need to wrap the data in sparse_csr_mat objects
     const auto info = solver.solve({N, N + 1, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
 
     if(0 == comm_world.rank()) {

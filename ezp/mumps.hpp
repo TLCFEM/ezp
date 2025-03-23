@@ -58,19 +58,32 @@ namespace ezp {
 
         const mpl::communicator& comm_world{mpl::environment::comm_world()};
 
+        auto sync_error() {
+            IT error = id.infog[0] < 0 ? -1 : 0;
+            comm_world.allreduce(mpl::min<IT>(), error);
+            return error;
+        }
+
+        auto perform_job(const IT job) {
+            id.job = job;
+            detail::mumps_struc<DT>::mumps_c(&id);
+        }
+
     public:
         explicit mumps(const int sym = 0) {
             id.comm_fortran = MPI_Comm_c2f(comm_world.native_handle());
             id.sym = sym;
-            id.job = -1;
-            detail::mumps_struc<DT>::mumps_c(&id);
+            perform_job(-1);
         };
 
-        ~mumps() {
-            id.job = -2;
-            detail::mumps_struc<DT>::mumps_c(&id);
-        };
+        ~mumps() { perform_job(-2); };
 
+        /**
+         * @brief Overloaded function call operator to access elements of the `icntl` array.
+         *
+         * @param index The index of the element to access.
+         * @return A reference to the element at the specified index in the `icntl` array.
+         */
         auto& operator()(const IT index) { return id.icntl[index]; }
 
         IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
@@ -97,13 +110,9 @@ namespace ezp {
             id.nrhs = B.n_cols;
             id.rhs = (entry_t*)B.data;
 
-            id.job = 6;
-            detail::mumps_struc<DT>::mumps_c(&id);
+            perform_job(6);
 
-            IT error = id.infog[0] < 0 ? -1 : 0;
-            comm_world.allreduce(mpl::min<IT>(), error);
-
-            return error;
+            return sync_error();
         }
 
         IT solve(full_mat<DT, IT>&& B) {
@@ -112,13 +121,9 @@ namespace ezp {
             id.nrhs = B.n_cols;
             id.rhs = (entry_t*)B.data;
 
-            id.job = 3;
-            detail::mumps_struc<DT>::mumps_c(&id);
+            perform_job(3);
 
-            IT error = id.infog[0] < 0 ? -1 : 0;
-            comm_world.allreduce(mpl::min<IT>(), error);
-
-            return error;
+            return sync_error();
         }
     };
 } // namespace ezp

@@ -149,4 +149,5 @@ endif ()
 
 add_subdirectory(mumps)
 
+target_link_libraries(example.mumps mumps)
 target_link_libraries(solver.mumps mumps)
