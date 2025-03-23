@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         build: [ RelWithDebInfo, Debug ]
-        mpi: [ mpich, impi ]
+        mpi: [ impi ]
     steps:
       - name: Clone
         uses: actions/checkout@v4
