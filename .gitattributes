@@ -38,3 +38,4 @@
 
 include/** linguist-vendored
 misc/** linguist-vendored
+mumps/** linguist-vendored
