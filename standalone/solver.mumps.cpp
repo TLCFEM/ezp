@@ -17,8 +17,10 @@
 
 #include <ezp/abstract/ezp.h>
 #include <mpl/mpl.hpp>
+#include <mumps/cmumps_c.h>
 #include <mumps/dmumps_c.h>
 #include <mumps/smumps_c.h>
+#include <mumps/zmumps_c.h>
 
 const auto& comm_world{mpl::environment::comm_world()};
 const auto& parent = mpl::inter_communicator::parent();
@@ -26,21 +28,34 @@ const auto& parent = mpl::inter_communicator::parent();
 template<typename DT> struct mumps_struc {};
 template<> struct mumps_struc<double> {
     using type = DMUMPS_STRUC_C;
+    using data_type = double;
     static auto mumps_c(DMUMPS_STRUC_C* ptr) { return dmumps_c(ptr); }
 };
 template<> struct mumps_struc<float> {
     using type = SMUMPS_STRUC_C;
+    using data_type = float;
     static auto mumps_c(SMUMPS_STRUC_C* ptr) { return smumps_c(ptr); }
 };
+template<> struct mumps_struc<complex16> {
+    using type = ZMUMPS_STRUC_C;
+    using data_type = mumps_double_complex;
+    static auto mumps_c(ZMUMPS_STRUC_C* ptr) { return zmumps_c(ptr); }
+};
+template<> struct mumps_struc<complex8> {
+    using type = CMUMPS_STRUC_C;
+    using data_type = mumps_complex;
+    static auto mumps_c(CMUMPS_STRUC_C* ptr) { return cmumps_c(ptr); }
+};
 
-template<typename DT, typename IT> int run(const IT (&config)[5]) {
+template<typename DT, typename IT> int run(const IT (&config)[6]) {
     const auto sym = config[0];
     const auto nrhs = config[1];
     const auto n = config[2];
     const auto nnz = config[3];
     const auto msglvl = config[4];
 
-    using struct_t = mumps_struc<DT>::type;
+    using struct_t = typename mumps_struc<DT>::type;
+    using data_t = typename mumps_struc<DT>::data_type;
 
     struct_t id;
     id.comm_fortran = MPI_Comm_c2f(comm_world.native_handle());
@@ -73,8 +88,8 @@ template<typename DT, typename IT> int run(const IT (&config)[5]) {
         id.nnz = nnz;
         id.irn = ia.data();
         id.jcn = ja.data();
-        id.a = a.data();
-        id.rhs = b.data();
+        id.a = (data_t*)a.data();
+        id.rhs = (data_t*)b.data();
     }
 
     id.job = 6;
@@ -97,11 +112,17 @@ template<typename DT, typename IT> int run(const IT (&config)[5]) {
 template<typename IT> auto prepare() {
     const auto all = mpl::communicator(parent, mpl::communicator::order_high);
 
-    IT config[5]{};
+    IT config[6]{};
 
     all.bcast(0, config);
 
-    return run<double>(config);
+    const auto FLOAT = config[5];
+
+    if(FLOAT >= 10) return run<complex16>(config);
+    if(FLOAT >= 0) return run<double>(config);
+    if(FLOAT > -10) return run<float>(config);
+
+    return run<complex8>(config);
 }
 
 int main(int argc, char** argv) {

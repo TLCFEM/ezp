@@ -24,7 +24,7 @@ int main(int, char**) {
     const auto worker = comm_world.spawn(0, NUM_NODE, {"solver.mumps"});
     const auto all = mpl::communicator(worker, mpl::communicator::order_low);
 
-    int config[5]{};
+    int config[6]{};
 
     constexpr int N = 10, NRHS = 1;
 
@@ -33,6 +33,7 @@ int main(int, char**) {
     config[2] = N;    // n
     config[3] = N;    // nnz
     config[4] = 4;    // msglvl
+    config[5] = 1;    // data type
 
     std::vector<int> ia(N + 1), ja(N);
     std::vector<double> a(N), b(N * NRHS, 1.);

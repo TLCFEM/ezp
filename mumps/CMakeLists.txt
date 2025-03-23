@@ -113,6 +113,78 @@ set(mumps_mod
         ssol_omp_m.F
         sstatic_ptr_m.F
         smumps_mpi3_mod.F
+
+        zana_aux.F
+        zana_aux_par.F
+        zana_lr.F
+        zfac_mem_dynamic.F
+        zfac_asm_master_ELT_m.F
+        zfac_asm_master_m.F
+        zfac_front_aux.F
+        zfac_front_LU_type1.F
+        zfac_front_LU_type2.F
+        zfac_front_LDLT_type1.F
+        zfac_front_LDLT_type2.F
+        zfac_front_type2_aux.F
+        zfac_sispointers_m.F
+        zfac_lr.F
+        zfac_omp_m.F
+        zfac_par_m.F
+        zfac_sol_l0omp_m.F
+        zlr_core.F
+        zlr_stats.F
+        zlr_type.F
+        zmumps_comm_buffer.F
+        zmumps_config_file.F
+        zmumps_load.F
+        zmumps_lr_data_m.F
+        zmumps_ooc_buffer.F
+        zmumps_ooc.F
+        zmumps_sol_es.F
+        zmumps_save_restore.F
+        zmumps_save_restore_files.F
+        zmumps_struc_def.F
+        zomp_tps_m.F
+        zsol_lr.F
+        zsol_omp_m.F
+        zstatic_ptr_m.F
+        zmumps_mpi3_mod.F
+
+        cana_aux.F
+        cana_aux_par.F
+        cana_lr.F
+        cfac_mem_dynamic.F
+        cfac_asm_master_ELT_m.F
+        cfac_asm_master_m.F
+        cfac_front_aux.F
+        cfac_front_LU_type1.F
+        cfac_front_LU_type2.F
+        cfac_front_LDLT_type1.F
+        cfac_front_LDLT_type2.F
+        cfac_front_type2_aux.F
+        cfac_sispointers_m.F
+        cfac_lr.F
+        cfac_omp_m.F
+        cfac_par_m.F
+        cfac_sol_l0omp_m.F
+        clr_core.F
+        clr_stats.F
+        clr_type.F
+        cmumps_comm_buffer.F
+        cmumps_config_file.F
+        cmumps_load.F
+        cmumps_lr_data_m.F
+        cmumps_ooc_buffer.F
+        cmumps_ooc.F
+        cmumps_sol_es.F
+        cmumps_save_restore.F
+        cmumps_save_restore_files.F
+        cmumps_struc_def.F
+        comp_tps_m.F
+        csol_lr.F
+        csol_omp_m.F
+        cstatic_ptr_m.F
+        cmumps_mpi3_mod.F
 )
 
 foreach (mod_src ${mumps_mod})
@@ -126,6 +198,8 @@ endforeach ()
 
 set_source_files_properties(dmumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARITH=MUMPS_ARITH_d")
 set_source_files_properties(smumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARITH=MUMPS_ARITH_s")
+set_source_files_properties(zmumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARITH=MUMPS_ARITH_z")
+set_source_files_properties(cmumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARITH=MUMPS_ARITH_c")
 
 add_library(${PROJECT_NAME} ${mumps_c} ${mumps_f} ${mumps_mod})
 
