@@ -4,7 +4,12 @@ var annotated_dup =
       [ "detail", null, [
         [ "abstract_solver", "d0/df0/classezp_1_1detail_1_1abstract__solver.html", null ],
         [ "band_solver", "d0/db0/classezp_1_1detail_1_1band__solver.html", null ],
-        [ "full_solver", "df/df0/classezp_1_1detail_1_1full__solver.html", "df/df0/classezp_1_1detail_1_1full__solver" ]
+        [ "full_solver", "df/df0/classezp_1_1detail_1_1full__solver.html", "df/df0/classezp_1_1detail_1_1full__solver" ],
+        [ "mumps_struc", "df/d7f/structezp_1_1detail_1_1mumps__struc.html", null ],
+        [ "mumps_struc< complex16 >", "d4/d83/structezp_1_1detail_1_1mumps__struc_3_01complex16_01_4.html", null ],
+        [ "mumps_struc< complex8 >", "d6/dae/structezp_1_1detail_1_1mumps__struc_3_01complex8_01_4.html", null ],
+        [ "mumps_struc< double >", "df/d5e/structezp_1_1detail_1_1mumps__struc_3_01double_01_4.html", null ],
+        [ "mumps_struc< float >", "db/d3e/structezp_1_1detail_1_1mumps__struc_3_01float_01_4.html", null ]
       ] ],
       [ "band_mat", "d9/d24/structezp_1_1band__mat.html", null ],
       [ "band_symm_mat", "d8/d3f/structezp_1_1band__symm__mat.html", null ],
@@ -13,6 +18,7 @@ var annotated_dup =
       [ "blacs_context", "df/dc0/classezp_1_1blacs__context.html", "df/dc0/classezp_1_1blacs__context" ],
       [ "blacs_env", "da/d77/classezp_1_1blacs__env.html", null ],
       [ "full_mat", "d0/d58/structezp_1_1full__mat.html", null ],
+      [ "mumps", "d6/dbe/classezp_1_1mumps.html", "d6/dbe/classezp_1_1mumps" ],
       [ "pdbsv", "de/d4c/classezp_1_1pdbsv.html", "de/d4c/classezp_1_1pdbsv" ],
       [ "pgbsv", "d1/d7e/classezp_1_1pgbsv.html", "d1/d7e/classezp_1_1pgbsv" ],
       [ "pgesv", "d5/d48/classezp_1_1pgesv.html", null ],
@@ -20,6 +26,7 @@ var annotated_dup =
       [ "ppbsv", "d3/df1/classezp_1_1ppbsv.html", "d3/df1/classezp_1_1ppbsv" ],
       [ "pposv", "de/d12/classezp_1_1pposv.html", null ],
       [ "pposvx", "d0/d05/classezp_1_1pposvx.html", null ],
+      [ "sparse_csr_mat", "d6/d5b/structezp_1_1sparse__csr__mat.html", null ],
       [ "WorkType", "da/d62/structezp_1_1WorkType.html", null ],
       [ "WorkType< complex16 >", "d2/dac/structezp_1_1WorkType_3_01complex16_01_4.html", null ],
       [ "WorkType< complex8 >", "d1/d01/structezp_1_1WorkType_3_01complex8_01_4.html", null ],
@@ -29,6 +36,7 @@ var annotated_dup =
     [ "bandsymm_mat", "d0/d33/classbandsymm__mat.html", null ],
     [ "general_mat", "d8/d10/classgeneral__mat.html", null ],
     [ "mat", "d0/d36/classmat.html", null ],
+    [ "mumps", "df/d0c/classmumps.html", null ],
     [ "pdbsv", "d0/de4/classpdbsv.html", null ],
     [ "pgbsv", "d4/d10/classpgbsv.html", null ],
     [ "pgesv", "dc/d13/classpgesv.html", null ],

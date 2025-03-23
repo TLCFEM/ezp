@@ -1,10 +1,4 @@
 var searchData=
 [
-  ['solver_2epdbsv_2ecpp_0',['solver.pdbsv.cpp',['../d4/dda/solver_8pdbsv_8cpp.html',1,'']]],
-  ['solver_2epgbsv_2ecpp_1',['solver.pgbsv.cpp',['../dd/d60/solver_8pgbsv_8cpp.html',1,'']]],
-  ['solver_2epgesv_2ecpp_2',['solver.pgesv.cpp',['../d3/db5/solver_8pgesv_8cpp.html',1,'']]],
-  ['solver_2epgesvx_2ecpp_3',['solver.pgesvx.cpp',['../d6/d84/solver_8pgesvx_8cpp.html',1,'']]],
-  ['solver_2eppbsv_2ecpp_4',['solver.ppbsv.cpp',['../d1/dab/solver_8ppbsv_8cpp.html',1,'']]],
-  ['solver_2epposv_2ecpp_5',['solver.pposv.cpp',['../d2/d91/solver_8pposv_8cpp.html',1,'']]],
-  ['solver_2epposvx_2ecpp_6',['solver.pposvx.cpp',['../d9/d45/solver_8pposvx_8cpp.html',1,'']]]
+  ['runner_2ecpp_0',['runner.cpp',['../d2/de6/runner_8cpp.html',1,'']]]
 ];

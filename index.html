@@ -714,7 +714,7 @@
 <h1 id="ezp">ezp</h1>
 <p><a href="https://codecov.io/gh/TLCFEM/ezp"><img alt="codecov" src="https://codecov.io/gh/TLCFEM/ezp/graph/badge.svg?token=ME0M312F5M" /></a>
 <a href="https://github.com/TLCFEM/ezp/actions/workflows/master.yml"><img alt="master" src="https://github.com/TLCFEM/ezp/actions/workflows/master.yml/badge.svg?branch=master" /></a></p>
-<p><code>ezp</code> is a lightweight C++ wrapper for selected ScaLAPACK solvers for linear systems.</p>
+<p><code>ezp</code> is a lightweight C++ wrapper for selected distributed solvers for linear systems.</p>
 <h2 id="features">Features</h2>
 <ol>
 <li>easy to use interface</li>
@@ -730,50 +730,72 @@
 <th>type of matrix</th>
 <th>operation</th>
 <th>solver</th>
+<th>package</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: center;">✔️</td>
+<td style="text-align: center;">✅</td>
 <td>general (partial pivoting)</td>
 <td>simple</td>
 <td>PxGESV</td>
+<td>ScaLAPACK</td>
 </tr>
 <tr>
-<td style="text-align: center;">✔️</td>
+<td style="text-align: center;">✅</td>
 <td>general (partial pivoting)</td>
 <td>expert</td>
 <td>PxGESVX</td>
+<td>ScaLAPACK</td>
 </tr>
 <tr>
-<td style="text-align: center;">✔️</td>
+<td style="text-align: center;">✅</td>
 <td>symmetric/Hermitian positive definite</td>
 <td>simple</td>
 <td>PxPOSV</td>
+<td>ScaLAPACK</td>
 </tr>
 <tr>
-<td style="text-align: center;">✔️</td>
+<td style="text-align: center;">✅</td>
 <td>symmetric/Hermitian positive definite</td>
 <td>expert</td>
 <td>PxPOSVX</td>
+<td>ScaLAPACK</td>
 </tr>
 <tr>
-<td style="text-align: center;">✔️</td>
+<td style="text-align: center;">✅</td>
 <td>general band (partial pivoting)</td>
 <td>simple</td>
 <td>PxGBSV</td>
+<td>ScaLAPACK</td>
 </tr>
 <tr>
-<td style="text-align: center;">✔️</td>
+<td style="text-align: center;">✅</td>
 <td>general band (no pivoting)</td>
 <td>simple</td>
 <td>PxDBSV</td>
+<td>ScaLAPACK</td>
 </tr>
 <tr>
-<td style="text-align: center;">✔️</td>
+<td style="text-align: center;">✅</td>
 <td>symmetric/Hermitian positive definite band</td>
 <td>simple</td>
 <td>PxPBSV</td>
+<td>ScaLAPACK</td>
+</tr>
+<tr>
+<td style="text-align: center;">✅</td>
+<td>sparse</td>
+<td></td>
+<td>PARDISO</td>
+<td>MKL</td>
+</tr>
+<tr>
+<td style="text-align: center;">✅</td>
+<td>sparse</td>
+<td></td>
+<td>MUMPS</td>
+<td>MUMPS</td>
 </tr>
 </tbody>
 </table>
@@ -787,7 +809,8 @@ The following drivers are needed.</p>
 </ol>
 <h2 id="example">Example</h2>
 <p>It is assumed that the root node (rank 0) prepares the left hand side <span class="arithmatex">\(<span class="arithmatex">\(A\)</span>\)</span> and right hand side <span class="arithmatex">\(<span class="arithmatex">\(B\)</span>\)</span>.
-The solvers distrbute the matrices to available processes and solve the system, return the solution back to the master node.</p>
+The solvers distribute the matrices to available processes and solve the system, return the solution back to the master
+node.</p>
 <p>The solvers are designed in such a way that all <code>BLACS</code> and <code>ScaLAPACK</code> details are hidden.
 One shall prepare the matrices (<strong>on the root node</strong>) and call the solver.
 The following is a typical example.

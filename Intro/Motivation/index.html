@@ -632,7 +632,7 @@ Since both <code>MPI</code> and <code>LAPACK</code>/<code>BLAS</code> have fabul
 <ol>
 <li>It avoids direct interactions with the <code>C</code> API, which requires manual memory management.
    The caller has to follow pretty much the same procedural style.</li>
-<li>A well designed OO approach can significantly reduce the code size.</li>
+<li>A well-designed OO approach can significantly reduce the code size.</li>
 </ol>
 <p><code>ezp</code> is designed to provide an intuitive interface that resembles the non-MPI version of linear systems solvers.
 The majority of <code>ScaLAPACK</code>, <code>BLACS</code> and <code>MPI</code> communication details shall be well hidden from the caller so that solving a system can be as simple as <code>solver.solve(A, B)</code>.
