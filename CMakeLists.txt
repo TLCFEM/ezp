@@ -149,5 +149,4 @@ endif ()
 
 add_subdirectory(mumps)
 
-target_include_directories(solver.mumps PRIVATE mumps)
 target_link_libraries(solver.mumps mumps)

@@ -33,20 +33,23 @@ template<> struct mumps_struc<float> {
     static auto mumps_c(SMUMPS_STRUC_C* ptr) { return smumps_c(ptr); }
 };
 
-template<typename DT, typename IT> int run(const IT (&config)[4]) {
-    const auto mtype = config[0];
+template<typename DT, typename IT> int run(const IT (&config)[5]) {
+    const auto sym = config[0];
     const auto nrhs = config[1];
     const auto n = config[2];
     const auto nnz = config[3];
+    const auto msglvl = config[4];
 
     using struct_t = mumps_struc<DT>::type;
 
     struct_t id;
     id.comm_fortran = MPI_Comm_c2f(comm_world.native_handle());
-    id.sym = mtype;
+    id.sym = sym;
 
     id.job = -1;
     mumps_struc<DT>::mumps_c(&id);
+
+    id.icntl[3] = msglvl;
 
     std::vector<IT> ia, ja;
     std::vector<DT> a, b;
@@ -94,7 +97,7 @@ template<typename DT, typename IT> int run(const IT (&config)[4]) {
 template<typename IT> auto prepare() {
     const auto all = mpl::communicator(parent, mpl::communicator::order_high);
 
-    IT config[4]{};
+    IT config[5]{};
 
     all.bcast(0, config);
 
