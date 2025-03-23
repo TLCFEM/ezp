@@ -28,8 +28,8 @@
  * To set control parameters, use the overloaded function call operator, which allows access to the `icntl` array.
  *
  * @code
-   auto solver = mumps<double, int_t>();
-   solver(3) = 0; // suppress output
+    auto solver = mumps<double, int_t>();
+    solver(3) = 0; // suppress output
  * @endcode
  *
  * The example usage can be seen as follows.
