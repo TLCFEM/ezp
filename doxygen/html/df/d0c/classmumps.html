@@ -102,7 +102,7 @@ $(document).ready(function(){initNavTree('df/d0c/classmumps.html','../../'); ini
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Solver for general sparse matrices. </p>
 <p>It solves the system of linear equations <code>A * X = B</code> with a general sparse matrix <code>A</code>. The RHS matrix <code>B</code> is a dense matrix.</p>
-<p>The solver automatically detects whether <code>A</code> is distributed on many processes or centralized on the root process. The matrix <code>A</code> should be stored in the Compressed Sparse Row (CSR) format with one-based indexing.</p>
+<p>The matrix <code>A</code> should be stored in the Compressed Sparse Row (CSR) format with one-based indexing.</p>
 <p>To set control parameters, use the overloaded function call operator, which allows access to the <code>icntl</code> array.</p>
 <div class="fragment"><div class="line"><span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">solver</a> = <a class="code hl_class" href="../../df/d0c/classmumps.html">mumps&lt;double, int_t&gt;</a>();</div>
 <div class="line"><a class="code hl_class" href="../../df/d0c/classmumps.html">solver</a>(3) = 0; <span class="comment">// suppress output</span></div>
