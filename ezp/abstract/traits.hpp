@@ -109,14 +109,17 @@ namespace ezp {
 
     template<data_t DT, index_t IT> struct sparse_csr_mat {
         IT n, nnz;
-        DT *irn, *jrn, *a;
+        IT *irn, *jcn;
+        DT* a;
 
-        sparse_csr_mat(const IT n, const IT nnz, DT* const irn, DT* const jrn, DT* const a)
+        sparse_csr_mat(const IT n, const IT nnz, IT* const irn, IT* const jcn, DT* const a)
             : n(n)
             , nnz(nnz)
             , irn(irn)
-            , jrn(jrn)
+            , jcn(jcn)
             , a(a) {}
+
+        auto is_valid() { return irn && jcn && a; }
     };
 
     template<typename T> concept wrapper_t = requires(T t) {

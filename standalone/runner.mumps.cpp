@@ -56,7 +56,7 @@ int main(int, char**) {
     worker.recv(error, 0);
     if(0 == error) worker.recv(b, 0);
 
-    for(auto i = 0; i < b.size(); i++) printf("x[%ld] = %+.8f\n", i, b[i]);
+    for(decltype(b.size()) i = 0; i < b.size(); i++) printf("x[%lu] = %+.8f\n", i, b[i]);
 
     return 0;
 }

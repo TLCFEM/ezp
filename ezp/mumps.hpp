@@ -19,6 +19,7 @@
 #define MUMPS_HPP
 
 #include <ezp/abstract/traits.hpp>
+#include <mpl/mpl.hpp>
 #include <mumps/cmumps_c.h>
 #include <mumps/dmumps_c.h>
 #include <mumps/smumps_c.h>
@@ -28,60 +29,91 @@ namespace ezp {
     namespace detail {
         template<typename DT> struct mumps_struc {};
         template<> struct mumps_struc<double> {
-            using type = DMUMPS_STRUC_C;
-            using data_type = double;
+            using struct_type = DMUMPS_STRUC_C;
+            using entry_type = double;
             static auto mumps_c(DMUMPS_STRUC_C* ptr) { return dmumps_c(ptr); }
         };
         template<> struct mumps_struc<float> {
-            using type = SMUMPS_STRUC_C;
-            using data_type = float;
+            using struct_type = SMUMPS_STRUC_C;
+            using entry_type = float;
             static auto mumps_c(SMUMPS_STRUC_C* ptr) { return smumps_c(ptr); }
         };
         template<> struct mumps_struc<complex16> {
-            using type = ZMUMPS_STRUC_C;
-            using data_type = mumps_double_complex;
+            using struct_type = ZMUMPS_STRUC_C;
+            using entry_type = mumps_double_complex;
             static auto mumps_c(ZMUMPS_STRUC_C* ptr) { return zmumps_c(ptr); }
         };
         template<> struct mumps_struc<complex8> {
-            using type = CMUMPS_STRUC_C;
-            using data_type = mumps_complex;
+            using struct_type = CMUMPS_STRUC_C;
+            using entry_type = mumps_complex;
             static auto mumps_c(CMUMPS_STRUC_C* ptr) { return cmumps_c(ptr); }
         };
     } // namespace detail
 
     template<data_t DT, index_t IT> class mumps final {
-        using struct_t = typename detail::mumps_struc<DT>::type;
-        using element_t = typename detail::mumps_struc<DT>::data_type;
+        using struct_t = typename detail::mumps_struc<DT>::struct_type;
+        using entry_t = typename detail::mumps_struc<DT>::entry_type;
 
         struct_t id;
 
-        const auto& comm_world{mpl::environment::comm_world()};
+        const mpl::communicator& comm_world{mpl::environment::comm_world()};
 
     public:
-        explicit mumps(const int sym) {
+        explicit mumps(const int sym = 0) {
             id.comm_fortran = MPI_Comm_c2f(comm_world.native_handle());
             id.sym = sym;
             id.job = -1;
-            mumps_struc<DT>::mumps_c(&id);
+            detail::mumps_struc<DT>::mumps_c(&id);
         };
 
         ~mumps() {
             id.job = -2;
-            mumps_struc<DT>::mumps_c(&id);
+            detail::mumps_struc<DT>::mumps_c(&id);
         };
 
         auto& operator()(const IT index) { return id.icntl[index]; }
 
         IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
+            if(A.n != B.n_rows) return -1;
+
+            int has_data = A.is_valid() ? 1 : 0;
+            comm_world.allreduce(mpl::plus<int>(), has_data);
+            if(has_data > 1) {
+                id.icntl[17] = 3;
+
+                id.nnz_loc = A.nnz;
+                id.irn_loc = A.irn;
+                id.jcn_loc = A.jcn;
+                id.a_loc = (entry_t*)A.a;
+            }
+            else {
+                id.nnz = A.nnz;
+                id.irn = A.irn;
+                id.jcn = A.jcn;
+                id.a = (entry_t*)A.a;
+            }
+
             id.n = A.n;
-            id.nnz = A.nnz;
-            id.irn = A.ia;
-            id.jcn = A.ja;
-            id.a = (element_t*)A.a;
-            id.rhs = (element_t*)B.data;
+            id.nrhs = B.n_cols;
+            id.rhs = (entry_t*)B.data;
 
             id.job = 6;
-            mumps_struc<DT>::mumps_c(&id);
+            detail::mumps_struc<DT>::mumps_c(&id);
+
+            IT error = id.infog[0] < 0 ? -1 : 0;
+            comm_world.allreduce(mpl::min<IT>(), error);
+
+            return error;
+        }
+
+        IT solve(full_mat<DT, IT>&& B) {
+            if(id.n != B.n_rows) return -1;
+
+            id.nrhs = B.n_cols;
+            id.rhs = (entry_t*)B.data;
+
+            id.job = 3;
+            detail::mumps_struc<DT>::mumps_c(&id);
 
             IT error = id.infog[0] < 0 ? -1 : 0;
             comm_world.allreduce(mpl::min<IT>(), error);

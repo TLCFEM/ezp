@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include <ezp/abstract/ezp.h>
+#include <ezp/mumps.hpp>
 #include <mpl/mpl.hpp>
 #include <mumps/cmumps_c.h>
 #include <mumps/dmumps_c.h>
@@ -25,28 +25,6 @@
 const auto& comm_world{mpl::environment::comm_world()};
 const auto& parent = mpl::inter_communicator::parent();
 
-template<typename DT> struct mumps_struc {};
-template<> struct mumps_struc<double> {
-    using type = DMUMPS_STRUC_C;
-    using data_type = double;
-    static auto mumps_c(DMUMPS_STRUC_C* ptr) { return dmumps_c(ptr); }
-};
-template<> struct mumps_struc<float> {
-    using type = SMUMPS_STRUC_C;
-    using data_type = float;
-    static auto mumps_c(SMUMPS_STRUC_C* ptr) { return smumps_c(ptr); }
-};
-template<> struct mumps_struc<complex16> {
-    using type = ZMUMPS_STRUC_C;
-    using data_type = mumps_double_complex;
-    static auto mumps_c(ZMUMPS_STRUC_C* ptr) { return zmumps_c(ptr); }
-};
-template<> struct mumps_struc<complex8> {
-    using type = CMUMPS_STRUC_C;
-    using data_type = mumps_complex;
-    static auto mumps_c(CMUMPS_STRUC_C* ptr) { return cmumps_c(ptr); }
-};
-
 template<typename DT, typename IT> int run(const IT (&config)[6]) {
     const auto sym = config[0];
     const auto nrhs = config[1];
@@ -54,17 +32,9 @@ template<typename DT, typename IT> int run(const IT (&config)[6]) {
     const auto nnz = config[3];
     const auto msglvl = config[4];
 
-    using struct_t = typename mumps_struc<DT>::type;
-    using data_t = typename mumps_struc<DT>::data_type;
+    auto solver = ezp::mumps<DT, IT>(sym);
 
-    struct_t id;
-    id.comm_fortran = MPI_Comm_c2f(comm_world.native_handle());
-    id.sym = sym;
-
-    id.job = -1;
-    mumps_struc<DT>::mumps_c(&id);
-
-    id.icntl[3] = msglvl;
+    solver(3) = msglvl;
 
     std::vector<IT> ia, ja;
     std::vector<DT> a, b;
@@ -83,28 +53,14 @@ template<typename DT, typename IT> int run(const IT (&config)[6]) {
         requests.push(parent.irecv(b, 0, mpl::tag_t{3}));
 
         requests.waitall();
-
-        id.n = n;
-        id.nnz = nnz;
-        id.irn = ia.data();
-        id.jcn = ja.data();
-        id.a = (data_t*)a.data();
-        id.rhs = (data_t*)b.data();
     }
 
-    id.job = 6;
-    mumps_struc<DT>::mumps_c(&id);
-
-    IT error = id.infog[0] < 0 ? -1 : 0;
-    comm_world.allreduce(mpl::min<IT>(), error);
+    const auto error = solver.solve({n, nnz, ia.data(), ja.data(), a.data()}, {n, nrhs, b.data()});
 
     if(0 == comm_world.rank()) {
         parent.send(error, 0);
         if(0 == error) parent.send(b, 0);
     }
-
-    id.job = -2;
-    mumps_struc<DT>::mumps_c(&id);
 
     return 0;
 }
