@@ -14,6 +14,34 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+/**
+ * @class mumps
+ * @brief Solver for general sparse matrices.
+ *
+ * It solves the system of linear equations `A*X=B` with a general sparse matrix `A`.
+ * The RHS matrix `B` is a dense matrix.
+ *
+ * The solver automatically detects whether `A` is distributed on many processes or
+ * centralized on the root process.
+ * The matrix `A` should be stored in the Compressed Sparse Row (CSR) format with one-based indexing.
+ *
+ * To set control parameters, use the overloaded function call operator, which allows access to the `icntl` array.
+ *
+ * @code
+   auto solver = mumps<double, int_t>();
+   solver(3) = 0; // suppress output
+ * @endcode
+ *
+ * The example usage can be seen as follows.
+ *
+ * @include ../examples/example.mumps.cpp
+ *
+ * @author tlc
+ * @date 23/03/2025
+ * @version 1.0.0
+ * @file mumps.hpp
+ * @{
+ */
 
 #ifndef MUMPS_HPP
 #define MUMPS_HPP
@@ -129,3 +157,5 @@ namespace ezp {
 } // namespace ezp
 
 #endif
+
+//! @}

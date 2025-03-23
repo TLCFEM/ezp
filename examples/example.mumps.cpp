@@ -39,6 +39,7 @@ int main() {
     std::vector<int_t> ia, ja;
     std::vector<double> a, b;
 
+    // initialise one-based CSR matrix on the root process
     if(0 == comm_world.rank()) {
         ia.resize(N + 1);
         ja.resize(N);
