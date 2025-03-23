@@ -54,8 +54,7 @@ endif ()
 find_package(MPI REQUIRED)
 message(STATUS ${MPIEXEC_EXECUTABLE})
 
-get_filename_component(MPI_ROOT_DIR ${MPIEXEC_EXECUTABLE} DIRECTORY)
-get_filename_component(MPI_ROOT_DIR ${MPI_ROOT_DIR} DIRECTORY)
+get_filename_component(MPI_ROOT_DIR ${MPI_C_INCLUDE_DIRS} DIRECTORY)
 find_library(MPI_FORT_LIB mpifort mpi_mpifh HINTS ${MPI_ROOT_DIR}/lib NO_CACHE REQUIRED)
 message(STATUS "MPI_FORT_LIB: ${MPI_FORT_LIB}")
 
