@@ -200,6 +200,8 @@ set_source_files_properties(smumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARI
 set_source_files_properties(zmumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARITH=MUMPS_ARITH_z")
 set_source_files_properties(cmumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARITH=MUMPS_ARITH_c")
 
+message(STATUS "MUMPS Fortran Flags: ${CMAKE_Fortran_FLAGS}")
+
 add_library(${PROJECT_NAME} ${mumps_c} ${mumps_f} ${mumps_mod})
 
 target_link_libraries(${PROJECT_NAME} gfortran gomp ${MPI_FORT_LIB})
