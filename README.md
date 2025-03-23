@@ -3,7 +3,7 @@
 [![codecov](https://codecov.io/gh/TLCFEM/ezp/graph/badge.svg?token=ME0M312F5M)](https://codecov.io/gh/TLCFEM/ezp)
 [![master](https://github.com/TLCFEM/ezp/actions/workflows/master.yml/badge.svg?branch=master)](https://github.com/TLCFEM/ezp/actions/workflows/master.yml)
 
-`ezp` is a lightweight C++ wrapper for selected ScaLAPACK solvers for linear systems.
+`ezp` is a lightweight C++ wrapper for selected distributed solvers for linear systems.
 
 ## Features
 
@@ -14,15 +14,17 @@
 
 The following solvers are implemented.
 
-| availability | type of matrix                             | operation | solver  |
-|:------------:|--------------------------------------------|-----------|---------|
-|      ✔️      | general (partial pivoting)                 | simple    | PxGESV  |
-|      ✔️      | general (partial pivoting)                 | expert    | PxGESVX |
-|      ✔️      | symmetric/Hermitian positive definite      | simple    | PxPOSV  |
-|      ✔️      | symmetric/Hermitian positive definite      | expert    | PxPOSVX |
-|      ✔️      | general band (partial pivoting)            | simple    | PxGBSV  |
-|      ✔️      | general band (no pivoting)                 | simple    | PxDBSV  |
-|      ✔️      | symmetric/Hermitian positive definite band | simple    | PxPBSV  |
+| availability | type of matrix                             | operation | solver  | package   |
+|:------------:|--------------------------------------------|-----------|---------|-----------|
+|      ✔️      | general (partial pivoting)                 | simple    | PxGESV  | ScaLAPACK |
+|      ✔️      | general (partial pivoting)                 | expert    | PxGESVX | ScaLAPACK |
+|      ✔️      | symmetric/Hermitian positive definite      | simple    | PxPOSV  | ScaLAPACK |
+|      ✔️      | symmetric/Hermitian positive definite      | expert    | PxPOSVX | ScaLAPACK |
+|      ✔️      | general band (partial pivoting)            | simple    | PxGBSV  | ScaLAPACK |
+|      ✔️      | general band (no pivoting)                 | simple    | PxDBSV  | ScaLAPACK |
+|      ✔️      | symmetric/Hermitian positive definite band | simple    | PxPBSV  | ScaLAPACK |
+|      ✔️      | sparse                                     |           | PARDISO | MKL       |
+|      ✔️      | sparse                                     |           | MUMPS   | MUMPS     |
 
 ## Dependency
 
@@ -36,7 +38,8 @@ The following drivers are needed.
 ## Example
 
 It is assumed that the root node (rank 0) prepares the left hand side $$A$$ and right hand side $$B$$.
-The solvers distrbute the matrices to available processes and solve the system, return the solution back to the master node.
+The solvers distribute the matrices to available processes and solve the system, return the solution back to the master
+node.
 
 The solvers are designed in such a way that all `BLACS` and `ScaLAPACK` details are hidden.
 One shall prepare the matrices (**on the root node**) and call the solver.
