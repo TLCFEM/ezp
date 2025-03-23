@@ -101,9 +101,78 @@ $(document).ready(function(){initNavTree('d4/d47/classpposvx.html','../../'); in
 <p><code>#include &lt;<a class="el" href="../../d5/d33/pposvx_8hpp_source.html">pposvx.hpp</a>&gt;</code></p>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Solver for general full symmetric positive definite matrices (expert driver). </p>
-<p>It solves the system of linear equations <code>A*X=B</code> with a full symmetric positive definite matrix <code>A</code>. The matrix <code>A</code> is stored in a <code>NxN</code> block. The matrix <code>B</code> is stored in a <code>NxNRHS</code> block.</p>
+<p>It solves the system of linear equations <code>A * X = B</code> with a full symmetric positive definite matrix <code>A</code>. The matrix <code>A</code> is stored in a <code>N x N</code> block. The matrix <code>B</code> is stored in a <code>N x NRHS</code> block.</p>
 <p>The example usage can be seen as follows.</p>
-<div class="fragment"></div><!-- fragment --><dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
+<div class="fragment"><div class="line"><span class="comment">/*******************************************************************************</span></div>
+<div class="line"><span class="comment"> * Copyright (C) 2025 Theodore Chang</span></div>
+<div class="line"><span class="comment"> *</span></div>
+<div class="line"><span class="comment"> * This program is free software: you can redistribute it and/or modify</span></div>
+<div class="line"><span class="comment"> * it under the terms of the GNU General Public License as published by</span></div>
+<div class="line"><span class="comment"> * the Free Software Foundation, either version 3 of the License, or</span></div>
+<div class="line"><span class="comment"> * (at your option) any later version.</span></div>
+<div class="line"><span class="comment"> *</span></div>
+<div class="line"><span class="comment"> * This program is distributed in the hope that it will be useful,</span></div>
+<div class="line"><span class="comment"> * but WITHOUT ANY WARRANTY; without even the implied warranty of</span></div>
+<div class="line"><span class="comment"> * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span></div>
+<div class="line"><span class="comment"> * GNU General Public License for more details.</span></div>
+<div class="line"><span class="comment"> *</span></div>
+<div class="line"><span class="comment"> * You should have received a copy of the GNU General Public License</span></div>
+<div class="line"><span class="comment"> * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span></div>
+<div class="line"><span class="comment"> ******************************************************************************/</span></div>
+<div class="line"><span class="preprocessor">#include &lt;<a class="code" href="../../d5/d33/pposvx_8hpp.html">ezp/pposvx.hpp</a>&gt;</span></div>
+<div class="line"><span class="preprocessor">#include &lt;iomanip&gt;</span></div>
+<div class="line"><span class="preprocessor">#include &lt;iostream&gt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">using namespace </span>ezp;</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">int</span> main() {</div>
+<div class="line">    <span class="comment">// get the current blacs environment</span></div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; <a class="code hl_class" href="../../df/d0c/classmumps.html">env</a> = <a class="code hl_class" href="../../df/d0c/classmumps.html">get_env&lt;int_t&gt;</a>();</div>
+<div class="line"> </div>
+<div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> N = 6, NRHS = 2;</div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// storage for the matrices A and B</span></div>
+<div class="line">    std::vector&lt;double&gt; <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>, <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>;</div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// helper function to convert 2D indices to 1D indices</span></div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a> = <a class="code hl_class" href="../../d6/dbe/classezp_1_1mumps.html">par_dposvx&lt;int_t&gt;::indexer</a>{N};</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordflow">if</span>(0 == <a class="code hl_class" href="../../df/d0c/classmumps.html">env</a>.rank()) {</div>
+<div class="line">        <span class="comment">// the matrices are only initialized on the root process</span></div>
+<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>.resize(N * N, 0.);</div>
+<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>.resize(N * NRHS);</div>
+<div class="line"> </div>
+<div class="line">        <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">M</a> = 5.10156648;</div>
+<div class="line"> </div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">I</a> = 0; <a class="code hl_class" href="../../df/d0c/classmumps.html">I</a> &lt; N; ++<a class="code hl_class" href="../../df/d0c/classmumps.html">I</a>) {</div>
+<div class="line">            <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">I</a>] = <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(<a class="code hl_class" href="../../df/d0c/classmumps.html">I</a>, <a class="code hl_class" href="../../df/d0c/classmumps.html">I</a>)] = <a class="code hl_class" href="../../df/d0c/classmumps.html">I</a> + 1;</div>
+<div class="line">            <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[N + <a class="code hl_class" href="../../df/d0c/classmumps.html">I</a>] = (<a class="code hl_class" href="../../df/d0c/classmumps.html">I</a> + 1) * <a class="code hl_class" href="../../df/d0c/classmumps.html">M</a>;</div>
+<div class="line">        }</div>
+<div class="line">    }</div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// create a parallel solver</span></div>
+<div class="line">    <span class="comment">// it takes the number of rows and columns of the process grid as arguments</span></div>
+<div class="line">    <span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">solver</a> = <a class="code hl_class" href="../../df/d0c/classmumps.html">par_dposvx&lt;int_t&gt;</a>();</div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// need to wrap the data in full_mat objects</span></div>
+<div class="line">    <span class="comment">// it requires the number of rows and columns of the matrix, and a pointer to the data</span></div>
+<div class="line">    <span class="comment">// on non-root processes, the data pointer is nullptr as the vector is empty</span></div>
+<div class="line">    <span class="comment">// solver.solve(full_mat{N, N, A.data()}, full_mat{N, NRHS, B.data()});</span></div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> info = <a class="code hl_class" href="../../df/d0c/classmumps.html">solver</a>.solve({N, N, <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>.data()}, {N, NRHS, <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>.data()});</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordflow">if</span>(0 == <a class="code hl_class" href="../../df/d0c/classmumps.html">env</a>.rank() &amp;&amp; 0 == info) {</div>
+<div class="line">        std::cout &lt;&lt; std::setprecision(10) &lt;&lt; <span class="stringliteral">&quot;Info: &quot;</span> &lt;&lt; info &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Solution:\n&quot;</span>;</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">double</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">i</a> : <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>) <a class="code hl_class" href="../../df/d0c/classmumps.html">std</a>::<a class="code hl_class" href="../../df/d0c/classmumps.html">cout</a> &lt;&lt; <a class="code hl_class" href="../../df/d0c/classmumps.html">i</a> &lt;&lt; <span class="stringliteral">&#39;\n&#39;</span>;</div>
+<div class="line">    }</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordflow">return</span> info;</div>
+<div class="line">}</div>
+<div class="line"> </div>
+<div class="ttc" id="aclassezp_1_1mumps_html"><div class="ttname"><a href="../../d6/dbe/classezp_1_1mumps.html">ezp::mumps</a></div><div class="ttdef"><b>Definition</b> mumps.hpp:81</div></div>
+<div class="ttc" id="aclassmumps_html"><div class="ttname"><a href="../../df/d0c/classmumps.html">mumps</a></div><div class="ttdoc">Solver for general sparse matrices.</div></div>
+<div class="ttc" id="apposvx_8hpp_html"><div class="ttname"><a href="../../d5/d33/pposvx_8hpp.html">pposvx.hpp</a></div></div>
+</div><!-- fragment --><dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>12/03/2025 </dd></dl>
 <dl class="section version"><dt>Version</dt><dd>1.0.0 </dd></dl>
 </div><hr/>The documentation for this class was generated from the following file:<ul>
