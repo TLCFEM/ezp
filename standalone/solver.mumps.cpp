@@ -17,10 +17,6 @@
 
 #include <ezp/mumps.hpp>
 #include <mpl/mpl.hpp>
-#include <mumps/cmumps_c.h>
-#include <mumps/dmumps_c.h>
-#include <mumps/smumps_c.h>
-#include <mumps/zmumps_c.h>
 
 const auto& comm_world{mpl::environment::comm_world()};
 const auto& parent = mpl::inter_communicator::parent();
