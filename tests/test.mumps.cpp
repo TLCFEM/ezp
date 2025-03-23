@@ -34,6 +34,8 @@ static auto REPEAT = 10;
 const auto& comm_world{mpl::environment::comm_world()};
 
 template<data_t DT> auto random_mumps() {
+    ezp::blacs_env<int>::do_not_manage_mpi();
+
     using solver_t = mumps<DT, int_t>;
 
     for(auto K = 0; K < REPEAT; ++K) {
