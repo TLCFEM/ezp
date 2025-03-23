@@ -98,9 +98,11 @@ namespace ezp {
         }
 
     public:
-        explicit mumps(const int sym = 0) {
+        explicit mumps(const int sym = 0, const int par = 0) {
             id.comm_fortran = MPI_Comm_c2f(comm_world.native_handle());
             id.sym = sym;
+            id.par = par;
+            // force par=1 if there is only one process
             if(comm_world.size() == 1) id.par = 1;
             perform_job(-1);
         };
