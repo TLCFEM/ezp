@@ -139,3 +139,5 @@ if (EZP_STANDALONE)
         install(TARGETS ${EXAMPLE_NAME} DESTINATION bin)
     endforeach ()
 endif ()
+
+add_subdirectory(mumps)
