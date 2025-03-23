@@ -24,7 +24,7 @@
  *
  * The example usage can be seen as follows.
  *
- * @include ../examples/example.pgesv.cpp
+ * @include example.pgesv.cpp
  *
  * @author tlc
  * @date 07/03/2025

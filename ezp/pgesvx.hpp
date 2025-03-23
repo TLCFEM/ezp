@@ -29,7 +29,7 @@
  *
  * The example usage can be seen as follows.
  *
- * @include ../examples/example.pgesvx.cpp
+ * @include example.pgesvx.cpp
  *
  * @author tlc
  * @date 12/03/2025

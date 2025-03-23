@@ -49,7 +49,7 @@
  *
  * The example usage can be seen as follows.
  *
- * @include ../examples/example.pdbsv.cpp
+ * @include example.pdbsv.cpp
  *
  * @author tlc
  * @date 07/03/2025

@@ -25,7 +25,7 @@
  *
  * The example usage can be seen as follows.
  *
- * @include ../examples/example.pposvx.cpp
+ * @include example.pposvx.cpp
  *
  * @author tlc
  * @date 12/03/2025

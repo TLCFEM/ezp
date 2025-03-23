@@ -72,7 +72,7 @@
  *
  * The example usage can be seen as follows.
  *
- * @include ../examples/example.ppbsv.cpp
+ * @include example.ppbsv.cpp
  *
  * @author tlc
  * @date 07/03/2025

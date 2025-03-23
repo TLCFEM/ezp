@@ -34,7 +34,7 @@
  *
  * The example usage can be seen as follows.
  *
- * @include ../examples/example.mumps.cpp
+ * @include example.mumps.cpp
  *
  * @author tlc
  * @date 23/03/2025
