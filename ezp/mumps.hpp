@@ -97,13 +97,13 @@ namespace ezp {
                 id.nnz_loc = A.nnz;
                 id.irn_loc = A.irn;
                 id.jcn_loc = A.jcn;
-                id.a_loc = (entry_t*)A.a;
+                id.a_loc = (entry_t*)A.data;
             }
             else {
                 id.nnz = A.nnz;
                 id.irn = A.irn;
                 id.jcn = A.jcn;
-                id.a = (entry_t*)A.a;
+                id.a = (entry_t*)A.data;
             }
 
             id.n = A.n;
