@@ -138,6 +138,7 @@ namespace ezp {
             }
 
             id.n = A.n;
+            id.lrhs = B.n_rows;
             id.nrhs = B.n_cols;
             id.rhs = (entry_t*)B.data;
 
@@ -149,6 +150,7 @@ namespace ezp {
         IT solve(full_mat<DT, IT>&& B) {
             if(id.n != B.n_rows) return -1;
 
+            id.lrhs = B.n_rows;
             id.nrhs = B.n_cols;
             id.rhs = (entry_t*)B.data;
 

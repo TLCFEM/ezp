@@ -21,8 +21,6 @@ if (EZP_ADD_UNDERSCORE)
     add_compile_definitions(EZP_UNDERSCORE)
 endif ()
 
-option(EZP_USE_64BIT_INT "Use 64-bit integer." OFF)
-
 set(MKL_LINK static)
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     set(MKL_THREADING gnu_thread)
@@ -37,6 +35,8 @@ elseif (MPI_PATH_LOWER MATCHES "mpich")
     set(MKL_MPI mpich)
     message(STATUS "MKL_MPI: ${MKL_MPI}")
 endif ()
+
+option(EZP_USE_64BIT_INT "Use 64-bit integer." OFF)
 if (EZP_USE_64BIT_INT)
     add_compile_definitions(EZP_INT64)
     add_compile_definitions(MUMPS_INTSIZE64)
@@ -111,21 +111,21 @@ if (EZP_ASAN)
     add_link_options(-fsanitize=address)
 endif ()
 
-file(GLOB EXAMPLES "*.cpp" "examples/*.cpp")
+option(EZP_TEST "Enable testing." OFF)
+if (EZP_TEST)
+    add_compile_definitions(EZP_ENABLE_TEST)
+endif ()
 
+add_subdirectory(mumps)
+link_libraries(mumps)
+
+file(GLOB EXAMPLES "*.cpp" "examples/*.cpp")
 foreach (EXAMPLE ${EXAMPLES})
     get_filename_component(EXAMPLE_NAME ${EXAMPLE} NAME_WLE)
     add_executable(${EXAMPLE_NAME} ${EXAMPLE})
 endforeach ()
 
-option(EZP_TEST "Enable testing." OFF)
-
-if (EZP_TEST)
-    add_compile_definitions(EZP_ENABLE_TEST)
-endif ()
-
 file(GLOB EXAMPLES "tests/*.cpp")
-
 if (EZP_TEST)
     add_executable(catch2 ${EXAMPLES} include/catch2/catchy.cpp)
 else ()
@@ -136,7 +136,6 @@ else ()
 endif ()
 
 option(EZP_STANDALONE "Enable standalone solver." OFF)
-
 if (EZP_STANDALONE)
     include_directories(mpl)
     file(GLOB EXAMPLES "standalone/*.cpp")
@@ -146,8 +145,3 @@ if (EZP_STANDALONE)
         install(TARGETS ${EXAMPLE_NAME} DESTINATION bin)
     endforeach ()
 endif ()
-
-add_subdirectory(mumps)
-
-target_link_libraries(example.mumps mumps)
-target_link_libraries(solver.mumps mumps)
