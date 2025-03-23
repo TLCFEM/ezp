@@ -41,7 +41,7 @@ Simply install the library and you are ready to go.
 sudo zypper in -y libscalapack2_2_2_0-gnu-mpich-hpc-devel-static git cmake
 git clone --recurse-submodules --depth 1 https://github.com/TLCFEM/ezp.git
 mkdir /ezp/build && /ezp/build
-cmake -DEZP_TEST=ON -DMPI_HOME=/usr/lib/hpc/gnu14/mpi/mpich/4.3.0/ .. && cmake --build . --config Release
+cmake -DEZP_TEST=ON -DEZP_USE_SYSTEM_LIBS=ON -DMPI_HOME=/usr/lib/hpc/gnu14/mpi/mpich/4.3.0/ -DCMAKE_PREFIX_PATH="/usr/lib/hpc/gnu14/mpich/scalapack/2.2.0/lib64/;/usr/lib/hpc/gnu14/openblas/0.3.29/lib64/" .. && cmake --build . --config Release
 ```
 
 `Fedora 41` has an environment that is close to usable.

@@ -33,10 +33,16 @@ template<typename DT, typename IT> int run(const IT (&config)[7], IT (&iparm)[64
 
     const auto nb = *n * *nrhs;
 
-    std::vector<IT> ia(*n + 1), ja(*nnz);
-    std::vector<DT> a(*nnz), b(nb), x(nb);
+    std::vector<IT> ia, ja;
+    std::vector<DT> a, b, x;
 
     if(0 == comm_world.rank()) {
+        ia.resize(*n + 1);
+        ja.resize(*nnz);
+        a.resize(*nnz);
+        b.resize(nb);
+        x.resize(nb);
+
         mpl::irequest_pool requests;
 
         requests.push(parent.irecv(ia, 0, mpl::tag_t{0}));

@@ -3,7 +3,7 @@
         "MPI_HOME": "/home/theodore/Documents/MPICH",
         "EZP_TEST": "ON",
         "EZP_STANDALONE": "ON",
-        "EZP_ASAN": "ON",
+        "EZP_ASAN": "OFF",
     },
     "files.associations": {
         "type_traits": "cpp",

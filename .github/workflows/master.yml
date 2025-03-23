@@ -6,6 +6,8 @@ on:
     branches: [ master ]
 permissions:
   contents: write
+env:
+  MPI_HOME: ""
 jobs:
   linux-dev:
     runs-on: ubuntu-24.04
@@ -13,33 +15,46 @@ jobs:
     strategy:
       matrix:
         build: [ RelWithDebInfo, Debug ]
-        mpi: [ mpich, impi ]
+        mpi: [ impi, mpich, openmpi ]
     steps:
       - name: Clone
         uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Update
+        run: |
+          sudo apt-get update && sudo apt-get install lcov
       - name: MKL
+        if: matrix.mpi == 'impi'
         run: |
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-          sudo apt-get update && sudo apt-get install lcov
-          if [ "${{ matrix.mpi }}" == "mpich" ]; then
-            sudo apt-get install lib${{ matrix.mpi }}-dev
-          else
-            sudo apt-get install intel-oneapi-mkl-devel intel-oneapi-mpi-devel
-          fi
+          sudo apt-get update && sudo apt-get install intel-oneapi-mkl-devel intel-oneapi-mpi-devel
       - name: Compile
         run: |
           mkdir build && cd build
           if [ "${{ matrix.mpi }}" == "impi" ]; then
             source /opt/intel/oneapi/setvars.sh
+            export MPI_HOME=/opt/intel/oneapi/mpi/latest
+          elif [ "${{ matrix.mpi }}" == "mpich" ]; then
+            wget -q https://github.com/TLCFEM/prebuilds/releases/download/latest/MPICH-linux.tar.gz
+            tar -xzf MPICH-linux.tar.gz
+            sudo mv MPICH /MPICH
+            export MPI_HOME=/MPICH
+          elif [ "${{ matrix.mpi }}" == "openmpi" ]; then
+            wget -q https://github.com/TLCFEM/prebuilds/releases/download/latest/OpenMPI-linux.tar.gz
+            tar -xzf OpenMPI-linux.tar.gz
+            sudo mv OpenMPI /OpenMPI
+            export MPI_HOME=/OpenMPI
           fi
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON ..
+          echo "MPI_HOME=$MPI_HOME" >> "$GITHUB_ENV"
+          echo $MPI_HOME
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=${{ env.MPI_HOME }} ..
           cmake --build . --target all
       - name: Test
         if: matrix.build == 'Debug' && matrix.mpi == 'mpich'
         run: |
+          export PATH=${{ env.MPI_HOME }}/bin:$PATH
           cd build
           for SRC in `find . -type f -executable -iname "*example*"`; do $SRC; done
           ./catch2
@@ -47,7 +62,7 @@ jobs:
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
           lcov --list coverage.info
       - name: Report
-        if: matrix.build == 'Debug' && matrix.mpi == 'mpich'
+        if: ${{ hashFiles('./build/coverage.info') != '' }}
         uses: codecov/codecov-action@v5
         with:
           plugins: gcov

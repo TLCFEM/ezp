@@ -7,7 +7,7 @@ Such a wrapper is advantageous and beneficial in the context of `C++` applicatio
 
 1. It avoids direct interactions with the `C` API, which requires manual memory management.
    The caller has to follow pretty much the same procedural style.
-2. A well designed OO approach can significantly reduce the code size.
+2. A well-designed OO approach can significantly reduce the code size.
 
 `ezp` is designed to provide an intuitive interface that resembles the non-MPI version of linear systems solvers.
 The majority of `ScaLAPACK`, `BLACS` and `MPI` communication details shall be well hidden from the caller so that solving a system can be as simple as `solver.solve(A, B)`.
