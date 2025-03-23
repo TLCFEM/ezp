@@ -18,9 +18,10 @@
  * @class pposvx
  * @brief Solver for general full symmetric positive definite matrices (expert driver).
  *
- * It solves the system of linear equations `A*X=B` with a full symmetric positive definite matrix `A`.
- * The matrix `A` is stored in a `NxN` block.
- * The matrix `B` is stored in a `NxNRHS` block.
+ * It solves the system of linear equations `A * X = B` with
+ * a full symmetric positive definite matrix `A`.
+ * The matrix `A` is stored in a `N x N` block.
+ * The matrix `B` is stored in a `N x NRHS` block.
  *
  * The example usage can be seen as follows.
  *

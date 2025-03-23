@@ -18,7 +18,7 @@
  * @class mumps
  * @brief Solver for general sparse matrices.
  *
- * It solves the system of linear equations `A*X=B` with a general sparse matrix `A`.
+ * It solves the system of linear equations `A * X = B` with a general sparse matrix `A`.
  * The RHS matrix `B` is a dense matrix.
  *
  * The solver automatically detects whether `A` is distributed on many processes or

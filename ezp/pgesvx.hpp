@@ -18,9 +18,9 @@
  * @class pgesvx
  * @brief Solver for general full matrices (expert driver).
  *
- * It solves the system of linear equations `A*X=B` with a full general matrix `A`.
- * The matrix `A` is stored in a `NxN` block.
- * The matrix `B` is stored in a `NxNRHS` block.
+ * It solves the system of linear equations `A * X = B` with a full general matrix `A`.
+ * The matrix `A` is stored in a `N x N` block.
+ * The matrix `B` is stored in a `N x NRHS` block.
  *
  * @note There is a known bug in the `pgesvx` solver that causes the program to hang.
  * See details: https://github.com/Reference-ScaLAPACK/scalapack/issues/119

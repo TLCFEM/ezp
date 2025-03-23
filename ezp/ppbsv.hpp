@@ -22,7 +22,7 @@
  * would lead to unwanted warning message from ScaLAPACK.
  * @note See: https://github.com/Reference-ScaLAPACK/scalapack/issues/116
  *
- * It solves the system of linear equations `A*X=B` with a symmetric band positive definite matrix `A`.
+ * It solves the system of linear equations `A * X = B` with a symmetric band positive definite matrix `A`.
  * The band matrix `A` has `KLU` sub-diagonals.
  * It shall be stored in the following format.
  * The band storage scheme is illustrated by the following example, when
