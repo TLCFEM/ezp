@@ -84,22 +84,22 @@ namespace ezp {
 
         auto& operator()(const IT index) { return iparm[index]; }
 
-        auto& default_value(const auto config) { return iparm[0]; };
-        auto& reducing_ordering(const auto config) { return iparm[1]; };
-        auto& user_permutation(const auto config) { return iparm[4]; };
-        auto& iterative_refinement(const auto config) { return iparm[7]; };
-        auto& pivoting_perturbation(const auto config) { return iparm[9]; };
-        auto& scaling(const auto config) { return iparm[10]; };
-        auto& transpose_matrix(const auto config) { return iparm[11]; };
-        auto& weighted_matching(const auto config) { return iparm[12]; };
-        auto& nnz_factor(const auto config) { return iparm[17]; };
-        auto& pivoting_type(const auto config) { return iparm[20]; };
-        auto& matrix_checker(const auto config) { return iparm[26]; };
-        auto& precision(const auto config) { return iparm[27]; };
-        auto& partial_solve(const auto config) { return iparm[30]; };
-        auto& zero_based_indexing(const auto config) { return iparm[34]; };
-        auto& schur_complement(const auto config) { return iparm[35]; };
-        auto& out_of_core(const auto config) { return iparm[59]; };
+        auto& iparm_default_value(const auto config) { return iparm[0] = config; };
+        auto& iparm_reducing_ordering(const auto config) { return iparm[1] = config; };
+        auto& iparm_user_permutation(const auto config) { return iparm[4] = config; };
+        auto& iparm_iterative_refinement(const auto config) { return iparm[7] = config; };
+        auto& iparm_pivoting_perturbation(const auto config) { return iparm[9] = config; };
+        auto& iparm_scaling(const auto config) { return iparm[10] = config; };
+        auto& iparm_transpose_matrix(const auto config) { return iparm[11] = config; };
+        auto& iparm_weighted_matching(const auto config) { return iparm[12] = config; };
+        auto& iparm_nnz_factor(const auto config) { return iparm[17] = config; };
+        auto& iparm_pivoting_type(const auto config) { return iparm[20] = config; };
+        auto& iparm_matrix_checker(const auto config) { return iparm[26] = config; };
+        auto& iparm_precision(const auto config) { return iparm[27] = config; };
+        auto& iparm_partial_solve(const auto config) { return iparm[30] = config; };
+        auto& iparm_zero_based_indexing(const auto config) { return iparm[34] = config; };
+        auto& iparm_schur_complement(const auto config) { return iparm[35] = config; };
+        auto& iparm_out_of_core(const auto config) { return iparm[59] = config; };
 
         IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(A.n != B.n_rows) return -1;
