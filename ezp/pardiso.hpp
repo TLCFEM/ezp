@@ -22,6 +22,7 @@
  * The RHS matrix `B` is a dense matrix.
  *
  * The matrix `A` should be stored in the Compressed Sparse Row (CSR) format with one-based indexing.
+ * Use the call operator to set the parameters `iparm` for the solver.
  *
  * The example usage can be seen as follows.
  *
@@ -71,6 +72,8 @@ namespace ezp {
                 b_ref.resize(B.n_rows * B.n_cols);
                 std::copy(B.data, B.data + b_ref.size(), b_ref.data());
             }
+
+            iparm[5] = 0; // write solution into x
 
             IT error = -1;
 
