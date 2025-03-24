@@ -29,8 +29,6 @@
 #include <iostream>
 #include <mpl/mpl.hpp>
 
-using namespace ezp;
-
 int main() {
 #ifdef EZP_MKL
     const auto& comm_world{mpl::environment::comm_world()};
@@ -57,7 +55,7 @@ int main() {
     // initialise one-based CSR matrix on the root process
     populate();
 
-    auto solver = pardiso<double, int_t>(11, 1, 1, 0);
+    auto solver = ezp::pardiso<double, int_t>(11, 1, 1, 0);
 
     // need to wrap the data in sparse_csr_mat objects
     auto info = solver.solve({N, N + 1, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
