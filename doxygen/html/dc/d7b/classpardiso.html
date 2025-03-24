@@ -151,7 +151,7 @@ $(document).ready(function(){initNavTree('dc/d7b/classpardiso.html','../../'); i
 <div class="line">    <span class="comment">// initialise one-based CSR matrix on the root process</span></div>
 <div class="line">    <a class="code hl_class" href="../../df/d0c/classmumps.html">populate</a>();</div>
 <div class="line"> </div>
-<div class="line">    <span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">solver</a> = <a class="code hl_class" href="../../d6/dbe/classezp_1_1mumps.html">ezp::pardiso&lt;double, int_t&gt;</a>(11, 1, 1, 0);</div>
+<div class="line">    <span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">solver</a> = <a class="code hl_class" href="../../d6/dbe/classezp_1_1mumps.html">ezp::pardiso&lt;double, int_t&gt;</a>(ezp::matrix_type::real_and_nonsymmetric, ezp::message_level::no_output);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// need to wrap the data in sparse_csr_mat objects</span></div>
 <div class="line">    <span class="keyword">auto</span> info = <a class="code hl_class" href="../../df/d0c/classmumps.html">solver</a>.solve({N, N + 1, <a class="code hl_class" href="../../df/d0c/classmumps.html">ia</a>.data(), <a class="code hl_class" href="../../df/d0c/classmumps.html">ja</a>.data(), a.data()}, {N, NRHS, b.data()});</div>
