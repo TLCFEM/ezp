@@ -16,7 +16,7 @@
  ******************************************************************************/
 
 #ifdef EZP_MKL
-#include <ezp/abstract/ezp.h>
+#include <ezp/pardiso.hpp>
 #include <mpl/mpl.hpp>
 
 const auto& comm_world{mpl::environment::comm_world()};
@@ -32,16 +32,13 @@ template<typename DT, typename IT> int run(const IT (&config)[7], IT (&iparm)[64
     const auto nrhs = config + 6;
 
     std::vector<IT> ia, ja;
-    std::vector<DT> a, b, x;
+    std::vector<DT> a, b;
 
     if(0 == comm_world.rank()) {
-        const auto nb = *n * *nrhs;
-
         ia.resize(*n + 1);
         ja.resize(*nnz);
         a.resize(*nnz);
-        b.resize(nb);
-        x.resize(nb);
+        b.resize(*n * *nrhs);
 
         mpl::irequest_pool requests;
 
@@ -53,35 +50,14 @@ template<typename DT, typename IT> int run(const IT (&config)[7], IT (&iparm)[64
         requests.waitall();
     }
 
-    std::int64_t pt[64]{};
+    ezp::pardiso<DT, IT> solver(*mtype, *maxfct, *mnum, *msglvl);
+    for(auto i = 0; i < 64; i++) solver(i) = iparm[i];
 
-    const auto comm = MPI_Comm_c2f(comm_world.native_handle());
-
-    IT error = -1;
-
-    IT phase = 13;
-    if constexpr(sizeof(IT) == 4) {
-        using E = std::int32_t;
-        cluster_sparse_solver(pt, (E*)maxfct, (E*)mnum, (E*)mtype, (E*)&phase, (E*)n, a.data(), (E*)ia.data(), (E*)ja.data(), nullptr, (E*)nrhs, (E*)iparm, (E*)msglvl, b.data(), x.data(), &comm, (E*)&error);
-    }
-    else if constexpr(sizeof(IT) == 8) {
-        using E = std::int64_t;
-        cluster_sparse_solver_64(pt, (E*)maxfct, (E*)mnum, (E*)mtype, (E*)&phase, (E*)n, a.data(), (E*)ia.data(), (E*)ja.data(), nullptr, (E*)nrhs, (E*)iparm, (E*)msglvl, b.data(), x.data(), &comm, (E*)&error);
-    }
+    const auto error = solver.solve({*n, *nnz, ia.data(), ja.data(), a.data()}, {*n, *nrhs, b.data()});
 
     if(0 == comm_world.rank()) {
         parent.send(error, 0);
-        if(0 == error) parent.send(x, 0);
-    }
-
-    phase = -1;
-    if constexpr(sizeof(IT) == 4) {
-        using E = std::int32_t;
-        cluster_sparse_solver(pt, (E*)maxfct, (E*)mnum, (E*)mtype, (E*)&phase, (E*)n, nullptr, (E*)ia.data(), (E*)ja.data(), nullptr, (E*)nrhs, (E*)iparm, (E*)msglvl, nullptr, nullptr, &comm, (E*)&error);
-    }
-    else if constexpr(sizeof(IT) == 8) {
-        using E = std::int64_t;
-        cluster_sparse_solver_64(pt, (E*)maxfct, (E*)mnum, (E*)mtype, (E*)&phase, (E*)n, nullptr, (E*)ia.data(), (E*)ja.data(), nullptr, (E*)nrhs, (E*)iparm, (E*)msglvl, nullptr, nullptr, &comm, (E*)&error);
+        if(0 == error) parent.send(b, 0);
     }
 
     return 0;

@@ -39,7 +39,7 @@ int main(int, char**) {
     iparm[26] = 0;  // check input data for correctness
     iparm[39] = 0;  // input: matrix/rhs/solution stored on master
 
-    constexpr int N = 100, NRHS = 1;
+    constexpr int N = 14, NRHS = 1;
 
     config[0] = 11;   // mtype
     config[1] = 1;    // maxfct

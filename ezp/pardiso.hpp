@@ -44,7 +44,9 @@
 
 namespace ezp {
     template<data_t DT, index_t IT> class pardiso final {
-        const int comm = MPI_Comm_c2f(mpl::environment::comm_world().native_handle());
+        const mpl::communicator& comm_world{mpl::environment::comm_world()};
+
+        const int comm = MPI_Comm_c2f(comm_world.native_handle());
 
         const IT mtype, maxfct, mnum, msglvl;
 
@@ -64,7 +66,11 @@ namespace ezp {
         IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(A.n != B.n_rows) return -1;
 
-            std::vector<DT> b_ref(B.data, B.data + B.n_rows * B.n_cols);
+            std::vector<DT> b_ref;
+            if(0 == comm_world.rank()) {
+                b_ref.resize(B.n_rows * B.n_cols);
+                std::copy(B.data, B.data + b_ref.size(), b_ref.data());
+            }
 
             IT error = -1;
 
