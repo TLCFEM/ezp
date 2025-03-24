@@ -24,19 +24,19 @@ const auto& parent = mpl::inter_communicator::parent();
 
 template<typename DT, typename IT> int run(const IT (&config)[7], IT (&iparm)[64]) {
     const auto mtype = config;
-    const auto nrhs = config + 1;
-    const auto maxfct = config + 2;
-    const auto mnum = config + 3;
-    const auto msglvl = config + 4;
-    const auto n = config + 5;
-    const auto nnz = config + 6;
-
-    const auto nb = *n * *nrhs;
+    const auto maxfct = config + 1;
+    const auto mnum = config + 2;
+    const auto msglvl = config + 3;
+    const auto n = config + 4;
+    const auto nnz = config + 5;
+    const auto nrhs = config + 6;
 
     std::vector<IT> ia, ja;
     std::vector<DT> a, b, x;
 
     if(0 == comm_world.rank()) {
+        const auto nb = *n * *nrhs;
+
         ia.resize(*n + 1);
         ja.resize(*nnz);
         a.resize(*nnz);
@@ -113,9 +113,9 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    if(argc > 1) return prepare<long long int>();
+    if(argc > 1) return prepare<std::int64_t>();
 
-    return prepare<int>();
+    return prepare<std::int32_t>();
 }
 #else
 #include <iostream>

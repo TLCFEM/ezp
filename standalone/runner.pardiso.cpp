@@ -42,12 +42,12 @@ int main(int, char**) {
     constexpr int N = 100, NRHS = 1;
 
     config[0] = 11;   // mtype
-    config[1] = NRHS; // nrhs
-    config[2] = 1;    // maxfct
-    config[3] = 1;    // mnum
-    config[4] = 0;    // msglvl
-    config[5] = N;    // n
-    config[6] = N;    // nnz
+    config[1] = 1;    // maxfct
+    config[2] = 1;    // mnum
+    config[3] = 0;    // msglvl
+    config[4] = N;    // n
+    config[5] = N;    // nnz
+    config[6] = NRHS; // nrhs
 
     std::vector<int> ia(N + 1), ja(N);
     std::vector<double> a(N), b(N * NRHS, 1.);
