@@ -139,8 +139,7 @@ namespace ezp {
 #define EZP_ENSURE_SAFE_EXIT std::atomic_bool ezp::blacs_base::RELEASED = false;
 #endif
 
-    template<index_t IT>
-    class blacs_env final : blacs_base {
+    template<index_t IT = int_t> class blacs_env final : blacs_base {
         static constexpr IT ZERO{0}, ONE{1};
 
         static std::atomic_bool FINALIZE;
@@ -149,6 +148,7 @@ namespace ezp {
 
     public:
         blacs_env() { blacs_pinfo(&_rank, &_size); }
+
         ~blacs_env() {
 #ifdef EZP_RELEASE_ONCE
             if(RELEASED.exchange(true)) return;
@@ -182,7 +182,7 @@ namespace ezp {
      * @tparam IT The index type used to instantiate the blacs_env template.
      * @return A constant reference to the static blacs_env instance.
      */
-    template<index_t IT> const auto& get_env() {
+    template<index_t IT = int_t> const auto& get_env() {
         static const blacs_env<IT> scoped_env;
 
         return scoped_env;
