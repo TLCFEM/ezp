@@ -55,7 +55,7 @@ int main() {
     // initialise one-based CSR matrix on the root process
     populate();
 
-    auto solver = ezp::pardiso<double, int_t>(11, 1, 1, 0);
+    auto solver = ezp::pardiso<double, int_t>(ezp::matrix_type::real_and_nonsymmetric, ezp::message_level::no_output);
 
     // need to wrap the data in sparse_csr_mat objects
     auto info = solver.solve({N, N + 1, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});

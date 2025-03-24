@@ -24,7 +24,7 @@ int main(int, char**) {
     const auto worker = comm_world.spawn(0, NUM_NODE, {"solver.pardiso"});
     const auto all = mpl::communicator(worker, mpl::communicator::order_low);
 
-    int config[7]{};
+    int config[5]{};
     int iparm[64]{};
 
     iparm[0] = 1;   // solver default parameters overriden with provided by iparm
@@ -42,12 +42,10 @@ int main(int, char**) {
     constexpr int N = 14, NRHS = 1;
 
     config[0] = 11;   // mtype
-    config[1] = 1;    // maxfct
-    config[2] = 1;    // mnum
-    config[3] = 0;    // msglvl
-    config[4] = N;    // n
-    config[5] = N;    // nnz
-    config[6] = NRHS; // nrhs
+    config[1] = 0;    // msglvl
+    config[2] = N;    // n
+    config[3] = N;    // nnz
+    config[4] = NRHS; // nrhs
 
     std::vector<int> ia(N + 1), ja(N);
     std::vector<double> a(N), b(N * NRHS, 1.);

@@ -22,14 +22,12 @@
 const auto& comm_world{mpl::environment::comm_world()};
 const auto& parent = mpl::inter_communicator::parent();
 
-template<typename DT, typename IT> int run(const IT (&config)[7], IT (&iparm)[64]) {
+template<typename DT, typename IT> int run(const IT (&config)[5], IT (&iparm)[64]) {
     const auto mtype = config;
-    const auto maxfct = config + 1;
-    const auto mnum = config + 2;
-    const auto msglvl = config + 3;
-    const auto n = config + 4;
-    const auto nnz = config + 5;
-    const auto nrhs = config + 6;
+    const auto msglvl = config + 1;
+    const auto n = config + 2;
+    const auto nnz = config + 3;
+    const auto nrhs = config + 4;
 
     std::vector<IT> ia, ja;
     std::vector<DT> a, b;
@@ -50,7 +48,7 @@ template<typename DT, typename IT> int run(const IT (&config)[7], IT (&iparm)[64
         requests.waitall();
     }
 
-    ezp::pardiso<DT, IT> solver(*mtype, *maxfct, *mnum, *msglvl);
+    ezp::pardiso<DT, IT> solver(*mtype, *msglvl);
     for(auto i = 0; i < 64; i++) solver(i) = iparm[i];
 
     const auto error = solver.solve({*n, *nnz, ia.data(), ja.data(), a.data()}, {*n, *nrhs, b.data()});
@@ -66,7 +64,7 @@ template<typename DT, typename IT> int run(const IT (&config)[7], IT (&iparm)[64
 template<typename IT> auto prepare() {
     const auto all = mpl::communicator(parent, mpl::communicator::order_high);
 
-    IT config[7]{};
+    IT config[5]{};
     IT iparm[64]{};
 
     all.bcast(0, config);
