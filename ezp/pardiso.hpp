@@ -84,27 +84,53 @@ namespace ezp {
 
         auto& operator()(const IT index) { return iparm[index]; }
 
+        auto& default_value(const auto config) { return iparm[0]; };
+        auto& reducing_ordering(const auto config) { return iparm[1]; };
+        auto& user_permutation(const auto config) { return iparm[4]; };
+        auto& iterative_refinement(const auto config) { return iparm[7]; };
+        auto& pivoting_perturbation(const auto config) { return iparm[9]; };
+        auto& scaling(const auto config) { return iparm[10]; };
+        auto& transpose_matrix(const auto config) { return iparm[11]; };
+        auto& weighted_matching(const auto config) { return iparm[12]; };
+        auto& nnz_factor(const auto config) { return iparm[17]; };
+        auto& pivoting_type(const auto config) { return iparm[20]; };
+        auto& matrix_checker(const auto config) { return iparm[26]; };
+        auto& precision(const auto config) { return iparm[27]; };
+        auto& partial_solve(const auto config) { return iparm[30]; };
+        auto& zero_based_indexing(const auto config) { return iparm[34]; };
+        auto& schur_complement(const auto config) { return iparm[35]; };
+        auto& out_of_core(const auto config) { return iparm[59]; };
+
         IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(A.n != B.n_rows) return -1;
 
             std::vector<DT> b_ref;
-            if(0 == comm_world.rank()) {
-                b_ref.resize(B.n_rows * B.n_cols);
-                std::copy(B.data, B.data + b_ref.size(), b_ref.data());
-            }
+            if(0 == comm_world.rank()) b_ref.resize(B.n_rows * B.n_cols);
 
-            iparm[5] = 0; // write solution into x
+            void *b_ptr, *x_ptr;
+
+            if(0 == iparm[0] || 0 == iparm[5]) {
+                // b unchanged, x has solution
+                if(0 == comm_world.rank()) std::copy(B.data, B.data + b_ref.size(), b_ref.data());
+                b_ptr = b_ref.data();
+                x_ptr = B.data;
+            }
+            else {
+                // b has solution, x is still used
+                b_ptr = B.data;
+                x_ptr = b_ref.data();
+            }
 
             IT error = -1;
 
             IT phase = 13;
             if constexpr(sizeof(IT) == 4) {
                 using E = std::int32_t;
-                cluster_sparse_solver(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, A.data, (E*)A.irn, (E*)A.jcn, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, b_ref.data(), B.data, &comm, (E*)&error);
+                cluster_sparse_solver(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, A.data, (E*)A.irn, (E*)A.jcn, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, b_ptr, x_ptr, &comm, (E*)&error);
             }
             else if constexpr(sizeof(IT) == 8) {
                 using E = std::int64_t;
-                cluster_sparse_solver_64(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, A.data, (E*)A.irn, (E*)A.jcn, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, b_ref.data(), B.data, &comm, (E*)&error);
+                cluster_sparse_solver_64(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, A.data, (E*)A.irn, (E*)A.jcn, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, b_ptr, x_ptr, &comm, (E*)&error);
             }
 
             phase = -1;

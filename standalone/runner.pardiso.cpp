@@ -29,15 +29,10 @@ int main(int, char**) {
 
     iparm[0] = 1;   // solver default parameters overriden with provided by iparm
     iparm[1] = 3;   // use METIS for fill-in reordering
-    iparm[5] = 0;   // write solution into x
     iparm[7] = 2;   // max number of iterative refinement steps
     iparm[9] = 13;  // perturb the pivot elements with 1E-13
     iparm[10] = 1;  // use nonsymmetric permutation and scaling MPS
     iparm[12] = 1;  // switch on Maximum Weighted Matching algorithm (default for non-symmetric)
-    // iparm[17] = -1; // output: Number of nonzeros in the factor LU
-    // iparm[18] = -1; // output: Mflops for LU factorization
-    iparm[26] = 0;  // check input data for correctness
-    iparm[39] = 0;  // input: matrix/rhs/solution stored on master
 
     constexpr int N = 14, NRHS = 1;
 
