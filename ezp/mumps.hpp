@@ -45,12 +45,12 @@
 #ifndef MUMPS_HPP
 #define MUMPS_HPP
 
+#include <external/mumps/cmumps_c.h>
+#include <external/mumps/dmumps_c.h>
+#include <external/mumps/smumps_c.h>
+#include <external/mumps/zmumps_c.h>
 #include <ezp/abstract/traits.hpp>
 #include <mpl/mpl.hpp>
-#include <mumps/cmumps_c.h>
-#include <mumps/dmumps_c.h>
-#include <mumps/smumps_c.h>
-#include <mumps/zmumps_c.h>
 
 namespace ezp {
     namespace detail {

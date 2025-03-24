@@ -116,7 +116,7 @@ if (EZP_TEST)
     add_compile_definitions(EZP_ENABLE_TEST)
 endif ()
 
-add_subdirectory(mumps)
+add_subdirectory(external/mumps)
 link_libraries(mumps)
 
 file(GLOB EXAMPLES "*.cpp" "examples/*.cpp")
