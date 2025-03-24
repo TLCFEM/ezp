@@ -142,7 +142,7 @@ namespace ezp {
         auto icntl_deficient_and_null_space_basis(const auto config) { return id.icntl[24] = config; }
         auto icntl_schur_complement_solution(const auto config) { return id.icntl[25] = config; }
         auto icntl_rhs_block_size(const auto config) { return id.icntl[26] = config; }
-        auto icntl_ordering_strategy(const auto config) { return id.icntl[27] = config; }
+        auto icntl_ordering_computation(const auto config) { return id.icntl[27] = config; }
         // auto icntl_parallel_ordering_tool(const auto config) { return id.icntl[28] = config; }
         auto icntl_inverse_computation(const auto config) { return id.icntl[29] = config; }
         // auto icntl_discard_factorization(const auto config) { return id.icntl[30] = config; }
