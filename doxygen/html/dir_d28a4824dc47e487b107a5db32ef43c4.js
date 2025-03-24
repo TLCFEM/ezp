@@ -1,6 +1,7 @@
 var dir_d28a4824dc47e487b107a5db32ef43c4 =
 [
     [ "example.mumps.cpp", "d6/da5/example_8mumps_8cpp.html", null ],
+    [ "example.pardiso.cpp", "d5/d08/example_8pardiso_8cpp.html", null ],
     [ "example.pdbsv.cpp", "dd/dfc/example_8pdbsv_8cpp.html", null ],
     [ "example.pgbsv.cpp", "d5/d86/example_8pgbsv_8cpp.html", null ],
     [ "example.pgesv.cpp", "d2/dde/example_8pgesv_8cpp.html", null ],
