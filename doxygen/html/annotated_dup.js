@@ -37,6 +37,7 @@ var annotated_dup =
     [ "general_mat", "d8/d10/classgeneral__mat.html", null ],
     [ "mat", "d0/d36/classmat.html", null ],
     [ "mumps", "df/d0c/classmumps.html", null ],
+    [ "pardiso", "dc/d7b/classpardiso.html", null ],
     [ "pdbsv", "d0/de4/classpdbsv.html", null ],
     [ "pgbsv", "d4/d10/classpgbsv.html", null ],
     [ "pgesv", "dc/d13/classpgesv.html", null ],

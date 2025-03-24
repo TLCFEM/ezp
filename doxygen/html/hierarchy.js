@@ -43,6 +43,7 @@ var hierarchy =
     [ "ezp::detail::mumps_struc< complex8 >", "d6/dae/structezp_1_1detail_1_1mumps__struc_3_01complex8_01_4.html", null ],
     [ "ezp::detail::mumps_struc< double >", "df/d5e/structezp_1_1detail_1_1mumps__struc_3_01double_01_4.html", null ],
     [ "ezp::detail::mumps_struc< float >", "db/d3e/structezp_1_1detail_1_1mumps__struc_3_01float_01_4.html", null ],
+    [ "pardiso", "dc/d7b/classpardiso.html", null ],
     [ "pdbsv", "d0/de4/classpdbsv.html", null ],
     [ "pgbsv", "d4/d10/classpgbsv.html", null ],
     [ "pgesv", "dc/d13/classpgesv.html", null ],
