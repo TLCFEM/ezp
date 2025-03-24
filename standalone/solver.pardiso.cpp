@@ -61,11 +61,11 @@ template<typename DT, typename IT> int run(const IT (&config)[7], IT (&iparm)[64
 
     IT phase = 13;
     if constexpr(sizeof(IT) == 4) {
-        using E = int;
+        using E = std::int32_t;
         cluster_sparse_solver(pt, (E*)maxfct, (E*)mnum, (E*)mtype, (E*)&phase, (E*)n, a.data(), (E*)ia.data(), (E*)ja.data(), nullptr, (E*)nrhs, (E*)iparm, (E*)msglvl, b.data(), x.data(), &comm, (E*)&error);
     }
     else {
-        using E = long long int;
+        using E = std::int64_t;
         cluster_sparse_solver_64(pt, (E*)maxfct, (E*)mnum, (E*)mtype, (E*)&phase, (E*)n, a.data(), (E*)ia.data(), (E*)ja.data(), nullptr, (E*)nrhs, (E*)iparm, (E*)msglvl, b.data(), x.data(), &comm, (E*)&error);
     }
 
@@ -76,11 +76,11 @@ template<typename DT, typename IT> int run(const IT (&config)[7], IT (&iparm)[64
 
     phase = -1;
     if constexpr(sizeof(IT) == 4) {
-        using E = int;
+        using E = std::int32_t;
         cluster_sparse_solver(pt, (E*)maxfct, (E*)mnum, (E*)mtype, (E*)&phase, (E*)n, nullptr, (E*)ia.data(), (E*)ja.data(), nullptr, (E*)nrhs, (E*)iparm, (E*)msglvl, nullptr, nullptr, &comm, (E*)&error);
     }
     else {
-        using E = long long int;
+        using E = std::int64_t;
         cluster_sparse_solver_64(pt, (E*)maxfct, (E*)mnum, (E*)mtype, (E*)&phase, (E*)n, nullptr, (E*)ia.data(), (E*)ja.data(), nullptr, (E*)nrhs, (E*)iparm, (E*)msglvl, nullptr, nullptr, &comm, (E*)&error);
     }
 

@@ -190,8 +190,8 @@ void igamn2d(const int_t* ConTxt, const char* scope, const char* top, const int_
 void igamx2d(const int_t* ConTxt, const char* scope, const char* top, const int_t* m, const int_t* n, int_t* A, const int_t* lda, int_t* rA, int_t* cA, const int_t* ldia, const int_t* rdest, const int_t* cdest);
 void igebr2d(const int_t* ConTxt, const char* scope, const char* top, const int_t* m, const int_t* n, int_t* A, const int_t* lda, const int_t* rsrc, const int_t* csrc);
 
-void cluster_sparse_solver(void*, const int*, const int*, const int*, const int*, const int*, const void*, const int*, const int*, int*, const int*, int*, const int*, void*, void*, const int*, int*);
-void cluster_sparse_solver_64(void*, const long long int*, const long long int*, const long long int*, const long long int*, const long long int*, const void*, const long long int*, const long long int*, long long int*, const long long int*, long long int*, const long long int*, void*, void*, const int*, long long int*);
+void cluster_sparse_solver(void*, const std::int32_t*, const std::int32_t*, const std::int32_t*, const std::int32_t*, const std::int32_t*, const void*, const std::int32_t*, const std::int32_t*, std::int32_t*, const std::int32_t*, std::int32_t*, const std::int32_t*, void*, void*, const std::int32_t*, std::int32_t*);
+void cluster_sparse_solver_64(void*, const std::int64_t*, const std::int64_t*, const std::int64_t*, const std::int64_t*, const std::int64_t*, const void*, const std::int64_t*, const std::int64_t*, std::int64_t*, const std::int64_t*, std::int64_t*, const std::int64_t*, void*, void*, const int*, std::int64_t*);
 
 #ifdef __cplusplus
 }
