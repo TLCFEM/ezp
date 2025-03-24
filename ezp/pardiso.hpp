@@ -102,7 +102,11 @@ namespace ezp {
         auto& iparm_out_of_core(const auto config) { return iparm[59] = config; };
 
         IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
+            if(0 == comm_world.rank() && A.irn[A.n] != A.nnz) return -1;
+
             if(A.n != B.n_rows) return -1;
+
+            iparm[39] = 0; // force centralised input/output
 
             std::vector<DT> b_ref;
             if(0 == comm_world.rank()) b_ref.resize(B.n_rows * B.n_cols);

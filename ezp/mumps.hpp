@@ -165,6 +165,8 @@ namespace ezp {
         auto& rinfog() { return id.rinfog; }
 
         IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
+            if(0 == comm_world.rank() && A.irn[A.n] != A.nnz) return -1;
+
             if(A.n != B.n_rows) return -1;
 
             id.nnz = A.nnz;
