@@ -76,6 +76,51 @@ namespace ezp {
         };
     } // namespace detail
 
+    enum class icntl {
+        error_message,
+        diagnostic_and_statistics,
+        global_info,
+        printing_level,
+        matrix_input_format,
+        permute_and_scale,
+        symmetric_permutation,
+        scaling_strategy,
+        transpose,
+        iterative_refinement,
+        error_analysis_statistics,
+        ordering_strategy,
+        root_parallelism,
+        working_space_percentage,
+        compression,
+        openmp_threads,
+        distribution_strategy = 17,
+        schur_complement,
+        rhs_format,
+        distribution_solution,
+        ooc,
+        maximum_working_memory,
+        null_pivot_detection,
+        deficient_and_null,
+        solution_schur_complement,
+        rhs_blocking_size,
+        ordering,
+        parallel_ordering,
+        inverse,
+        discard_factor,
+        forward_elimination,
+        determinant,
+        ooc_file,
+        blr,
+        blr_variant,
+        blr_compression,
+        lu_compression,
+        block_compression,
+        tree_parallelism = 47,
+        compact_working_space,
+        pseudo_singularity = 55,
+        symbolic_factorization = 57,
+    };
+
     template<data_t DT, index_t IT> class mumps final {
         using struct_t = typename detail::mumps_struc<DT>::struct_type;
         using entry_t = typename detail::mumps_struc<DT>::entry_type;
