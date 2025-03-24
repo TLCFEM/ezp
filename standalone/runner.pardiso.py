@@ -23,11 +23,12 @@ def run(nprocs: int, N: int, NRHS: int):
     comm = MPI.COMM_WORLD
 
     # spawn the solver
-    worker = comm.Spawn("./solver.mumps", maxprocs=nprocs)
+    worker = comm.Spawn("./solver.pardiso", maxprocs=nprocs)
     all = worker.Merge()
 
     # broadcast the problem configuration
-    all.Bcast(array("i", [0, NRHS, N, N + 1, 0, 1]), root=0)
+    all.Bcast(array("i", [11, 0, N, N + 1, NRHS]), root=0)
+    all.Bcast(numpy.zeros(64, dtype=numpy.int32), root=0)
 
     # send the matrices
     ia = numpy.array([x + 1 for x in range(N + 1)], dtype=numpy.int32)
@@ -56,7 +57,7 @@ def run(nprocs: int, N: int, NRHS: int):
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Usage: runner.mumps.py <nprocs> <N> <NRHS>")
+        print("Usage: runner.pardiso.py <nprocs> <N> <NRHS>")
         sys.exit(1)
 
     nprocs = int(sys.argv[1])
