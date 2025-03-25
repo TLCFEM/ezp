@@ -41,11 +41,11 @@ int main() {
 
 ## Available Solvers
 
-`ezp` imeplements all precisions (DSZC) with both 32-bit and 64-bit indexing.
+`ezp` implements all precisions (DSZC) with both 32-bit and 64-bit indexing.
 
 ### Dense Matrix
 
-`ezp` provides all solvers listed in [ScaLAPCK]{https://www.netlib.org/scalapack/slug/node44.html} page for **full** and **band** matrices.
+`ezp` provides all solvers listed in [ScaLAPCK](https://www.netlib.org/scalapack/slug/node44.html) page for **full** and **band** matrices.
 Solvers for tridiagonal matrices are not implemented as they can be stored in band formats and solved by the corresponding solver.
 
 ### Sparse Matrix
@@ -56,8 +56,9 @@ Solvers for tridiagonal matrices are not implemented as they can be stored in ba
 
 ### Why not SuperLU?
 
-The codebase is messy and hard to maintain due to, for example, abuse of macros.
-And it is not significantly faster than other direct solvers.
+~~The codebase is messy and hard to maintain due to, for example, abuse of macros.~~
+~~And it is not significantly faster than other direct solvers.~~
+I do not like its code aesthetics.
 
 ## References
 
