@@ -105,16 +105,16 @@ $(document).ready(function(){initNavTree('d0/de4/classpdbsv.html','../../'); ini
 <dd>
 See: <a href="https://github.com/Reference-ScaLAPACK/scalapack/issues/116">https://github.com/Reference-ScaLAPACK/scalapack/issues/116</a></dd></dl>
 <p>It solves the system of linear equations <code>A * X = B</code> with a general band matrix <code>A</code>. The band matrix <code>A</code> has <code>KL</code> sub-diagonals and <code>KU</code> super-diagonals. It shall be stored in the following format. The band storage scheme is illustrated by the following example, when <code>M=N=6</code>, <code>KL=2</code>, <code>KU=1</code>.</p>
-<div class="fragment"><div class="line"> .   <a class="code hl_class" href="../../df/d0c/classmumps.html">a12</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a23</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a34</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a45</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a56</a></div>
-<div class="line"><a class="code hl_class" href="../../df/d0c/classmumps.html">a11</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a22</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a33</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a44</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a55</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a66</a></div>
-<div class="line"><a class="code hl_class" href="../../df/d0c/classmumps.html">a21</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a32</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a43</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a54</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a65</a>   .</div>
-<div class="line">a31  <a class="code hl_class" href="../../df/d0c/classmumps.html">a42</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a53</a>  <a class="code hl_class" href="../../df/d0c/classmumps.html">a64</a>   .    .</div>
-<div class="ttc" id="aclassmumps_html"><div class="ttname"><a href="../../df/d0c/classmumps.html">mumps</a></div><div class="ttdoc">Solver for general sparse matrices.</div></div>
+<div class="fragment"><div class="line"> .   <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a12</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a23</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a34</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a45</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a56</a></div>
+<div class="line"><a class="code hl_class" href="../../dc/d7b/classpardiso.html">a11</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a22</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a33</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a44</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a55</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a66</a></div>
+<div class="line"><a class="code hl_class" href="../../dc/d7b/classpardiso.html">a21</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a32</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a43</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a54</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a65</a>   .</div>
+<div class="line">a31  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a42</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a53</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a64</a>   .    .</div>
+<div class="ttc" id="aclasspardiso_html"><div class="ttname"><a href="../../dc/d7b/classpardiso.html">pardiso</a></div><div class="ttdoc">Solver for general sparse matrices.</div></div>
 </div><!-- fragment --><p>The lead dimension should be <code>(KL+KU+1)</code>.</p>
 <p>With zero based indexing, for a general band matrix <code>A</code>, the element at row <code>i</code> and column <code>j</code> is stored at <code>A[IDX(i, j)]</code>.</p>
-<div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a> = [&amp;](<span class="keyword">const</span> <span class="keywordtype">int</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">i</a>, <span class="keyword">const</span> <span class="keywordtype">int</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">j</a>) {</div>
-<div class="line">    <span class="keywordflow">if</span>(<a class="code hl_class" href="../../df/d0c/classmumps.html">i</a> - <a class="code hl_class" href="../../df/d0c/classmumps.html">j</a> &gt; <a class="code hl_class" href="../../df/d0c/classmumps.html">KL</a> || <a class="code hl_class" href="../../df/d0c/classmumps.html">j</a> - <a class="code hl_class" href="../../df/d0c/classmumps.html">i</a> &gt; <a class="code hl_class" href="../../df/d0c/classmumps.html">KU</a>) <span class="keywordflow">return</span> -1;</div>
-<div class="line">    <span class="keywordflow">return</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">KU</a> + <a class="code hl_class" href="../../df/d0c/classmumps.html">i</a> - <a class="code hl_class" href="../../df/d0c/classmumps.html">j</a> + <a class="code hl_class" href="../../df/d0c/classmumps.html">j</a> * (<a class="code hl_class" href="../../df/d0c/classmumps.html">KL</a> + <a class="code hl_class" href="../../df/d0c/classmumps.html">KU</a> + 1);</div>
+<div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a> = [&amp;](<span class="keyword">const</span> <span class="keywordtype">int</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>, <span class="keyword">const</span> <span class="keywordtype">int</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">j</a>) {</div>
+<div class="line">    <span class="keywordflow">if</span>(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> - <a class="code hl_class" href="../../dc/d7b/classpardiso.html">j</a> &gt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> || <a class="code hl_class" href="../../dc/d7b/classpardiso.html">j</a> - <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> &gt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a>) <span class="keywordflow">return</span> -1;</div>
+<div class="line">    <span class="keywordflow">return</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> - <a class="code hl_class" href="../../dc/d7b/classpardiso.html">j</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">j</a> * (<a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> + 1);</div>
 <div class="line">};</div>
 </div><!-- fragment --><p>The example usage can be seen as follows.</p>
 <div class="fragment"><div class="line"><span class="comment">/*******************************************************************************</span></div>
@@ -141,113 +141,112 @@ See: <a href="https://github.com/Reference-ScaLAPACK/scalapack/issues/116">https
 <div class="line"> </div>
 <div class="line"><span class="keywordtype">int</span> main() {</div>
 <div class="line">    <span class="comment">// get the current blacs environment</span></div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; <a class="code hl_class" href="../../df/d0c/classmumps.html">env</a> = <a class="code hl_class" href="../../df/d0c/classmumps.html">get_env&lt;int_t&gt;</a>();</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">env</a> = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">get_env&lt;int_t&gt;</a>();</div>
 <div class="line"> </div>
-<div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> N = 10, NRHS = 1, <a class="code hl_class" href="../../df/d0c/classmumps.html">KL</a> = 2, <a class="code hl_class" href="../../df/d0c/classmumps.html">KU</a> = 2;</div>
-<div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">LDA</a> = <a class="code hl_class" href="../../df/d0c/classmumps.html">KL</a> + <a class="code hl_class" href="../../df/d0c/classmumps.html">KU</a> + 1;</div>
+<div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> N = 10, NRHS = 1, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> = 2, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> = 2;</div>
+<div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">LDA</a> = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> + 1;</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// storage for the matrices A and B</span></div>
-<div class="line">    std::vector&lt;double&gt; <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>, <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>;</div>
+<div class="line">    std::vector&lt;double&gt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>;</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// helper function to convert 2D indices to 1D indices</span></div>
 <div class="line">    <span class="comment">// the band symmetric matrix used for dbsv subroutine requires the matrix to be stored with a leading dimension of (KL + KU + 1)</span></div>
 <div class="line">    <span class="comment">// see Fig. 4.9 https://netlib.org/scalapack/slug/node84.html</span></div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a> = <a class="code hl_class" href="../../d6/dbe/classezp_1_1mumps.html">par_ddbsv&lt;int_t&gt;::indexer</a>{N, <a class="code hl_class" href="../../df/d0c/classmumps.html">KL</a>, <a class="code hl_class" href="../../df/d0c/classmumps.html">KU</a>};</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a> = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">par_ddbsv&lt;int_t&gt;::indexer</a>{N, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a>};</div>
 <div class="line"> </div>
-<div class="line">    <span class="keywordflow">if</span>(0 == <a class="code hl_class" href="../../df/d0c/classmumps.html">env</a>.rank()) {</div>
+<div class="line">    <span class="keywordflow">if</span>(0 == <a class="code hl_class" href="../../dc/d7b/classpardiso.html">env</a>.rank()) {</div>
 <div class="line">        <span class="comment">// the matrices are only initialized on the root process</span></div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>.resize(N * <a class="code hl_class" href="../../df/d0c/classmumps.html">LDA</a>, 0.);</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>.resize(N * NRHS);</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>.resize(N * <a class="code hl_class" href="../../dc/d7b/classpardiso.html">LDA</a>, 0.);</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>.resize(N * NRHS);</div>
 <div class="line"> </div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(0, 0)] = 1.741102;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(0, 1)] = 0.597832;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(0, 2)] = 0.859107;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(1, 0)] = 0.654704;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(1, 1)] = 1.839290;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(1, 2)] = 0.284697;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(1, 3)] = 0.093657;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(2, 0)] = 0.064187;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(2, 1)] = 0.851994;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(2, 2)] = 2.753108;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(2, 3)] = 0.504381;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(2, 4)] = 0.018659;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(3, 1)] = 0.858028;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(3, 2)] = 0.255440;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(3, 3)] = 3.308421;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(3, 4)] = 0.682957;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(3, 5)] = 0.777682;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(4, 2)] = 0.341441;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(4, 3)] = 0.237288;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(4, 4)] = 1.849747;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(4, 5)] = 0.376083;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(4, 6)] = 0.406906;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(5, 3)] = 0.452318;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(5, 4)] = 0.429588;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(5, 5)] = 2.486945;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(5, 6)] = 0.680845;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(5, 7)] = 0.887935;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(6, 4)] = 0.823589;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(6, 5)] = 0.420532;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(6, 6)] = 2.626641;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(6, 7)] = 0.269718;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(6, 8)] = 0.002824;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(7, 5)] = 0.133123;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(7, 6)] = 0.333038;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(7, 7)] = 1.966010;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(7, 8)] = 0.764672;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(7, 9)] = 0.462412;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(8, 6)] = 0.119309;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(8, 7)] = 0.886263;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(8, 8)] = 2.895127;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(8, 9)] = 0.445419;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(9, 7)] = 0.455375;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(9, 8)] = 0.024524;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(9, 9)] = 1.200660;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(0, 0)] = 1.741102;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(0, 1)] = 0.597832;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(0, 2)] = 0.859107;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(1, 0)] = 0.654704;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(1, 1)] = 1.839290;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(1, 2)] = 0.284697;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(1, 3)] = 0.093657;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(2, 0)] = 0.064187;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(2, 1)] = 0.851994;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(2, 2)] = 2.753108;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(2, 3)] = 0.504381;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(2, 4)] = 0.018659;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(3, 1)] = 0.858028;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(3, 2)] = 0.255440;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(3, 3)] = 3.308421;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(3, 4)] = 0.682957;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(3, 5)] = 0.777682;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(4, 2)] = 0.341441;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(4, 3)] = 0.237288;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(4, 4)] = 1.849747;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(4, 5)] = 0.376083;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(4, 6)] = 0.406906;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(5, 3)] = 0.452318;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(5, 4)] = 0.429588;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(5, 5)] = 2.486945;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(5, 6)] = 0.680845;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(5, 7)] = 0.887935;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(6, 4)] = 0.823589;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(6, 5)] = 0.420532;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(6, 6)] = 2.626641;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(6, 7)] = 0.269718;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(6, 8)] = 0.002824;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(7, 5)] = 0.133123;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(7, 6)] = 0.333038;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(7, 7)] = 1.966010;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(7, 8)] = 0.764672;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(7, 9)] = 0.462412;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(8, 6)] = 0.119309;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(8, 7)] = 0.886263;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(8, 8)] = 2.895127;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(8, 9)] = 0.445419;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(9, 7)] = 0.455375;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(9, 8)] = 0.024524;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(9, 9)] = 1.200660;</div>
 <div class="line"> </div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[0] = 1.261587;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[1] = 0.988482;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[2] = 3.130108;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[3] = 1.785095;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[4] = 1.095000;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[5] = 1.316414;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[6] = 0.804297;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[7] = 1.723804;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[8] = 1.628384;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[9] = 1.369979;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[0] = 1.261587;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[1] = 0.988482;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[2] = 3.130108;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[3] = 1.785095;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[4] = 1.095000;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[5] = 1.316414;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[6] = 0.804297;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[7] = 1.723804;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[8] = 1.628384;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[9] = 1.369979;</div>
 <div class="line">    }</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// create a parallel solver</span></div>
 <div class="line">    <span class="comment">// it uses a one-dimensional process grid</span></div>
 <div class="line">    <span class="comment">// it takes the number of processes as arguments</span></div>
-<div class="line">    <span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">solver</a> = <a class="code hl_class" href="../../d6/dbe/classezp_1_1mumps.html">par_ddbsv</a>(<a class="code hl_class" href="../../df/d0c/classmumps.html">env</a>.size());</div>
+<div class="line">    <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">solver</a> = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">par_ddbsv</a>(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">env</a>.size());</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// need to wrap the data in full_mat objects</span></div>
 <div class="line">    <span class="comment">// it requires the number of rows and columns of the matrix, and a pointer to the data</span></div>
 <div class="line">    <span class="comment">// on non-root processes, the data pointer is nullptr as the vector is empty</span></div>
 <div class="line">    <span class="comment">// solver.solve(band_mat{N, N, KL, KU, A.data()}, full_mat{N, NRHS, B.data()});</span></div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> info = <a class="code hl_class" href="../../df/d0c/classmumps.html">solver</a>.solve({N, N, <a class="code hl_class" href="../../df/d0c/classmumps.html">KL</a>, <a class="code hl_class" href="../../df/d0c/classmumps.html">KU</a>, <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>.data()}, {N, NRHS, <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>.data()});</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> info = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">solver</a>.solve({N, N, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>.data()}, {N, NRHS, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>.data()});</div>
 <div class="line"> </div>
-<div class="line">    <span class="keywordflow">if</span>(0 == <a class="code hl_class" href="../../df/d0c/classmumps.html">env</a>.rank() &amp;&amp; 0 == info) {</div>
+<div class="line">    <span class="keywordflow">if</span>(0 == <a class="code hl_class" href="../../dc/d7b/classpardiso.html">env</a>.rank() &amp;&amp; 0 == info) {</div>
 <div class="line">        std::cout &lt;&lt; std::setprecision(6) &lt;&lt; std::fixed &lt;&lt; <span class="stringliteral">&quot;Info: &quot;</span> &lt;&lt; info &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
 <div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Solution:\n&quot;</span>;</div>
-<div class="line">        std::vector&lt;double&gt; <a class="code hl_class" href="../../df/d0c/classmumps.html">X</a>(N * NRHS);</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">X</a>[0] = 0.128021;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">X</a>[1] = 0.326264;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">X</a>[2] = 0.981995;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">X</a>[3] = 0.266945;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">X</a>[4] = 0.307322;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">X</a>[5] = 0.207357;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">X</a>[6] = 0.122664;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">X</a>[7] = 0.523065;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">X</a>[8] = 0.253049;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">X</a>[9] = 0.937470;</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">i</a> = 0<a class="code hl_class" href="../../df/d0c/classmumps.html">u</a>; <a class="code hl_class" href="../../df/d0c/classmumps.html">i</a> &lt; <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>.size(); ++<a class="code hl_class" href="../../df/d0c/classmumps.html">i</a>) std::cout &lt;&lt; <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">i</a>] &lt;&lt; <span class="charliteral">&#39; &#39;</span> &lt;&lt; <a class="code hl_class" href="../../df/d0c/classmumps.html">X</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">i</a>] &lt;&lt; <span class="stringliteral">&quot; abs(diff): &quot;</span> &lt;&lt; std::abs(<a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">i</a>] - <a class="code hl_class" href="../../df/d0c/classmumps.html">X</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">i</a>]) &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line">        std::vector&lt;double&gt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">X</a>(N * NRHS);</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">X</a>[0] = 0.128021;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">X</a>[1] = 0.326264;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">X</a>[2] = 0.981995;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">X</a>[3] = 0.266945;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">X</a>[4] = 0.307322;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">X</a>[5] = 0.207357;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">X</a>[6] = 0.122664;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">X</a>[7] = 0.523065;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">X</a>[8] = 0.253049;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">X</a>[9] = 0.937470;</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> = 0<a class="code hl_class" href="../../dc/d7b/classpardiso.html">u</a>; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> &lt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>.size(); ++<a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>) std::cout &lt;&lt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>] &lt;&lt; <span class="charliteral">&#39; &#39;</span> &lt;&lt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">X</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>] &lt;&lt; <span class="stringliteral">&quot; abs(diff): &quot;</span> &lt;&lt; std::abs(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>] - <a class="code hl_class" href="../../dc/d7b/classpardiso.html">X</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>]) &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
 <div class="line">    }</div>
 <div class="line"> </div>
 <div class="line">    <span class="keywordflow">return</span> info;</div>
 <div class="line">}</div>
 <div class="line"> </div>
-<div class="ttc" id="aclassezp_1_1mumps_html"><div class="ttname"><a href="../../d6/dbe/classezp_1_1mumps.html">ezp::mumps</a></div><div class="ttdef"><b>Definition</b> mumps.hpp:80</div></div>
 <div class="ttc" id="apdbsv_8hpp_html"><div class="ttname"><a href="../../da/d0e/pdbsv_8hpp.html">pdbsv.hpp</a></div></div>
 </div><!-- fragment --><dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>07/03/2025 </dd></dl>

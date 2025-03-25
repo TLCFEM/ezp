@@ -127,66 +127,65 @@ $(document).ready(function(){initNavTree('dc/d13/classpgesv.html','../../'); ini
 <div class="line"> </div>
 <div class="line"><span class="keywordtype">int</span> main() {</div>
 <div class="line">    <span class="comment">// get the current blacs environment</span></div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; <a class="code hl_class" href="../../df/d0c/classmumps.html">env</a> = <a class="code hl_class" href="../../df/d0c/classmumps.html">get_env&lt;int_t&gt;</a>();</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">env</a> = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">get_env&lt;int_t&gt;</a>();</div>
 <div class="line"> </div>
 <div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> N = 6, NRHS = 2;</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// storage for the matrices A and B</span></div>
-<div class="line">    std::vector&lt;double&gt; <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>, <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>;</div>
+<div class="line">    std::vector&lt;double&gt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>;</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// helper function to convert 2D indices to 1D indices</span></div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a> = <a class="code hl_class" href="../../d6/dbe/classezp_1_1mumps.html">par_dgesv&lt;int_t&gt;::indexer</a>{N};</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a> = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">par_dgesv&lt;int_t&gt;::indexer</a>{N};</div>
 <div class="line"> </div>
-<div class="line">    <span class="keywordflow">if</span>(0 == <a class="code hl_class" href="../../df/d0c/classmumps.html">env</a>.rank()) {</div>
+<div class="line">    <span class="keywordflow">if</span>(0 == <a class="code hl_class" href="../../dc/d7b/classpardiso.html">env</a>.rank()) {</div>
 <div class="line">        <span class="comment">// the matrices are only initialized on the root process</span></div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>.resize(N * N, 0.);</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>.resize(N * NRHS);</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>.resize(N * N, 0.);</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>.resize(N * NRHS);</div>
 <div class="line"> </div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(0, 0)] = 1.;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(1, 1)] = 2.;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(2, 2)] = 3.;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(3, 3)] = 4.;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(4, 4)] = 5.;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>[<a class="code hl_class" href="../../df/d0c/classmumps.html">IDX</a>(5, 5)] = 6.;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(0, 0)] = 1.;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(1, 1)] = 2.;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(2, 2)] = 3.;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(3, 3)] = 4.;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(4, 4)] = 5.;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(5, 5)] = 6.;</div>
 <div class="line"> </div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[0] = 1.;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[1] = 2.;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[2] = 3.;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[3] = 4.;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[4] = 5.;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[5] = 6.;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[0] = 1.;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[1] = 2.;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[2] = 3.;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[3] = 4.;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[4] = 5.;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[5] = 6.;</div>
 <div class="line"> </div>
-<div class="line">        <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">M</a> = 5.10156648;</div>
+<div class="line">        <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">M</a> = 5.10156648;</div>
 <div class="line"> </div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[6] = 1. * <a class="code hl_class" href="../../df/d0c/classmumps.html">M</a>;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[7] = 2. * <a class="code hl_class" href="../../df/d0c/classmumps.html">M</a>;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[8] = 3. * <a class="code hl_class" href="../../df/d0c/classmumps.html">M</a>;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[9] = 4. * <a class="code hl_class" href="../../df/d0c/classmumps.html">M</a>;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[10] = 5. * <a class="code hl_class" href="../../df/d0c/classmumps.html">M</a>;</div>
-<div class="line">        <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>[11] = 6. * <a class="code hl_class" href="../../df/d0c/classmumps.html">M</a>;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[6] = 1. * <a class="code hl_class" href="../../dc/d7b/classpardiso.html">M</a>;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[7] = 2. * <a class="code hl_class" href="../../dc/d7b/classpardiso.html">M</a>;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[8] = 3. * <a class="code hl_class" href="../../dc/d7b/classpardiso.html">M</a>;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[9] = 4. * <a class="code hl_class" href="../../dc/d7b/classpardiso.html">M</a>;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[10] = 5. * <a class="code hl_class" href="../../dc/d7b/classpardiso.html">M</a>;</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[11] = 6. * <a class="code hl_class" href="../../dc/d7b/classpardiso.html">M</a>;</div>
 <div class="line">    }</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// create a parallel solver</span></div>
 <div class="line">    <span class="comment">// it takes the number of rows and columns of the process grid as arguments</span></div>
-<div class="line">    <span class="keyword">auto</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">solver</a> = <a class="code hl_class" href="../../df/d0c/classmumps.html">par_dgesv&lt;int_t&gt;</a>();</div>
+<div class="line">    <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">solver</a> = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">par_dgesv&lt;int_t&gt;</a>();</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// need to wrap the data in full_mat objects</span></div>
 <div class="line">    <span class="comment">// it requires the number of rows and columns of the matrix, and a pointer to the data</span></div>
 <div class="line">    <span class="comment">// on non-root processes, the data pointer is nullptr as the vector is empty</span></div>
 <div class="line">    <span class="comment">// solver.solve(full_mat{N, N, A.data()}, full_mat{N, NRHS, B.data()});</span></div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> info = <a class="code hl_class" href="../../df/d0c/classmumps.html">solver</a>.solve({N, N, <a class="code hl_class" href="../../df/d0c/classmumps.html">A</a>.data()}, {N, NRHS, <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>.data()});</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> info = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">solver</a>.solve({N, N, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">A</a>.data()}, {N, NRHS, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>.data()});</div>
 <div class="line"> </div>
-<div class="line">    <span class="keywordflow">if</span>(0 == <a class="code hl_class" href="../../df/d0c/classmumps.html">env</a>.rank() &amp;&amp; 0 == info) {</div>
+<div class="line">    <span class="keywordflow">if</span>(0 == <a class="code hl_class" href="../../dc/d7b/classpardiso.html">env</a>.rank() &amp;&amp; 0 == info) {</div>
 <div class="line">        std::cout &lt;&lt; std::setprecision(10) &lt;&lt; <span class="stringliteral">&quot;Info: &quot;</span> &lt;&lt; info &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
 <div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Solution:\n&quot;</span>;</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">double</span> <a class="code hl_class" href="../../df/d0c/classmumps.html">i</a> : <a class="code hl_class" href="../../df/d0c/classmumps.html">B</a>) <a class="code hl_class" href="../../df/d0c/classmumps.html">std</a>::<a class="code hl_class" href="../../df/d0c/classmumps.html">cout</a> &lt;&lt; <a class="code hl_class" href="../../df/d0c/classmumps.html">i</a> &lt;&lt; <span class="stringliteral">&#39;\n&#39;</span>;</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">double</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> : <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>) <a class="code hl_class" href="../../dc/d7b/classpardiso.html">std</a>::<a class="code hl_class" href="../../dc/d7b/classpardiso.html">cout</a> &lt;&lt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> &lt;&lt; <span class="stringliteral">&#39;\n&#39;</span>;</div>
 <div class="line">    }</div>
 <div class="line"> </div>
 <div class="line">    <span class="keywordflow">return</span> info;</div>
 <div class="line">}</div>
 <div class="line"> </div>
-<div class="ttc" id="aclassezp_1_1mumps_html"><div class="ttname"><a href="../../d6/dbe/classezp_1_1mumps.html">ezp::mumps</a></div><div class="ttdef"><b>Definition</b> mumps.hpp:80</div></div>
-<div class="ttc" id="aclassmumps_html"><div class="ttname"><a href="../../df/d0c/classmumps.html">mumps</a></div><div class="ttdoc">Solver for general sparse matrices.</div></div>
+<div class="ttc" id="aclasspardiso_html"><div class="ttname"><a href="../../dc/d7b/classpardiso.html">pardiso</a></div><div class="ttdoc">Solver for general sparse matrices.</div></div>
 <div class="ttc" id="apgesv_8hpp_html"><div class="ttname"><a href="../../df/d21/pgesv_8hpp.html">pgesv.hpp</a></div></div>
 </div><!-- fragment --><dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>07/03/2025 </dd></dl>
