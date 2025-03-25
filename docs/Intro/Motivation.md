@@ -64,3 +64,4 @@ And it is not significantly faster than other direct solvers.
 1. [Configuration of a linear solver for linearly implicit time integration and efficient data transfer in parallel thermo-hydraulic computations](https://mediatum.ub.tum.de/doc/1486743/0996759907923.pdf)
 2. [A Parallel Geometric Multifrontal Solver Using Hierarchically Semiseparable Structure](https://doi.org/10.1145/2830569)
 3. [Caveats of three direct linear solvers for finite element analyses](https://doi.org/10.1002/nme.7545)
+4. [Evaluating Accuracy and Efficiency of HPC Solvers for Sparse Linear Systems with Applications to PDEs](https://doi.org/10.48550/arXiv.2201.05413)
