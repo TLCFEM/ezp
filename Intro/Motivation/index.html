@@ -410,6 +410,18 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Motivation
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -420,6 +432,76 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#available-solvers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available Solvers
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Available Solvers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dense-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dense Matrix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sparse-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sparse Matrix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-not-superlu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why not SuperLU?
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      References
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -608,6 +690,65 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#available-solvers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available Solvers
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Available Solvers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dense-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dense Matrix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sparse-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sparse Matrix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-not-superlu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why not SuperLU?
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      References
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -682,6 +823,24 @@ However, as shown in the front page, a minimum example spans merely a few lines 
 <a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="p">}</span>
 </code></pre></div></td></tr></table></div>
+<h2 id="available-solvers">Available Solvers</h2>
+<p><code>ezp</code> imeplements all precisions (DSZC) with both 32-bit and 64-bit indexing.</p>
+<h3 id="dense-matrix">Dense Matrix</h3>
+<p><code>ezp</code> provides all solvers listed in [ScaLAPCK]{https://www.netlib.org/scalapack/slug/node44.html} page for <strong>full</strong> and <strong>band</strong> matrices.
+Solvers for tridiagonal matrices are not implemented as they can be stored in band formats and solved by the corresponding solver.</p>
+<h3 id="sparse-matrix">Sparse Matrix</h3>
+<p><code>ezp</code> provides interface to <code>PARDISO</code> solver bundled in <a href="https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2025-1/cluster-sparse-solver.html">Intel® oneAPI Math Kernel Library (oneMKL)</a>.</p>
+<p><code>ezp</code> provides interface to <a href="https://mumps-solver.org/"><code>MUMPS</code></a> solver.</p>
+<h3 id="why-not-superlu">Why not SuperLU?</h3>
+<p>The codebase is messy and hard to maintain due to, for example, abuse of macros.
+And it is not significantly faster than other direct solvers.</p>
+<h2 id="references">References</h2>
+<ol>
+<li><a href="https://mediatum.ub.tum.de/doc/1486743/0996759907923.pdf">Configuration of a linear solver for linearly implicit time integration and efficient data transfer in parallel thermo-hydraulic computations</a></li>
+<li><a href="https://doi.org/10.1145/2830569">A Parallel Geometric Multifrontal Solver Using Hierarchically Semiseparable Structure</a></li>
+<li><a href="https://doi.org/10.1002/nme.7545">Caveats of three direct linear solvers for finite element analyses</a></li>
+<li><a href="https://doi.org/10.48550/arXiv.2201.05413">Evaluating Accuracy and Efficiency of HPC Solvers for Sparse Linear Systems with Applications to PDEs</a></li>
+</ol>
 
 
 
