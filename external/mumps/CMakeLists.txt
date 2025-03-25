@@ -11,9 +11,9 @@ if (MKL_FOUND)
 endif ()
 
 if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp -fopenmp -w -fallow-argument-mismatch -fno-strict-aliasing --param=max-vartrack-size=500000000")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp -w -fallow-argument-mismatch -fno-strict-aliasing --param=max-vartrack-size=500000000")
 elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpp -qopenmp")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpp")
 endif ()
 
 file(GLOB mumps_f "*.F")
@@ -202,6 +202,6 @@ set_source_files_properties(cmumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARI
 
 message(STATUS "MUMPS Fortran Flags: ${CMAKE_Fortran_FLAGS}")
 
-add_library(${PROJECT_NAME} ${mumps_c} ${mumps_f} ${mumps_mod})
+add_library(${PROJECT_NAME} STATIC ${mumps_c} ${mumps_f} ${mumps_mod})
 
 target_link_libraries(${PROJECT_NAME} gfortran gomp ${MPI_FORT_LIB})

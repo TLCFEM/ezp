@@ -9,7 +9,11 @@ endif ()
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+add_compile_definitions(MPICH_SKIP_MPICXX)
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    add_compile_options(-fopenmp)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+    add_compile_options(-qopenmp)
     add_compile_options(-Rno-debug-disables-optimization)
     add_link_options(-Rno-debug-disables-optimization)
 endif ()
@@ -118,6 +122,34 @@ endif ()
 
 add_subdirectory(external/mumps)
 link_libraries(mumps)
+
+# ===============================================
+# for lis
+# ===============================================
+add_compile_definitions(USE_COMPLEX USE_VEC_COMP USE_MPI)
+
+if (EZP_USE_64BIT_INT)
+    add_compile_definitions(_LONG__LONG)
+endif ()
+
+include(CheckIncludeFile)
+check_include_file(complex.h HAVE_COMPLEX_H)
+if (HAVE_COMPLEX_H)
+    add_compile_definitions(HAVE_COMPLEX_H)
+endif ()
+check_include_file(malloc.h HAVE_MALLOC_H)
+if (HAVE_MALLOC_H)
+    add_compile_definitions(HAVE_MALLOC_H)
+endif ()
+check_include_file(quadmath.h HAVE_QUADMATH_H)
+if (HAVE_QUADMATH_H)
+    add_compile_definitions(HAVE_QUADMATH_H)
+endif ()
+# ===============================================
+# for lis
+# ===============================================
+add_subdirectory(external/lis)
+link_libraries(lis)
 
 file(GLOB EXAMPLES "*.cpp" "examples/*.cpp")
 foreach (EXAMPLE ${EXAMPLES})
