@@ -38,3 +38,29 @@ int main() {
     return 0;
 }
 ```
+
+## Available Solvers
+
+`ezp` imeplements all precisions (DSZC) with both 32-bit and 64-bit indexing.
+
+### Dense Matrix
+
+`ezp` provides all solvers listed in [ScaLAPCK]{https://www.netlib.org/scalapack/slug/node44.html} page for **full** and **band** matrices.
+Solvers for tridiagonal matrices are not implemented as they can be stored in band formats and solved by the corresponding solver.
+
+### Sparse Matrix
+
+`ezp` provides interface to `PARDISO` solver bundled in [Intel® oneAPI Math Kernel Library (oneMKL)](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2025-1/cluster-sparse-solver.html).
+
+`ezp` provides interface to [`MUMPS`](https://mumps-solver.org/) solver.
+
+### Why not SuperLU?
+
+The codebase is messy and hard to maintain due to, for example, abuse of macros.
+And it is not significantly faster than other direct solvers.
+
+## References
+
+1. [Configuration of a linear solver for linearly implicit time integration and efficient data transfer in parallel thermo-hydraulic computations](https://mediatum.ub.tum.de/doc/1486743/0996759907923.pdf)
+2. [A Parallel Geometric Multifrontal Solver Using Hierarchically Semiseparable Structure](https://doi.org/10.1145/2830569)
+3. [Caveats of three direct linear solvers for finite element analyses](https://doi.org/10.1002/nme.7545)
