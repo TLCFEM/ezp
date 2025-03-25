@@ -9,7 +9,7 @@ LIS_INT main(int argc, char* argv[]) {
     int nprocs, my_rank;
     LIS_INT err, i, n, gn, is, ie, iter;
 
-    n = 12;
+    n = 120;
     lis_initialize(&argc, &argv);
     comm = LIS_COMM_WORLD;
 
@@ -43,7 +43,7 @@ LIS_INT main(int argc, char* argv[]) {
     lis_vector_set_all(1.0, u);
     lis_matvec(A, u, b);
     lis_solver_create(&solver);
-    lis_solver_set_option("-print mem", solver);
+    lis_solver_set_option("-print mem -p ilu -i 20", solver);
     err = lis_solver_set_optionC(solver);
     CHKERR(err);
     lis_solve(A, b, x, solver);
