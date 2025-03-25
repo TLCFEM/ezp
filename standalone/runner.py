@@ -13,6 +13,25 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#
+# This script runs a parallel solver using MPI to solve a system of linear equations.
+#
+# Functions:
+#     run(nprocs: int, N: int, NRHS: int):
+#         Spawns a parallel solver process, sends matrix data, and receives the solution.
+#
+# Usage:
+#     runner.py <nprocs> <N> <NRHS>
+#
+# Arguments:
+#     nprocs (int): Number of processes to spawn.
+#     N (int): Size of the NxN matrix.
+#     NRHS (int): Number of right-hand sides.
+#
+# Example:
+#     python runner.py 4 10 2
+#
+
 import numpy
 import sys
 from array import array

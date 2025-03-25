@@ -13,6 +13,26 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#
+# This script runs a parallel solver using MPI to distribute the computation.
+#
+# Functions:
+#     run(nprocs: int, N: int, NRHS: int):
+#         Spawns the solver process, broadcasts the problem configuration, sends the matrices,
+#         receives the error code and solution, and disconnects the worker and merged communicator.
+#
+# Usage:
+#     runner.pardiso.py <nprocs> <N> <NRHS>
+#
+# Arguments:
+#     nprocs (int): Number of processes to spawn.
+#     N (int): Size of the matrix.
+#     NRHS (int): Number of right-hand sides.
+#
+# Example:
+#     python runner.pardiso.py 4 100 10
+#
+
 import numpy
 import sys
 from array import array

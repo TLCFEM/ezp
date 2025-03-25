@@ -13,6 +13,27 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#
+# This script runs a parallel MUMPS solver using MPI.
+#
+# Functions:
+#     run(nprocs: int, N: int, NRHS: int):
+#         Spawns the MUMPS solver with the specified number of processes and problem size.
+#         Broadcasts the problem configuration and sends the matrices to the solver.
+#         Receives the error code and solution from the solver.
+#
+# Usage:
+#     runner.mumps.py <nprocs> <N> <NRHS>
+#
+# Arguments:
+#     nprocs (int): Number of processes to spawn.
+#     N (int): Size of the matrix.
+#     NRHS (int): Number of right-hand sides.
+#
+# Example:
+#     python runner.mumps.py 4 1000 10
+#
+
 import numpy
 import sys
 from array import array
