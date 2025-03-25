@@ -824,16 +824,17 @@ However, as shown in the front page, a minimum example spans merely a few lines 
 <a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 <h2 id="available-solvers">Available Solvers</h2>
-<p><code>ezp</code> imeplements all precisions (DSZC) with both 32-bit and 64-bit indexing.</p>
+<p><code>ezp</code> implements all precisions (DSZC) with both 32-bit and 64-bit indexing.</p>
 <h3 id="dense-matrix">Dense Matrix</h3>
-<p><code>ezp</code> provides all solvers listed in [ScaLAPCK]{https://www.netlib.org/scalapack/slug/node44.html} page for <strong>full</strong> and <strong>band</strong> matrices.
+<p><code>ezp</code> provides all solvers listed in <a href="https://www.netlib.org/scalapack/slug/node44.html">ScaLAPCK</a> page for <strong>full</strong> and <strong>band</strong> matrices.
 Solvers for tridiagonal matrices are not implemented as they can be stored in band formats and solved by the corresponding solver.</p>
 <h3 id="sparse-matrix">Sparse Matrix</h3>
 <p><code>ezp</code> provides interface to <code>PARDISO</code> solver bundled in <a href="https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2025-1/cluster-sparse-solver.html">Intel® oneAPI Math Kernel Library (oneMKL)</a>.</p>
 <p><code>ezp</code> provides interface to <a href="https://mumps-solver.org/"><code>MUMPS</code></a> solver.</p>
 <h3 id="why-not-superlu">Why not SuperLU?</h3>
-<p>The codebase is messy and hard to maintain due to, for example, abuse of macros.
-And it is not significantly faster than other direct solvers.</p>
+<p><del>The codebase is messy and hard to maintain due to, for example, abuse of macros.</del>
+<del>And it is not significantly faster than other direct solvers.</del>
+I do not like its code aesthetics.</p>
 <h2 id="references">References</h2>
 <ol>
 <li><a href="https://mediatum.ub.tum.de/doc/1486743/0996759907923.pdf">Configuration of a linear solver for linearly implicit time integration and efficient data transfer in parallel thermo-hydraulic computations</a></li>
