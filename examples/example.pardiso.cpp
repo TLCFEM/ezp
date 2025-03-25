@@ -27,7 +27,6 @@
 #include <ezp/pardiso.hpp>
 #include <iomanip>
 #include <iostream>
-#include <mpl/mpl.hpp>
 
 int main() {
 #ifdef EZP_MKL
@@ -58,7 +57,7 @@ int main() {
     populate();
 
     // need to wrap the data in sparse_csr_mat objects
-    auto info = solver.solve({N, N + 1, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
+    auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
 
     const auto print = [&]() {
         if(0 != comm_world.rank()) return;
@@ -73,7 +72,7 @@ int main() {
     N = 20;
 
     populate();
-    info = solver.solve({N, N + 1, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
+    info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
     print();
 
     return info;

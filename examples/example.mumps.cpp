@@ -27,7 +27,6 @@
 #include <ezp/mumps.hpp>
 #include <iomanip>
 #include <iostream>
-#include <mpl/mpl.hpp>
 
 using namespace ezp;
 
@@ -60,7 +59,7 @@ int main() {
     solver(3) = 0; // msglvl
 
     // need to wrap the data in sparse_csr_mat objects
-    auto info = solver.solve({N, N + 1, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
+    auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
 
     const auto print = [&]() {
         if(0 != comm_world.rank()) return;
@@ -75,7 +74,7 @@ int main() {
     N = 20;
 
     populate();
-    info = solver.solve({N, N + 1, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
+    info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
     print();
 
     return info;

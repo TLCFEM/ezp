@@ -74,6 +74,11 @@ namespace ezp {
 
         IT iparm[64]{};
 
+        auto sync_error(IT error) {
+            comm_world.allreduce(mpl::min<IT>(), error);
+            return error;
+        }
+
     public:
         pardiso(const IT mtype, const IT msglvl = 0)
             : pardiso(matrix_type{static_cast<int>(mtype)}, message_level{static_cast<int>(msglvl)}) {};
@@ -102,7 +107,11 @@ namespace ezp {
         auto& iparm_out_of_core(const auto config) { return iparm[59] = config; };
 
         IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
-            if(0 == comm_world.rank() && A.irn[A.n] != A.nnz) return -1;
+            IT error = 0;
+            if(0 == comm_world.rank() && A.irn[A.n] != A.nnz + 1) error = -1;
+
+            error = sync_error(error);
+            if(error < 0) return error;
 
             if(A.n != B.n_rows) return -1;
 
@@ -125,8 +134,6 @@ namespace ezp {
                 x_ptr = b_ref.data();
             }
 
-            IT error = -1;
-
             IT phase = 13;
             if constexpr(sizeof(IT) == 4) {
                 using E = std::int32_t;
@@ -136,6 +143,8 @@ namespace ezp {
                 using E = std::int64_t;
                 cluster_sparse_solver_64(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, A.data, (E*)A.irn, (E*)A.jcn, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, b_ptr, x_ptr, &comm, (E*)&error);
             }
+
+            const auto info = sync_error(error);
 
             phase = -1;
             if constexpr(sizeof(IT) == 4) {
@@ -147,7 +156,7 @@ namespace ezp {
                 cluster_sparse_solver_64(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, nullptr, (E*)A.irn, (E*)A.jcn, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, nullptr, nullptr, &comm, (E*)&error);
             }
 
-            return error;
+            return info;
         }
     };
 } // namespace ezp

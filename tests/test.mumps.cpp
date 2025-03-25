@@ -69,7 +69,7 @@ template<data_t DT> auto random_mumps() {
         auto solver = solver_t();
         solver(3) = 0; // msglvl
 
-        const auto info = solver.solve({N, N + 1, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
+        const auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
 
         if(0 == comm_world.rank()) REQUIRE(info == 0);
     }
