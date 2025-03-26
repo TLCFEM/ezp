@@ -125,8 +125,6 @@ namespace ezp {
             auto b_loc = create_vector(B.n_rows);
             auto x_loc = create_vector(B.n_rows);
 
-            IT error = 0;
-
             for(auto I = 0, J = 0; I < B.n_cols; ++I, J += B.n_rows) {
                 lis_vector_set(b_loc, 0 == env.rank() ? b_ref.data() + J : nullptr);
                 lis_vector_set(x_loc, 0 == env.rank() ? B.data + J : nullptr);
