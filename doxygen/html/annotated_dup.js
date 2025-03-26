@@ -26,6 +26,7 @@ var annotated_dup =
       [ "ppbsv", "d3/df1/classezp_1_1ppbsv.html", "d3/df1/classezp_1_1ppbsv" ],
       [ "pposv", "de/d12/classezp_1_1pposv.html", null ],
       [ "pposvx", "d0/d05/classezp_1_1pposvx.html", null ],
+      [ "sparse_coo_mat", "d4/d16/structezp_1_1sparse__coo__mat.html", null ],
       [ "sparse_csr_mat", "d6/d5b/structezp_1_1sparse__csr__mat.html", null ],
       [ "WorkType", "da/d62/structezp_1_1WorkType.html", null ],
       [ "WorkType< complex16 >", "d2/dac/structezp_1_1WorkType_3_01complex16_01_4.html", null ],

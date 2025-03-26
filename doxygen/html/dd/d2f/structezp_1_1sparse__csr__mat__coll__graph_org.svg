@@ -22,8 +22,8 @@
 <g id="Node000002" class="node">
 <title>Node2</title>
 <g id="a_Node000002"><a xlink:title=" ">
-<polygon fill="white" stroke="#bfbfbf" points="48.5,-129 19.5,-129 19.5,-110 48.5,-110 48.5,-129"/>
-<text text-anchor="middle" x="34" y="-117" font-family="Helvetica,sans-Serif" font-size="10.00">IT</text>
+<polygon fill="white" stroke="#bfbfbf" points="42.5,-129 13.5,-129 13.5,-110 42.5,-110 42.5,-129"/>
+<text text-anchor="middle" x="28" y="-117" font-family="Helvetica,sans-Serif" font-size="10.00">IT</text>
 </a>
 </g>
 </g>
@@ -31,21 +31,21 @@
 <g id="edge1_Node000001_Node000002" class="edge">
 <title>Node2&#45;&gt;Node1</title>
 <g id="a_edge1_Node000001_Node000002"><a xlink:title=" ">
-<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M34.36,-99.47C35.07,-85.08 36.97,-64.96 42,-48 43.8,-41.93 46.71,-35.61 49.55,-30.21"/>
-<polygon fill="#9a32cd" stroke="#9a32cd" points="30.86,-99.51 34.02,-109.62 37.86,-99.74 30.86,-99.51"/>
+<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M24.74,-99.6C23.04,-84.99 22.49,-64.54 29,-48 31.64,-41.3 36.38,-35.13 41.27,-30.03"/>
+<polygon fill="#9a32cd" stroke="#9a32cd" points="21.33,-100.49 26.23,-109.88 28.26,-99.48 21.33,-100.49"/>
 </a>
 </g>
-<text text-anchor="middle" x="51" y="-84" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey"> irn</text>
-<text text-anchor="middle" x="51" y="-73" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">jcn</text>
-<text text-anchor="middle" x="51" y="-62" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">n</text>
-<text text-anchor="middle" x="51" y="-51" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">nnz</text>
+<text text-anchor="middle" x="48" y="-84" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey"> col_idx</text>
+<text text-anchor="middle" x="48" y="-73" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">n</text>
+<text text-anchor="middle" x="48" y="-62" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">nnz</text>
+<text text-anchor="middle" x="48" y="-51" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">row_ptr</text>
 </g>
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
 <g id="a_Node000003"><a xlink:title=" ">
-<polygon fill="white" stroke="#bfbfbf" points="97,-129 67,-129 67,-110 97,-110 97,-129"/>
-<text text-anchor="middle" x="82" y="-117" font-family="Helvetica,sans-Serif" font-size="10.00">DT</text>
+<polygon fill="white" stroke="#bfbfbf" points="104,-129 74,-129 74,-110 104,-110 104,-129"/>
+<text text-anchor="middle" x="89" y="-117" font-family="Helvetica,sans-Serif" font-size="10.00">DT</text>
 </a>
 </g>
 </g>
@@ -53,11 +53,11 @@
 <g id="edge2_Node000001_Node000003" class="edge">
 <title>Node3&#45;&gt;Node1</title>
 <g id="a_edge2_Node000001_Node000003"><a xlink:title=" ">
-<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M77.66,-99.96C72.96,-79.91 65.58,-48.38 61.33,-30.2"/>
-<polygon fill="#9a32cd" stroke="#9a32cd" points="74.27,-100.82 79.95,-109.76 81.08,-99.23 74.27,-100.82"/>
+<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M83.39,-99.96C77.33,-79.91 67.79,-48.38 62.3,-30.2"/>
+<polygon fill="#9a32cd" stroke="#9a32cd" points="80.11,-101.2 86.36,-109.76 86.81,-99.18 80.11,-101.2"/>
 </a>
 </g>
-<text text-anchor="middle" x="87.5" y="-67.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey"> data</text>
+<text text-anchor="middle" x="92.5" y="-67.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey"> data</text>
 </g>
 </g>
 </svg>

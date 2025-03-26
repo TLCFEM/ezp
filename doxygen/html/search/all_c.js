@@ -8,5 +8,6 @@ var searchData=
   ['solver_2eppbsv_2ecpp_5',['solver.ppbsv.cpp',['../d1/dab/solver_8ppbsv_8cpp.html',1,'']]],
   ['solver_2epposv_2ecpp_6',['solver.pposv.cpp',['../d2/d91/solver_8pposv_8cpp.html',1,'']]],
   ['solver_2epposvx_2ecpp_7',['solver.pposvx.cpp',['../d9/d45/solver_8pposvx_8cpp.html',1,'']]],
-  ['sparse_5fcsr_5fmat_8',['sparse_csr_mat',['../d6/d5b/structezp_1_1sparse__csr__mat.html',1,'ezp']]]
+  ['sparse_5fcoo_5fmat_8',['sparse_coo_mat',['../d4/d16/structezp_1_1sparse__coo__mat.html',1,'ezp']]],
+  ['sparse_5fcsr_5fmat_9',['sparse_csr_mat',['../d6/d5b/structezp_1_1sparse__csr__mat.html',1,'ezp']]]
 ];

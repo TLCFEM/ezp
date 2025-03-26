@@ -51,6 +51,7 @@ var hierarchy =
     [ "ppbsv", "d8/dba/classppbsv.html", null ],
     [ "pposv", "db/db1/classpposv.html", null ],
     [ "pposvx", "d4/d47/classpposvx.html", null ],
+    [ "ezp::sparse_coo_mat< DT, IT >", "d4/d16/structezp_1_1sparse__coo__mat.html", null ],
     [ "ezp::sparse_csr_mat< DT, IT >", "d6/d5b/structezp_1_1sparse__csr__mat.html", null ],
     [ "ezp::WorkType< T >", "da/d62/structezp_1_1WorkType.html", null ],
     [ "ezp::WorkType< complex16 >", "d2/dac/structezp_1_1WorkType_3_01complex16_01_4.html", null ],
