@@ -123,9 +123,11 @@ Features</h1>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter">✅   </td><td class="markdownTableBodyNone">symmetric/Hermitian positive definite band   </td><td class="markdownTableBodyNone">simple   </td><td class="markdownTableBodyNone">PxPBSV   </td><td class="markdownTableBodyNone">ScaLAPACK    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyCenter">✅   </td><td class="markdownTableBodyNone">sparse   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">PARDISO   </td><td class="markdownTableBodyNone">MKL    </td></tr>
+<td class="markdownTableBodyCenter">✅   </td><td class="markdownTableBodyNone">sparse (one- or zero-indexing CSR format)   </td><td class="markdownTableBodyNone">direct   </td><td class="markdownTableBodyNone">PARDISO   </td><td class="markdownTableBodyNone">MKL    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyCenter">✅   </td><td class="markdownTableBodyNone">sparse   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">MUMPS   </td><td class="markdownTableBodyNone">MUMPS   </td></tr>
+<td class="markdownTableBodyCenter">✅   </td><td class="markdownTableBodyNone">sparse (one-indexing COO format)   </td><td class="markdownTableBodyNone">direct   </td><td class="markdownTableBodyNone">MUMPS   </td><td class="markdownTableBodyNone">MUMPS    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyCenter">✅   </td><td class="markdownTableBodyNone">sparse (zero-indexing CSR format)   </td><td class="markdownTableBodyNone">iterative   </td><td class="markdownTableBodyNone">Lis   </td><td class="markdownTableBodyNone">Lis   </td></tr>
 </table>
 <h1><a class="anchor" id="autotoc_md2"></a>
 Dependency</h1>
