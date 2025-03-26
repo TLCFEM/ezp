@@ -50,9 +50,11 @@ Solvers for tridiagonal matrices are not implemented as they can be stored in ba
 
 ### Sparse Matrix
 
-`ezp` provides interface to `PARDISO` solver bundled in [Intel® oneAPI Math Kernel Library (oneMKL)](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2025-1/cluster-sparse-solver.html).
+`ezp` provides interface to `PARDISO` direct solver bundled in [Intel® oneAPI Math Kernel Library (oneMKL)](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2025-1/cluster-sparse-solver.html).
 
-`ezp` provides interface to [`MUMPS`](https://mumps-solver.org/) solver.
+`ezp` provides interface to [`MUMPS`](https://mumps-solver.org/) direct solver.
+
+`ezp` provides interface to [`Lis`](http://www.ssisc.org/lis/) iterative solver.
 
 ### Why not SuperLU?
 

@@ -23,8 +23,9 @@ The following solvers are implemented.
 |      ✅       | general band (partial pivoting)            | simple    | PxGBSV  | ScaLAPACK |
 |      ✅       | general band (no pivoting)                 | simple    | PxDBSV  | ScaLAPACK |
 |      ✅       | symmetric/Hermitian positive definite band | simple    | PxPBSV  | ScaLAPACK |
-|      ✅       | sparse                                     |           | PARDISO | MKL       |
-|      ✅       | sparse                                     |           | MUMPS   | MUMPS     |
+|      ✅       | sparse (one- or zero-indexing CSR format)  | direct    | PARDISO | MKL       |
+|      ✅       | sparse (one-indexing COO format)           | direct    | MUMPS   | MUMPS     |
+|      ✅       | sparse (zero-indexing CSR format)          | iterative | Lis     | Lis       |
 
 ## Dependency
 
