@@ -30,7 +30,7 @@
 #     NRHS (int): Number of right-hand sides.
 #
 # Example:
-#     python runner.lis.py 4 100 10
+#     python runner.lis.py 4 100 10 -print all -p ilu -ilu_fill 1 -i fgmres
 #
 
 import numpy
@@ -39,16 +39,16 @@ from array import array
 from mpi4py import MPI
 
 
-def run(nprocs: int, N: int, NRHS: int):
+def run(nprocs: int, N: int, NRHS: int, option: str):
     comm = MPI.COMM_WORLD
 
     # spawn the solver
     worker = comm.Spawn("./solver.lis", maxprocs=nprocs)
     all = worker.Merge()
 
-    option = numpy.frombuffer(
-        "-print all -p ilu -ilu_fill 1 -i fgmres".encode(), dtype=numpy.int8
-    )
+    print(f"option: {option}")
+
+    option = numpy.frombuffer(option.encode(), dtype=numpy.int8)
 
     # broadcast the problem configuration
     all.Bcast(array("i", [len(option), N, N, NRHS]), root=0)
@@ -81,11 +81,12 @@ def run(nprocs: int, N: int, NRHS: int):
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Usage: runner.pardiso.py <nprocs> <N> <NRHS>")
+        print("Usage: runner.pardiso.py <nprocs> <N> <NRHS> [option]")
         sys.exit(1)
 
     nprocs = int(sys.argv[1])
     N = int(sys.argv[2])
     NRHS = int(sys.argv[3])
+    option = " ".join(sys.argv[4:]) if len(sys.argv) > 4 else ""
 
-    run(nprocs, N, NRHS)
+    run(nprocs, N, NRHS, option)
