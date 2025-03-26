@@ -47,7 +47,7 @@ def run(nprocs: int, N: int, NRHS: int):
     all = worker.Merge()
 
     # broadcast the problem configuration
-    all.Bcast(array("i", [11, 0, N, N + 1, NRHS]), root=0)
+    all.Bcast(array("i", [11, 0, N, N, NRHS]), root=0)
     all.Bcast(numpy.zeros(64, dtype=numpy.int32), root=0)
 
     # send the matrices

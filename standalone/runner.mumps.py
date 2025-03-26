@@ -48,10 +48,10 @@ def run(nprocs: int, N: int, NRHS: int):
     all = worker.Merge()
 
     # broadcast the problem configuration
-    all.Bcast(array("i", [0, NRHS, N, N + 1, 0, 1]), root=0)
+    all.Bcast(array("i", [0, NRHS, N, N, 0, 1]), root=0)
 
     # send the matrices
-    ia = numpy.array([x + 1 for x in range(N + 1)], dtype=numpy.int32)
+    ia = numpy.array([x + 1 for x in range(N)], dtype=numpy.int32)
     ja = numpy.array([x + 1 for x in range(N)], dtype=numpy.int32)
     a = numpy.array([x + 1 for x in range(N)], dtype=numpy.float64)
     b = numpy.ones((N, NRHS), dtype=numpy.float64, order="F")

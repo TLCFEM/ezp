@@ -164,16 +164,12 @@ namespace ezp {
         auto& infog() { return id.infog; }
         auto& rinfog() { return id.rinfog; }
 
-        IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
-            if(0 == comm_world.rank() && A.irn[A.n] != A.nnz + 1) id.infog[0] = -1;
-
-            if(const auto error = sync_error(); error < 0) return error;
-
+        IT solve(sparse_coo_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(A.n != B.n_rows) return -1;
 
             id.nnz = A.nnz;
-            id.irn = A.irn;
-            id.jcn = A.jcn;
+            id.irn = A.row;
+            id.jcn = A.col;
             id.a = (entry_t*)A.data;
 
             id.n = A.n;

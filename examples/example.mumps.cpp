@@ -41,18 +41,17 @@ int main() {
     const auto populate = [&]() {
         if(0 != comm_world.rank()) return;
 
-        ia.resize(N + 1);
+        ia.resize(N);
         ja.resize(N);
         a.resize(N);
         b.resize(N * NRHS);
 
         for(auto i = 0; i < N; i++) ia[i] = ja[i] = a[i] = i + 1;
-        ia[N] = N + 1;
 
         std::fill(b.begin(), b.end(), 1.);
     };
 
-    // initialise one-based CSR matrix on the root process
+    // initialise one-based COO matrix on the root process
     populate();
 
     auto solver = mumps<double, int_t>();

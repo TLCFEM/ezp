@@ -35,11 +35,11 @@ int main(int, char**) {
     config[4] = 4;    // msglvl
     config[5] = 1;    // data type
 
-    std::vector<int> ia(N + 1), ja(N);
+    std::vector<int> ia(N), ja(N);
     std::vector<double> a(N), b(N * NRHS, 1.);
 
+    // one based COO format
     for(auto i = 0; i < N; i++) ia[i] = ja[i] = a[i] = i + 1;
-    ia[N] = N + 1;
 
     all.bcast(0, config);
 

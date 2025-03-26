@@ -108,7 +108,7 @@ namespace ezp {
 
         IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             IT error = 0;
-            if(0 == comm_world.rank() && A.irn[A.n] != A.nnz + (0 == iparm[0] || 0 == iparm[34])) error = -1;
+            if(0 == comm_world.rank() && A.row_ptr[A.n] != A.nnz + (0 == iparm[0] || 0 == iparm[34])) error = -1;
 
             error = sync_error(error);
             if(error < 0) return error;
@@ -137,11 +137,11 @@ namespace ezp {
             IT phase = 13;
             if constexpr(sizeof(IT) == 4) {
                 using E = std::int32_t;
-                cluster_sparse_solver(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, A.data, (E*)A.irn, (E*)A.jcn, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, b_ptr, x_ptr, &comm, (E*)&error);
+                cluster_sparse_solver(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, A.data, (E*)A.row_ptr, (E*)A.col_idx, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, b_ptr, x_ptr, &comm, (E*)&error);
             }
             else if constexpr(sizeof(IT) == 8) {
                 using E = std::int64_t;
-                cluster_sparse_solver_64(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, A.data, (E*)A.irn, (E*)A.jcn, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, b_ptr, x_ptr, &comm, (E*)&error);
+                cluster_sparse_solver_64(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, A.data, (E*)A.row_ptr, (E*)A.col_idx, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, b_ptr, x_ptr, &comm, (E*)&error);
             }
 
             const auto info = sync_error(error);
@@ -149,11 +149,11 @@ namespace ezp {
             phase = -1;
             if constexpr(sizeof(IT) == 4) {
                 using E = std::int32_t;
-                cluster_sparse_solver(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, nullptr, (E*)A.irn, (E*)A.jcn, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, nullptr, nullptr, &comm, (E*)&error);
+                cluster_sparse_solver(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, nullptr, (E*)A.row_ptr, (E*)A.col_idx, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, nullptr, nullptr, &comm, (E*)&error);
             }
             else if constexpr(sizeof(IT) == 8) {
                 using E = std::int64_t;
-                cluster_sparse_solver_64(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, nullptr, (E*)A.irn, (E*)A.jcn, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, nullptr, nullptr, &comm, (E*)&error);
+                cluster_sparse_solver_64(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, nullptr, (E*)A.row_ptr, (E*)A.col_idx, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, nullptr, nullptr, &comm, (E*)&error);
             }
 
             return info;

@@ -70,7 +70,7 @@ template<typename DT, typename IT> int run(const IT (&config)[6]) {
     std::vector<DT> a, b;
 
     if(0 == comm_world.rank()) {
-        ia.resize(n + 1);
+        ia.resize(nnz);
         ja.resize(nnz);
         a.resize(nnz);
         b.resize(n * nrhs);
