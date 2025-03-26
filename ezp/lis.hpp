@@ -308,27 +308,59 @@ void lis_do_not_handle_mpi();
 }
 
 namespace ezp {
-    struct lis_env {
-        const mpl::communicator& comm_world{mpl::environment::comm_world()};
+    namespace detail {
+        struct lis_env {
+            const mpl::communicator& comm_world{mpl::environment::comm_world()};
 
-        lis_env() {
-            lis_do_not_handle_mpi();
-            lis_initialize(nullptr, nullptr);
+            lis_env() {
+                lis_do_not_handle_mpi();
+                lis_initialize(nullptr, nullptr);
+            }
+            ~lis_env() { lis_finalize(); }
+
+            auto rank() const { return comm_world.rank(); }
+        };
+
+        auto& get_lis_env() {
+            static const lis_env env;
+            return env;
         }
-        ~lis_env() { lis_finalize(); }
 
-        auto& comm() const { return comm_world; }
-        auto rank() const { return comm_world.rank(); }
-    };
+        class lis_vector final {
+            LIS_VECTOR v;
 
-    auto& get_lis_env() {
-        static const lis_env env;
-        return env;
-    }
+            const bool is_root = 0 == get_lis_env().rank();
+
+            bool is_set = false;
+
+            auto unset() {
+                if(is_set) lis_vector_unset(v);
+                is_set = false;
+            }
+
+        public:
+            lis_vector(const LIS_INT n) {
+                lis_vector_create(get_lis_env().comm_world.native_handle(), &v);
+                lis_vector_set_size(v, is_root ? n : 0, 0);
+            }
+
+            ~lis_vector() {
+                unset();
+                lis_vector_destroy(v);
+            }
+
+            auto set(LIS_SCALAR* value) {
+                unset();
+                is_set = true;
+                lis_vector_set(v, is_root ? value : nullptr);
+                return v;
+            }
+        };
+    } // namespace detail
 
     class lis final {
-        const lis_env& env = get_lis_env();
-        const MPI_Comm comm = env.comm().native_handle();
+        const detail::lis_env& env = detail::get_lis_env();
+        const MPI_Comm comm = env.comm_world.native_handle();
 
         LIS_SOLVER solver;
         LIS_MATRIX a_loc;
@@ -338,7 +370,7 @@ namespace ezp {
         bool is_set = false;
 
         auto sync_error(LIS_INT error) {
-            env.comm().allreduce(mpl::min<LIS_INT>(), error);
+            env.comm_world.allreduce(mpl::min<LIS_INT>(), error);
             return error;
         }
 
@@ -355,13 +387,6 @@ namespace ezp {
             lis_matrix_set_csr(is_root ? A.nnz : 0, A.row_ptr, A.col_idx, A.data, a_loc);
             lis_matrix_assemble(a_loc);
             is_set = true;
-        }
-
-        LIS_VECTOR create_vector(const LIS_INT n) {
-            LIS_VECTOR v;
-            lis_vector_create(comm, &v);
-            lis_vector_set_size(v, is_root ? n : 0, 0);
-            return v;
         }
 
     public:
@@ -398,23 +423,14 @@ namespace ezp {
                 std::copy(B.data, B.data + b_ref.size(), b_ref.data());
             }
 
-            auto b_loc = create_vector(B.n_rows);
-            auto x_loc = create_vector(B.n_rows);
+            auto b_loc = detail::lis_vector(B.n_rows);
+            auto x_loc = detail::lis_vector(B.n_rows);
 
             for(auto I = 0, J = 0; I < B.n_cols; ++I, J += B.n_rows) {
-                lis_vector_set(b_loc, is_root ? b_ref.data() + J : nullptr);
-                lis_vector_set(x_loc, is_root ? B.data + J : nullptr);
+                error = lis_solve(a_loc, b_loc.set(b_ref.data() + J), x_loc.set(B.data + J), solver);
 
-                error = lis_solve(a_loc, b_loc, x_loc, solver);
-
-                if(0 != error) I = B.n_cols;
-
-                lis_vector_unset(b_loc);
-                lis_vector_unset(x_loc);
+                if(0 != error) break;
             }
-
-            lis_vector_destroy(b_loc);
-            lis_vector_destroy(x_loc);
 
             return error;
         }
