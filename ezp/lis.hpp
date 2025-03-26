@@ -80,7 +80,7 @@ namespace ezp {
         auto register_matrix(const sparse_csr_mat<LIS_SCALAR, IT>& A) {
             deregister_matrix();
             lis_matrix_set_size(a_loc, 0 == env.rank() ? A.n : 0, 0);
-            lis_matrix_set_csr(0 == env.rank() ? A.nnz : 0, A.irn, A.jcn, A.data, a_loc);
+            lis_matrix_set_csr(0 == env.rank() ? A.nnz : 0, A.row_ptr, A.col_idx, A.data, a_loc);
             lis_matrix_assemble(a_loc);
             is_set = true;
         }
@@ -107,7 +107,7 @@ namespace ezp {
 
         IT solve(sparse_csr_mat<LIS_SCALAR, IT>&& A, full_mat<LIS_SCALAR, IT>&& B) {
             IT error = 0;
-            if(0 == env.rank() && A.irn[A.n] != A.nnz) error = -1;
+            if(0 == env.rank() && A.row_ptr[A.n] != A.nnz) error = -1;
 
             error = sync_error(error);
             if(error < 0) return error;
