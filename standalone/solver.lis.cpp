@@ -80,7 +80,7 @@ int main(int, char**) {
     std::vector<LIS_SCALAR> a, b;
 
     if(0 == comm_world.rank()) {
-        ia.resize(nnz);
+        ia.resize(n + 1);
         ja.resize(nnz);
         a.resize(nnz);
         b.resize(n * nrhs);
