@@ -829,8 +829,9 @@ However, as shown in the front page, a minimum example spans merely a few lines 
 <p><code>ezp</code> provides all solvers listed in <a href="https://www.netlib.org/scalapack/slug/node44.html">ScaLAPCK</a> page for <strong>full</strong> and <strong>band</strong> matrices.
 Solvers for tridiagonal matrices are not implemented as they can be stored in band formats and solved by the corresponding solver.</p>
 <h3 id="sparse-matrix">Sparse Matrix</h3>
-<p><code>ezp</code> provides interface to <code>PARDISO</code> solver bundled in <a href="https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2025-1/cluster-sparse-solver.html">Intel® oneAPI Math Kernel Library (oneMKL)</a>.</p>
-<p><code>ezp</code> provides interface to <a href="https://mumps-solver.org/"><code>MUMPS</code></a> solver.</p>
+<p><code>ezp</code> provides interface to <code>PARDISO</code> direct solver bundled in <a href="https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2025-1/cluster-sparse-solver.html">Intel® oneAPI Math Kernel Library (oneMKL)</a>.</p>
+<p><code>ezp</code> provides interface to <a href="https://mumps-solver.org/"><code>MUMPS</code></a> direct solver.</p>
+<p><code>ezp</code> provides interface to <a href="http://www.ssisc.org/lis/"><code>Lis</code></a> iterative solver.</p>
 <h3 id="why-not-superlu">Why not SuperLU?</h3>
 <p><del>The codebase is messy and hard to maintain due to, for example, abuse of macros.</del>
 <del>And it is not significantly faster than other direct solvers.</del>
