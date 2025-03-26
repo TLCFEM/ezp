@@ -16,7 +16,7 @@
  ******************************************************************************/
 
 #include <chrono>
-#include <ezp/mumps.hpp>
+#include <ezp/pardiso.hpp>
 #include <random>
 #include <thread>
 
@@ -31,12 +31,12 @@ using namespace std::chrono;
 
 static auto REPEAT = 10;
 
-template<data_t DT> auto random_mumps() {
+template<data_t DT> auto random_pardiso() {
     const auto& comm_world{mpl::environment::comm_world()};
 
     blacs_env<>::do_not_manage_mpi();
 
-    using solver_t = mumps<DT, int_t>;
+    using solver_t = pardiso<DT, int_t>;
 
     for(auto K = 0; K < REPEAT; ++K) {
         auto seed = static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count());
@@ -52,7 +52,7 @@ template<data_t DT> auto random_mumps() {
         std::vector<DT> a, b;
 
         if(0 == comm_world.rank()) {
-            ia.resize(N);
+            ia.resize(N + 1);
             ja.resize(N);
             a.resize(N);
             b.resize(N * NRHS);
@@ -61,12 +61,18 @@ template<data_t DT> auto random_mumps() {
                 ia[i] = ja[i] = i + 1;
                 a[i] = i + 1;
             }
+            ia[N] = N + 1;
 
             std::fill(b.begin(), b.end(), 1.);
         }
 
-        auto solver = solver_t();
-        solver(3) = 0; // msglvl
+        int_t mtype;
+        if constexpr(std::is_same_v<DT, double>) mtype = 11;
+        else if constexpr(std::is_same_v<DT, float>) mtype = 11;
+        else if constexpr(std::is_same_v<DT, complex16>) mtype = 13;
+        else if constexpr(std::is_same_v<DT, complex8>) mtype = 13;
+
+        auto solver = solver_t(mtype);
 
         const auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
 
@@ -75,35 +81,35 @@ template<data_t DT> auto random_mumps() {
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random DMUMPS", "[Sparse Solver]") {
+TEST_CASE("Random PARDISO", "[Sparse Solver]") {
 #else
-void random_dmumps() {
+void random_dpardiso() {
 #endif
-    random_mumps<double>();
+    random_pardiso<double>();
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random SMUMPS", "[Sparse Solver]") {
+TEST_CASE("Random SPARDISO", "[Sparse Solver]") {
 #else
-void random_smumps() {
+void random_spardiso() {
 #endif
-    random_mumps<float>();
+    random_pardiso<float>();
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random ZMUMPS", "[Sparse Solver]") {
+TEST_CASE("Random ZPARDISO", "[Sparse Solver]") {
 #else
-void random_zmumps() {
+void random_zpardiso() {
 #endif
-    random_mumps<complex16>();
+    random_pardiso<complex16>();
 }
 
 #ifdef EZP_ENABLE_TEST
-TEST_CASE("Random CMUMPS", "[Sparse Solver]") {
+TEST_CASE("Random CPARDISO", "[Sparse Solver]") {
 #else
-void random_cmumps() {
+void random_cpardiso() {
 #endif
-    random_mumps<complex8>();
+    random_pardiso<complex8>();
 }
 
 #ifdef EZP_ENABLE_TEST
@@ -114,10 +120,10 @@ int main(const int argc, const char* argv[]) {
         while(0 == i) std::this_thread::sleep_for(seconds(10));
     else REPEAT = std::atoi(argv[1]);
 
-    random_dmumps();
-    random_smumps();
-    random_zmumps();
-    random_cmumps();
+    random_dpardiso();
+    random_spardiso();
+    random_zpardiso();
+    random_cpardiso();
 
     return 0;
 }

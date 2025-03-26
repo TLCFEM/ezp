@@ -100,7 +100,7 @@ namespace ezp {
         auto& iparm_nnz_factor(const auto config) { return iparm[17] = config; };
         auto& iparm_pivoting_type(const auto config) { return iparm[20] = config; };
         auto& iparm_matrix_checker(const auto config) { return iparm[26] = config; };
-        auto& iparm_precision(const auto config) { return iparm[27] = config; };
+        // auto& iparm_precision(const auto config) { return iparm[27] = config; };
         auto& iparm_partial_solve(const auto config) { return iparm[30] = config; };
         auto& iparm_zero_based_indexing(const auto config) { return iparm[34] = config; };
         auto& iparm_schur_complement(const auto config) { return iparm[35] = config; };
@@ -116,6 +116,11 @@ namespace ezp {
             if(A.n != B.n_rows) return -1;
 
             iparm[39] = 0; // force centralised input/output
+
+            if constexpr(std::is_same_v<DT, double>) iparm[27] = 0;
+            else if constexpr(std::is_same_v<DT, float>) iparm[27] = 1;
+            else if constexpr(std::is_same_v<DT, complex16>) iparm[27] = 0;
+            else if constexpr(std::is_same_v<DT, complex8>) iparm[27] = 1;
 
             std::vector<DT> b_ref;
             if(0 == comm_world.rank()) b_ref.resize(B.n_rows * B.n_cols);
