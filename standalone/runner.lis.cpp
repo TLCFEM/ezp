@@ -17,7 +17,7 @@
 
 #include <mpl/mpl.hpp>
 
-int main(int, char**) {
+int main(int argc, char** argv) {
     constexpr int NUM_NODE = 2;
 
     const auto& comm_world{mpl::environment::comm_world()};
@@ -26,9 +26,15 @@ int main(int, char**) {
 
     int config[4]{};
 
-    std::string option = "-print all -p ilu -ilu_fill 1 -i fgmres"; // option string
+    std::string option; // "-print all -p ilu -ilu_fill 1 -i fgmres" option string
+    for(auto i = 1; i < argc; i++) {
+        option += argv[i];
+        if(i < argc - 1) option += ' ';
+    }
 
-    constexpr int N = 14, NRHS = 1;
+    printf("option: %s\n", option.c_str());
+
+    constexpr int N = 40, NRHS = 1;
 
     config[0] = option.size(); // length of the option string
     config[1] = N;             // n
