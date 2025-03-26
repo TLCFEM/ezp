@@ -75,3 +75,7 @@ Use `-DEZP_ADD_UNDERSCORE=ON` flag in CMake, or define the macro `EZP_UNDERSCORE
 ### Standalone Solvers
 
 Use `-DEZP_STANDALONE=ON` flag in CMake to compile standalone solver.
+
+### Enable OpenMP
+
+Use `-DEZP_ENABLE_OPENMP=ON` flag in CMake to enable the `-fopenmp` compiling flag.
