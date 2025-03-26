@@ -179,7 +179,7 @@ $(document).ready(function(){initNavTree('da/d0e/pdbsv_8hpp_source.html','../../
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span> </div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>        <span class="keyword">template</span>&lt;band_container_t AT, full_container_t BT&gt; IT solve(AT&amp;&amp; A, BT&amp;&amp; B) { <span class="keywordflow">return</span> solve(to_band(A), to_full(B)); }</div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>        IT solve(<a class="code hl_struct" href="../../d9/d24/structezp_1_1band__mat.html">band_mat&lt;DT, IT&gt;</a>&amp;&amp; A, <a class="code hl_struct" href="../../d0/d58/structezp_1_1full__mat.html">full_mat&lt;DT, IT&gt;</a>&amp;&amp; B) {</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>        IT solve(<a class="code hl_struct" href="../../d9/d24/structezp_1_1band__mat.html">band_mat&lt;DT, IT&gt;</a>&amp;&amp; A, <a class="code hl_struct" href="../../d0/d58/structezp_1_1full__mat.html">full_mat&lt;DT, IT&gt;</a>&amp;&amp; B)<span class="keyword"> override </span>{</div>
 <div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>            <span class="keywordflow">if</span>(!this-&gt;ctx.is_valid() || !this-&gt;trans_ctx.is_valid()) <span class="keywordflow">return</span> 0;</div>
 <div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
 <div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>            <span class="keywordflow">if</span>(A.n_rows != A.n_cols || A.n_cols != B.n_rows) <span class="keywordflow">return</span> -1;</div>
@@ -224,7 +224,7 @@ $(document).ready(function(){initNavTree('da/d0e/pdbsv_8hpp_source.html','../../
 <div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>            <span class="keywordflow">return</span> solve(std::move(B));</div>
 <div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>        }</div>
 <div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span> </div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>        IT solve(full_mat&lt;DT, IT&gt;&amp;&amp; B) {</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>        IT solve(full_mat&lt;DT, IT&gt;&amp;&amp; B)<span class="keyword"> override </span>{</div>
 <div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>            <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keywordtype">char</span> TRANS = <span class="charliteral">&#39;N&#39;</span>;</div>
 <div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span> </div>
 <div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>            <span class="keywordflow">if</span>(B.n_rows != loc.n) <span class="keywordflow">return</span> -1;</div>

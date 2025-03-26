@@ -139,7 +139,7 @@ $(document).ready(function(){initNavTree('df/d0c/classmumps.html','../../'); ini
 <div class="line">    std::vector&lt;int_t&gt; ia, ja;</div>
 <div class="line">    std::vector&lt;double&gt; a, b;</div>
 <div class="line"> </div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> populate = [&amp;]() {</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> populate = [&amp;] {</div>
 <div class="line">        <span class="keywordflow">if</span>(0 != comm_world.rank()) <span class="keywordflow">return</span>;</div>
 <div class="line"> </div>
 <div class="line">        ia.resize(N);</div>
@@ -161,7 +161,7 @@ $(document).ready(function(){initNavTree('df/d0c/classmumps.html','../../'); ini
 <div class="line">    <span class="comment">// need to wrap the data in sparse_coo_mat objects</span></div>
 <div class="line">    <span class="keyword">auto</span> info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});</div>
 <div class="line"> </div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> print = [&amp;]() {</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> print = [&amp;] {</div>
 <div class="line">        <span class="keywordflow">if</span>(0 != comm_world.rank()) <span class="keywordflow">return</span>;</div>
 <div class="line"> </div>
 <div class="line">        std::cout &lt;&lt; std::fixed &lt;&lt; std::setprecision(10) &lt;&lt; <span class="stringliteral">&quot;Info: &quot;</span> &lt;&lt; info &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
