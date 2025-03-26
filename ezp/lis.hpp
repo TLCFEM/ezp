@@ -125,11 +125,15 @@ namespace ezp {
             auto b_loc = create_vector(B.n_rows);
             auto x_loc = create_vector(B.n_rows);
 
+            IT error = 0;
+
             for(auto I = 0, J = 0; I < B.n_cols; ++I, J += B.n_rows) {
                 lis_vector_set(b_loc, 0 == env.rank() ? b_ref.data() + J : nullptr);
                 lis_vector_set(x_loc, 0 == env.rank() ? B.data + J : nullptr);
 
-                lis_solve(a_loc, b_loc, x_loc, solver);
+                error = lis_solve(a_loc, b_loc, x_loc, solver);
+
+                if(LIS_SUCCESS != error) I = B.n_cols;
 
                 lis_vector_unset(b_loc);
                 lis_vector_unset(x_loc);
@@ -138,7 +142,7 @@ namespace ezp {
             lis_vector_destroy(b_loc);
             lis_vector_destroy(x_loc);
 
-            return 0;
+            return error;
         }
     };
 } // namespace ezp
