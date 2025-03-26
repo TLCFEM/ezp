@@ -34,7 +34,7 @@ static auto REPEAT = 10;
 const auto& comm_world{mpl::environment::comm_world()};
 
 template<data_t DT> auto random_mumps() {
-    ezp::blacs_env<int_t>::do_not_manage_mpi();
+    blacs_env<>::do_not_manage_mpi();
 
     using solver_t = mumps<DT, int_t>;
 
@@ -52,7 +52,7 @@ template<data_t DT> auto random_mumps() {
         std::vector<DT> a, b;
 
         if(0 == comm_world.rank()) {
-            ia.resize(N + 1);
+            ia.resize(N);
             ja.resize(N);
             a.resize(N);
             b.resize(N * NRHS);
@@ -61,7 +61,6 @@ template<data_t DT> auto random_mumps() {
                 ia[i] = ja[i] = i + 1;
                 a[i] = i + 1;
             }
-            ia[N] = N + 1;
 
             std::fill(b.begin(), b.end(), 1.);
         }
