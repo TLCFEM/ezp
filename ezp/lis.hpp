@@ -317,6 +317,8 @@ namespace ezp {
             ~lis_env() { lis_finalize(); }
 
             [[nodiscard]] auto rank() const { return comm_world.rank(); }
+
+            [[nodiscard]] auto native_handle() const { return comm_world.native_handle(); }
         };
 
         inline auto& get_lis_env() {
@@ -327,8 +329,6 @@ namespace ezp {
         class lis_vector final {
             LIS_VECTOR v{};
 
-            const bool is_root = 0 == get_lis_env().rank();
-
             bool is_set = false;
 
             auto unset() {
@@ -338,8 +338,8 @@ namespace ezp {
 
         public:
             explicit lis_vector(const LIS_INT n) {
-                lis_vector_create(get_lis_env().comm_world.native_handle(), &v);
-                lis_vector_set_size(v, is_root ? n : 0, 0);
+                lis_vector_create(get_lis_env().native_handle(), &v);
+                lis_vector_set_size(v, 0 == get_lis_env().rank() ? n : 0, 0);
             }
 
             ~lis_vector() {
@@ -350,73 +350,90 @@ namespace ezp {
             auto set(LIS_SCALAR* value) {
                 unset();
                 is_set = true;
-                lis_vector_set(v, is_root ? value : nullptr);
+                lis_vector_set(v, 0 == get_lis_env().rank() ? value : nullptr);
                 return v;
             }
+        };
+
+        class lis_matrix final {
+            LIS_MATRIX a_mat{};
+
+            bool is_set = false;
+
+            auto unset() {
+                if(is_set) lis_matrix_unset(a_mat);
+                lis_matrix_destroy(a_mat);
+                is_set = false;
+            }
+
+        public:
+            lis_matrix() {}
+
+            ~lis_matrix() { unset(); }
+
+            auto get() const { return a_mat; }
+
+            auto set(const sparse_csr_mat<LIS_SCALAR, LIS_INT>& A) {
+                unset();
+                const bool is_root = 0 == get_lis_env().rank();
+                lis_matrix_create(get_lis_env().native_handle(), &a_mat);
+                lis_matrix_set_size(a_mat, is_root ? A.n : 0, 0);
+                lis_matrix_set_csr(is_root ? A.nnz : 0, A.row_ptr, A.col_idx, A.data, a_mat);
+                lis_matrix_assemble(a_mat);
+                is_set = true;
+            }
+        };
+
+        class lis_solver final {
+            LIS_SOLVER solver{};
+
+        public:
+            explicit lis_solver(const char* setting) {
+                lis_solver_create(&solver);
+                lis_solver_set_option(setting, solver);
+            }
+
+            ~lis_solver() { lis_solver_destroy(solver); }
+
+            auto solve(LIS_MATRIX A, LIS_VECTOR B, LIS_VECTOR X) const { return lis_solve(A, B, X, solver); }
         };
     } // namespace detail
 
     class lis final {
         const detail::lis_env& env = detail::get_lis_env();
-        const MPI_Comm comm = env.comm_world.native_handle();
 
-        LIS_SOLVER solver{};
-        LIS_MATRIX a_loc{};
-
-        const bool is_root = 0 == env.rank();
-
-        bool is_set = false;
+        detail::lis_solver solver;
+        detail::lis_matrix a_loc;
 
         [[nodiscard]] auto sync_error(LIS_INT error) const {
             env.comm_world.allreduce(mpl::min<LIS_INT>(), error);
             return error;
         }
 
-        auto deregister_matrix() {
-            if(is_set) lis_matrix_unset(a_loc);
-            lis_matrix_destroy(a_loc);
-            is_set = false;
-        }
-
-        auto register_matrix(const sparse_csr_mat<LIS_SCALAR, LIS_INT>& A) {
-            deregister_matrix();
-            lis_matrix_create(comm, &a_loc);
-            lis_matrix_set_size(a_loc, is_root ? A.n : 0, 0);
-            lis_matrix_set_csr(is_root ? A.nnz : 0, A.row_ptr, A.col_idx, A.data, a_loc);
-            lis_matrix_assemble(a_loc);
-            is_set = true;
-        }
-
     public:
-        explicit lis(const char* setting) {
-            lis_solver_create(&solver);
-            lis_solver_set_option(setting, solver);
-        }
-
-        ~lis() {
-            deregister_matrix();
-            lis_solver_destroy(solver);
-        }
+        explicit lis(const char* setting)
+            : solver(setting)
+            , a_loc() {}
 
         LIS_INT solve(sparse_csr_mat<LIS_SCALAR, LIS_INT>&& A, full_mat<LIS_SCALAR, LIS_INT>&& B) {
             LIS_INT error = 0;
-            if(is_root && A.row_ptr[A.n] != A.nnz) error = -1;
+            if(0 == env.rank() && A.row_ptr[A.n] != A.nnz) error = -1;
 
             error = sync_error(error);
             if(error < 0) return error;
 
-            register_matrix(A);
+            a_loc.set(std::move(A));
 
             return solve(std::move(B));
         }
 
         LIS_INT solve(full_mat<LIS_SCALAR, LIS_INT>&& B) const {
-            if(a_loc->gn != B.n_rows) return -1;
+            if(a_loc.get()->gn != B.n_rows) return -1;
 
             LIS_INT error = 0;
 
             std::vector<LIS_SCALAR> b_ref;
-            if(is_root) {
+            if(0 == env.rank()) {
                 b_ref.resize(B.n_rows * B.n_cols);
                 std::copy_n(B.data, b_ref.size(), b_ref.data());
             }
@@ -425,7 +442,7 @@ namespace ezp {
             auto x_loc = detail::lis_vector(B.n_rows);
 
             for(auto I = 0, J = 0; I < B.n_cols; ++I, J += B.n_rows) {
-                error = lis_solve(a_loc, b_loc.set(b_ref.data() + J), x_loc.set(B.data + J), solver);
+                error = solver.solve(a_loc.get(), b_loc.set(b_ref.data() + J), x_loc.set(B.data + J));
 
                 if(0 != error) break;
             }
