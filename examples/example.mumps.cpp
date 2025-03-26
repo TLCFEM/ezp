@@ -57,7 +57,7 @@ int main() {
     auto solver = mumps<double, int_t>();
     solver(3) = 0; // msglvl
 
-    // need to wrap the data in sparse_csr_mat objects
+    // need to wrap the data in sparse_coo_mat objects
     auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
 
     const auto print = [&]() {
