@@ -158,7 +158,7 @@ $(document).ready(function(){initNavTree('df/d0c/classmumps.html','../../'); ini
 <div class="line">    <span class="keyword">auto</span> solver = <a class="code hl_class" href="../../df/d0c/classmumps.html">mumps&lt;double, int_t&gt;</a>();</div>
 <div class="line">    solver(3) = 0; <span class="comment">// msglvl</span></div>
 <div class="line"> </div>
-<div class="line">    <span class="comment">// need to wrap the data in sparse_csr_mat objects</span></div>
+<div class="line">    <span class="comment">// need to wrap the data in sparse_coo_mat objects</span></div>
 <div class="line">    <span class="keyword">auto</span> info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});</div>
 <div class="line"> </div>
 <div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> print = [&amp;]() {</div>
