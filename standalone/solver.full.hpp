@@ -18,7 +18,7 @@
 #ifndef SOLVER_FULL_HPP
 #define SOLVER_FULL_HPP
 
-#include <ezp/ezp>
+#include <ezp/ezp.dense>
 #include <mpl/mpl.hpp>
 
 inline const auto& comm_world{mpl::environment::comm_world()};

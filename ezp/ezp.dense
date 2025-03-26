@@ -15,5 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "ezp.dense"
-#include "ezp.sparse"
+#include "pdbsv.hpp"
+#include "pgbsv.hpp"
+#include "pgesv.hpp"
+#include "pgesvx.hpp"
+#include "ppbsv.hpp"
+#include "pposv.hpp"
+#include "pposvx.hpp"
