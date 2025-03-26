@@ -2,6 +2,7 @@ var dir_a85023a8420daaed5b8c620d6ec875fb =
 [
     [ "runner.cpp", "d2/de6/runner_8cpp.html", null ],
     [ "solver.full.hpp", "d3/d6d/solver_8full_8hpp_source.html", null ],
+    [ "solver.lis.cpp", "dd/da7/solver_8lis_8cpp.html", null ],
     [ "solver.mumps.cpp", "dc/dff/solver_8mumps_8cpp.html", null ],
     [ "solver.pardiso.cpp", "d4/d4e/solver_8pardiso_8cpp.html", null ],
     [ "solver.pdbsv.cpp", "d4/dda/solver_8pdbsv_8cpp.html", null ],
