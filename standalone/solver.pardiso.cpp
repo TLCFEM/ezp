@@ -23,20 +23,20 @@ const auto& comm_world{mpl::environment::comm_world()};
 const auto& parent = mpl::inter_communicator::parent();
 
 template<typename DT, typename IT> int run(const IT (&config)[5], IT (&iparm)[64]) {
-    const auto mtype = config;
-    const auto msglvl = config + 1;
-    const auto n = config + 2;
-    const auto nnz = config + 3;
-    const auto nrhs = config + 4;
+    const auto mtype = config[0];
+    const auto msglvl = config[1];
+    const auto n = config[2];
+    const auto nnz = config[3];
+    const auto nrhs = config[4];
 
     std::vector<IT> ia, ja;
     std::vector<DT> a, b;
 
     if(0 == comm_world.rank()) {
-        ia.resize(*n + 1);
-        ja.resize(*nnz);
-        a.resize(*nnz);
-        b.resize(*n * *nrhs);
+        ia.resize(n + 1);
+        ja.resize(nnz);
+        a.resize(nnz);
+        b.resize(n * nrhs);
 
         mpl::irequest_pool requests;
 
@@ -48,10 +48,10 @@ template<typename DT, typename IT> int run(const IT (&config)[5], IT (&iparm)[64
         requests.waitall();
     }
 
-    ezp::pardiso<DT, IT> solver(*mtype, *msglvl);
+    ezp::pardiso<DT, IT> solver(mtype, msglvl);
     for(auto i = 0; i < 64; i++) solver(i) = iparm[i];
 
-    const auto error = solver.solve({*n, *nnz, ia.data(), ja.data(), a.data()}, {*n, *nrhs, b.data()});
+    const auto error = solver.solve({n, nnz, ia.data(), ja.data(), a.data()}, {n, nrhs, b.data()});
 
     if(0 == comm_world.rank()) {
         parent.send(error, 0);

@@ -108,7 +108,7 @@ namespace ezp {
 
         IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             IT error = 0;
-            if(0 == comm_world.rank() && A.irn[A.n] != A.nnz + 1) error = -1;
+            if(0 == comm_world.rank() && A.irn[A.n] != A.nnz + (0 == iparm[0] || 0 == iparm[34])) error = -1;
 
             error = sync_error(error);
             if(error < 0) return error;
