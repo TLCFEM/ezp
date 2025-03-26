@@ -6,6 +6,8 @@ var annotated_dup =
         [ "band_solver", "d0/db0/classezp_1_1detail_1_1band__solver.html", null ],
         [ "full_solver", "df/df0/classezp_1_1detail_1_1full__solver.html", "df/df0/classezp_1_1detail_1_1full__solver" ],
         [ "lis_env", "de/dca/structezp_1_1detail_1_1lis__env.html", null ],
+        [ "lis_matrix", "d1/d8e/classezp_1_1detail_1_1lis__matrix.html", null ],
+        [ "lis_solver", "d6/dd6/classezp_1_1detail_1_1lis__solver.html", null ],
         [ "lis_vector", "d3/dae/classezp_1_1detail_1_1lis__vector.html", null ],
         [ "mumps_struc", "df/d7f/structezp_1_1detail_1_1mumps__struc.html", null ],
         [ "mumps_struc< complex16 >", "d4/d83/structezp_1_1detail_1_1mumps__struc_3_01complex16_01_4.html", null ],

@@ -11,9 +11,9 @@
 <!-- Node0 -->
 <g id="Node000000" class="node">
 <title>Node0</title>
-<g id="a_Node000000"><a xlink:href="d4/d5d/structLIS__SOLVER__STRUCT.html" target="_top" xlink:title=" ">
+<g id="a_Node000000"><a xlink:href="d0/d39/structLIS__MATRIX__STRUCT.html" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="118,-19 0,-19 0,0 118,0 118,-19"/>
-<text text-anchor="middle" x="59" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">LIS_SOLVER_STRUCT</text>
+<text text-anchor="middle" x="59" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">LIS_MATRIX_STRUCT</text>
 </a>
 </g>
 </g>
