@@ -1,62 +1,79 @@
-#include "external/lis/include/lis.h"
+/*******************************************************************************
+ * Copyright (C) 2025 Theodore Chang
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
+/**
+ * @brief Example caller to the `lis` solver.
+ *
+ * @author tlc
+ * @date 26/03/2025
+ * @version 1.0.0
+ * @file example.lis.cpp
+ * @{
+ */
 
-#include <stdio.h>
-LIS_INT main(int argc, char* argv[]) {
-    LIS_Comm comm;
-    LIS_MATRIX A;
-    LIS_VECTOR b, x, u;
-    LIS_SOLVER solver;
-    int nprocs, my_rank;
-    LIS_INT err, i, n, gn, is, ie, iter;
+#include <ezp/lis.hpp>
+#include <iomanip>
+#include <iostream>
 
-    n = 10;
-    lis_initialize(&argc, &argv);
-    comm = LIS_COMM_WORLD;
+using namespace ezp;
 
-    MPI_Comm_size(comm, &nprocs);
-    MPI_Comm_rank(comm, &my_rank);
+int main() {
+    const auto& comm_world{mpl::environment::comm_world()};
 
-    lis_printf(comm, "\n");
-    lis_printf(comm, "number of processes = %d\n", nprocs);
+    int N = 10, NRHS = 1;
 
-#ifdef _OPENMP
-    lis_printf(comm, "max number of threads = %d\n", omp_get_num_procs());
-    lis_printf(comm, "number of threads = %d\n", omp_get_max_threads());
-#endif
+    std::vector<int_t> ia, ja;
+    std::vector<double> a, b;
 
-    lis_matrix_create(comm, &A);
-    err = lis_matrix_set_size(A, 0, n);
-    CHKERR(err);
-    lis_matrix_get_size(A, &n, &gn);
-    lis_matrix_get_range(A, &is, &ie);
-    for(i = is; i < ie; i++) {
-        if(i > 0) lis_matrix_set_value(LIS_INS_VALUE, i, i - 1, -1.0, A);
-        if(i < gn - 1) lis_matrix_set_value(LIS_INS_VALUE, i, i + 1, -1.0, A);
-        lis_matrix_set_value(LIS_INS_VALUE, i, i, 2.0, A);
-    }
-    lis_matrix_set_type(A, LIS_MATRIX_CSR);
-    lis_matrix_assemble(A);
+    const auto populate = [&]() {
+        if(0 != comm_world.rank()) return;
 
-    lis_vector_duplicate(A, &u);
-    lis_vector_duplicate(A, &b);
-    lis_vector_duplicate(A, &x);
-    lis_vector_set_all(1.0, u);
-    lis_matvec(A, u, b);
-    lis_solver_create(&solver);
-    lis_solver_set_option("-print all -p ilu -i 20", solver);
-    err = lis_solver_set_optionC(solver);
-    CHKERR(err);
-    lis_solve(A, b, x, solver);
-    lis_solver_get_iter(solver, &iter);
-    lis_printf(comm, "number of iterations = %D\n", iter);
-    lis_printf(comm, "\n");
-    lis_vector_print(x);
+        ia.resize(N + 1);
+        ja.resize(N);
+        a.resize(N);
+        b.resize(N * NRHS);
 
-    lis_matrix_destroy(A);
-    lis_vector_destroy(b);
-    lis_vector_destroy(x);
-    lis_vector_destroy(u);
-    lis_solver_destroy(solver);
-    lis_finalize();
-    return 0;
+        for(auto i = 0; i < N; i++) {
+            ia[i] = ja[i] = i;
+            a[i] = i + 1;
+        }
+        ia[N] = N;
+
+        std::fill(b.begin(), b.end(), 1.);
+    };
+
+    // initialise zero-based CSR matrix on the root process
+    populate();
+
+    auto solver = lis("-print none -p ilu -ilu_fill 1 -i fgmres");
+
+    // need to wrap the data in sparse_csr_mat objects
+    auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
+
+    const auto print = [&]() {
+        if(0 != comm_world.rank()) return;
+
+        std::cout << std::fixed << std::setprecision(10) << "Info: " << info << '\n';
+        std::cout << "Solution:\n";
+        for(const double i : b) std::cout << i << '\n';
+    };
+
+    print();
+
+    return info;
 }
+
+//! @}
