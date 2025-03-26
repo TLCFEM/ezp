@@ -22,9 +22,10 @@
  *
  * The caller spawns this program as a worker process.
  *
+ * The matrix `A` is stored in the coordinate (COO) format.
  * The caller must send five buffers to the worker process:
  * - an integer array of size 6
- * - a buffer containing the row index of matrix `A`, size `N + 1`,
+ * - a buffer containing the row index of matrix `A`, size `NNZ`,
  * - a buffer containing the column index of matrix `A`, size `NNZ`,
  * - a buffer containing the value of matrix `A`, size `NNZ`,
  * - a buffer containing the right-hand side `B`, size `N x NRHS`.

@@ -14,6 +14,35 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+/**
+ * @brief Standalone `pardiso` solver.
+ *
+ * This program is a standalone application that solves a system of linear equations
+ * using the `pardiso` solver.
+ *
+ * The caller spawns this program as a worker process.
+ *
+ * The matrix `A` is stored in the compressed sparse row (CSR) format.
+ * The caller must send five buffers to the worker process:
+ * - an integer array of size 5
+ * - a buffer containing the row index of matrix `A`, size `N + 1`,
+ * - a buffer containing the column index of matrix `A`, size `NNZ`,
+ * - a buffer containing the value of matrix `A`, size `NNZ`,
+ * - a buffer containing the right-hand side `B`, size `N x NRHS`.
+ *
+ * The error code (0 for success) will be sent back to the root process of the caller.
+ * If error code is 0, the solution will be sent back as well.
+ *
+ * The example caller logic can be seen as follows.
+ *
+ * @include runner.pardiso.cpp
+ *
+ * @author tlc
+ * @date 26/03/2025
+ * @version 1.0.0
+ * @file solver.pardiso.cpp
+ * @{
+ */
 
 #ifdef EZP_MKL
 #include <ezp/pardiso.hpp>
@@ -97,3 +126,5 @@ int main(int, char**) {
     return 0;
 }
 #endif
+
+//! @}
