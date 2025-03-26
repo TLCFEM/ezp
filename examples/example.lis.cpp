@@ -73,6 +73,12 @@ int main() {
 
     print();
 
+    N = 20;
+
+    populate();
+    info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
+    print();
+
     return info;
 }
 

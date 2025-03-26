@@ -333,6 +333,8 @@ namespace ezp {
         LIS_SOLVER solver;
         LIS_MATRIX a_loc;
 
+        const bool is_root = 0 == env.rank();
+
         bool is_set = false;
 
         auto sync_error(LIS_INT error) {
@@ -342,13 +344,15 @@ namespace ezp {
 
         auto deregister_matrix() {
             if(is_set) lis_matrix_unset(a_loc);
+            lis_matrix_destroy(a_loc);
             is_set = false;
         }
 
         auto register_matrix(const sparse_csr_mat<LIS_SCALAR, LIS_INT>& A) {
             deregister_matrix();
-            lis_matrix_set_size(a_loc, 0 == env.rank() ? A.n : 0, 0);
-            lis_matrix_set_csr(0 == env.rank() ? A.nnz : 0, A.row_ptr, A.col_idx, A.data, a_loc);
+            lis_matrix_create(comm, &a_loc);
+            lis_matrix_set_size(a_loc, is_root ? A.n : 0, 0);
+            lis_matrix_set_csr(is_root ? A.nnz : 0, A.row_ptr, A.col_idx, A.data, a_loc);
             lis_matrix_assemble(a_loc);
             is_set = true;
         }
@@ -356,7 +360,7 @@ namespace ezp {
         LIS_VECTOR create_vector(const LIS_INT n) {
             LIS_VECTOR v;
             lis_vector_create(comm, &v);
-            lis_vector_set_size(v, 0 == env.rank() ? n : 0, 0);
+            lis_vector_set_size(v, is_root ? n : 0, 0);
             return v;
         }
 
@@ -364,28 +368,32 @@ namespace ezp {
         lis(const char* setting) {
             lis_solver_create(&solver);
             lis_solver_set_option(setting, solver);
-            lis_matrix_create(comm, &a_loc);
         }
 
         ~lis() {
             deregister_matrix();
-            lis_matrix_destroy(a_loc);
             lis_solver_destroy(solver);
         }
 
         LIS_INT solve(sparse_csr_mat<LIS_SCALAR, LIS_INT>&& A, full_mat<LIS_SCALAR, LIS_INT>&& B) {
             LIS_INT error = 0;
-            if(0 == env.rank() && A.row_ptr[A.n] != A.nnz) error = -1;
+            if(is_root && A.row_ptr[A.n] != A.nnz) error = -1;
 
             error = sync_error(error);
             if(error < 0) return error;
 
-            if(A.n != B.n_rows) return -1;
-
             register_matrix(A);
 
+            return solve(std::move(B));
+        }
+
+        LIS_INT solve(full_mat<LIS_SCALAR, LIS_INT>&& B) {
+            if(a_loc->gn != B.n_rows) return -1;
+
+            LIS_INT error = 0;
+
             std::vector<LIS_SCALAR> b_ref;
-            if(0 == env.rank()) {
+            if(is_root) {
                 b_ref.resize(B.n_rows * B.n_cols);
                 std::copy(B.data, B.data + b_ref.size(), b_ref.data());
             }
@@ -394,8 +402,8 @@ namespace ezp {
             auto x_loc = create_vector(B.n_rows);
 
             for(auto I = 0, J = 0; I < B.n_cols; ++I, J += B.n_rows) {
-                lis_vector_set(b_loc, 0 == env.rank() ? b_ref.data() + J : nullptr);
-                lis_vector_set(x_loc, 0 == env.rank() ? B.data + J : nullptr);
+                lis_vector_set(b_loc, is_root ? b_ref.data() + J : nullptr);
+                lis_vector_set(x_loc, is_root ? B.data + J : nullptr);
 
                 error = lis_solve(a_loc, b_loc, x_loc, solver);
 
