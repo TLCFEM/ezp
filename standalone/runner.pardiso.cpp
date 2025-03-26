@@ -27,12 +27,12 @@ int main(int, char**) {
     int config[5]{};
     int iparm[64]{};
 
-    iparm[0] = 1;   // solver default parameters overriden with provided by iparm
-    iparm[1] = 3;   // use METIS for fill-in reordering
-    iparm[7] = 2;   // max number of iterative refinement steps
-    iparm[9] = 13;  // perturb the pivot elements with 1E-13
-    iparm[10] = 1;  // use nonsymmetric permutation and scaling MPS
-    iparm[12] = 1;  // switch on Maximum Weighted Matching algorithm (default for non-symmetric)
+    iparm[0] = 1;  // solver default parameters overriden with provided by iparm
+    iparm[1] = 3;  // use METIS for fill-in reordering
+    iparm[7] = 2;  // max number of iterative refinement steps
+    iparm[9] = 13; // perturb the pivot elements with 1E-13
+    iparm[10] = 1; // use nonsymmetric permutation and scaling MPS
+    iparm[12] = 1; // switch on Maximum Weighted Matching algorithm (default for non-symmetric)
 
     constexpr int N = 14, NRHS = 1;
 

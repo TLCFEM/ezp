@@ -130,7 +130,7 @@ namespace ezp {
 
         template<band_container_t AT, full_container_t BT> IT solve(AT&& A, BT&& B) { return solve(to_band(A), to_full(B)); }
 
-        IT solve(band_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
+        IT solve(band_mat<DT, IT>&& A, full_mat<DT, IT>&& B) override {
             if(!this->ctx.is_valid() || !this->trans_ctx.is_valid()) return 0;
 
             if(A.n_rows != A.n_cols || A.n_cols != B.n_rows) return -1;
@@ -175,7 +175,7 @@ namespace ezp {
             return solve(std::move(B));
         }
 
-        IT solve(full_mat<DT, IT>&& B) {
+        IT solve(full_mat<DT, IT>&& B) override {
             static constexpr char TRANS = 'N';
 
             if(B.n_rows != loc.n) return -1;

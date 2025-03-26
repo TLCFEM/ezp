@@ -32,7 +32,7 @@ using namespace ezp;
 
 class general_mat {
 public:
-    int_t n_rows, n_cols;
+    int_t n_rows{}, n_cols{};
 
 private:
     std::vector<double> storage;
@@ -55,7 +55,7 @@ public:
 
 class bandsymm_mat {
 public:
-    int_t n_rows, n_cols, klu;
+    int_t n_rows{}, n_cols{}, klu{};
 
 private:
     std::vector<double> storage;
@@ -82,13 +82,12 @@ int main() {
     // get the current blacs environment
     const auto& env = get_env<int_t>();
 
-    constexpr auto N = 6, NRHS = 2, KLU = 1;
-
     // storage for the matrices A and B
     bandsymm_mat A;
     general_mat B;
 
     if(0 == env.rank()) {
+        constexpr auto N = 6, NRHS = 2, KLU = 1;
         // the matrices are only initialized on the root process
         A.init(N, KLU);
         B.init(N, NRHS);

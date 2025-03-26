@@ -80,10 +80,10 @@ namespace ezp {
         }
 
     public:
-        pardiso(const IT mtype, const IT msglvl = 0)
+        explicit pardiso(const IT mtype, const IT msglvl = 0)
             : pardiso(matrix_type{static_cast<int>(mtype)}, message_level{static_cast<int>(msglvl)}) {};
 
-        pardiso(const matrix_type mtype, const message_level msglvl = message_level::no_output)
+        explicit pardiso(const matrix_type mtype, const message_level msglvl = message_level::no_output)
             : mtype(mtype)
             , msglvl(msglvl) {};
 
@@ -135,6 +135,7 @@ namespace ezp {
             }
 
             IT phase = 13;
+            // ReSharper disable CppCStyleCast
             if constexpr(sizeof(IT) == 4) {
                 using E = std::int32_t;
                 cluster_sparse_solver(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, A.data, (E*)A.row_ptr, (E*)A.col_idx, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, b_ptr, x_ptr, &comm, (E*)&error);
@@ -143,10 +144,12 @@ namespace ezp {
                 using E = std::int64_t;
                 cluster_sparse_solver_64(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, A.data, (E*)A.row_ptr, (E*)A.col_idx, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, b_ptr, x_ptr, &comm, (E*)&error);
             }
+            // ReSharper restore CppCStyleCast
 
             const auto info = sync_error(error);
 
             phase = -1;
+            // ReSharper disable CppCStyleCast
             if constexpr(sizeof(IT) == 4) {
                 using E = std::int32_t;
                 cluster_sparse_solver(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, nullptr, (E*)A.row_ptr, (E*)A.col_idx, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, nullptr, nullptr, &comm, (E*)&error);
@@ -155,6 +158,7 @@ namespace ezp {
                 using E = std::int64_t;
                 cluster_sparse_solver_64(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, nullptr, (E*)A.row_ptr, (E*)A.col_idx, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, nullptr, nullptr, &comm, (E*)&error);
             }
+            // ReSharper restore CppCStyleCast
 
             return info;
         }

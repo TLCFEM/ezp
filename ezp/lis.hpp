@@ -72,7 +72,7 @@ struct LIS_VECTOR_STRUCT {
     LIS_INT intvalue;
 };
 
-typedef struct LIS_VECTOR_STRUCT* LIS_VECTOR;
+typedef LIS_VECTOR_STRUCT* LIS_VECTOR;
 
 struct LIS_MATRIX_CORE_STRUCT {
     LIS_INT nnz;
@@ -94,7 +94,7 @@ struct LIS_MATRIX_CORE_STRUCT {
     LIS_SCALAR* work;
 };
 
-typedef struct LIS_MATRIX_CORE_STRUCT* LIS_MATRIX_CORE;
+typedef LIS_MATRIX_CORE_STRUCT* LIS_MATRIX_CORE;
 
 struct LIS_MATRIX_DIAG_STRUCT {
     LIS_INT label;
@@ -124,7 +124,7 @@ struct LIS_MATRIX_DIAG_STRUCT {
     LIS_SCALAR** v_value;
 };
 
-typedef struct LIS_MATRIX_DIAG_STRUCT* LIS_MATRIX_DIAG;
+typedef LIS_MATRIX_DIAG_STRUCT* LIS_MATRIX_DIAG;
 
 struct LIS_COMMTABLE_STRUCT {
     LIS_Comm comm;
@@ -141,13 +141,11 @@ struct LIS_COMMTABLE_STRUCT {
     LIS_INT* export_index;
     LIS_SCALAR* ws;
     LIS_SCALAR* wr;
-#ifdef USE_MPI
     MPI_Request *req1, *req2;
     MPI_Status *sta1, *sta2;
-#endif
 };
 
-typedef struct LIS_COMMTABLE_STRUCT* LIS_COMMTABLE;
+typedef LIS_COMMTABLE_STRUCT* LIS_COMMTABLE;
 
 struct LIS_MATRIX_STRUCT {
     LIS_INT label;
@@ -218,7 +216,7 @@ struct LIS_MATRIX_STRUCT {
     LIS_COMMTABLE commtable;
 };
 
-typedef struct LIS_MATRIX_STRUCT* LIS_MATRIX;
+typedef LIS_MATRIX_STRUCT* LIS_MATRIX;
 
 struct LIS_MATRIX_ILU_STRUCT {
     LIS_INT n;
@@ -231,7 +229,7 @@ struct LIS_MATRIX_ILU_STRUCT {
     LIS_SCALAR*** values;
 };
 
-typedef struct LIS_MATRIX_ILU_STRUCT* LIS_MATRIX_ILU;
+typedef LIS_MATRIX_ILU_STRUCT* LIS_MATRIX_ILU;
 
 struct LIS_PRECON_STRUCT {
     LIS_INT precon_type;
@@ -256,7 +254,7 @@ struct LIS_PRECON_STRUCT {
     LIS_COMMTABLE commtable; /* saamg */
 };
 
-typedef struct LIS_PRECON_STRUCT* LIS_PRECON;
+typedef LIS_PRECON_STRUCT* LIS_PRECON;
 
 struct LIS_SOLVER_STRUCT {
     LIS_MATRIX A, Ah;
@@ -284,7 +282,7 @@ struct LIS_SOLVER_STRUCT {
     LIS_INT setup;
 };
 
-typedef struct LIS_SOLVER_STRUCT* LIS_SOLVER;
+typedef LIS_SOLVER_STRUCT* LIS_SOLVER;
 
 extern "C" {
 LIS_INT lis_finalize(void);
@@ -318,16 +316,16 @@ namespace ezp {
             }
             ~lis_env() { lis_finalize(); }
 
-            auto rank() const { return comm_world.rank(); }
+            [[nodiscard]] auto rank() const { return comm_world.rank(); }
         };
 
-        auto& get_lis_env() {
+        inline auto& get_lis_env() {
             static const lis_env env;
             return env;
         }
 
         class lis_vector final {
-            LIS_VECTOR v;
+            LIS_VECTOR v{};
 
             const bool is_root = 0 == get_lis_env().rank();
 
@@ -339,7 +337,7 @@ namespace ezp {
             }
 
         public:
-            lis_vector(const LIS_INT n) {
+            explicit lis_vector(const LIS_INT n) {
                 lis_vector_create(get_lis_env().comm_world.native_handle(), &v);
                 lis_vector_set_size(v, is_root ? n : 0, 0);
             }
@@ -362,14 +360,14 @@ namespace ezp {
         const detail::lis_env& env = detail::get_lis_env();
         const MPI_Comm comm = env.comm_world.native_handle();
 
-        LIS_SOLVER solver;
-        LIS_MATRIX a_loc;
+        LIS_SOLVER solver{};
+        LIS_MATRIX a_loc{};
 
         const bool is_root = 0 == env.rank();
 
         bool is_set = false;
 
-        auto sync_error(LIS_INT error) {
+        [[nodiscard]] auto sync_error(LIS_INT error) const {
             env.comm_world.allreduce(mpl::min<LIS_INT>(), error);
             return error;
         }
@@ -390,7 +388,7 @@ namespace ezp {
         }
 
     public:
-        lis(const char* setting) {
+        explicit lis(const char* setting) {
             lis_solver_create(&solver);
             lis_solver_set_option(setting, solver);
         }
@@ -412,7 +410,7 @@ namespace ezp {
             return solve(std::move(B));
         }
 
-        LIS_INT solve(full_mat<LIS_SCALAR, LIS_INT>&& B) {
+        LIS_INT solve(full_mat<LIS_SCALAR, LIS_INT>&& B) const {
             if(a_loc->gn != B.n_rows) return -1;
 
             LIS_INT error = 0;
@@ -420,7 +418,7 @@ namespace ezp {
             std::vector<LIS_SCALAR> b_ref;
             if(is_root) {
                 b_ref.resize(B.n_rows * B.n_cols);
-                std::copy(B.data, B.data + b_ref.size(), b_ref.data());
+                std::copy_n(B.data, b_ref.size(), b_ref.data());
             }
 
             auto b_loc = detail::lis_vector(B.n_rows);

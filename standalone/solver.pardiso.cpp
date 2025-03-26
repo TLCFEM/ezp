@@ -79,7 +79,7 @@ template<typename IT> auto prepare() {
     return run<complex8>(config, iparm);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char**) {
     if(!parent.is_valid()) {
         printf("This program must be invoked by the host application.\n");
         return 0;

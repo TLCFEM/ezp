@@ -55,7 +55,7 @@
 #include "solver.full.hpp"
 
 int main(int, char**) {
-    ezp::blacs_env<int>::do_not_manage_mpi();
+    ezp::blacs_env<>::do_not_manage_mpi();
 
     if(!parent.is_valid()) {
         printf("This program must be invoked by the host application.\n");

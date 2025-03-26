@@ -38,7 +38,7 @@ int main() {
     std::vector<int_t> ia, ja;
     std::vector<double> a, b;
 
-    const auto populate = [&]() {
+    const auto populate = [&] {
         if(0 != comm_world.rank()) return;
 
         ia.resize(N);
@@ -60,7 +60,7 @@ int main() {
     // need to wrap the data in sparse_coo_mat objects
     auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
 
-    const auto print = [&]() {
+    const auto print = [&] {
         if(0 != comm_world.rank()) return;
 
         std::cout << std::fixed << std::setprecision(10) << "Info: " << info << '\n';

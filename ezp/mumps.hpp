@@ -167,6 +167,7 @@ namespace ezp {
         IT solve(sparse_coo_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(A.n != B.n_rows) return -1;
 
+            // ReSharper disable CppCStyleCast
             id.nnz = A.nnz;
             id.irn = A.row;
             id.jcn = A.col;
@@ -176,6 +177,7 @@ namespace ezp {
             id.lrhs = B.n_rows;
             id.nrhs = B.n_cols;
             id.rhs = (entry_t*)B.data;
+            // ReSharper restore CppCStyleCast
 
             perform_job(6);
 
@@ -185,9 +187,11 @@ namespace ezp {
         IT solve(full_mat<DT, IT>&& B) {
             if(id.n != B.n_rows) return -1;
 
+            // ReSharper disable CppCStyleCast
             id.lrhs = B.n_rows;
             id.nrhs = B.n_cols;
             id.rhs = (entry_t*)B.data;
+            // ReSharper restore CppCStyleCast
 
             perform_job(3);
 

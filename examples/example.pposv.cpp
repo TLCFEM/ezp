@@ -63,7 +63,7 @@ int main() {
     // acceptable objects shall have members `.n_rows` and `.n_cols`
     // and have any of the following methods `.mem()`, `.memptr()`, `.data()`
     // or contiguous iterators
-    // all of above methods shall return a pointer to the first element
+    // all above methods shall return a pointer to the first element
     mat A(N, N), B(N, NRHS);
 
     if(0 == env.rank()) {
