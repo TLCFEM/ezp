@@ -108,7 +108,7 @@ Include dependency graph for solver.pposv.cpp:</div>
 Functions</h2></td></tr>
 <tr><td colspan="2"><div class="groupHeader"></div></td></tr>
 <tr class="memitem:a2c3f6775325c30275d11c6abee2db6a0" id="r_a2c3f6775325c30275d11c6abee2db6a0"><td class="memItemLeft" align="right" valign="top"><a id="a2c3f6775325c30275d11c6abee2db6a0" name="a2c3f6775325c30275d11c6abee2db6a0"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (int, char **)</td></tr>
+<a class="el" href="../../dc/d7b/classpardiso.html">int</a>&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (<a class="el" href="../../dc/d7b/classpardiso.html">int</a>, <a class="el" href="../../dc/d7b/classpardiso.html">char</a> **)</td></tr>
 <tr class="separator:a2c3f6775325c30275d11c6abee2db6a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -147,81 +147,81 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (int, char **
 <div class="line"><span class="preprocessor">#include &lt;iostream&gt;</span></div>
 <div class="line"><span class="preprocessor">#include &lt;mpl/mpl.hpp&gt;</span></div>
 <div class="line"> </div>
-<div class="line"><span class="keywordtype">int</span> main(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span>** argv) {</div>
-<div class="line">    <span class="keywordflow">if</span>(argc &lt; 2) {</div>
+<div class="line"><span class="keywordtype">int</span> main(<span class="keywordtype">int</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">argc</a>, <span class="keywordtype">char</span>** <a class="code hl_class" href="../../dc/d7b/classpardiso.html">argv</a>) {</div>
+<div class="line">    <span class="keywordflow">if</span>(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">argc</a> &lt; 2) {</div>
 <div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Usage: runner ge|gex|po|pox|gb|db|pb [n]\n&quot;</span>;</div>
 <div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Example: runner ge 3\n&quot;</span>;</div>
 <div class="line">        <span class="keywordflow">return</span> 0;</div>
 <div class="line">    }</div>
 <div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> N = 6, NRHS = 1;</div>
 <div class="line"> </div>
-<div class="line">    std::vector&lt;double&gt; A, B(N * NRHS, 1.);</div>
-<div class="line">    std::vector&lt;int&gt; config;</div>
+<div class="line">    std::vector&lt;double&gt; A, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>(N * NRHS, 1.);</div>
+<div class="line">    std::vector&lt;int&gt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">config</a>;</div>
 <div class="line"> </div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> type = std::string(argv[1]);</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> type = std::string(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">argv</a>[1]);</div>
 <div class="line">    std::string solver;</div>
 <div class="line"> </div>
 <div class="line">    <span class="keywordflow">if</span>(<span class="stringliteral">&quot;ge&quot;</span> == type) {</div>
 <div class="line">        solver = <span class="stringliteral">&quot;solver.pgesv&quot;</span>;</div>
 <div class="line"> </div>
-<div class="line">        config = {N, NRHS, 1};</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">config</a> = {N, NRHS, 1};</div>
 <div class="line"> </div>
 <div class="line">        A.resize(N * N, 0.);</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[I * N + I] = I + 1.;</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> = 0; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> &lt; N; ++<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>) A[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> * N + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>] = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> + 1.;</div>
 <div class="line">    }</div>
 <div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;gex&quot;</span> == type) {</div>
 <div class="line">        solver = <span class="stringliteral">&quot;solver.pgesvx&quot;</span>;</div>
 <div class="line"> </div>
-<div class="line">        config = {N, NRHS, 1};</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">config</a> = {N, NRHS, 1};</div>
 <div class="line"> </div>
 <div class="line">        A.resize(N * N, 0.);</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[I * N + I] = I + 1.;</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> = 0; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> &lt; N; ++<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>) A[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> * N + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>] = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> + 1.;</div>
 <div class="line">    }</div>
 <div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;po&quot;</span> == type) {</div>
 <div class="line">        solver = <span class="stringliteral">&quot;solver.pposv&quot;</span>;</div>
 <div class="line"> </div>
-<div class="line">        config = {N, NRHS, 1};</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">config</a> = {N, NRHS, 1};</div>
 <div class="line"> </div>
 <div class="line">        A.resize(N * N, 0.);</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[I * N + I] = I + 1.;</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> = 0; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> &lt; N; ++<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>) A[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> * N + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>] = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> + 1.;</div>
 <div class="line">    }</div>
 <div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;pox&quot;</span> == type) {</div>
 <div class="line">        solver = <span class="stringliteral">&quot;solver.pposvx&quot;</span>;</div>
 <div class="line"> </div>
-<div class="line">        config = {N, NRHS, 1};</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">config</a> = {N, NRHS, 1};</div>
 <div class="line"> </div>
 <div class="line">        A.resize(N * N, 0.);</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[I * N + I] = I + 1.;</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> = 0; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> &lt; N; ++<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>) A[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> * N + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>] = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> + 1.;</div>
 <div class="line">    }</div>
 <div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;gb&quot;</span> == type) {</div>
 <div class="line">        solver = <span class="stringliteral">&quot;solver.pgbsv&quot;</span>;</div>
 <div class="line"> </div>
-<div class="line">        <span class="keyword">constexpr</span> <span class="keyword">auto</span> KL = 1, KU = 1;</div>
+<div class="line">        <span class="keyword">constexpr</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> = 1, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> = 1;</div>
 <div class="line"> </div>
-<div class="line">        config = {N, KL, KU, NRHS, 1};</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">config</a> = {N, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a>, NRHS, 1};</div>
 <div class="line"> </div>
-<div class="line">        A.resize(N * (KL + KU + 1), 0.);</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[KU + I * (KL + KU + 1)] = I + 1.;</div>
+<div class="line">        A.resize(N * (<a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> + 1), 0.);</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> = 0; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> &lt; N; ++<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>) A[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> * (<a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> + 1)] = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> + 1.;</div>
 <div class="line">    }</div>
 <div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;db&quot;</span> == type) {</div>
 <div class="line">        solver = <span class="stringliteral">&quot;solver.pdbsv&quot;</span>;</div>
 <div class="line"> </div>
-<div class="line">        <span class="keyword">constexpr</span> <span class="keyword">auto</span> KL = 1, KU = 1;</div>
+<div class="line">        <span class="keyword">constexpr</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> = 1, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> = 1;</div>
 <div class="line"> </div>
-<div class="line">        config = {N, KL, KU, NRHS, 1};</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">config</a> = {N, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a>, NRHS, 1};</div>
 <div class="line"> </div>
-<div class="line">        A.resize(N * (KL + KU + 1), 0.);</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[KU + I * (KL + KU + 1)] = I + 1.;</div>
+<div class="line">        A.resize(N * (<a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> + 1), 0.);</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> = 0; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> &lt; N; ++<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>) A[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> * (<a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> + 1)] = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> + 1.;</div>
 <div class="line">    }</div>
 <div class="line">    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="stringliteral">&quot;pb&quot;</span> == type) {</div>
 <div class="line">        solver = <span class="stringliteral">&quot;solver.ppbsv&quot;</span>;</div>
 <div class="line"> </div>
-<div class="line">        <span class="keyword">constexpr</span> <span class="keyword">auto</span> KLU = 1;</div>
+<div class="line">        <span class="keyword">constexpr</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KLU</a> = 1;</div>
 <div class="line"> </div>
-<div class="line">        config = {N, KLU, NRHS, 1};</div>
+<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">config</a> = {N, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KLU</a>, NRHS, 1};</div>
 <div class="line"> </div>
-<div class="line">        A.resize(N * (KLU + 1), 0.);</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[I + I * KLU] = I + 1.;</div>
+<div class="line">        A.resize(N * (<a class="code hl_class" href="../../dc/d7b/classpardiso.html">KLU</a> + 1), 0.);</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> = 0; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> &lt; N; ++<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>) A[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> * <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KLU</a>] = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> + 1.;</div>
 <div class="line">    }</div>
 <div class="line">    <span class="keywordflow">else</span> {</div>
 <div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Usage: runner ge|gex|po|pox|gb|db|pb [n]\n&quot;</span>;</div>
@@ -229,27 +229,28 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (int, char **
 <div class="line">    }</div>
 <div class="line"> </div>
 <div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; comm_world{mpl::environment::comm_world()};</div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> worker = comm_world.spawn(0, argc &lt; 3 ? 1 : std::abs(std::stoi(argv[2])), {solver});</div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> all = mpl::communicator(worker, mpl::communicator::order_low);</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">worker</a> = comm_world.spawn(0, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">argc</a> &lt; 3 ? 1 : <a class="code hl_class" href="../../dc/d7b/classpardiso.html">std</a>::<a class="code hl_class" href="../../dc/d7b/classpardiso.html">abs</a>(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">std</a>::<a class="code hl_class" href="../../dc/d7b/classpardiso.html">stoi</a>(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">argv</a>[2])), {solver});</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">all</a> = mpl::communicator(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">worker</a>, mpl::communicator::order_low);</div>
 <div class="line"> </div>
-<div class="line">    all.bcast(0, config.data(), mpl::contiguous_layout&lt;int&gt;(config.size()));</div>
+<div class="line">    <a class="code hl_class" href="../../dc/d7b/classpardiso.html">all</a>.bcast(0, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">config</a>.data(), mpl::contiguous_layout&lt;int&gt;(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">config</a>.size()));</div>
 <div class="line"> </div>
-<div class="line">    mpl::irequest_pool requests;</div>
+<div class="line">    mpl::irequest_pool <a class="code hl_class" href="../../dc/d7b/classpardiso.html">requests</a>;</div>
 <div class="line"> </div>
-<div class="line">    requests.push(worker.isend(A, 0, mpl::tag_t{0}));</div>
-<div class="line">    requests.push(worker.isend(B, 0, mpl::tag_t{1}));</div>
+<div class="line">    <a class="code hl_class" href="../../dc/d7b/classpardiso.html">requests</a>.push(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">worker</a>.isend(A, 0, mpl::tag_t{0}));</div>
+<div class="line">    <a class="code hl_class" href="../../dc/d7b/classpardiso.html">requests</a>.push(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">worker</a>.isend(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>, 0, mpl::tag_t{1}));</div>
 <div class="line"> </div>
-<div class="line">    requests.waitall();</div>
+<div class="line">    <a class="code hl_class" href="../../dc/d7b/classpardiso.html">requests</a>.waitall();</div>
 <div class="line"> </div>
-<div class="line">    <span class="keywordtype">int</span> error = -1;</div>
-<div class="line">    worker.recv(error, 0);</div>
-<div class="line">    <span class="keywordflow">if</span>(0 == error) worker.recv(B, 0);</div>
+<div class="line">    <span class="keywordtype">int</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">error</a> = -1;</div>
+<div class="line">    <a class="code hl_class" href="../../dc/d7b/classpardiso.html">worker</a>.recv(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">error</a>, 0);</div>
+<div class="line">    <span class="keywordflow">if</span>(0 == <a class="code hl_class" href="../../dc/d7b/classpardiso.html">error</a>) <a class="code hl_class" href="../../dc/d7b/classpardiso.html">worker</a>.recv(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>, 0);</div>
 <div class="line"> </div>
-<div class="line">    <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) printf(<span class="stringliteral">&quot;x[%d] = %+.6f\n&quot;</span>, I, B[I]);</div>
+<div class="line">    <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> = 0; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> &lt; N; ++<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>) <a class="code hl_class" href="../../dc/d7b/classpardiso.html">printf</a>(<span class="stringliteral">&quot;x[%d] = %+.6f\n&quot;</span>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>]);</div>
 <div class="line"> </div>
 <div class="line">    <span class="keywordflow">return</span> 0;</div>
 <div class="line">}</div>
 <div class="line"> </div>
+<div class="ttc" id="aclasspardiso_html"><div class="ttname"><a href="../../dc/d7b/classpardiso.html">pardiso</a></div><div class="ttdoc">Solver for general sparse matrices.</div></div>
 </div><!-- fragment --><dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>07/03/2025 </dd></dl>
 <dl class="section version"><dt>Version</dt><dd>1.0.0 </dd></dl>
