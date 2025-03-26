@@ -20,6 +20,8 @@
 #include <random>
 #include <thread>
 
+#ifdef EZP_MKL
+
 using namespace ezp;
 using namespace std::chrono;
 
@@ -127,4 +129,6 @@ int main(const int argc, const char* argv[]) {
 
     return 0;
 }
+#endif
+
 #endif

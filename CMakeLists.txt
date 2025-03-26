@@ -122,11 +122,6 @@ if (EZP_ASAN)
     add_link_options(-fsanitize=address)
 endif ()
 
-option(EZP_TEST "Enable testing." OFF)
-if (EZP_TEST)
-    add_compile_definitions(EZP_ENABLE_TEST)
-endif ()
-
 add_subdirectory(external/mumps)
 link_libraries(mumps)
 
@@ -140,8 +135,10 @@ foreach (EXAMPLE ${EXAMPLES})
 endforeach ()
 
 file(GLOB EXAMPLES "tests/*.cpp")
+option(EZP_TEST "Enable testing." OFF)
 if (EZP_TEST)
     add_executable(catch2 ${EXAMPLES} include/catch2/catchy.cpp)
+    target_compile_definitions(catch2 PRIVATE EZP_ENABLE_TEST)
 else ()
     foreach (EXAMPLE ${EXAMPLES})
         get_filename_component(EXAMPLE_NAME ${EXAMPLE} NAME_WLE)
