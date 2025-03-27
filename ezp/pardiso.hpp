@@ -129,7 +129,7 @@ namespace ezp {
 
             if(0 == iparm[0] || 0 == iparm[5]) {
                 // b unchanged, x has solution
-                if(0 == comm_world.rank()) std::copy(B.data, B.data + b_ref.size(), b_ref.data());
+                if(0 == comm_world.rank()) std::copy_n(B.data, b_ref.size(), b_ref.data());
                 b_ptr = b_ref.data();
                 x_ptr = B.data;
             }
