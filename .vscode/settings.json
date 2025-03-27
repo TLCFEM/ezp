@@ -81,7 +81,8 @@
         "typeinfo": "cpp",
         "ezp": "cpp",
         "future": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "xstring": "cpp"
     },
     "cSpell.words": [
         "blacs",
