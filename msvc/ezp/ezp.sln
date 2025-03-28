@@ -7,6 +7,18 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pardiso", "pardiso\pardiso.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gesv", "gesv\gesv.vcxproj", "{D65A80D3-0DF5-4FAC-8FC2-7188C1EFDE86}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dbsv", "dbsv\dbsv.vcxproj", "{EB0F4312-1DC6-4EE4-97A2-6126D3B9C05F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gbsv", "gbsv\gbsv.vcxproj", "{341AAD07-605D-4E99-98DD-069FFFBC5D34}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gesvx", "gesvx\gesvx.vcxproj", "{273E3CA9-EBA2-401B-92A3-05C227936D08}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pbsv", "pbsv\pbsv.vcxproj", "{0CC2FB36-4A13-4F01-A402-60DF67059394}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "posv", "posv\posv.vcxproj", "{212ED3B9-1420-4BD1-BCCC-9098C67649F3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "posvx", "posvx\posvx.vcxproj", "{6FE029F6-107A-493E-8F59-1708AD7026F2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +33,30 @@ Global
 		{D65A80D3-0DF5-4FAC-8FC2-7188C1EFDE86}.Debug|x64.Build.0 = Debug|x64
 		{D65A80D3-0DF5-4FAC-8FC2-7188C1EFDE86}.Release|x64.ActiveCfg = Release|x64
 		{D65A80D3-0DF5-4FAC-8FC2-7188C1EFDE86}.Release|x64.Build.0 = Release|x64
+		{EB0F4312-1DC6-4EE4-97A2-6126D3B9C05F}.Debug|x64.ActiveCfg = Debug|x64
+		{EB0F4312-1DC6-4EE4-97A2-6126D3B9C05F}.Debug|x64.Build.0 = Debug|x64
+		{EB0F4312-1DC6-4EE4-97A2-6126D3B9C05F}.Release|x64.ActiveCfg = Release|x64
+		{EB0F4312-1DC6-4EE4-97A2-6126D3B9C05F}.Release|x64.Build.0 = Release|x64
+		{341AAD07-605D-4E99-98DD-069FFFBC5D34}.Debug|x64.ActiveCfg = Debug|x64
+		{341AAD07-605D-4E99-98DD-069FFFBC5D34}.Debug|x64.Build.0 = Debug|x64
+		{341AAD07-605D-4E99-98DD-069FFFBC5D34}.Release|x64.ActiveCfg = Release|x64
+		{341AAD07-605D-4E99-98DD-069FFFBC5D34}.Release|x64.Build.0 = Release|x64
+		{273E3CA9-EBA2-401B-92A3-05C227936D08}.Debug|x64.ActiveCfg = Debug|x64
+		{273E3CA9-EBA2-401B-92A3-05C227936D08}.Debug|x64.Build.0 = Debug|x64
+		{273E3CA9-EBA2-401B-92A3-05C227936D08}.Release|x64.ActiveCfg = Release|x64
+		{273E3CA9-EBA2-401B-92A3-05C227936D08}.Release|x64.Build.0 = Release|x64
+		{0CC2FB36-4A13-4F01-A402-60DF67059394}.Debug|x64.ActiveCfg = Debug|x64
+		{0CC2FB36-4A13-4F01-A402-60DF67059394}.Debug|x64.Build.0 = Debug|x64
+		{0CC2FB36-4A13-4F01-A402-60DF67059394}.Release|x64.ActiveCfg = Release|x64
+		{0CC2FB36-4A13-4F01-A402-60DF67059394}.Release|x64.Build.0 = Release|x64
+		{212ED3B9-1420-4BD1-BCCC-9098C67649F3}.Debug|x64.ActiveCfg = Debug|x64
+		{212ED3B9-1420-4BD1-BCCC-9098C67649F3}.Debug|x64.Build.0 = Debug|x64
+		{212ED3B9-1420-4BD1-BCCC-9098C67649F3}.Release|x64.ActiveCfg = Release|x64
+		{212ED3B9-1420-4BD1-BCCC-9098C67649F3}.Release|x64.Build.0 = Release|x64
+		{6FE029F6-107A-493E-8F59-1708AD7026F2}.Debug|x64.ActiveCfg = Debug|x64
+		{6FE029F6-107A-493E-8F59-1708AD7026F2}.Debug|x64.Build.0 = Debug|x64
+		{6FE029F6-107A-493E-8F59-1708AD7026F2}.Release|x64.ActiveCfg = Release|x64
+		{6FE029F6-107A-493E-8F59-1708AD7026F2}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
