@@ -16,6 +16,15 @@ elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpp")
 endif ()
 
+if (EZP_USE_64BIT_INT)
+    add_compile_definitions(MUMPS_INTSIZE64)
+    if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-integer-8")
+    elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -integer-size 64")
+    endif ()
+endif ()
+
 file(GLOB mumps_f "*.F")
 file(GLOB mumps_c "*.c")
 
