@@ -140,9 +140,9 @@ $(document).ready(function(){initNavTree('db/db1/classpposv.html','../../'); ini
 <div class="line"> </div>
 <div class="line">    <span class="keyword">auto</span> init() { storage.resize(n_rows * n_cols); }</div>
 <div class="line"> </div>
-<div class="line">    <span class="keyword">auto</span>&amp; operator()(<span class="keyword">const</span> int_t <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>, <span class="keyword">const</span> int_t <a class="code hl_class" href="../../dc/d7b/classpardiso.html">j</a>) { <span class="keywordflow">return</span> storage[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">j</a> * n_cols]; }</div>
+<div class="line">    <span class="keyword">auto</span>&amp; operator()(<span class="keyword">const</span> int_t i, <span class="keyword">const</span> int_t j) { <span class="keywordflow">return</span> storage[i + j * n_cols]; }</div>
 <div class="line"> </div>
-<div class="line">    <span class="keyword">auto</span>&amp; operator[](<span class="keyword">const</span> int_t <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>) { <span class="keywordflow">return</span> storage[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>]; }</div>
+<div class="line">    <span class="keyword">auto</span>&amp; operator[](<span class="keyword">const</span> int_t i) { <span class="keywordflow">return</span> storage[i]; }</div>
 <div class="line"> </div>
 <div class="line">    <span class="keyword">auto</span> begin() { <span class="keywordflow">return</span> storage.begin(); }</div>
 <div class="line"> </div>
@@ -151,7 +151,7 @@ $(document).ready(function(){initNavTree('db/db1/classpposv.html','../../'); ini
 <div class="line"> </div>
 <div class="line"><span class="keywordtype">int</span> main() {</div>
 <div class="line">    <span class="comment">// get the current blacs environment</span></div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; env = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">get_env&lt;int_t&gt;</a>();</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; env = get_env&lt;int_t&gt;();</div>
 <div class="line"> </div>
 <div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> N = 6, NRHS = 2;</div>
 <div class="line"> </div>
@@ -160,34 +160,34 @@ $(document).ready(function(){initNavTree('db/db1/classpposv.html','../../'); ini
 <div class="line">    <span class="comment">// and have any of the following methods `.mem()`, `.memptr()`, `.data()`</span></div>
 <div class="line">    <span class="comment">// or contiguous iterators</span></div>
 <div class="line">    <span class="comment">// all above methods shall return a pointer to the first element</span></div>
-<div class="line">    <a class="code hl_class" href="../../d0/d36/classmat.html">mat</a> A(N, N), <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>(N, NRHS);</div>
+<div class="line">    <a class="code hl_class" href="../../d0/d36/classmat.html">mat</a> A(N, N), B(N, NRHS);</div>
 <div class="line"> </div>
 <div class="line">    <span class="keywordflow">if</span>(0 == env.rank()) {</div>
 <div class="line">        <span class="comment">// the matrices are only initialized on the root process</span></div>
 <div class="line">        A.init();</div>
-<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>.init();</div>
+<div class="line">        B.init();</div>
 <div class="line"> </div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> = 0; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> &lt; N; ++<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>) {</div>
-<div class="line">            <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>] = A(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>) = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> + 1;</div>
-<div class="line">            <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> + N] = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> + 4;</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) {</div>
+<div class="line">            B[I] = A(I, I) = I + 1;</div>
+<div class="line">            B[I + N] = I + 4;</div>
 <div class="line">        }</div>
 <div class="line">    }</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// create a parallel solver</span></div>
 <div class="line">    <span class="comment">// and send custom matrix objects to the solver</span></div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> info = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">par_dposv&lt;int_t&gt;</a>().solve(A, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>);</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> info = <a class="code hl_class" href="../../de/d12/classezp_1_1pposv.html">par_dposv&lt;int_t&gt;</a>().solve(A, B);</div>
 <div class="line"> </div>
 <div class="line">    <span class="keywordflow">if</span>(0 == env.rank() &amp;&amp; 0 == info) {</div>
 <div class="line">        std::cout &lt;&lt; std::setprecision(10) &lt;&lt; <span class="stringliteral">&quot;Info: &quot;</span> &lt;&lt; info &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
 <div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Solution:\n&quot;</span>;</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> : <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>) <a class="code hl_class" href="../../dc/d7b/classpardiso.html">std</a>::<a class="code hl_class" href="../../dc/d7b/classpardiso.html">cout</a> &lt;&lt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> &lt;&lt; <span class="stringliteral">&#39;\n&#39;</span>;</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keyword">auto</span> i : B) std::cout &lt;&lt; i &lt;&lt; <span class="stringliteral">&#39;\n&#39;</span>;</div>
 <div class="line">    }</div>
 <div class="line"> </div>
 <div class="line">    <span class="keywordflow">return</span> info;</div>
 <div class="line">}</div>
 <div class="line"> </div>
+<div class="ttc" id="aclassezp_1_1pposv_html"><div class="ttname"><a href="../../de/d12/classezp_1_1pposv.html">ezp::pposv</a></div><div class="ttdef"><b>Definition</b> pposv.hpp:43</div></div>
 <div class="ttc" id="aclassmat_html"><div class="ttname"><a href="../../d0/d36/classmat.html">mat</a></div><div class="ttdef"><b>Definition</b> example.pposv.cpp:33</div></div>
-<div class="ttc" id="aclasspardiso_html"><div class="ttname"><a href="../../dc/d7b/classpardiso.html">pardiso</a></div><div class="ttdoc">Solver for general sparse matrices.</div></div>
 <div class="ttc" id="apposv_8hpp_html"><div class="ttname"><a href="../../d4/d53/pposv_8hpp.html">pposv.hpp</a></div></div>
 </div><!-- fragment --><dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>07/03/2025 </dd></dl>
