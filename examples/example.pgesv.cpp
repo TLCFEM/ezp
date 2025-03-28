@@ -34,7 +34,7 @@ int main() {
     // get the current blacs environment
     const auto& env = get_env<int_t>();
 
-    constexpr auto N = 6, NRHS = 2;
+    constexpr auto N = 600, NRHS = 2;
 
     // storage for the matrices A and B
     std::vector<double> A, B;
@@ -47,28 +47,12 @@ int main() {
         A.resize(N * N, 0.);
         B.resize(N * NRHS);
 
-        A[IDX(0, 0)] = 1.;
-        A[IDX(1, 1)] = 2.;
-        A[IDX(2, 2)] = 3.;
-        A[IDX(3, 3)] = 4.;
-        A[IDX(4, 4)] = 5.;
-        A[IDX(5, 5)] = 6.;
-
-        B[0] = 1.;
-        B[1] = 2.;
-        B[2] = 3.;
-        B[3] = 4.;
-        B[4] = 5.;
-        B[5] = 6.;
-
         static constexpr auto M = 5.10156648;
 
-        B[6] = 1. * M;
-        B[7] = 2. * M;
-        B[8] = 3. * M;
-        B[9] = 4. * M;
-        B[10] = 5. * M;
-        B[11] = 6. * M;
+        for(auto I = 0; I < N; ++I) {
+            B[I] = A[IDX(I, I)] = I + 1;
+            B[I + N] = (I + 1) * M;
+        }
     }
 
     // create a parallel solver
