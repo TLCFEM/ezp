@@ -108,7 +108,7 @@ It has to be pointed out that, the ***column-major*** memory layout shall be kep
 
 ```py title="runner.py" hl_lines="15 25 31 35 37 38"
 --8<--
-./standalone/runner.py:16
+./standalone/runner.py:35
 --8<--
 ```
 
