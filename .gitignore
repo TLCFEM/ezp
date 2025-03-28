@@ -1,9 +1,9 @@
 .idea/
 .venv/
+.vs/
 .vscode/
 build/
 cmake-build-*/
 docs/README.md
 doxygen/
-.vs/
 x64/
