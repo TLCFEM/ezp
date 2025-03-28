@@ -117,10 +117,8 @@ namespace ezp {
 
             iparm[39] = 0; // force centralised input/output
 
-            if constexpr(std::is_same_v<DT, double>) iparm[27] = 0;
-            else if constexpr(std::is_same_v<DT, float>) iparm[27] = 1;
-            else if constexpr(std::is_same_v<DT, complex16>) iparm[27] = 0;
-            else if constexpr(std::is_same_v<DT, complex8>) iparm[27] = 1;
+            if constexpr(std::is_same_v<DT, double> || std::is_same_v<DT, complex16>) iparm[27] = 0;
+            else if constexpr(std::is_same_v<DT, float> || std::is_same_v<DT, complex8>) iparm[27] = 1;
 
             std::vector<DT> b_ref;
             if(0 == comm_world.rank()) b_ref.resize(B.n_rows * B.n_cols);

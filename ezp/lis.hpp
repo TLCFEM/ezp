@@ -367,11 +367,11 @@ namespace ezp {
             }
 
         public:
-            lis_matrix() {}
+            lis_matrix() = default;
 
             ~lis_matrix() { unset(); }
 
-            auto get() const { return a_mat; }
+            [[nodiscard]] auto get() const { return a_mat; }
 
             auto set(const sparse_csr_mat<LIS_SCALAR, LIS_INT>& A) {
                 unset();
@@ -441,8 +441,8 @@ namespace ezp {
             auto b_loc = detail::lis_vector(B.n_rows);
             auto x_loc = detail::lis_vector(B.n_rows);
 
-            for(auto I = 0, J = 0; I < B.n_cols; ++I, J += B.n_rows) {
-                error = solver.solve(a_loc.get(), b_loc.set(b_ref.data() + J), x_loc.set(B.data + J));
+            for(decltype(B.n_rows) I = 0; I < B.n_rows * B.n_cols; I += B.n_rows) {
+                error = solver.solve(a_loc.get(), b_loc.set(b_ref.data() + I), x_loc.set(B.data + I));
 
                 if(0 != error) break;
             }

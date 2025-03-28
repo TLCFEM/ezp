@@ -54,7 +54,7 @@
 
 namespace ezp {
     namespace detail {
-        template<typename DT> struct mumps_struc {};
+        template<typename> struct mumps_struc {};
         template<> struct mumps_struc<double> {
             using struct_type = DMUMPS_STRUC_C;
             using entry_type = double;

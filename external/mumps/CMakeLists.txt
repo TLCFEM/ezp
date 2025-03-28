@@ -17,7 +17,7 @@ elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
 endif ()
 
 if (EZP_USE_64BIT_INT)
-    add_compile_definitions(MUMPS_INTSIZE64)
+    add_compile_definitions(MUMPS_INTSIZE64 PORD_INTSIZE64)
     if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
         set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-integer-8")
     elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
