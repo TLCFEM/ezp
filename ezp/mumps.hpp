@@ -168,12 +168,12 @@ namespace ezp {
             if(A.n != B.n_rows) return -1;
 
             // ReSharper disable CppCStyleCast
+            id.n = A.n;
             id.nnz = A.nnz;
             id.irn = A.row;
             id.jcn = A.col;
             id.a = (entry_t*)A.data;
 
-            id.n = A.n;
             id.lrhs = B.n_rows;
             id.nrhs = B.n_cols;
             id.rhs = (entry_t*)B.data;
