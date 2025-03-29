@@ -44,7 +44,7 @@
 #include <mpl/mpl.hpp>
 
 namespace ezp {
-    enum matrix_type : int {
+    enum matrix_type : std::int8_t {
         real_and_symmetric_positive_definite = 2,
         real_and_symmetric_indefinite = -2,
         real_and_structurally_symmetric = 1,
@@ -56,25 +56,25 @@ namespace ezp {
         complex_and_nonsymmetric = 13
     };
 
-    enum message_level : int {
+    enum message_level : std::int8_t {
         no_output = 0,
         print_statistical_information = 1
     };
 
     template<data_t DT, index_t IT> class pardiso final {
-        const mpl::communicator& comm_world{mpl::environment::comm_world()};
-
-        const int comm = MPI_Comm_c2f(comm_world.native_handle());
-
         static constexpr IT one{1}, negone{-1}, PARDISO_ANA_FACT{12}, PARDISO_SOLVE{33}, PARDISO_RELEASE{-1};
-
-        const IT mtype, msglvl;
-
-        sparse_csr_mat<DT, IT> a_mat;
 
         std::int64_t pt[64]{};
 
         IT iparm[64]{};
+
+        sparse_csr_mat<DT, IT> a_mat{};
+
+        const mpl::communicator& comm_world{mpl::environment::comm_world()};
+
+        const int comm = MPI_Comm_c2f(comm_world.native_handle());
+
+        const IT mtype, msglvl;
 
         bool is_allocated{false};
 
@@ -104,7 +104,7 @@ namespace ezp {
 
     public:
         explicit pardiso(const IT mtype, const IT msglvl = 0)
-            : pardiso(matrix_type{static_cast<int>(mtype)}, message_level{static_cast<int>(msglvl)}) {};
+            : pardiso(matrix_type{static_cast<std::int8_t>(mtype)}, message_level{static_cast<std::int8_t>(msglvl)}) {};
 
         explicit pardiso(const matrix_type mtype, const message_level msglvl = message_level::no_output)
             : mtype(mtype)
