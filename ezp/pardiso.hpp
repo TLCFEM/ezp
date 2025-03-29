@@ -66,13 +66,36 @@ namespace ezp {
 
         const int comm = MPI_Comm_c2f(comm_world.native_handle());
 
-        static constexpr IT one{1};
+        static constexpr IT one{1}, negone{-1}, PARDISO_ANA_FACT{12}, PARDISO_SOLVE{33}, PARDISO_RELEASE{-1};
 
         const IT mtype, msglvl;
+
+        sparse_csr_mat<DT, IT> a_mat;
 
         std::int64_t pt[64]{};
 
         IT iparm[64]{};
+
+        bool is_allocated{false};
+
+        auto alloc(sparse_csr_mat<DT, IT>&& A) {
+            dealloc();
+            is_allocated = true;
+            a_mat = std::move(A);
+            IT error{-1};
+            if constexpr(sizeof(IT) == 4) cluster_sparse_solver(pt, &one, &one, &mtype, &PARDISO_ANA_FACT, &a_mat.n, a_mat.data, a_mat.row_ptr, a_mat.col_idx, nullptr, &negone, iparm, &msglvl, nullptr, nullptr, &comm, &error);
+            else if constexpr(sizeof(IT) == 8) cluster_sparse_solver_64(pt, &one, &one, &mtype, &PARDISO_ANA_FACT, &a_mat.n, a_mat.data, a_mat.row_ptr, a_mat.col_idx, nullptr, &negone, iparm, &msglvl, nullptr, nullptr, &comm, &error);
+            return sync_error(error);
+        }
+
+        auto dealloc() {
+            if(!is_allocated) return;
+            is_allocated = false;
+            IT error;
+            if constexpr(sizeof(IT) == 4) cluster_sparse_solver(pt, &one, &one, &mtype, &PARDISO_RELEASE, &negone, nullptr, nullptr, nullptr, nullptr, &negone, iparm, &msglvl, nullptr, nullptr, &comm, &error);
+            else if constexpr(sizeof(IT) == 8) cluster_sparse_solver_64(pt, &one, &one, &mtype, &PARDISO_RELEASE, &negone, nullptr, nullptr, nullptr, nullptr, &negone, iparm, &msglvl, nullptr, nullptr, &comm, &error);
+            for(auto& i : pt) i = 0;
+        }
 
         auto sync_error(IT error) {
             comm_world.allreduce(mpl::min<IT>(), error);
@@ -86,6 +109,8 @@ namespace ezp {
         explicit pardiso(const matrix_type mtype, const message_level msglvl = message_level::no_output)
             : mtype(mtype)
             , msglvl(msglvl) {};
+
+        ~pardiso() { dealloc(); }
 
         auto& operator()(const IT index) { return iparm[index]; }
 
@@ -115,10 +140,19 @@ namespace ezp {
 
             if(A.n != B.n_rows) return -1;
 
+            error = sync_error(alloc(std::move(A)));
+            if(error < 0) return error;
+
             iparm[39] = 0; // force centralised input/output
 
             if constexpr(std::is_same_v<DT, double> || std::is_same_v<DT, complex16>) iparm[27] = 0;
             else if constexpr(std::is_same_v<DT, float> || std::is_same_v<DT, complex8>) iparm[27] = 1;
+
+            return solve(std::move(B));
+        }
+
+        IT solve(full_mat<DT, IT>&& B) {
+            if(a_mat.n != B.n_rows) return -1;
 
             std::vector<DT> b_ref;
             if(0 == comm_world.rank()) b_ref.resize(B.n_rows * B.n_cols);
@@ -137,33 +171,11 @@ namespace ezp {
                 x_ptr = b_ref.data();
             }
 
-            IT phase = 13;
-            // ReSharper disable CppCStyleCast
-            if constexpr(sizeof(IT) == 4) {
-                using E = std::int32_t;
-                cluster_sparse_solver(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, A.data, (E*)A.row_ptr, (E*)A.col_idx, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, b_ptr, x_ptr, &comm, (E*)&error);
-            }
-            else if constexpr(sizeof(IT) == 8) {
-                using E = std::int64_t;
-                cluster_sparse_solver_64(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, A.data, (E*)A.row_ptr, (E*)A.col_idx, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, b_ptr, x_ptr, &comm, (E*)&error);
-            }
-            // ReSharper restore CppCStyleCast
+            IT error{-1};
+            if constexpr(sizeof(IT) == 4) cluster_sparse_solver(pt, &one, &one, &mtype, &PARDISO_SOLVE, &a_mat.n, a_mat.data, a_mat.row_ptr, a_mat.col_idx, nullptr, &B.n_cols, iparm, &msglvl, b_ptr, x_ptr, &comm, &error);
+            else if constexpr(sizeof(IT) == 8) cluster_sparse_solver_64(pt, &one, &one, &mtype, &PARDISO_SOLVE, &a_mat.n, a_mat.data, a_mat.row_ptr, a_mat.col_idx, nullptr, &B.n_cols, iparm, &msglvl, b_ptr, x_ptr, &comm, &error);
 
-            const auto info = sync_error(error);
-
-            phase = -1;
-            // ReSharper disable CppCStyleCast
-            if constexpr(sizeof(IT) == 4) {
-                using E = std::int32_t;
-                cluster_sparse_solver(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, nullptr, (E*)A.row_ptr, (E*)A.col_idx, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, nullptr, nullptr, &comm, (E*)&error);
-            }
-            else if constexpr(sizeof(IT) == 8) {
-                using E = std::int64_t;
-                cluster_sparse_solver_64(pt, (E*)&one, (E*)&one, (E*)&mtype, (E*)&phase, (E*)&A.n, nullptr, (E*)A.row_ptr, (E*)A.col_idx, nullptr, (E*)&B.n_cols, (E*)iparm, (E*)&msglvl, nullptr, nullptr, &comm, (E*)&error);
-            }
-            // ReSharper restore CppCStyleCast
-
-            return info;
+            return sync_error(error);
         }
     };
 } // namespace ezp

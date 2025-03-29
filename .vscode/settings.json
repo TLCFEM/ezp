@@ -9,5 +9,14 @@
     "cSpell.words": [
         "blacs",
         "numroc"
-    ]
+    ],
+    "files.associations": {
+        "vector": "cpp",
+        "exception": "cpp",
+        "iterator": "cpp",
+        "istream": "cpp",
+        "ostream": "cpp",
+        "utility": "cpp",
+        "type_traits": "cpp"
+    }
 }

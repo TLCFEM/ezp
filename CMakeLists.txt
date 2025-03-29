@@ -117,8 +117,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif ()
 
 if (EZP_ASAN)
-    add_compile_options(-fsanitize=address)
-    add_link_options(-fsanitize=address)
+    add_compile_options(-fsanitize=address,leak,undefined -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address,leak,undefined -fno-omit-frame-pointer)
 endif ()
 
 add_subdirectory(external/mumps)

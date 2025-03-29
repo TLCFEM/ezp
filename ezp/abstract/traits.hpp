@@ -112,6 +112,8 @@ namespace ezp {
         IT *row_ptr, *col_idx;
         DT* data;
 
+        sparse_csr_mat() = default;
+
         sparse_csr_mat(const IT n, const IT nnz, IT* const row_ptr, IT* const col_idx, DT* const data)
             : n(n)
             , nnz(nnz)
