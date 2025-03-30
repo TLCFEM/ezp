@@ -114,8 +114,7 @@ void random_cpardiso() {
     random_pardiso<complex8>();
 }
 
-#ifdef EZP_ENABLE_TEST
-#else
+#ifndef EZP_ENABLE_TEST
 int main(const int argc, const char* argv[]) {
     volatile int i = 0;
     if(argc <= 1)
@@ -130,5 +129,6 @@ int main(const int argc, const char* argv[]) {
     return 0;
 }
 #endif
-
+#elif !defined(EZP_ENABLE_TEST)
+int main() { return 0; }
 #endif

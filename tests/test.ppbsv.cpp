@@ -139,8 +139,7 @@ void random_pcpbsv_u() {
     random_ppbsv<complex8, 'U'>();
 }
 
-#ifdef EZP_ENABLE_TEST
-#else
+#ifndef EZP_ENABLE_TEST
 int main(const int argc, const char* argv[]) {
     volatile int i = 0;
     if(argc <= 1)
