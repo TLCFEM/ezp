@@ -215,6 +215,10 @@ add_library(${PROJECT_NAME} STATIC ${mumps_c} ${mumps_f} ${mumps_mod})
 
 target_link_libraries(${PROJECT_NAME} gfortran gomp ${MPI_FORT_LIB})
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wno-unused-function>)
+endif ()
+
 if (EZP_ENABLE_OPEEZP_ENABLE_OPENMP_MUMPSMP_LIS)
     if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         target_compile_options(${PROJECT_NAME} PRIVATE -fopenmp)
