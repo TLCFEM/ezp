@@ -25,11 +25,8 @@ endif ()
 
 option(EZP_ENABLE_OPENMP "Use OpenMP whenever possible." OFF)
 if (EZP_ENABLE_OPENMP)
-    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        add_compile_options(-fopenmp)
-    elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-        add_compile_options(-qopenmp)
-    endif ()
+    option(EZP_ENABLE_OPENMP_MUMPS "Use OpenMP for MUMPS." OFF)
+    option(EZP_ENABLE_OPENMP_LIS "Use OpenMP for LIS." OFF)
 endif ()
 
 set(MKL_LINK static)
