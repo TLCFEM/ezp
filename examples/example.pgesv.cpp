@@ -34,7 +34,7 @@ int main() {
     // get the current blacs environment
     const auto& env = get_env<int_t>();
 
-    constexpr auto N = 600, NRHS = 2;
+    constexpr auto N = 6, NRHS = 2;
 
     // storage for the matrices A and B
     std::vector<double> A, B;
