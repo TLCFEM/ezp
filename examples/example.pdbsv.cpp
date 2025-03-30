@@ -67,7 +67,7 @@ int main() {
     if(0 == env.rank() && 0 == info) {
         std::cout << std::setprecision(6) << std::fixed << "Info: " << info << '\n';
         std::cout << "Solution:\n";
-        for(auto i = 0u; i < B.size(); ++i) std::cout << B[i] << '\n';
+        for(const double i : B) std::cout << i << '\n';
     }
 
     return info;

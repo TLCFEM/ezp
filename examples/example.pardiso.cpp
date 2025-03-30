@@ -51,7 +51,7 @@ int main() {
         for(auto i = 0; i < N; i++) ia[i] = ja[i] = a[i] = i + 1;
         ia[N] = N + 1;
 
-        std::fill(b.begin(), b.end(), 1.);
+        std::ranges::fill(b, 1.);
     };
 
     populate();

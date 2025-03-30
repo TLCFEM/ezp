@@ -32,7 +32,7 @@ using namespace ezp;
 
 int main() {
     // get the current blacs environment
-    const auto& env = get_env<int_t>();
+    const auto& env = get_env<>();
 
     constexpr auto N = 6, NRHS = 2;
 

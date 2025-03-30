@@ -28,8 +28,6 @@
 #include <iomanip>
 #include <iostream>
 
-using namespace ezp;
-
 class general_mat {
 public:
     int_t n_rows{}, n_cols{};
@@ -80,7 +78,7 @@ public:
 
 int main() {
     // get the current blacs environment
-    const auto& env = get_env<int_t>();
+    const auto& env = ezp::get_env<>();
 
     // storage for the matrices A and B
     bandsymm_mat A;
@@ -103,7 +101,7 @@ int main() {
     // create a parallel solver
     // it uses a one-dimensional process grid
     // it takes the number of processes as arguments
-    auto solver = par_dpbsv(env.size());
+    auto solver = ezp::par_dpbsv(env.size());
 
     // use custom matrix objects
     const auto info = solver.solve(A, B);
