@@ -46,7 +46,7 @@ endif ()
 
 option(EZP_USE_64BIT_INT "Use 64-bit integer." OFF)
 if (EZP_USE_64BIT_INT)
-    add_compile_definitions(EZP_INT64)
+    add_compile_definitions(EZP_INT64 MUMPS_INTSIZE64)
     set(MKL_INTERFACE ilp64)
 else ()
     set(MKL_INTERFACE lp64)

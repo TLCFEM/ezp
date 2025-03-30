@@ -16,6 +16,7 @@ jobs:
       matrix:
         build: [ RelWithDebInfo, Debug ]
         mpi: [ impi, mpich, openmpi ]
+        index: [ 'ON', 'OFF' ]
     steps:
       - name: Clone
         uses: actions/checkout@v4
@@ -49,10 +50,10 @@ jobs:
           fi
           echo "MPI_HOME=$MPI_HOME" >> "$GITHUB_ENV"
           echo $MPI_HOME
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=${{ env.MPI_HOME }} ..
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=${{ env.MPI_HOME }} -DEZP_USE_64BIT_INT=${{ matrix.index }} ..
           cmake --build . --target all
       - name: Test
-        if: matrix.build == 'Debug' && matrix.mpi == 'mpich'
+        if: matrix.build == 'Debug' && matrix.mpi == 'mpich' && matrix.index == 'OFF'
         run: |
           export PATH=${{ env.MPI_HOME }}/bin:$PATH
           cd build
