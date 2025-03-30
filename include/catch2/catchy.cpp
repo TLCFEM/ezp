@@ -9416,7 +9416,7 @@ void ConsoleReporter::testCaseEnded(TestCaseStats const& _testCaseStats) {
     m_headerPrinted = false;
 }
 void ConsoleReporter::testRunEnded(TestRunStats const& _testRunStats) {
-    if(0 != ezp::get_env<int>().rank()) return;
+    if(0 != ezp::get_env<>().rank()) return;
     printTotalsDivider(_testRunStats.totals);
     printTestRunTotals( m_stream, *m_colour, _testRunStats.totals );
     m_stream << '\n' << std::flush;

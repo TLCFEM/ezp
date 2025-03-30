@@ -17,6 +17,11 @@ jobs:
         build: [ RelWithDebInfo, Debug ]
         mpi: [ impi, mpich, openmpi ]
         index: [ 'ON', 'OFF' ]
+        exclude:
+          - mpi: mpich
+            index: 'ON'
+          - mpi: openmpi
+            index: 'ON'
     steps:
       - name: Clone
         uses: actions/checkout@v4
