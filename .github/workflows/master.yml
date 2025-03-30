@@ -57,7 +57,7 @@ jobs:
           export PATH=${{ env.MPI_HOME }}/bin:$PATH
           cd build
           for SRC in `find . -type f -executable -iname "*example*"`; do $SRC; done
-          ./catch2
+          mpirun -n 2 ./catch2
           lcov --capture --directory . --output-file coverage.info
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
           lcov --list coverage.info
