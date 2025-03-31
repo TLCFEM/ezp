@@ -63,7 +63,10 @@ template<typename DT, typename IT> int run(const IT (&config)[6]) {
     const auto nnz = config[3];
     const auto msglvl = config[4];
 
-    auto solver = ezp::mumps<DT, IT>(sym);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnarrowing"
+    auto solver = ezp::mumps<DT, IT>(ezp::symmetric_pattern{sym});
+#pragma GCC diagnostic pop
 
     solver(3) = msglvl;
 
