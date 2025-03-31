@@ -78,6 +78,17 @@ namespace ezp {
         };
     } // namespace detail
 
+    enum symmetric_pattern : std::int8_t {
+        unsymmetric = 0,
+        symmetric_positive_definite = 1,
+        symmetric_indefinite = 2
+    };
+
+    enum parallel_mode : std::int8_t {
+        no_host = 0,
+        host_involved = 1
+    };
+
     template<data_t DT, index_t IT> class mumps final {
         using struct_t = typename detail::mumps_struc<DT>::struct_type;
         using entry_t = typename detail::mumps_struc<DT>::entry_type;
@@ -98,7 +109,7 @@ namespace ezp {
         }
 
     public:
-        explicit mumps(const int sym = 0, const int par = 0) {
+        explicit mumps(const symmetric_pattern sym = unsymmetric, const parallel_mode par = no_host) {
             id.comm_fortran = MPI_Comm_c2f(comm_world.native_handle());
             id.sym = sym;
             id.par = par;
