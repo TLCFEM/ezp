@@ -30,4 +30,12 @@ endif ()
 
 add_compile_options(-w)
 
-add_library(lis STATIC ${lis_src})
+add_library(${PROJECT_NAME} STATIC ${lis_src})
+
+if (EZP_ENABLE_OPENMP_LIS)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        target_compile_options(${PROJECT_NAME} PRIVATE -fopenmp)
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+        target_compile_options(${PROJECT_NAME} PRIVATE -qopenmp)
+    endif ()
+endif ()
