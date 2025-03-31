@@ -40,7 +40,8 @@
 
 #ifdef EZP_MKL
 
-#include <ezp/abstract/traits.hpp>
+#include "abstract/traits.hpp"
+
 #include <mpl/mpl.hpp>
 
 namespace ezp {
