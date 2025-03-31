@@ -26,6 +26,7 @@ cd mpl
 
 git fetch origin
 git checkout origin/$BRANCH_MPL -- mpl
+git restore --staged .
 
 if ! git diff --quiet; then
   echo "Changes detected in mpl, updating submodules..."
@@ -36,6 +37,7 @@ cd ..
 
 git fetch origin
 git checkout origin/$BRANCH_EZP -- external ezp CMakeLists.txt
+git restore --staged .
 
 if ! git diff --quiet; then
   echo "Changes detected in ezp, updating submodules..."
