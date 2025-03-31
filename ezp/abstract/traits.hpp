@@ -211,7 +211,7 @@ namespace ezp {
 
         char layout{'R'};
 
-        IT info;
+        IT info{-1};
 
         auto init() {
             blacs_get(nullptr, &ZERO, &context);
@@ -268,9 +268,9 @@ namespace ezp {
             : blacs_context(get_env<IT>().size(), 1) {}
 
         explicit blacs_context(const char order)
-            : n_rows(-1)
-            , n_cols(-1)
-            , layout(order) {
+            : layout(order)
+            , n_rows(-1)
+            , n_cols(-1) {
             const auto& env = get_env<IT>();
             n_rows = std::max(IT{1}, static_cast<IT>(std::sqrt(env.size())));
             n_cols = env.size() / n_rows;
@@ -278,14 +278,14 @@ namespace ezp {
         }
 
         blacs_context(const IT rows, const IT cols, const char order = 'R')
-            : n_rows(rows)
-            , n_cols(cols)
-            , layout(order) { init(); }
+            : layout(order)
+            , n_rows(rows)
+            , n_cols(cols) { init(); }
 
         blacs_context(const blacs_context& other)
-            : n_rows(other.n_rows)
-            , n_cols(other.n_cols)
-            , layout(other.layout) { init(); }
+            : layout(other.layout)
+            , n_rows(other.n_rows)
+            , n_cols(other.n_cols) { init(); }
 
         blacs_context(blacs_context&&) noexcept = delete;
         blacs_context& operator=(const blacs_context&) = delete;
