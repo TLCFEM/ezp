@@ -22,12 +22,22 @@ fi
 
 cd "$(dirname "$0")"
 
-git fetch origin
-git checkout $BRANCH_EZP -- external ezp CMakeLists.txt
-
 cd mpl
 
 git fetch origin
-git checkout $BRANCH_MPL -- mpl
+git checkout origin/$BRANCH_MPL -- mpl
+
+if ! git diff --quiet; then
+  echo "Changes detected in mpl, updating submodules..."
+  git add --all && git commit -m "Automatic sync with $BRANCH_MPL" || exit 1
+fi
 
 cd ..
+
+git fetch origin
+git checkout origin/$BRANCH_EZP -- external ezp CMakeLists.txt
+
+if ! git diff --quiet; then
+  echo "Changes detected in ezp, updating submodules..."
+  git add --all && git commit -m "Automatic sync with $BRANCH_EZP" || exit 1
+fi
