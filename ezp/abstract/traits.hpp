@@ -209,11 +209,13 @@ namespace ezp {
         static constexpr IT ZERO{0}, ONE{1}, NEGONE{-1};
         static constexpr char SCOPE = 'A', TOP = ' ';
 
+        char layout{'R'};
+
         IT info;
 
-        auto init(const char order) {
+        auto init() {
             blacs_get(nullptr, &ZERO, &context);
-            blacs_gridinit(&context, &order, &n_rows, &n_cols);
+            blacs_gridinit(&context, &layout, &n_rows, &n_cols);
             blacs_pinfo(&rank, &size);
             blacs_gridinfo(&context, &n_rows, &n_cols, &my_row, &my_col);
         }
@@ -267,18 +269,24 @@ namespace ezp {
 
         explicit blacs_context(const char order)
             : n_rows(-1)
-            , n_cols(-1) {
+            , n_cols(-1)
+            , layout(order) {
             const auto& env = get_env<IT>();
             n_rows = std::max(IT{1}, static_cast<IT>(std::sqrt(env.size())));
             n_cols = env.size() / n_rows;
-            init(order);
-        };
+            init();
+        }
 
         blacs_context(const IT rows, const IT cols, const char order = 'R')
             : n_rows(rows)
-            , n_cols(cols) { init(order); };
+            , n_cols(cols)
+            , layout(order) { init(); }
 
-        blacs_context(const blacs_context&) = delete;
+        blacs_context(const blacs_context& other)
+            : n_rows(other.n_rows)
+            , n_cols(other.n_cols)
+            , layout(other.layout) { init(); }
+
         blacs_context(blacs_context&&) noexcept = delete;
         blacs_context& operator=(const blacs_context&) = delete;
         blacs_context& operator=(blacs_context&&) noexcept = delete;
