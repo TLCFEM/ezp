@@ -23,7 +23,7 @@ fi
 cd "$(dirname "$0")"
 
 git fetch origin
-git checkout $BRANCH_EZP -- external ezp
+git checkout $BRANCH_EZP -- external ezp CMakeLists.txt
 
 cd mpl
 
