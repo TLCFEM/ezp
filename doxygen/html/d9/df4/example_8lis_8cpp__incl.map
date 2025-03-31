@@ -1,15 +1,15 @@
 <map id="examples/example.lis.cpp" name="examples/example.lis.cpp">
-<area shape="rect" id="Node000001" title="Example caller to the lis solver." alt="" coords="395,5,588,31"/>
-<area shape="rect" id="Node000002" href="$dd/dd1/lis_8hpp.html" title=" " alt="" coords="337,79,429,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="475,33,414,73,411,69,473,28"/>
-<area shape="rect" id="Node000013" title=" " alt="" coords="454,79,529,104"/>
-<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="494,31,494,65,489,65,489,31"/>
-<area shape="rect" id="Node000014" title=" " alt="" coords="553,79,633,104"/>
-<area shape="poly" id="edge13_Node000001_Node000014" title=" " alt="" coords="509,28,566,68,563,73,506,33"/>
-<area shape="rect" id="Node000003" href="$df/d73/traits_8hpp_source.html" title=" " alt="" coords="219,152,387,177"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="372,106,328,145,325,141,369,102"/>
-<area shape="rect" id="Node000012" title=" " alt="" coords="411,152,515,177"/>
-<area shape="poly" id="edge11_Node000002_Node000012" title=" " alt="" coords="398,102,442,141,438,145,394,106"/>
+<area shape="rect" id="Node000001" title="Example caller to the lis solver." alt="" coords="388,5,581,31"/>
+<area shape="rect" id="Node000002" href="$dd/dd1/lis_8hpp.html" title=" " alt="" coords="331,79,423,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="469,33,407,73,404,69,466,28"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="447,79,522,104"/>
+<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="487,31,487,65,482,65,482,31"/>
+<area shape="rect" id="Node000014" title=" " alt="" coords="546,79,626,104"/>
+<area shape="poly" id="edge13_Node000001_Node000014" title=" " alt="" coords="502,28,560,68,557,73,499,33"/>
+<area shape="rect" id="Node000003" href="$df/d73/traits_8hpp_source.html" title=" " alt="" coords="233,152,374,177"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="366,106,327,144,323,140,363,102"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="398,152,502,177"/>
+<area shape="poly" id="edge11_Node000002_Node000012" title=" " alt="" coords="391,102,430,140,426,144,387,106"/>
 <area shape="rect" id="Node000004" href="$d1/d4c/ezp_8h_source.html" title=" " alt="" coords="64,225,121,251"/>
 <area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="270,180,136,225,134,220,269,175"/>
 <area shape="rect" id="Node000007" title=" " alt="" coords="146,225,202,251"/>
