@@ -124,7 +124,7 @@ namespace ezp {
 
         public:
             explicit indexer(const band_mat<DT, IT>& A)
-                : n(A.n)
+                : n(A.n_rows)
                 , klu(A.klu) {}
 
             indexer(const IT N, const IT KLU)

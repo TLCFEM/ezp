@@ -59,14 +59,19 @@ namespace ezp::detail {
             , ctx(rows, cols, ODER) {}
 
         class indexer {
-            IT n;
+            IT n, m;
 
         public:
             explicit indexer(const full_mat<DT, IT>& A)
-                : n(A.n) {}
+                : n(A.n_rows)
+                , m(A.n_cols) {}
 
             explicit indexer(const IT N)
-                : n(N) {}
+                : indexer(N, N) {}
+
+            indexer(const IT N, const IT M)
+                : n(N)
+                , m(M) {}
 
             auto operator()(const IT i, const IT j) const {
                 if(i < 0 || i >= n || j < 0 || j >= n) return IT{-1};
