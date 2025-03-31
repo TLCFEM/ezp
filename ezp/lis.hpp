@@ -35,7 +35,8 @@
 #ifndef LIS_HPP
 #define LIS_HPP
 
-#include <ezp/abstract/traits.hpp>
+#include "abstract/traits.hpp"
+
 #include <mpl/mpl.hpp>
 
 #ifdef EZP_INT64
