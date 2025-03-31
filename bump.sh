@@ -1,8 +1,17 @@
 #!/bin/bash
 
-if [ "$#" -ne 2 ]; then
-    echo "Usage: ezp_branch_name mpl_branch_name"
-    exit 1
+if [ "$#" -eq 0 ]; then
+    echo "No arguments supplied, using default branches"
+    BRANCH_EZP="master"
+    BRANCH_MPL="feature-easy-life"
+elif [ "$#" -eq 1 ]; then
+    echo "One argument supplied, using default mpl branch"
+    BRANCH_EZP=$1
+    BRANCH_MPL="feature-easy-life"
+else
+    echo "Two arguments supplied, using custom branches"
+    BRANCH_EZP=$1
+    BRANCH_MPL=$2
 fi
 
 if ! command -v git &> /dev/null
@@ -13,10 +22,12 @@ fi
 
 cd "$(dirname "$0")"
 
-git checkout $1 -- external ezp
+git fetch origin
+git checkout $BRANCH_EZP -- external ezp
 
 cd mpl
 
-git checkout $2 -- mpl
+git fetch origin
+git checkout $BRANCH_MPL -- mpl
 
 cd ..
