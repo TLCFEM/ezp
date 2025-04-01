@@ -370,6 +370,11 @@ namespace ezp {
         public:
             lis_matrix() = default;
 
+            lis_matrix(const lis_matrix&) {}
+            lis_matrix(lis_matrix&&) = delete;
+            lis_matrix& operator=(const lis_matrix&) = delete;
+            lis_matrix& operator=(lis_matrix&&) = delete;
+
             ~lis_matrix() { unset(); }
 
             [[nodiscard]] auto get() const { return a_mat; }
@@ -389,12 +394,21 @@ namespace ezp {
             LIS_SOLVER solver{};
 
         public:
-            explicit lis_solver(const char* setting) {
-                lis_solver_create(&solver);
-                lis_solver_set_option(setting, solver);
-            }
+            lis_solver() { lis_solver_create(&solver); }
+
+            lis_solver(const lis_solver&) { lis_solver_create(&solver); };
+            lis_solver(lis_solver&&) = delete;
+            lis_solver& operator=(const lis_solver&) = delete;
+            lis_solver& operator=(lis_solver&&) = delete;
 
             ~lis_solver() { lis_solver_destroy(solver); }
+
+            explicit lis_solver(const char* setting) {
+                lis_solver_create(&solver);
+                set_option(setting);
+            }
+
+            void set_option(const char* setting) const { lis_solver_set_option(setting, solver); }
 
             auto solve(LIS_MATRIX A, LIS_VECTOR B, LIS_VECTOR X) const { return lis_solve(A, B, X, solver); }
         };
@@ -412,9 +426,12 @@ namespace ezp {
         }
 
     public:
+        lis() = default;
+
         explicit lis(const char* setting)
-            : solver(setting)
-            , a_loc() {}
+            : solver(setting) {}
+
+        void set_option(const char* setting) const { solver.set_option(setting); }
 
         LIS_INT solve(sparse_csr_mat<LIS_SCALAR, LIS_INT>&& A, full_mat<LIS_SCALAR, LIS_INT>&& B) {
             LIS_INT error = 0;
