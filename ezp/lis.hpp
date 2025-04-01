@@ -403,12 +403,12 @@ namespace ezp {
 
             ~lis_solver() { lis_solver_destroy(solver); }
 
-            explicit lis_solver(const char* setting) {
+            explicit lis_solver(const std::string_view setting) {
                 lis_solver_create(&solver);
                 set_option(setting);
             }
 
-            void set_option(const char* setting) const { lis_solver_set_option(setting, solver); }
+            void set_option(const std::string_view setting) const { lis_solver_set_option(setting.data(), solver); }
 
             auto solve(LIS_MATRIX A, LIS_VECTOR B, LIS_VECTOR X) const { return lis_solve(A, B, X, solver); }
         };
@@ -428,10 +428,10 @@ namespace ezp {
     public:
         lis() = default;
 
-        explicit lis(const char* setting)
+        explicit lis(const std::string_view setting)
             : solver(setting) {}
 
-        void set_option(const char* setting) const { solver.set_option(setting); }
+        void set_option(const std::string_view setting) const { solver.set_option(setting); }
 
         LIS_INT solve(sparse_csr_mat<LIS_SCALAR, LIS_INT>&& A, full_mat<LIS_SCALAR, LIS_INT>&& B) {
             LIS_INT error = 0;
