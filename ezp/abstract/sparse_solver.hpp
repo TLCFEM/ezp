@@ -36,24 +36,26 @@ namespace ezp {
         auto is_valid() { return row && col && data; }
     };
 
-    template<index_t IT> class csr_comparator {
-        const IT* const row_idx;
-        const IT* const col_idx;
+    namespace detail {
+        template<index_t IT> class csr_comparator {
+            const IT* const row_idx;
+            const IT* const col_idx;
 
-    public:
-        csr_comparator(const IT* const in_row_idx, const IT* const in_col_idx)
-            : row_idx(in_row_idx)
-            , col_idx(in_col_idx) {}
+        public:
+            csr_comparator(const IT* const in_row_idx, const IT* const in_col_idx)
+                : row_idx(in_row_idx)
+                , col_idx(in_col_idx) {}
 
-        bool operator()(const IT idx_a, const IT idx_b) const {
-            if(row_idx[idx_a] == row_idx[idx_b]) return col_idx[idx_a] < col_idx[idx_b];
-            return row_idx[idx_a] < row_idx[idx_b];
-        }
-    };
+            bool operator()(const IT idx_a, const IT idx_b) const {
+                if(row_idx[idx_a] == row_idx[idx_b]) return col_idx[idx_a] < col_idx[idx_b];
+                return row_idx[idx_a] < row_idx[idx_b];
+            }
+        };
 
-    template<typename T> bool approx_equal(T x, T y, int ulp = 2)
-        requires(!std::numeric_limits<T>::is_integer)
-    { return std::fabs(x - y) <= std::numeric_limits<T>::epsilon() * std::fabs(x + y) * ulp || std::fabs(x - y) < std::numeric_limits<T>::min(); }
+        template<typename T> bool approx_equal(T x, T y, int ulp = 2)
+            requires(!std::numeric_limits<T>::is_integer)
+        { return std::fabs(x - y) <= std::numeric_limits<T>::epsilon() * std::fabs(x + y) * ulp || std::fabs(x - y) < std::numeric_limits<T>::min(); }
+    } // namespace detail
 
     template<data_t DT, index_t IT> struct sparse_csr_mat {
         IT n, nnz;
@@ -77,7 +79,7 @@ namespace ezp {
             , nnz(IT{coo.nnz}) {
             std::vector<IT2> index(nnz);
             std::iota(index.begin(), index.end(), IT2(0));
-            std::sort(index.begin(), index.end(), csr_comparator(coo.row, coo.col));
+            std::sort(index.begin(), index.end(), detail::csr_comparator(coo.row, coo.col));
 
             row_storage.resize(nnz);
             col_storage.resize(nnz);
@@ -103,7 +105,7 @@ namespace ezp {
             auto last_sum = DT(0);
 
             auto populate = [&] {
-                if(approx_equal(last_sum, DT(0)) && (!full || last_row != last_col)) return;
+                if(detail::approx_equal(last_sum, DT(0)) && (!full || last_row != last_col)) return;
                 row_storage[current_pos] = last_row;
                 col_storage[current_pos] = last_col;
                 data_storage[current_pos] = last_sum;
