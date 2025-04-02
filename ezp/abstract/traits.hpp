@@ -107,38 +107,6 @@ namespace ezp {
             , klu(klu) {}
     };
 
-    template<data_t DT, index_t IT> struct sparse_csr_mat {
-        IT n, nnz;
-        IT *row_ptr, *col_idx;
-        DT* data;
-
-        sparse_csr_mat() = default;
-
-        sparse_csr_mat(const IT n, const IT nnz, IT* const row_ptr, IT* const col_idx, DT* const data)
-            : n(n)
-            , nnz(nnz)
-            , row_ptr(row_ptr)
-            , col_idx(col_idx)
-            , data(data) {}
-
-        auto is_valid() { return row_ptr && col_idx && data; }
-    };
-
-    template<data_t DT, index_t IT> struct sparse_coo_mat {
-        IT n, nnz;
-        IT *row, *col;
-        DT* data;
-
-        sparse_coo_mat(const IT n, const IT nnz, IT* const row, IT* const col, DT* const data)
-            : n(n)
-            , nnz(nnz)
-            , row(row)
-            , col(col)
-            , data(data) {}
-
-        auto is_valid() { return row && col && data; }
-    };
-
     template<typename T> concept wrapper_t = requires(T t) {
         requires std::is_same_v<T, full_mat<typename T::data_type, typename T::index_type>> || std::is_same_v<T, band_mat<typename T::data_type, typename T::index_type>> || std::is_same_v<T, band_symm_mat<typename T::data_type, typename T::index_type>>;
     };
