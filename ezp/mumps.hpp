@@ -45,6 +45,10 @@
 #ifndef MUMPS_HPP
 #define MUMPS_HPP
 
+#ifdef EZP_INT64
+#define MUMPS_INTSIZE64
+#endif
+
 #include "../external/mumps/cmumps_c.h"
 #include "../external/mumps/dmumps_c.h"
 #include "../external/mumps/smumps_c.h"
