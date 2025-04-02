@@ -88,20 +88,20 @@ namespace ezp {
             col_storage.resize(nnz);
             data_storage.resize(nnz);
 
-            std::for_each(0, nnz, [&](const auto I) {
+            for(auto I = IT{0}; I < nnz; ++I) {
                 row_storage[I] = coo.row[index[I]];
                 col_storage[I] = coo.col[index[I]];
                 data_storage[I] = coo.data[index[I]];
-            });
+            }
 
-            condense<full>();
+            condense(full);
 
             row_ptr = row_storage.data();
             col_idx = col_storage.data();
             data = data_storage.data();
         }
 
-        template<bool full> auto condense() {
+        auto condense(const bool full) {
             auto last_row = row_storage[0], last_col = col_storage[0];
 
             auto current_pos = IT(0);
