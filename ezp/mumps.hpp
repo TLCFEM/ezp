@@ -49,7 +49,7 @@
 #include "../external/mumps/dmumps_c.h"
 #include "../external/mumps/smumps_c.h"
 #include "../external/mumps/zmumps_c.h"
-#include "abstract/traits.hpp"
+#include "abstract/sparse_solver.hpp"
 
 #include <mpl/mpl.hpp>
 
