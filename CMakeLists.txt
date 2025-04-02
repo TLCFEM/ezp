@@ -175,6 +175,7 @@ foreach (EXAMPLE ${EXAMPLES})
     elseif (EXAMPLE_NAME MATCHES "lis")
         target_link_libraries(${EXAMPLE_NAME} lis)
     endif ()
+    target_link_libraries(benchmark mumps lis)
 endforeach ()
 
 option(EZP_STANDALONE "Enable standalone solver." OFF)
