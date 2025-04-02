@@ -110,6 +110,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa6d6566ab3b0158fae42b7cfc02bea82" id="r_aa6d6566ab3b0158fae42b7cfc02bea82"><td class="memItemLeft" align="right" valign="top"><a id="aa6d6566ab3b0158fae42b7cfc02bea82" name="aa6d6566ab3b0158fae42b7cfc02bea82"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>sparse_csr_mat</b> (const IT n, const IT nnz, IT *const row_ptr, IT *const col_idx, DT *const data)</td></tr>
 <tr class="separator:aa6d6566ab3b0158fae42b7cfc02bea82"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7785642e3a06df8cf793bd8468c876a1" id="r_a7785642e3a06df8cf793bd8468c876a1"><td class="memTemplParams" colspan="2"><a id="a7785642e3a06df8cf793bd8468c876a1" name="a7785642e3a06df8cf793bd8468c876a1"></a>
+template&lt;data_t DT2, index_t IT2&gt; </td></tr>
+<tr class="memitem:a7785642e3a06df8cf793bd8468c876a1"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><b>sparse_csr_mat</b> (const <a class="el" href="../../d4/d16/structezp_1_1sparse__coo__mat.html">sparse_coo_mat</a>&lt; DT2, IT2 &gt; &amp;coo, const bool full=false)</td></tr>
+<tr class="separator:a7785642e3a06df8cf793bd8468c876a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a282e3a7f110b562fc06e9504cd923feb" id="r_a282e3a7f110b562fc06e9504cd923feb"><td class="memItemLeft" align="right" valign="top"><a id="a282e3a7f110b562fc06e9504cd923feb" name="a282e3a7f110b562fc06e9504cd923feb"></a>
+auto&#160;</td><td class="memItemRight" valign="bottom"><b>condense</b> (const bool full)</td></tr>
+<tr class="separator:a282e3a7f110b562fc06e9504cd923feb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae607dae61d69c81ef90d6d8c99689c61" id="r_ae607dae61d69c81ef90d6d8c99689c61"><td class="memItemLeft" align="right" valign="top"><a id="ae607dae61d69c81ef90d6d8c99689c61" name="ae607dae61d69c81ef90d6d8c99689c61"></a>
 auto&#160;</td><td class="memItemRight" valign="bottom"><b>is_valid</b> ()</td></tr>
 <tr class="separator:ae607dae61d69c81ef90d6d8c99689c61"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -131,9 +138,18 @@ IT *&#160;</td><td class="memItemRight" valign="bottom"><b>col_idx</b></td></tr>
 <tr class="memitem:aed2466e31bcf7cf2487a5f3f8bde98ca" id="r_aed2466e31bcf7cf2487a5f3f8bde98ca"><td class="memItemLeft" align="right" valign="top"><a id="aed2466e31bcf7cf2487a5f3f8bde98ca" name="aed2466e31bcf7cf2487a5f3f8bde98ca"></a>
 DT *&#160;</td><td class="memItemRight" valign="bottom"><b>data</b></td></tr>
 <tr class="separator:aed2466e31bcf7cf2487a5f3f8bde98ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a10d7193d009a7912cc21ab5aba4409e9" id="r_a10d7193d009a7912cc21ab5aba4409e9"><td class="memItemLeft" align="right" valign="top"><a id="a10d7193d009a7912cc21ab5aba4409e9" name="a10d7193d009a7912cc21ab5aba4409e9"></a>
+std::vector&lt; IT &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>row_storage</b></td></tr>
+<tr class="separator:a10d7193d009a7912cc21ab5aba4409e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a203a3e02050bcba9932b34c2f62e7b6f" id="r_a203a3e02050bcba9932b34c2f62e7b6f"><td class="memItemLeft" align="right" valign="top"><a id="a203a3e02050bcba9932b34c2f62e7b6f" name="a203a3e02050bcba9932b34c2f62e7b6f"></a>
+std::vector&lt; IT &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>col_storage</b></td></tr>
+<tr class="separator:a203a3e02050bcba9932b34c2f62e7b6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8d0889dd3fe829e454a993699a264f8" id="r_ae8d0889dd3fe829e454a993699a264f8"><td class="memItemLeft" align="right" valign="top"><a id="ae8d0889dd3fe829e454a993699a264f8" name="ae8d0889dd3fe829e454a993699a264f8"></a>
+std::vector&lt; DT &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>data_storage</b></td></tr>
+<tr class="separator:ae8d0889dd3fe829e454a993699a264f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>ezp/abstract/<a class="el" href="../../df/d73/traits_8hpp_source.html">traits.hpp</a></li>
+<li>ezp/abstract/<a class="el" href="../../db/d17/sparse__solver_8hpp_source.html">sparse_solver.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
