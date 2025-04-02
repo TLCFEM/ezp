@@ -35,7 +35,7 @@
 #ifndef LIS_HPP
 #define LIS_HPP
 
-#include "abstract/traits.hpp"
+#include "abstract/sparse_solver.hpp"
 
 #include <mpl/mpl.hpp>
 

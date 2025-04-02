@@ -40,7 +40,7 @@
 
 #ifdef EZP_MKL
 
-#include "abstract/traits.hpp"
+#include "abstract/sparse_solver.hpp"
 
 #include <mpl/mpl.hpp>
 
