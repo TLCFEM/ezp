@@ -20,6 +20,9 @@
 
 #include "traits.hpp"
 
+#include <algorithm>
+#include <numeric>
+
 namespace ezp {
     template<data_t DT, index_t IT> struct sparse_coo_mat {
         IT n, nnz;
