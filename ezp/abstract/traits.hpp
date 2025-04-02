@@ -182,7 +182,7 @@ namespace ezp {
         IT info{-1};
 
         auto init() {
-            blacs_get(nullptr, &ZERO, &context);
+            blacs_get(&NEGONE, &ZERO, &context);
             blacs_gridinit(&context, &layout, &n_rows, &n_cols);
             blacs_pinfo(&rank, &size);
             blacs_gridinfo(&context, &n_rows, &n_cols, &my_row, &my_col);
