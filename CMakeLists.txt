@@ -11,6 +11,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 add_compile_definitions(MPICH_SKIP_MPICXX)
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    add_compile_options(-Wall)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     add_compile_options(-Rno-debug-disables-optimization)
     add_link_options(-Rno-debug-disables-optimization)
