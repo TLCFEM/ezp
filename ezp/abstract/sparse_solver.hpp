@@ -77,7 +77,7 @@ namespace ezp {
             , col_idx(col_idx)
             , data(data) {}
 
-        template<data_t DT2, index_t IT2> sparse_csr_mat(const sparse_coo_mat<DT2, IT2>& coo, const bool full = false)
+        template<data_t DT2, index_t IT2> explicit sparse_csr_mat(const sparse_coo_mat<DT2, IT2>& coo, const bool one_based = false, const bool full = false)
             : n(IT{coo.n})
             , nnz(IT{coo.nnz}) {
             std::vector<IT2> index(nnz);
@@ -94,18 +94,18 @@ namespace ezp {
                 data_storage[I] = coo.data[index[I]];
             }
 
-            condense(full);
+            condense(one_based, full);
 
             row_ptr = row_storage.data();
             col_idx = col_storage.data();
             data = data_storage.data();
         }
 
-        auto condense(const bool full) {
+        auto condense(const bool one_based, const bool full) {
             auto last_row = row_storage[0], last_col = col_storage[0];
 
-            auto current_pos = IT(0);
-            auto last_sum = DT(0);
+            auto current_pos = IT{0};
+            auto last_sum = DT{0};
 
             auto populate = [&] {
                 if(detail::approx_equal(last_sum, DT(0)) && (!full || last_row != last_col)) return;
@@ -113,7 +113,7 @@ namespace ezp {
                 col_storage[current_pos] = last_col;
                 data_storage[current_pos] = last_sum;
                 ++current_pos;
-                last_sum = DT(0);
+                last_sum = DT{0};
             };
 
             for(auto I = IT{0}; I < nnz; ++I) {
@@ -129,6 +129,16 @@ namespace ezp {
 
             nnz = current_pos;
 
+            auto current_row = current_pos = IT{0};
+            auto shift = one_based ? IT{1} : IT{0};
+
+            while(current_pos < nnz)
+                if(row_storage[current_pos] < current_row + shift) ++current_pos;
+                else row_storage[current_row++] = current_pos + shift;
+
+            row_storage[0] = IT{0} + shift;
+            row_storage[n] = nnz + shift;
+
             row_storage.resize(n + 1);
             col_storage.resize(nnz);
             data_storage.resize(nnz);
@@ -138,4 +148,4 @@ namespace ezp {
     };
 } // namespace ezp
 
-#endif // ABSTRACT_SOLVER_HPP
+#endif // SPARSE_SOLVER_HPP

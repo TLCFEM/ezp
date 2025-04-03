@@ -25,6 +25,22 @@ namespace ezp::detail {
     protected:
         blacs_context<IT> ctx, trans_ctx;
 
+        template<band_container_t CT> auto to_band(CT&& custom) {
+            if constexpr(has_mem<CT>) return band_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.kl, custom.ku, custom.mem()};
+            else if constexpr(has_memptr<CT>) return band_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.kl, custom.ku, custom.memptr()};
+            else if constexpr(has_data_method<CT>) return band_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.kl, custom.ku, custom.data()};
+            else if constexpr(has_iterator<CT>) return band_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.kl, custom.ku, &(*custom.begin())};
+            else static_assert(always_false_v<CT>, "invalid container type");
+        }
+
+        template<band_symm_container_t CT> auto to_band_symm(CT&& custom) {
+            if constexpr(has_mem<CT>) return band_symm_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.klu, custom.mem()};
+            else if constexpr(has_memptr<CT>) return band_symm_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.klu, custom.memptr()};
+            else if constexpr(has_data_method<CT>) return band_symm_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.klu, custom.data()};
+            else if constexpr(has_iterator<CT>) return band_symm_mat<DT, IT>{custom.n_rows, custom.n_cols, custom.klu, &(*custom.begin())};
+            else static_assert(always_false_v<CT>, "invalid container type");
+        }
+
     public:
         explicit band_solver(const IT rows)
             : abstract_solver<DT, IT, WT>()
