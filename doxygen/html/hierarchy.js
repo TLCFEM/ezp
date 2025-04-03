@@ -59,10 +59,6 @@ var hierarchy =
     [ "ezp::detail::mumps_struc< double >", "df/d5e/structezp_1_1detail_1_1mumps__struc_3_01double_01_4.html", null ],
     [ "ezp::detail::mumps_struc< DT >", "df/d7f/structezp_1_1detail_1_1mumps__struc.html", null ],
     [ "ezp::detail::mumps_struc< float >", "db/d3e/structezp_1_1detail_1_1mumps__struc_3_01float_01_4.html", null ],
-    [ "ezp::detail::non_copyable", "d7/d04/structezp_1_1detail_1_1non__copyable.html", [
-      [ "ezp::sparse_coo_mat< DT, IT >", "d4/d16/structezp_1_1sparse__coo__mat.html", null ],
-      [ "ezp::sparse_csr_mat< DT, IT >", "d6/d5b/structezp_1_1sparse__csr__mat.html", null ]
-    ] ],
     [ "pardiso", "dc/d7b/classpardiso.html", null ],
     [ "pdbsv", "d0/de4/classpdbsv.html", null ],
     [ "pgbsv", "d4/d10/classpgbsv.html", null ],
@@ -71,6 +67,8 @@ var hierarchy =
     [ "ppbsv", "d8/dba/classppbsv.html", null ],
     [ "pposv", "db/db1/classpposv.html", null ],
     [ "pposvx", "d4/d47/classpposvx.html", null ],
+    [ "ezp::sparse_coo_mat< DT, IT >", "d4/d16/structezp_1_1sparse__coo__mat.html", null ],
+    [ "ezp::sparse_csr_mat< DT, IT >", "d6/d5b/structezp_1_1sparse__csr__mat.html", null ],
     [ "ezp::WorkType< T >", "da/d62/structezp_1_1WorkType.html", null ],
     [ "ezp::WorkType< complex16 >", "d2/dac/structezp_1_1WorkType_3_01complex16_01_4.html", null ],
     [ "ezp::WorkType< complex8 >", "d1/d01/structezp_1_1WorkType_3_01complex8_01_4.html", null ],

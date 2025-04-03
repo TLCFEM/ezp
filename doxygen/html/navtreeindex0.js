@@ -71,7 +71,6 @@ var NAVTREEINDEX0 =
 "d6/dbe/classezp_1_1mumps.html#a153a26c682a94e43d5683e52c61bee73":[4,0,0,9,1],
 "d6/dbe/classezp_1_1mumps.html#a70793e72d44bb569f24e3740d0398f23":[4,0,0,9,0],
 "d6/dd6/classezp_1_1detail_1_1lis__solver.html":[4,0,0,0,6],
-"d7/d04/structezp_1_1detail_1_1non__copyable.html":[4,0,0,0,13],
 "d8/d10/classgeneral__mat.html":[4,0,2],
 "d8/d17/pgesvx_8hpp.html":[5,0,1,7],
 "d8/d17/pgesvx_8hpp_source.html":[5,0,1,7],

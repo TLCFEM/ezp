@@ -11,9 +11,9 @@
 <!-- Node0 -->
 <g id="Node000000" class="node">
 <title>Node0</title>
-<g id="a_Node000000"><a xlink:href="df/d1a/classpgesvx.html" target="_top" xlink:title="Solver for general full matrices (expert driver).">
+<g id="a_Node000000"><a xlink:href="d4/d47/classpposvx.html" target="_top" xlink:title="Solver for general full symmetric positive definite matrices (expert driver).">
 <polygon fill="white" stroke="#666666" points="52,-19 0,-19 0,0 52,0 52,-19"/>
-<text text-anchor="middle" x="26" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">pgesvx</text>
+<text text-anchor="middle" x="26" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">pposvx</text>
 </a>
 </g>
 </g>

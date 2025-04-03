@@ -1,9 +1,7 @@
 <map id="ezp::sparse_coo_mat&lt; DT, IT &gt;" name="ezp::sparse_coo_mat&lt; DT, IT &gt;">
-<area shape="rect" id="Node000001" title=" " alt="" coords="157,137,316,177"/>
-<area shape="rect" id="Node000002" href="$d7/d04/structezp_1_1detail_1_1non__copyable.html" title=" " alt="" coords="5,5,193,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="122,39,220,135,216,139,119,42"/>
-<area shape="rect" id="Node000003" title=" " alt="" coords="217,5,256,31"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="239,44,239,137,234,137,234,44"/>
-<area shape="rect" id="Node000004" title=" " alt="" coords="281,5,321,31"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="297,45,285,78,270,115,254,139,250,136,265,112,280,76,292,43"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,137,164,177"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="33,5,72,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="55,45,58,77,65,113,75,136,70,138,59,114,52,78,50,45"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="97,5,137,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="113,45,92,138,87,136,108,43"/>
 </map>
