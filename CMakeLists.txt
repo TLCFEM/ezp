@@ -33,7 +33,7 @@ endif ()
 option(EZP_ENABLE_TBB "Use TBB." OFF)
 set(MKL_LINK static)
 if (NOT MKL_THREADING)
-    if (EZP_ENABLE_TBB)
+    if (EZP_ENABLE_TBB AND 0) # somehow linking tbb_thread causes segfault
         set(MKL_THREADING tbb_thread)
         message(STATUS "MKL_THREADING: ${MKL_THREADING}")
     elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
