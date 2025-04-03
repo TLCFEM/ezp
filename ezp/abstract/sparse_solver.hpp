@@ -22,9 +22,23 @@
 
 #include <algorithm>
 #include <numeric>
+#ifdef EZP_TBB
+#include <execution>
+#endif
 
 namespace ezp {
-    template<data_t DT, index_t IT> struct sparse_coo_mat {
+    namespace detail {
+        struct non_copyable {
+            non_copyable() = default;
+            non_copyable(const non_copyable&) = delete;
+            non_copyable(non_copyable&&) = default;
+            non_copyable& operator=(const non_copyable&) = delete;
+            non_copyable& operator=(non_copyable&&) = default;
+            virtual ~non_copyable() = default;
+        };
+    } // namespace detail
+
+    template<data_t DT, index_t IT> struct sparse_coo_mat : detail::non_copyable {
         IT n, nnz;
         IT *row, *col;
         DT* data;
@@ -60,7 +74,7 @@ namespace ezp {
         { return std::fabs(x - y) <= std::numeric_limits<T>::epsilon() * std::fabs(x + y) * ulp || std::fabs(x - y) < std::numeric_limits<T>::min(); }
     } // namespace detail
 
-    template<data_t DT, index_t IT> struct sparse_csr_mat {
+    template<data_t DT, index_t IT> struct sparse_csr_mat : detail::non_copyable {
         IT n, nnz;
         IT *row_ptr, *col_idx;
         DT* data;
@@ -82,7 +96,12 @@ namespace ezp {
             , nnz(IT{coo.nnz}) {
             std::vector<IT2> index(nnz);
             std::iota(index.begin(), index.end(), IT2(0));
-            std::sort(index.begin(), index.end(), detail::csr_comparator(coo.row, coo.col));
+            std::sort(
+#ifdef EZP_TBB
+                std::execution::par,
+#endif
+                index.begin(), index.end(), detail::csr_comparator(coo.row, coo.col)
+            );
 
             row_storage.resize(nnz);
             col_storage.resize(nnz);
