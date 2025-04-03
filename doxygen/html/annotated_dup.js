@@ -14,7 +14,8 @@ var annotated_dup =
         [ "mumps_struc< complex16 >", "d4/d83/structezp_1_1detail_1_1mumps__struc_3_01complex16_01_4.html", null ],
         [ "mumps_struc< complex8 >", "d6/dae/structezp_1_1detail_1_1mumps__struc_3_01complex8_01_4.html", null ],
         [ "mumps_struc< double >", "df/d5e/structezp_1_1detail_1_1mumps__struc_3_01double_01_4.html", null ],
-        [ "mumps_struc< float >", "db/d3e/structezp_1_1detail_1_1mumps__struc_3_01float_01_4.html", null ]
+        [ "mumps_struc< float >", "db/d3e/structezp_1_1detail_1_1mumps__struc_3_01float_01_4.html", null ],
+        [ "non_copyable", "d7/d04/structezp_1_1detail_1_1non__copyable.html", null ]
       ] ],
       [ "band_mat", "d9/d24/structezp_1_1band__mat.html", null ],
       [ "band_symm_mat", "d8/d3f/structezp_1_1band__symm__mat.html", null ],

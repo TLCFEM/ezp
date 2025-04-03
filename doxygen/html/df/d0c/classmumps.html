@@ -105,10 +105,10 @@ $(document).ready(function(){initNavTree('df/d0c/classmumps.html','../../'); ini
 <p>It solves the system of linear equations <code>A * X = B</code> with a general sparse matrix <code>A</code>. The RHS matrix <code>B</code> is a dense matrix.</p>
 <p>The matrix <code>A</code> should be stored in the Compressed Sparse Row (CSR) format with one-based indexing.</p>
 <p>To set control parameters, use the overloaded function call operator, which allows access to the <code>icntl</code> array.</p>
-<div class="fragment"><div class="line"><span class="keyword">auto</span> solver = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">mumps&lt;double, int_t&gt;</a>();</div>
+<div class="fragment"><div class="line"><span class="keyword">auto</span> solver = <a class="code hl_class" href="../../df/d0c/classmumps.html">mumps&lt;double, int_t&gt;</a>();</div>
 <div class="line">solver(3) = 0; <span class="comment">// suppress output</span></div>
 <div class="line">solver.icntl_printing_level(0); <span class="comment">// equivalent to the above</span></div>
-<div class="ttc" id="aclasspardiso_html"><div class="ttname"><a href="../../dc/d7b/classpardiso.html">pardiso</a></div><div class="ttdoc">Solver for general sparse matrices.</div></div>
+<div class="ttc" id="aclassmumps_html"><div class="ttname"><a href="../../df/d0c/classmumps.html">mumps</a></div><div class="ttdoc">Solver for general sparse matrices.</div></div>
 </div><!-- fragment --><p>The example usage can be seen as follows.</p>
 <div class="fragment"><div class="line"><span class="comment">/*******************************************************************************</span></div>
 <div class="line"><span class="comment"> * Copyright (C) 2025 Theodore Chang</span></div>
@@ -137,46 +137,46 @@ $(document).ready(function(){initNavTree('df/d0c/classmumps.html','../../'); ini
 <div class="line"> </div>
 <div class="line">    <span class="keywordtype">int</span> N = 10, NRHS = 1;</div>
 <div class="line"> </div>
-<div class="line">    std::vector&lt;int_t&gt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">ia</a>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">ja</a>;</div>
+<div class="line">    std::vector&lt;int_t&gt; ia, ja;</div>
 <div class="line">    std::vector&lt;double&gt; a, b;</div>
 <div class="line"> </div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">populate</a> = [&amp;] {</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> populate = [&amp;] {</div>
 <div class="line">        <span class="keywordflow">if</span>(0 != comm_world.rank()) <span class="keywordflow">return</span>;</div>
 <div class="line"> </div>
-<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">ia</a>.resize(N);</div>
-<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">ja</a>.resize(N);</div>
+<div class="line">        ia.resize(N);</div>
+<div class="line">        ja.resize(N);</div>
 <div class="line">        a.resize(N);</div>
 <div class="line">        b.resize(N * NRHS);</div>
 <div class="line"> </div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> = 0; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> &lt; N; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>++) <a class="code hl_class" href="../../dc/d7b/classpardiso.html">ia</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>] = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">ja</a>[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>] = a[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>] = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> + 1;</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> i = 0; i &lt; N; i++) ia[i] = ja[i] = a[i] = i + 1;</div>
 <div class="line"> </div>
 <div class="line">        std::fill(b.begin(), b.end(), 1.);</div>
 <div class="line">    };</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// initialise one-based COO matrix on the root process</span></div>
-<div class="line">    <a class="code hl_class" href="../../dc/d7b/classpardiso.html">populate</a>();</div>
+<div class="line">    populate();</div>
 <div class="line"> </div>
-<div class="line">    <span class="keyword">auto</span> solver = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">mumps&lt;double, int_t&gt;</a>();</div>
+<div class="line">    <span class="keyword">auto</span> solver = <a class="code hl_class" href="../../df/d0c/classmumps.html">mumps&lt;double, int_t&gt;</a>();</div>
 <div class="line">    solver(3) = 0; <span class="comment">// msglvl</span></div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// need to wrap the data in sparse_coo_mat objects</span></div>
-<div class="line">    <span class="keyword">auto</span> info = solver.solve({N, N, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">ia</a>.data(), <a class="code hl_class" href="../../dc/d7b/classpardiso.html">ja</a>.data(), a.data()}, {N, NRHS, b.data()});</div>
+<div class="line">    <span class="keyword">auto</span> info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});</div>
 <div class="line"> </div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">print</a> = [&amp;] {</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> print = [&amp;] {</div>
 <div class="line">        <span class="keywordflow">if</span>(0 != comm_world.rank()) <span class="keywordflow">return</span>;</div>
 <div class="line"> </div>
 <div class="line">        std::cout &lt;&lt; std::fixed &lt;&lt; std::setprecision(10) &lt;&lt; <span class="stringliteral">&quot;Info: &quot;</span> &lt;&lt; info &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
 <div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Solution:\n&quot;</span>;</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">double</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> : b) <a class="code hl_class" href="../../dc/d7b/classpardiso.html">std</a>::<a class="code hl_class" href="../../dc/d7b/classpardiso.html">cout</a> &lt;&lt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> &lt;&lt; <span class="stringliteral">&#39;\n&#39;</span>;</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">double</span> i : b) std::cout &lt;&lt; i &lt;&lt; <span class="stringliteral">&#39;\n&#39;</span>;</div>
 <div class="line">    };</div>
 <div class="line"> </div>
-<div class="line">    <a class="code hl_class" href="../../dc/d7b/classpardiso.html">print</a>();</div>
+<div class="line">    print();</div>
 <div class="line"> </div>
 <div class="line">    N = 20;</div>
 <div class="line"> </div>
-<div class="line">    <a class="code hl_class" href="../../dc/d7b/classpardiso.html">populate</a>();</div>
-<div class="line">    info = solver.solve({N, N, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">ia</a>.data(), <a class="code hl_class" href="../../dc/d7b/classpardiso.html">ja</a>.data(), a.data()}, {N, NRHS, b.data()});</div>
-<div class="line">    <a class="code hl_class" href="../../dc/d7b/classpardiso.html">print</a>();</div>
+<div class="line">    populate();</div>
+<div class="line">    info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});</div>
+<div class="line">    print();</div>
 <div class="line"> </div>
 <div class="line">    <span class="keywordflow">return</span> info;</div>
 <div class="line">}</div>
