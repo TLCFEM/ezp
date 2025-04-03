@@ -5,6 +5,7 @@
         "EZP_STANDALONE": "ON",
         "EZP_ASAN": "ON",
         "EZP_ENABLE_OPENMP": "ON",
+        "EZP_ENABLE_TBB": "ON",
     },
     "cSpell.words": [
         "blacs",
@@ -82,6 +83,7 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "valarray": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "execution": "cpp"
     }
 }

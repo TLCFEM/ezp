@@ -22,6 +22,9 @@
 
 #include <algorithm>
 #include <numeric>
+#ifdef EZP_TBB
+#include <execution>
+#endif
 
 namespace ezp {
     namespace detail {
@@ -93,7 +96,12 @@ namespace ezp {
             , nnz(IT{coo.nnz}) {
             std::vector<IT2> index(nnz);
             std::iota(index.begin(), index.end(), IT2(0));
-            std::sort(index.begin(), index.end(), detail::csr_comparator(coo.row, coo.col));
+            std::sort(
+#ifdef EZP_TBB
+                std::execution::par,
+#endif
+                index.begin(), index.end(), detail::csr_comparator(coo.row, coo.col)
+            );
 
             row_storage.resize(nnz);
             col_storage.resize(nnz);
