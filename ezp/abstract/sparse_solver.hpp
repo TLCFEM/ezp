@@ -23,7 +23,10 @@
 #include <algorithm>
 #include <numeric>
 #ifdef EZP_TBB
-#include <execution>
+#include <tbb/parallel_sort.h>
+#define ezp_sort tbb::parallel_sort
+#else
+#define ezp_sort std::sort
 #endif
 
 namespace ezp {
@@ -101,12 +104,7 @@ namespace ezp {
             , nnz(IT{coo.nnz}) {
             std::vector<IT2> index(nnz);
             std::iota(index.begin(), index.end(), IT2(0));
-            std::sort(
-#ifdef EZP_TBB
-                std::execution::par,
-#endif
-                index.begin(), index.end(), detail::csr_comparator(coo.row, coo.col)
-            );
+            ezp_sort(index.begin(), index.end(), detail::csr_comparator(coo.row, coo.col));
 
             row_storage.resize(nnz);
             col_storage.resize(nnz);
