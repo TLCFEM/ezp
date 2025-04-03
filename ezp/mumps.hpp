@@ -116,11 +116,16 @@ namespace ezp {
         explicit mumps(const symmetric_pattern sym = unsymmetric, const parallel_mode par = no_host) {
             id.comm_fortran = MPI_Comm_c2f(comm_world.native_handle());
             id.sym = sym;
-            id.par = par;
             // force par=1 if there is only one process
-            if(comm_world.size() == 1) id.par = 1;
+            id.par = comm_world.size() == 1 ? 1 : par;
             perform_job(-1);
         };
+
+        mumps(const mumps& other)
+            : mumps(symmetric_pattern{static_cast<std::int8_t>(other.id.sym)}, parallel_mode{static_cast<std::int8_t>(other.id.par)}) {};
+        mumps(mumps&&) = delete;
+        mumps& operator=(const mumps&) = delete;
+        mumps& operator=(mumps&&) = delete;
 
         ~mumps() { perform_job(-2); };
 

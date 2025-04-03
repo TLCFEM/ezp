@@ -27,18 +27,7 @@
 #endif
 
 namespace ezp {
-    namespace detail {
-        struct non_copyable {
-            non_copyable() = default;
-            non_copyable(const non_copyable&) = delete;
-            non_copyable(non_copyable&&) = default;
-            non_copyable& operator=(const non_copyable&) = delete;
-            non_copyable& operator=(non_copyable&&) = default;
-            virtual ~non_copyable() = default;
-        };
-    } // namespace detail
-
-    template<data_t DT, index_t IT> struct sparse_coo_mat : detail::non_copyable {
+    template<data_t DT, index_t IT> struct sparse_coo_mat {
         IT n, nnz;
         IT *row, *col;
         DT* data;
@@ -74,7 +63,7 @@ namespace ezp {
         { return std::fabs(x - y) <= std::numeric_limits<T>::epsilon() * std::fabs(x + y) * ulp || std::fabs(x - y) < std::numeric_limits<T>::min(); }
     } // namespace detail
 
-    template<data_t DT, index_t IT> struct sparse_csr_mat : detail::non_copyable {
+    template<data_t DT, index_t IT> struct sparse_csr_mat {
         IT n, nnz;
         IT *row_ptr, *col_idx;
         DT* data;
@@ -83,6 +72,22 @@ namespace ezp {
         std::vector<DT> data_storage;
 
         sparse_csr_mat() = default;
+        sparse_csr_mat(const sparse_csr_mat& other)
+            : n(other.n)
+            , row_ptr(other.row_ptr)
+            , col_idx(other.col_idx)
+            , data(other.data)
+            , row_storage(other.row_storage)
+            , col_storage(other.col_storage)
+            , data_storage(other.data_storage) {
+            if(!row_storage.empty()) row_ptr = row_storage.data();
+            if(!col_storage.empty()) col_idx = col_storage.data();
+            if(!data_storage.empty()) data = data_storage.data();
+        }
+        sparse_csr_mat(sparse_csr_mat&&) = delete;
+        sparse_csr_mat& operator=(const sparse_csr_mat&) = delete;
+        sparse_csr_mat& operator=(sparse_csr_mat&&) = default;
+        virtual ~sparse_csr_mat() = default;
 
         sparse_csr_mat(const IT n, const IT nnz, IT* const row_ptr, IT* const col_idx, DT* const data)
             : n(n)
