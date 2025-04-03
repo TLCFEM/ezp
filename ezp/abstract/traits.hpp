@@ -391,4 +391,4 @@ namespace ezp {
     };
 } // namespace ezp
 
-#endif // ABSTRACT_SOLVER_HPP
+#endif // TRAITS_HPP

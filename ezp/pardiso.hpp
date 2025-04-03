@@ -107,7 +107,7 @@ namespace ezp {
         explicit pardiso(const IT mtype, const IT msglvl = 0)
             : pardiso(matrix_type{static_cast<std::int8_t>(mtype)}, message_level{static_cast<std::int8_t>(msglvl)}) {};
 
-        explicit pardiso(const matrix_type mtype, const message_level msglvl = message_level::no_output)
+        explicit pardiso(const matrix_type mtype, const message_level msglvl = no_output)
             : mtype(mtype)
             , msglvl(msglvl) {};
 

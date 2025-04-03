@@ -77,7 +77,7 @@ namespace ezp {
             , col_idx(col_idx)
             , data(data) {}
 
-        template<data_t DT2, index_t IT2> sparse_csr_mat(const sparse_coo_mat<DT2, IT2>& coo, const bool full = false)
+        template<data_t DT2, index_t IT2> explicit sparse_csr_mat(const sparse_coo_mat<DT2, IT2>& coo, const bool full = false)
             : n(IT{coo.n})
             , nnz(IT{coo.nnz}) {
             std::vector<IT2> index(nnz);
@@ -138,4 +138,4 @@ namespace ezp {
     };
 } // namespace ezp
 
-#endif // ABSTRACT_SOLVER_HPP
+#endif // SPARSE_SOLVER_HPP

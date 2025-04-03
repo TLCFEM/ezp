@@ -128,7 +128,8 @@ namespace ezp {
             }
         };
 
-        template<band_container_t AT, full_container_t BT> IT solve(AT&& A, BT&& B) { return solve(to_band(A), to_full(B)); }
+        template<band_container_t AT, full_container_t BT> IT solve(AT&& A, BT&& B) { return solve(to_band(std::forward<AT>(A)), to_full(std::forward<BT>(B))); }
+        template<band_container_t AT> IT solve(AT&& A, full_mat<DT, IT>&& B) { return solve(to_band(std::forward<AT>(A)), to_full(std::forward<full_mat<DT, IT>>(B))); }
 
         IT solve(band_mat<DT, IT>&& A, full_mat<DT, IT>&& B) override {
             if(!this->ctx.is_valid() || !this->trans_ctx.is_valid()) return 0;

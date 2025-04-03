@@ -213,6 +213,33 @@ namespace ezp {
 
             return sync_error();
         }
+
+        /**
+         * @brief Computes the determinant of a matrix using MUMPS library data.
+         *
+         * This function calculates the determinant based on the values stored in the
+         * MUMPS library's internal data structures. It uses the `rinfog` and `infog`
+         * arrays to retrieve necessary information for the computation.
+         *
+         * @note The result is meaningful only if the solver is configured to compute
+         * the determinant (`icntl_determinant_computation` or directly `id.icntl[32]`).
+         *
+         * @tparam DT The data type of the determinant (e.g., float, double).
+         * @return A `std::complex<DT>` representing the determinant of the matrix.
+         *
+         * @note The computation involves:
+         *       - `rinfog[11]` as the real part of the determinant.
+         *       - `rinfog[12]` as the imaginary part, if applicable.
+         *       - `infog[33]` to determine the power of 2 scaling factor.
+         *       - If `DT` is a floating-point type, the imaginary part is set to zero.
+         */
+        auto det() {
+            const auto a = id.rinfog[11];
+            const auto b = floating_t<DT> ? DT{0} : id.rinfog[12];
+            const auto c = std::pow(DT{2}, id.infog[33]);
+
+            return std::complex<DT>{a, b} * c;
+        }
     };
 } // namespace ezp
 
