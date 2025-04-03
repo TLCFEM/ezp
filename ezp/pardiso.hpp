@@ -111,6 +111,15 @@ namespace ezp {
             : mtype(mtype)
             , msglvl(msglvl) {};
 
+        pardiso(const pardiso& other)
+            : iparm(other.iparm)
+            , a_mat(other.a_mat)
+            , mtype(other.mtype)
+            , msglvl(other.msglvl) {}
+        pardiso(pardiso&&) = delete;
+        pardiso& operator=(const pardiso&) = delete;
+        pardiso& operator=(pardiso&&) = delete;
+
         ~pardiso() { dealloc(); }
 
         auto& operator()(const IT index) { return iparm[index]; }

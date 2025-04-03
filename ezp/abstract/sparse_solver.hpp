@@ -84,20 +84,8 @@ namespace ezp {
             if(!col_storage.empty()) col_idx = col_storage.data();
             if(!data_storage.empty()) data = data_storage.data();
         }
-        sparse_csr_mat(sparse_csr_mat&&) = default;
-        sparse_csr_mat& operator=(const sparse_csr_mat& other) {
-            if(this != &other) {
-                n = other.n;
-                row_storage = other.row_storage;
-                col_storage = other.col_storage;
-                data_storage = other.data_storage;
-                row_ptr = row_storage.empty() ? other.row_ptr : row_storage.data();
-                col_idx = col_storage.empty() ? other.col_idx : col_storage.data();
-                data = data_storage.empty() ? other.data : data_storage.data();
-            }
-
-            return *this;
-        }
+        sparse_csr_mat(sparse_csr_mat&&) = delete;
+        sparse_csr_mat& operator=(const sparse_csr_mat&) = delete;
         sparse_csr_mat& operator=(sparse_csr_mat&&) = default;
         virtual ~sparse_csr_mat() = default;
 
