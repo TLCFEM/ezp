@@ -161,7 +161,7 @@ namespace ezp {
             return info;
         }
 
-        IT solve(full_mat<DT, IT>&& B) override { return IT{-1}; }
+        IT solve(full_mat<DT, IT>&&) override { throw std::runtime_error("not implemented"); }
     };
 
     template<index_t IT, char FCT = 'E', char ODER = 'R'> using par_dgesvx = pgesvx<double, IT, FCT, ODER>;

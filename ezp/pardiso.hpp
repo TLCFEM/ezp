@@ -141,15 +141,9 @@ namespace ezp {
         auto& iparm_out_of_core(const auto config) { return iparm[59] = config; };
 
         IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
-            IT error = 0;
-            if(0 == comm_world.rank() && A.row_ptr[A.n] != A.nnz + (0 == iparm[0] || 0 == iparm[34])) error = -1;
-
-            error = sync_error(error);
-            if(error < 0) return error;
-
             if(A.n != B.n_rows) return -1;
 
-            error = sync_error(alloc(std::move(A)));
+            auto error = sync_error(alloc(std::move(A)));
             if(error < 0) return error;
 
             iparm[39] = 0; // force centralised input/output

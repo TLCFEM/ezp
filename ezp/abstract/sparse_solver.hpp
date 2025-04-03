@@ -66,7 +66,7 @@ namespace ezp {
         { return std::fabs(x - y) <= std::numeric_limits<T>::epsilon() * std::fabs(x + y) * ulp || std::fabs(x - y) < std::numeric_limits<T>::min(); }
     } // namespace detail
 
-    template<data_t DT, index_t IT> struct sparse_csr_mat {
+    template<data_t DT, index_t IT> struct sparse_csr_mat final {
         IT n, nnz;
         IT *row_ptr, *col_idx;
         DT* data;
@@ -90,7 +90,7 @@ namespace ezp {
         sparse_csr_mat(sparse_csr_mat&&) = delete;
         sparse_csr_mat& operator=(const sparse_csr_mat&) = delete;
         sparse_csr_mat& operator=(sparse_csr_mat&&) = default;
-        virtual ~sparse_csr_mat() = default;
+        ~sparse_csr_mat() = default;
 
         sparse_csr_mat(const IT n, const IT nnz, IT* const row_ptr, IT* const col_idx, DT* const data)
             : n(n)
