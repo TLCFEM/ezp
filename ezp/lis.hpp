@@ -343,6 +343,11 @@ namespace ezp {
                 lis_vector_set_size(v, 0 == get_lis_env().rank() ? n : 0, 0);
             }
 
+            lis_vector(const lis_vector&) = delete;
+            lis_vector(lis_vector&&) = delete;
+            lis_vector& operator=(const lis_vector&) = delete;
+            lis_vector& operator=(lis_vector&&) = delete;
+
             ~lis_vector() {
                 unset();
                 lis_vector_destroy(v);

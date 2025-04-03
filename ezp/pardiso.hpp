@@ -112,10 +112,9 @@ namespace ezp {
             , msglvl(msglvl) {};
 
         pardiso(const pardiso& other)
-            : iparm(other.iparm)
-            , a_mat(other.a_mat)
+            : a_mat(other.a_mat)
             , mtype(other.mtype)
-            , msglvl(other.msglvl) {}
+            , msglvl(other.msglvl) { std::copy_n(other.iparm, 64, iparm); }
         pardiso(pardiso&&) = delete;
         pardiso& operator=(const pardiso&) = delete;
         pardiso& operator=(pardiso&&) = delete;
