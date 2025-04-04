@@ -82,8 +82,8 @@ namespace ezp::detail {
         using base_t::solve;
 
         template<full_container_t AT, full_container_t BT> IT solve(AT&& A, BT&& B) { return solve(to_full(std::forward<AT>(A)), to_full(std::forward<BT>(B))); }
-        template<full_container_t AT> IT solve(AT&& A, full_mat<DT, IT>&& B) { return solve(to_full(std::forward<AT>(A)), std::forward<full_mat<DT, IT>>(B)); }
-        template<full_container_t BT> IT solve(full_mat<DT, IT>&& A, BT&& B) { return solve(std::forward<full_mat<DT, IT>>(A), to_full(std::forward<BT>(B))); }
+        template<full_container_t AT> IT solve(AT&& A, full_mat<DT, IT>&& B) { return solve(to_full(std::forward<AT>(A)), std::move(B)); }
+        template<full_container_t BT> IT solve(full_mat<DT, IT>&& A, BT&& B) { return solve(std::move(A), to_full(std::forward<BT>(B))); }
     };
 } // namespace ezp::detail
 
