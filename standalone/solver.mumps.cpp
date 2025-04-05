@@ -24,7 +24,12 @@
  *
  * The matrix `A` is stored in the coordinate (COO) format.
  * The caller must send five buffers to the worker process:
- * - an integer array of size 6
+ * - an integer array of size 5
+ *   - the symmetry type of matrix `A`,
+ *   - the number of right-hand sides,
+ *   - the number of rows of matrix `A`,
+ *   - the number of non-zero elements of matrix `A`,
+ *   - the data type of matrix `A` (see below),
  * - a buffer containing the row index of matrix `A`, size `NNZ`,
  * - a buffer containing the column index of matrix `A`, size `NNZ`,
  * - a buffer containing the value of matrix `A`, size `NNZ`,
@@ -50,25 +55,26 @@
  * @{
  */
 
-#include <ezp/mumps.hpp>
+#include <ezp/mumps.parser.hpp>
 #include <mpl/mpl.hpp>
 
 const auto& comm_world{mpl::environment::comm_world()};
 const auto& parent = mpl::inter_communicator::parent();
 
-template<typename DT, typename IT> int run(const IT (&config)[6]) {
+static constexpr auto config_size = 5;
+
+template<typename DT, typename IT> int run(const IT (&config)[config_size], const std::string_view command) {
     const auto sym = config[0];
     const auto nrhs = config[1];
     const auto n = config[2];
     const auto nnz = config[3];
-    const auto msglvl = config[4];
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnarrowing"
     auto solver = ezp::mumps<DT, IT>(ezp::symmetric_pattern{sym});
 #pragma GCC diagnostic pop
 
-    solver(3) = msglvl;
+    mumps_set(std::string(command), solver);
 
     std::vector<IT> ia, ja;
     std::vector<DT> a, b;
@@ -99,29 +105,35 @@ template<typename DT, typename IT> int run(const IT (&config)[6]) {
     return 0;
 }
 
-template<typename IT> auto prepare() {
+template<typename IT> auto prepare(const std::string_view command) {
     const auto all = mpl::communicator(parent, mpl::communicator::order_high);
 
-    IT config[6]{};
+    IT config[config_size]{};
 
     all.bcast(0, config);
 
-    const auto FLOAT = config[5];
+    const auto FLOAT = config[config_size - 1];
 
-    if(FLOAT >= 10) return run<complex16>(config);
-    if(FLOAT >= 0) return run<double>(config);
-    if(FLOAT > -10) return run<float>(config);
+    if(FLOAT >= 10) return run<complex16>(config, command);
+    if(FLOAT >= 0) return run<double>(config, command);
+    if(FLOAT > -10) return run<float>(config, command);
 
-    return run<complex8>(config);
+    return run<complex8>(config, command);
 }
 
-int main(int, char**) {
+int main(const int argc, char** argv) {
     if(!parent.is_valid()) {
         printf("This program must be invoked by the host application.\n");
         return 0;
     }
 
-    return prepare<int_t>();
+    std::string command{};
+    for(int i = 1; i < argc; i++) {
+        command += ' ';
+        command += argv[i];
+    }
+
+    return prepare<int_t>(command);
 }
 
 //! @}

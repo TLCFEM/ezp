@@ -34,10 +34,10 @@
 
 namespace ezp {
     namespace detail {
-        static constexpr auto app_name = "mumps";
+        static constexpr std::string app_name = "mumps";
     } // namespace detail
 
-    template<data_t DT, index_t IT> auto mumps_set(const std::string& command, mumps<DT, IT>& solver) {
+    template<data_t DT, index_t IT> auto mumps_set(std::string command, mumps<DT, IT>& solver) {
         argparse::ArgumentParser program(detail::app_name, "", argparse::default_arguments::none);
         program.add_argument("--output-error-message").help("[1] output stream for error messages.").default_value(6).scan<'i', int>().metavar("INT").nargs(1);
         program.add_argument("--output-diagnostic-statistics-warning").help("[2] output stream for diagnostic printing and statistics local to each MPI process.").default_value(0).scan<'i', int>().metavar("INT").nargs(1);
@@ -79,6 +79,7 @@ namespace ezp {
         program.add_argument("--symbolic-factorization").help("[58] defines options for symbolic factorization.").default_value(2).choices(1, 2).scan<'i', int>().metavar("INT").nargs(1);
 
         std::vector<std::string> args{detail::app_name};
+        command = command.substr(command.find('-'));
         std::istringstream iss(command);
         args.insert(args.end(), std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>());
         program.parse_args(args);
