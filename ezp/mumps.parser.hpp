@@ -78,8 +78,7 @@ namespace ezp {
         program.add_argument("--rank-revealing-factorization").help("[56] detects pseudo-singularities during factorization and factorizes the root node with a rank-revealing method.").default_value(0).choices(0, 1).scan<'i', int>().metavar("INT").nargs(1);
         program.add_argument("--symbolic-factorization").help("[58] defines options for symbolic factorization.").default_value(2).choices(1, 2).scan<'i', int>().metavar("INT").nargs(1);
 
-        std::vector<std::string> args;
-        args.emplace_back(detail::app_name);
+        std::vector<std::string> args{detail::app_name};
         std::istringstream iss(command);
         args.insert(args.end(), std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>());
         program.parse_args(args);
