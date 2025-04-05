@@ -53,6 +53,7 @@ var annotated_dup =
     [ "LIS_VECTOR_STRUCT", "d0/d77/structLIS__VECTOR__STRUCT.html", null ],
     [ "mat", "d0/d36/classmat.html", null ],
     [ "mumps", "df/d0c/classmumps.html", null ],
+    [ "mumps_parser", "d4/d64/classmumps__parser.html", null ],
     [ "pardiso", "dc/d7b/classpardiso.html", null ],
     [ "pdbsv", "d0/de4/classpdbsv.html", null ],
     [ "pgbsv", "d4/d10/classpgbsv.html", null ],
