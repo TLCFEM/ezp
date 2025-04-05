@@ -169,18 +169,17 @@ $(document).ready(function(){initNavTree('d7/db7/mumps_8parser_8hpp_source.html'
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>        program.add_argument(<span class="stringliteral">&quot;--rank-revealing-factorization&quot;</span>).help(<span class="stringliteral">&quot;[56] detects pseudo-singularities during factorization and factorizes the root node with a rank-revealing method.&quot;</span>).default_value(0).choices(0, 1).scan&lt;<span class="charliteral">&#39;i&#39;</span>, <span class="keywordtype">int</span>&gt;().metavar(<span class="stringliteral">&quot;INT&quot;</span>).nargs(1);</div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>        program.add_argument(<span class="stringliteral">&quot;--symbolic-factorization&quot;</span>).help(<span class="stringliteral">&quot;[58] defines options for symbolic factorization.&quot;</span>).default_value(2).choices(1, 2).scan&lt;<span class="charliteral">&#39;i&#39;</span>, <span class="keywordtype">int</span>&gt;().metavar(<span class="stringliteral">&quot;INT&quot;</span>).nargs(1);</div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        std::vector&lt;std::string&gt; args;</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>        args.emplace_back(detail::app_name);</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>        std::istringstream iss(command);</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>        args.insert(args.end(), std::istream_iterator&lt;std::string&gt;(iss), std::istream_iterator&lt;std::string&gt;());</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>        program.parse_args(args);</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>        solver.icntl_printing_level(program.get&lt;<span class="keywordtype">int</span>&gt;(<span class="stringliteral">&quot;--printing-level&quot;</span>));</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    }</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>} <span class="comment">// namespace ezp</span></div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        std::vector&lt;std::string&gt; args{detail::app_name};</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>        std::istringstream iss(command);</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>        args.insert(args.end(), std::istream_iterator&lt;std::string&gt;(iss), std::istream_iterator&lt;std::string&gt;());</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>        program.parse_args(args);</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>        solver.icntl_printing_level(program.get&lt;<span class="keywordtype">int</span>&gt;(<span class="stringliteral">&quot;--printing-level&quot;</span>));</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    }</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>} <span class="comment">// namespace ezp</span></div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
 <div class="ttc" id="aclassmumps_html"><div class="ttname"><a href="../../df/d0c/classmumps.html">mumps</a></div><div class="ttdoc">Solver for general sparse matrices.</div></div>
 <div class="ttc" id="amumps_8hpp_html"><div class="ttname"><a href="../../d9/d07/mumps_8hpp.html">mumps.hpp</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
