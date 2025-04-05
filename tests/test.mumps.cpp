@@ -36,7 +36,8 @@ template<data_t DT> auto random_mumps() {
 
     blacs_env<>::do_not_manage_mpi();
 
-    using solver_t = mumps<DT, int_t>;
+    auto solver = mumps<DT, int_t>();
+    solver(3) = 0; // msglvl
 
     for(auto K = 0; K < REPEAT; ++K) {
         auto seed = static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count());
@@ -64,9 +65,6 @@ template<data_t DT> auto random_mumps() {
 
             std::fill(b.begin(), b.end(), 1.);
         }
-
-        auto solver = solver_t();
-        solver(3) = 0; // msglvl
 
         const auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
 

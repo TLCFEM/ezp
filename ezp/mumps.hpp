@@ -97,7 +97,7 @@ namespace ezp {
         using struct_t = typename detail::mumps_struc<DT>::struct_type;
         using entry_t = typename detail::mumps_struc<DT>::entry_type;
 
-        struct_t id;
+        struct_t id{};
 
         const mpl::communicator& comm_world{mpl::environment::comm_world()};
 
@@ -186,7 +186,7 @@ namespace ezp {
         auto& rinfog() { return id.rinfog; }
 
         IT solve(sparse_coo_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
-            if(A.n != B.n_rows) return -1;
+            if(A.n != B.n_rows) return IT{-1};
 
             // ReSharper disable CppCStyleCast
             id.n = A.n;
@@ -206,7 +206,7 @@ namespace ezp {
         }
 
         IT solve(full_mat<DT, IT>&& B) {
-            if(id.n != B.n_rows) return -1;
+            if(id.n != B.n_rows) return IT{-1};
 
             // ReSharper disable CppCStyleCast
             id.lrhs = B.n_rows;
