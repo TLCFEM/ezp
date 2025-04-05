@@ -106,9 +106,10 @@ void random_cmumps() {
 
 #ifndef EZP_ENABLE_TEST
 int main(const int argc, const char* argv[]) {
-    volatile int i = 0;
-    if(argc <= 1)
+    if(argc <= 1) {
+        volatile int i = 0;
         while(0 == i) std::this_thread::sleep_for(seconds(10));
+    }
     else REPEAT = std::atoi(argv[1]);
 
     random_dmumps();
