@@ -83,7 +83,46 @@ namespace ezp {
         args.insert(args.end(), std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>());
         program.parse_args(args);
 
-        solver.icntl_printing_level(program.get<int>("--printing-level"));
+        if(program.is_used("--output-error-message")) solver.icntl_output_error_message(program.get<int>("--output-error-message"));
+        if(program.is_used("--output-diagnostic-statistics-warning")) solver.icntl_output_diagnostic_statistics_warning(program.get<int>("--output-diagnostic-statistics-warning"));
+        if(program.is_used("--output-global-information")) solver.icntl_output_global_information(program.get<int>("--output-global-information"));
+        if(program.is_used("--printing-level")) solver.icntl_printing_level(program.get<int>("--printing-level"));
+        if(program.is_used("--permutation-and-scaling")) solver.icntl_permutation_and_scaling(program.get<int>("--permutation-and-scaling"));
+        if(program.is_used("--symmetric-permutation")) solver.icntl_symmetric_permutation(program.get<int>("--symmetric-permutation"));
+        if(program.is_used("--scaling-strategy")) solver.icntl_scaling_strategy(program.get<int>("--scaling-strategy"));
+        if(program.is_used("--transpose-matrix")) solver.icntl_transpose_matrix(program.get<int>("--transpose-matrix"));
+        if(program.is_used("--iterative-refinement")) solver.icntl_iterative_refinement(program.get<int>("--iterative-refinement"));
+        if(program.is_used("--error-analysis")) solver.icntl_error_analysis(program.get<int>("--error-analysis"));
+        if(program.is_used("--ordering-strategy")) solver.icntl_ordering_strategy(program.get<int>("--ordering-strategy"));
+        if(program.is_used("--root-parallelism")) solver.icntl_root_parallelism(program.get<int>("--root-parallelism"));
+        if(program.is_used("--working-space-percentage-increase")) solver.icntl_working_space_percentage_increase(program.get<int>("--working-space-percentage-increase"));
+        if(program.is_used("--compression-block-format")) solver.icntl_compression_block_format(program.get<int>("--compression-block-format"));
+        if(program.is_used("--openmp-threads")) solver.icntl_openmp_threads(program.get<int>("--openmp-threads"));
+        if(program.is_used("--distribution-strategy-input")) solver.icntl_distribution_strategy_input(program.get<int>("--distribution-strategy-input"));
+        if(program.is_used("--schur-complement")) solver.icntl_schur_complement(program.get<int>("--schur-complement"));
+        if(program.is_used("--distribution-strategy-solution")) solver.icntl_distribution_strategy_solution(program.get<int>("--distribution-strategy-solution"));
+        if(program.is_used("--out-of-core")) solver.icntl_out_of_core(program.get<int>("--out-of-core"));
+        if(program.is_used("--maximum-working-memory")) solver.icntl_maximum_working_memory(program.get<int>("--maximum-working-memory"));
+        if(program.is_used("--null-pivot-row-detection")) solver.icntl_null_pivot_row_detection(program.get<int>("--null-pivot-row-detection"));
+        if(program.is_used("--deficient-and-null-space-basis")) solver.icntl_deficient_and_null_space_basis(program.get<int>("--deficient-and-null-space-basis"));
+        if(program.is_used("--schur-complement-solution")) solver.icntl_schur_complement_solution(program.get<int>("--schur-complement-solution"));
+        if(program.is_used("--rhs-block-size")) solver.icntl_rhs_block_size(program.get<int>("--rhs-block-size"));
+        if(program.is_used("--ordering-computation")) solver.icntl_ordering_computation(program.get<int>("--ordering-computation"));
+        if(program.is_used("--inverse-computation")) solver.icntl_inverse_computation(program.get<int>("--inverse-computation"));
+        if(program.is_used("--forward-elimination")) solver.icntl_forward_elimination(program.get<int>("--forward-elimination"));
+        if(program.is_used("--determinant-computation")) solver.icntl_determinant_computation(program.get<int>("--determinant-computation"));
+        if(program.is_used("--out-of-core-file")) solver.icntl_out_of_core_file(program.get<int>("--out-of-core-file"));
+        if(program.is_used("--blr")) solver.icntl_blr(program.get<int>("--blr"));
+        if(program.is_used("--blr-variant")) solver.icntl_blr_variant(program.get<int>("--blr-variant"));
+        if(program.is_used("--blr-compression")) solver.icntl_blr_compression(program.get<int>("--blr-compression"));
+        if(program.is_used("--lu-compression-rate")) solver.icntl_lu_compression_rate(program.get<int>("--lu-compression-rate"));
+        if(program.is_used("--block-compression-rate")) solver.icntl_block_compression_rate(program.get<int>("--block-compression-rate"));
+        if(program.is_used("--tree-parallelism")) solver.icntl_tree_parallelism(program.get<int>("--tree-parallelism"));
+        if(program.is_used("--compact-working-space")) solver.icntl_compact_working_space(program.get<int>("--compact-working-space"));
+        if(program.is_used("--rank-revealing-factorization")) solver.icntl_rank_revealing_factorization(program.get<int>("--rank-revealing-factorization"));
+        if(program.is_used("--symbolic-factorization")) solver.icntl_symbolic_factorization(program.get<int>("--symbolic-factorization"));
+
+        return;
     }
 } // namespace ezp
 
