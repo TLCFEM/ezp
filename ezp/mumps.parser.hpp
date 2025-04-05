@@ -74,7 +74,7 @@ namespace ezp {
         program.add_argument("--lu-compression-rate").help("[38] estimates compression rate of LU factors.").default_value(600).scan<'i', int>().metavar("INT").nargs(1);
         program.add_argument("--block-compression-rate").help("[39] estimates compression rate of contribution blocks.").default_value(500).scan<'i', int>().metavar("INT").nargs(1);
         program.add_argument("--tree-parallelism").help("[48] controls multithreading with tree parallelism.").default_value(1).choices(0, 1).scan<'i', int>().metavar("INT").nargs(1);
-        program.add_argument("--compact-working-space").help("[49] compact workarray at the end of factorization phase.").default_value(0).choices(0, 1, 2).scan<'i', int>().metavar("INT").nargs(1);
+        program.add_argument("--compact-working-space").help("[49] compacts workarray at the end of factorization phase.").default_value(0).choices(0, 1, 2).scan<'i', int>().metavar("INT").nargs(1);
         program.add_argument("--rank-revealing-factorization").help("[56] detects pseudo-singularities during factorization and factorizes the root node with a rank-revealing method.").default_value(0).choices(0, 1).scan<'i', int>().metavar("INT").nargs(1);
         program.add_argument("--symbolic-factorization").help("[58] defines options for symbolic factorization.").default_value(2).choices(1, 2).scan<'i', int>().metavar("INT").nargs(1);
 
