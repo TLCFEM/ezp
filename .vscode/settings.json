@@ -84,6 +84,10 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
-        "execution": "cpp"
+        "execution": "cpp",
+        "any": "cpp",
+        "charconv": "cpp",
+        "shared_mutex": "cpp",
+        "cfenv": "cpp"
     }
 }

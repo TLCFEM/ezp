@@ -16,7 +16,7 @@
  ******************************************************************************/
 
 #include <chrono>
-#include <ezp/mumps.hpp>
+#include <ezp/mumps.parser.hpp>
 #include <random>
 #include <thread>
 
@@ -37,7 +37,7 @@ template<data_t DT> auto random_mumps() {
     blacs_env<>::do_not_manage_mpi();
 
     auto solver = mumps<DT, int_t>();
-    solver(3) = 0; // msglvl
+    mumps_set("--printing-level 0", solver);
 
     for(auto K = 0; K < REPEAT; ++K) {
         auto seed = static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count());
