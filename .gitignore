@@ -1,4 +1,5 @@
-.dirty
+.cache/
+.dirty/
 .idea/
 .venv/
 .vs/
