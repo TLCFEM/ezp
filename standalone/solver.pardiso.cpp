@@ -17,13 +17,14 @@
 /**
  * @brief Standalone `pardiso` solver.
  *
- * This program is a standalone application that solves a system of linear equations
- * using the `pardiso` solver.
+ * This program is a standalone application that solves a system of linear
+ * equations using the `pardiso` solver.
  *
  * The caller spawns this program as a worker process.
  *
  * The matrix `A` is stored in the compressed sparse row (CSR) format.
  * The caller must send five buffers to the worker process:
+ *
  * - an integer array of size 5
  * - a buffer containing the row index of matrix `A`, size `N + 1`,
  * - a buffer containing the column index of matrix `A`, size `NNZ`,
@@ -45,7 +46,7 @@
  */
 
 #ifdef EZP_MKL
-#include <ezp/pardiso.hpp>
+#include <ezp/pardiso.parser.hpp>
 #include <mpl/mpl.hpp>
 
 const auto& comm_world{mpl::environment::comm_world()};
