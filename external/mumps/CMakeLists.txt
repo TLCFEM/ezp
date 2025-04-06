@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.18)
 
 project(mumps C Fortran)
 
+add_compile_options(-w)
+
 add_compile_definitions(Add_)
 add_compile_definitions(pord)
 # add_compile_definitions(metis)
