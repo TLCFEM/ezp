@@ -73,6 +73,14 @@ find_package(MPI REQUIRED)
 message(STATUS ${MPIEXEC_EXECUTABLE})
 
 get_filename_component(MPI_ROOT_DIR ${MPIEXEC_EXECUTABLE} DIRECTORY)
+
+file(GLOB MPI_VERSION_FILE
+    "${MPI_ROOT_DIR}/mpichversion"
+    "${MPI_ROOT_DIR}/ompi_info"
+    "${MPI_ROOT_DIR}/impi_info"
+)
+message(STATUS "MPI_VERSION_FILE: ${MPI_VERSION_FILE}")
+
 get_filename_component(MPI_ROOT_DIR ${MPI_ROOT_DIR} DIRECTORY)
 find_library(MPI_FORT_LIB mpichfort mpi_mpifh mpifort HINTS ${MPI_ROOT_DIR}/lib NO_CACHE REQUIRED)
 message(STATUS "MPI_FORT_LIB: ${MPI_FORT_LIB}")
@@ -98,13 +106,10 @@ if (NOT MKL_FOUND)
         endif ()
     else ()
         link_directories(${PROJECT_SOURCE_DIR}/libs)
-        string(TOLOWER ${MPI_C_INCLUDE_DIRS} MPI_PATH)
-        if (MPI_PATH MATCHES "openmpi")
-            message(STATUS "Using OpenMPI.")
-            link_libraries(scalapack-openmpi)
-        else ()
-            message(STATUS "Using MPICH.")
+        if (MPI_VERSION_FILE MATCHES "mpichversion")
             link_libraries(scalapack-mpich)
+        elseif (MPI_VERSION_FILE MATCHES "ompi_info")
+            link_libraries(scalapack-openmpi)
         endif ()
         link_libraries(lapack blas gfortran)
     endif ()
