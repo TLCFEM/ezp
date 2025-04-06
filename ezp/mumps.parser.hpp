@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 /**
- * @class mumps_parser
+ * @fn mumps_set
  * @brief Parse MUMPS parameters.
  *
  * Usage: mumps [--output-error-message INT] [--output-diagnostic-statistics-warning INT] [--output-global-information INT] [--printing-level INT] [--permutation-and-scaling INT] [--symmetric-permutation INT] [--scaling-strategy INT] [--transpose-matrix INT] [--iterative-refinement INT] [--error-analysis INT] [--ordering-strategy INT] [--root-parallelism INT] [--working-space-percentage-increase INT] [--compression-block-format INT] [--openmp-threads INT] [--distribution-strategy-input INT] [--schur-complement INT] [--distribution-strategy-solution INT] [--out-of-core INT] [--maximum-working-memory INT] [--null-pivot-row-detection INT] [--deficient-and-null-space-basis INT] [--schur-complement-solution INT] [--rhs-block-size INT] [--ordering-computation INT] [--inverse-computation INT] [--forward-elimination INT] [--determinant-computation INT] [--out-of-core-file INT] [--blr INT] [--blr-variant INT] [--blr-compression INT] [--lu-compression-rate INT] [--block-compression-rate INT] [--tree-parallelism INT] [--compact-working-space INT] [--rank-revealing-factorization INT] [--symbolic-factorization INT]
@@ -76,11 +76,11 @@
 
 namespace ezp {
     namespace detail {
-        static constexpr std::string app_name = "mumps";
+        static constexpr std::string mumps_name = "mumps";
     } // namespace detail
 
     template<data_t DT, index_t IT> auto mumps_set(std::string command, mumps<DT, IT>& solver) {
-        argparse::ArgumentParser program(detail::app_name, "", argparse::default_arguments::none);
+        argparse::ArgumentParser program(detail::mumps_name, "", argparse::default_arguments::none);
         program.add_argument("--output-error-message").help("[1] output stream for error messages.").default_value(6).scan<'i', int>().metavar("INT").nargs(1);
         program.add_argument("--output-diagnostic-statistics-warning").help("[2] output stream for diagnostic printing and statistics local to each MPI process.").default_value(0).scan<'i', int>().metavar("INT").nargs(1);
         program.add_argument("--output-global-information").help("[3] output stream for global information, collected on the host.").default_value(6).scan<'i', int>().metavar("INT").nargs(1);
@@ -120,7 +120,7 @@ namespace ezp {
         program.add_argument("--rank-revealing-factorization").help("[56] detects pseudo-singularities during factorization and factorizes the root node with a rank-revealing method.").default_value(0).choices(0, 1).scan<'i', int>().metavar("INT").nargs(1);
         program.add_argument("--symbolic-factorization").help("[58] defines options for symbolic factorization.").default_value(2).choices(1, 2).scan<'i', int>().metavar("INT").nargs(1);
 
-        std::vector<std::string> args{detail::app_name};
+        std::vector<std::string> args{detail::mumps_name};
         command = command.substr(command.find('-'));
         std::istringstream iss(command);
         args.insert(args.end(), std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>());
