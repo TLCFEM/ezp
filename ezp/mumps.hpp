@@ -137,48 +137,174 @@ namespace ezp {
          */
         auto& operator()(const IT index) { return id.icntl[index]; }
 
-        auto icntl_output_error_message(const auto config) { return id.icntl[0] = config; }
-        auto icntl_output_diagnostic_statistics_warning(const auto config) { return id.icntl[1] = config; }
-        auto icntl_output_global_information(const auto config) { return id.icntl[2] = config; }
-        auto icntl_printing_level(const auto config) { return id.icntl[3] = config; }
-        // auto icntl_matrix_input_format(const auto config) { return id.icntl[4] = config; }
-        auto icntl_permutation_and_scaling(const auto config) { return id.icntl[5] = config; }
-        auto icntl_symmetric_permutation(const auto config) { return id.icntl[6] = config; }
-        auto icntl_scaling_strategy(const auto config) { return id.icntl[7] = config; }
-        auto icntl_transpose_matrix(const auto config) { return id.icntl[8] = config; }
-        auto icntl_iterative_refinement(const auto config) { return id.icntl[9] = config; }
-        auto icntl_error_analysis(const auto config) { return id.icntl[10] = config; }
-        auto icntl_ordering_strategy(const auto config) { return id.icntl[11] = config; }
-        auto icntl_root_parallelism(const auto config) { return id.icntl[12] = config; }
-        auto icntl_working_space_percentage_increase(const auto config) { return id.icntl[13] = config; }
-        auto icntl_compression_block_format(const auto config) { return id.icntl[14] = config; }
-        auto icntl_openmp_threads(const auto config) { return id.icntl[15] = config; }
-        auto icntl_distribution_strategy_input(const auto config) { return id.icntl[17] = config; }
-        auto icntl_schur_complement(const auto config) { return id.icntl[18] = config; }
-        // auto icntl_rhs_format(const auto config) { return id.icntl[19] = config; }
-        auto icntl_distribution_strategy_solution(const auto config) { return id.icntl[20] = config; }
-        auto icntl_out_of_core(const auto config) { return id.icntl[21] = config; }
-        auto icntl_maximum_working_memory(const auto config) { return id.icntl[22] = config; }
-        auto icntl_null_pivot_row_detection(const auto config) { return id.icntl[23] = config; }
-        auto icntl_deficient_and_null_space_basis(const auto config) { return id.icntl[24] = config; }
-        auto icntl_schur_complement_solution(const auto config) { return id.icntl[25] = config; }
-        auto icntl_rhs_block_size(const auto config) { return id.icntl[26] = config; }
-        auto icntl_ordering_computation(const auto config) { return id.icntl[27] = config; }
-        // auto icntl_parallel_ordering_tool(const auto config) { return id.icntl[28] = config; }
-        auto icntl_inverse_computation(const auto config) { return id.icntl[29] = config; }
-        // auto icntl_discard_factorization(const auto config) { return id.icntl[30] = config; }
-        auto icntl_forward_elimination(const auto config) { return id.icntl[31] = config; }
-        auto icntl_determinant_computation(const auto config) { return id.icntl[32] = config; }
-        auto icntl_out_of_core_file(const auto config) { return id.icntl[33] = config; }
-        auto icntl_blr(const auto config) { return id.icntl[34] = config; }
-        auto icntl_blr_variant(const auto config) { return id.icntl[35] = config; }
-        auto icntl_blr_compression(const auto config) { return id.icntl[36] = config; }
-        auto icntl_lu_compression_rate(const auto config) { return id.icntl[37] = config; }
-        auto icntl_block_compression_rate(const auto config) { return id.icntl[38] = config; }
-        auto icntl_tree_parallelism(const auto config) { return id.icntl[47] = config; }
-        auto icntl_compact_working_space(const auto config) { return id.icntl[48] = config; }
-        auto icntl_rank_revealing_factorization(const auto config) { return id.icntl[55] = config; }
-        auto icntl_symbolic_factorization(const auto config) { return id.icntl[57] = config; }
+        auto& icntl_output_error_message(const auto config) {
+            id.icntl[0] = config;
+            return *this;
+        }
+        auto& icntl_output_diagnostic_statistics_warning(const auto config) {
+            id.icntl[1] = config;
+            return *this;
+        }
+        auto& icntl_output_global_information(const auto config) {
+            id.icntl[2] = config;
+            return *this;
+        }
+        auto& icntl_printing_level(const auto config) {
+            id.icntl[3] = config;
+            return *this;
+        }
+        // auto& icntl_matrix_input_format(const auto config) {
+        //     id.icntl[4] = config;
+        //     return *this;
+        // }
+        auto& icntl_permutation_and_scaling(const auto config) {
+            id.icntl[5] = config;
+            return *this;
+        }
+        auto& icntl_symmetric_permutation(const auto config) {
+            id.icntl[6] = config;
+            return *this;
+        }
+        auto& icntl_scaling_strategy(const auto config) {
+            id.icntl[7] = config;
+            return *this;
+        }
+        auto& icntl_transpose_matrix(const auto config) {
+            id.icntl[8] = config;
+            return *this;
+        }
+        auto& icntl_iterative_refinement(const auto config) {
+            id.icntl[9] = config;
+            return *this;
+        }
+        auto& icntl_error_analysis(const auto config) {
+            id.icntl[10] = config;
+            return *this;
+        }
+        auto& icntl_ordering_strategy(const auto config) {
+            id.icntl[11] = config;
+            return *this;
+        }
+        auto& icntl_root_parallelism(const auto config) {
+            id.icntl[12] = config;
+            return *this;
+        }
+        auto& icntl_working_space_percentage_increase(const auto config) {
+            id.icntl[13] = config;
+            return *this;
+        }
+        auto& icntl_compression_block_format(const auto config) {
+            id.icntl[14] = config;
+            return *this;
+        }
+        auto& icntl_openmp_threads(const auto config) {
+            id.icntl[15] = config;
+            return *this;
+        }
+        auto& icntl_distribution_strategy_input(const auto config) {
+            id.icntl[17] = config;
+            return *this;
+        }
+        auto& icntl_schur_complement(const auto config) {
+            id.icntl[18] = config;
+            return *this;
+        }
+        // auto& icntl_rhs_format(const auto config) {
+        //     id.icntl[19] = config;
+        //     return *this;
+        // }
+        auto& icntl_distribution_strategy_solution(const auto config) {
+            id.icntl[20] = config;
+            return *this;
+        }
+        auto& icntl_out_of_core(const auto config) {
+            id.icntl[21] = config;
+            return *this;
+        }
+        auto& icntl_maximum_working_memory(const auto config) {
+            id.icntl[22] = config;
+            return *this;
+        }
+        auto& icntl_null_pivot_row_detection(const auto config) {
+            id.icntl[23] = config;
+            return *this;
+        }
+        auto& icntl_deficient_and_null_space_basis(const auto config) {
+            id.icntl[24] = config;
+            return *this;
+        }
+        auto& icntl_schur_complement_solution(const auto config) {
+            id.icntl[25] = config;
+            return *this;
+        }
+        auto& icntl_rhs_block_size(const auto config) {
+            id.icntl[26] = config;
+            return *this;
+        }
+        auto& icntl_ordering_computation(const auto config) {
+            id.icntl[27] = config;
+            return *this;
+        }
+        // auto& icntl_parallel_ordering_tool(const auto config) {
+        //     id.icntl[28] = config;
+        //     return *this;
+        // }
+        auto& icntl_inverse_computation(const auto config) {
+            id.icntl[29] = config;
+            return *this;
+        }
+        // auto& icntl_discard_factorization(const auto config) {
+        //     id.icntl[30] = config;
+        //     return *this;
+        // }
+        auto& icntl_forward_elimination(const auto config) {
+            id.icntl[31] = config;
+            return *this;
+        }
+        auto& icntl_determinant_computation(const auto config) {
+            id.icntl[32] = config;
+            return *this;
+        }
+        auto& icntl_out_of_core_file(const auto config) {
+            id.icntl[33] = config;
+            return *this;
+        }
+        auto& icntl_blr(const auto config) {
+            id.icntl[34] = config;
+            return *this;
+        }
+        auto& icntl_blr_variant(const auto config) {
+            id.icntl[35] = config;
+            return *this;
+        }
+        auto& icntl_blr_compression(const auto config) {
+            id.icntl[36] = config;
+            return *this;
+        }
+        auto& icntl_lu_compression_rate(const auto config) {
+            id.icntl[37] = config;
+            return *this;
+        }
+        auto& icntl_block_compression_rate(const auto config) {
+            id.icntl[38] = config;
+            return *this;
+        }
+        auto& icntl_tree_parallelism(const auto config) {
+            id.icntl[47] = config;
+            return *this;
+        }
+        auto& icntl_compact_working_space(const auto config) {
+            id.icntl[48] = config;
+            return *this;
+        }
+        auto& icntl_rank_revealing_factorization(const auto config) {
+            id.icntl[55] = config;
+            return *this;
+        }
+        auto& icntl_symbolic_factorization(const auto config) {
+            id.icntl[57] = config;
+            return *this;
+        }
 
         auto& info() { return id.info; }
         auto& rinfo() { return id.rinfo; }
