@@ -116,7 +116,8 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>main</b> (int, char **
 <div class="textblock"><p>Standalone <code>pardiso</code> solver. </p>
 <p>This program is a standalone application that solves a system of linear equations using the <code>pardiso</code> solver.</p>
 <p>The caller spawns this program as a worker process.</p>
-<p>The matrix <code>A</code> is stored in the compressed sparse row (CSR) format. The caller must send five buffers to the worker process:</p><ul>
+<p>The matrix <code>A</code> is stored in the compressed sparse row (CSR) format. The caller must send five buffers to the worker process:</p>
+<ul>
 <li>an integer array of size 5</li>
 <li>a buffer containing the row index of matrix <code>A</code>, size <code>N + 1</code>,</li>
 <li>a buffer containing the column index of matrix <code>A</code>, size <code>NNZ</code>,</li>
