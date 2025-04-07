@@ -2666,6 +2666,7 @@ namespace {
 namespace Catch {
     namespace Clara {
         namespace Detail {
+            static const auto console_dummy = "master";
 
             void TokenStream::loadBuffer() {
                 m_tokenBuffer.clear();
@@ -2700,6 +2701,7 @@ namespace Catch {
                             }
                         }
                     } else {
+                        if(0 != ezp::get_env<>().rank() && std::string(next).find("::out=") != std::string::npos) next = console_dummy;
                         m_tokenBuffer.push_back(
                             { TokenType::Argument, next } );
                     }
