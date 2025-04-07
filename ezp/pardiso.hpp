@@ -105,11 +105,18 @@ namespace ezp {
 
     public:
         explicit pardiso(const IT mtype, const IT msglvl = 0)
-            : pardiso(matrix_type{static_cast<std::int8_t>(mtype)}, message_level{static_cast<std::int8_t>(msglvl)}) {};
+            : pardiso(matrix_type{static_cast<std::int8_t>(mtype)}, message_level{static_cast<std::int8_t>(msglvl)}) {}
 
         explicit pardiso(const matrix_type mtype, const message_level msglvl = no_output)
             : mtype(mtype)
-            , msglvl(msglvl) {};
+            , msglvl(msglvl) {
+            if constexpr(floating_t<DT>) {
+                if(mtype != real_and_symmetric_positive_definite && mtype != real_and_symmetric_indefinite && mtype != real_and_structurally_symmetric && mtype != real_and_nonsymmetric) throw std::invalid_argument("matrix type does not match the data type");
+            }
+            else {
+                if(mtype != complex_and_hermitian_positive_definite && mtype != complex_and_hermitian_indefinite && mtype != complex_and_structurally_symmetric && mtype != complex_and_symmetric && mtype != complex_and_nonsymmetric) throw std::invalid_argument("matrix type does not match the data type");
+            }
+        }
 
         pardiso(const pardiso& other)
             : a_mat(other.a_mat)
