@@ -119,15 +119,15 @@ namespace ezp {
             // force par=1 if there is only one process
             id.par = comm_world.size() == 1 ? 1 : par;
             perform_job(-1);
-        };
+        }
 
         mumps(const mumps& other)
-            : mumps(symmetric_pattern{static_cast<std::int8_t>(other.id.sym)}, parallel_mode{static_cast<std::int8_t>(other.id.par)}) {};
+            : mumps(symmetric_pattern{static_cast<std::int8_t>(other.id.sym)}, parallel_mode{static_cast<std::int8_t>(other.id.par)}) {}
         mumps(mumps&&) = delete;
         mumps& operator=(const mumps&) = delete;
         mumps& operator=(mumps&&) = delete;
 
-        ~mumps() { perform_job(-2); };
+        ~mumps() { perform_job(-2); }
 
         /**
          * @brief Overloaded function call operator to access elements of the `icntl` array.
