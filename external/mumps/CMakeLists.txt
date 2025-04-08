@@ -15,7 +15,7 @@ endif ()
 if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp -w -fallow-argument-mismatch -fno-strict-aliasing --param=max-vartrack-size=500000000")
 elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpp")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpp -diag-disable=10440")
 endif ()
 
 if (EZP_USE_64BIT_INT)
