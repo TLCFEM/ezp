@@ -215,7 +215,7 @@ message(STATUS "MUMPS Fortran Flags: ${CMAKE_Fortran_FLAGS}")
 
 add_library(${PROJECT_NAME} STATIC ${mumps_c} ${mumps_f} ${mumps_mod})
 
-target_link_libraries(${PROJECT_NAME} gfortran ${MPI_FORT_LIB})
+target_link_libraries(${PROJECT_NAME} gfortran)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wno-unused-function>)
