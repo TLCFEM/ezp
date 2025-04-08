@@ -28,6 +28,9 @@
 #include <iomanip>
 #include <iostream>
 
+// get the current blacs environment
+const auto& env = ezp::get_env<>();
+
 class general_mat {
 public:
     int_t n_rows{}, n_cols{};
@@ -39,7 +42,7 @@ public:
     auto init(const int_t rows, const int cols) {
         n_rows = rows;
         n_cols = cols;
-        storage.resize(rows * cols);
+        if(0 == env.rank()) storage.resize(rows * cols);
     }
 
     explicit general_mat(const int_t rows = 0, const int cols = 0) { init(rows, cols); }
@@ -65,7 +68,7 @@ public:
         n_rows = n;
         n_cols = n;
         klu = bandwidth;
-        storage.resize(n * (klu + 1));
+        if(0 == env.rank()) storage.resize(n * (klu + 1));
         indexer = {n, klu};
     }
 
@@ -77,19 +80,16 @@ public:
 };
 
 int main() {
-    // get the current blacs environment
-    const auto& env = ezp::get_env<>();
-
     // storage for the matrices A and B
     bandsymm_mat A;
     general_mat B;
 
-    if(0 == env.rank()) {
-        constexpr auto N = 6, NRHS = 2, KLU = 1;
-        // the matrices are only initialized on the root process
-        A.init(N, KLU);
-        B.init(N, NRHS);
+    constexpr auto N = 6, NRHS = 2, KLU = 1;
+    // the matrices are only initialized on the root process
+    A.init(N, KLU);
+    B.init(N, NRHS);
 
+    if(0 == env.rank()) {
         static constexpr auto M = 5.10156648;
 
         for(auto I = 0; I < N; ++I) {
