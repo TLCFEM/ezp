@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(ezp)
+project(ezp C CXX Fortran)
 
 if (NOT CMAKE_SYSTEM_NAME MATCHES "Linux")
     message(FATAL_ERROR "Only Linux is supported.")
 endif ()
 
 include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(include)
+include_directories(mpl)
 
 add_compile_definitions(MPICH_SKIP_MPICXX)
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
@@ -69,7 +70,7 @@ if (MKL_FOUND)
     add_compile_definitions(EZP_MKL)
 endif ()
 
-find_package(MPI REQUIRED)
+find_package(MPI REQUIRED COMPONENTS C Fortran)
 message(STATUS ${MPIEXEC_EXECUTABLE})
 
 get_filename_component(MPI_ROOT_DIR ${MPIEXEC_EXECUTABLE} DIRECTORY)
@@ -80,10 +81,6 @@ file(GLOB MPI_VERSION_FILE
         "${MPI_ROOT_DIR}/impi_info"
 )
 message(STATUS "MPI_VERSION_FILE: ${MPI_VERSION_FILE}")
-
-get_filename_component(MPI_ROOT_DIR ${MPI_ROOT_DIR} DIRECTORY)
-find_library(MPI_FORT_LIB mpichfort mpi_mpifh mpifort HINTS ${MPI_ROOT_DIR}/lib NO_CACHE REQUIRED)
-message(STATUS "MPI_FORT_LIB: ${MPI_FORT_LIB}")
 
 if (NOT MKL_FOUND)
     option(EZP_USE_SYSTEM_LIBS "Use system libraries." OFF)
@@ -115,7 +112,7 @@ if (NOT MKL_FOUND)
     endif ()
 endif ()
 
-link_libraries(MPI::MPI_C MPI::MPI_CXX)
+link_libraries(MPI::MPI_C MPI::MPI_Fortran)
 
 if (EZP_ENABLE_TBB)
     if (MKL_THREADING STREQUAL "tbb_thread")
@@ -184,7 +181,6 @@ endforeach ()
 
 option(EZP_STANDALONE "Enable standalone solver." OFF)
 if (EZP_STANDALONE)
-    include_directories(mpl)
     file(GLOB EXAMPLES "standalone/*.cpp")
     foreach (EXAMPLE ${EXAMPLES})
         get_filename_component(EXAMPLE_NAME ${EXAMPLE} NAME_WLE)
