@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.18)
 
 project(ezp)
 
@@ -75,9 +75,9 @@ message(STATUS ${MPIEXEC_EXECUTABLE})
 get_filename_component(MPI_ROOT_DIR ${MPIEXEC_EXECUTABLE} DIRECTORY)
 
 file(GLOB MPI_VERSION_FILE
-    "${MPI_ROOT_DIR}/mpichversion"
-    "${MPI_ROOT_DIR}/ompi_info"
-    "${MPI_ROOT_DIR}/impi_info"
+        "${MPI_ROOT_DIR}/mpichversion"
+        "${MPI_ROOT_DIR}/ompi_info"
+        "${MPI_ROOT_DIR}/impi_info"
 )
 message(STATUS "MPI_VERSION_FILE: ${MPI_VERSION_FILE}")
 
