@@ -7,7 +7,8 @@ if (NOT CMAKE_SYSTEM_NAME MATCHES "Linux")
 endif ()
 
 include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(include)
+include_directories(mpl)
 
 add_compile_definitions(MPICH_SKIP_MPICXX)
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
@@ -184,7 +185,6 @@ endforeach ()
 
 option(EZP_STANDALONE "Enable standalone solver." OFF)
 if (EZP_STANDALONE)
-    include_directories(mpl)
     file(GLOB EXAMPLES "standalone/*.cpp")
     foreach (EXAMPLE ${EXAMPLES})
         get_filename_component(EXAMPLE_NAME ${EXAMPLE} NAME_WLE)
