@@ -76,7 +76,7 @@
 
 namespace ezp {
     namespace detail {
-        static constexpr std::string mumps_name = "mumps";
+        static constexpr auto mumps_name = "mumps";
     } // namespace detail
 
     template<data_t DT, index_t IT> auto mumps_set(std::string command, mumps<DT, IT>& solver) {
@@ -120,7 +120,7 @@ namespace ezp {
         program.add_argument("--rank-revealing-factorization").help("[56] detects pseudo-singularities during factorization and factorizes the root node with a rank-revealing method.").default_value(0).choices(0, 1).scan<'i', int>().metavar("INT").nargs(1);
         program.add_argument("--symbolic-factorization").help("[58] defines options for symbolic factorization.").default_value(2).choices(1, 2).scan<'i', int>().metavar("INT").nargs(1);
 
-        std::vector<std::string> args{detail::mumps_name};
+        std::vector<std::string> args{{detail::mumps_name}};
         command = command.substr(command.find('-'));
         std::istringstream iss(command);
         args.insert(args.end(), std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>());
