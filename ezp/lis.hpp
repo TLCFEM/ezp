@@ -39,12 +39,7 @@
 
 #include <mpl/mpl.hpp>
 
-#ifdef EZP_INT64
-using LIS_INT = std::int64_t;
-#else
-using LIS_INT = std::int32_t;
-#endif
-
+using LIS_INT = int_t;
 using LIS_SCALAR = double;
 using LIS_REAL = double;
 using LIS_Comm = MPI_Comm;
