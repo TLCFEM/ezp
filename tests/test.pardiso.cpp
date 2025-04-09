@@ -76,6 +76,13 @@ template<data_t DT> auto random_pardiso() {
 
         auto solver = solver_t(mtype);
 
+        solver(0) = 1;  // solver default parameters overriden with provided by iparm
+        solver(1) = 3;  // use METIS for fill-in reordering
+        solver(7) = 2;  // max number of iterative refinement steps
+        solver(9) = 13; // perturb the pivot elements with 1E-13
+        solver(10) = 1; // use nonsymmetric permutation and scaling MPS
+        solver(12) = 1; // switch on Maximum Weighted Matching algorithm (default for non-symmetric)
+
         const auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
 
         if(0 == comm_world.rank()) REQUIRE(info == 0);

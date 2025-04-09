@@ -198,13 +198,13 @@ namespace ezp {
         IT solve(sparse_csr_mat<DT, IT>&& A, full_mat<DT, IT>&& B) {
             if(A.n != B.n_rows) return -1;
 
-            auto error = sync_error(alloc(std::move(A)));
-            if(error < 0) return error;
-
             iparm[39] = 0; // force centralised input/output
 
             if constexpr(std::is_same_v<DT, double> || std::is_same_v<DT, complex16>) iparm[27] = 0;
             else if constexpr(std::is_same_v<DT, float> || std::is_same_v<DT, complex8>) iparm[27] = 1;
+
+            auto error = sync_error(alloc(std::move(A)));
+            if(error < 0) return error;
 
             return solve(std::move(B));
         }
