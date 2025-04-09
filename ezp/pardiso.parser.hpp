@@ -53,7 +53,7 @@
 
 namespace ezp {
     namespace detail {
-        static constexpr std::string pardiso_name = "pardiso";
+        static constexpr auto pardiso_name = "pardiso";
     } // namespace detail
 
     template<data_t DT, index_t IT> auto pardiso_set(std::string command, pardiso<DT, IT>& solver) {
@@ -74,7 +74,7 @@ namespace ezp {
         program.add_argument("--schur-complement").help("[35] Schur complement matrix computation control.").default_value(0).choices(0, 1, 2).scan<'i', int>().metavar("INT").nargs(1);
         program.add_argument("--out-of-core").help("[59] Solver mode.").default_value(0).choices(0, 1, 2).scan<'i', int>().metavar("INT").nargs(1);
 
-        std::vector<std::string> args{detail::pardiso_name};
+        std::vector<std::string> args{{detail::pardiso_name}};
         command = command.substr(command.find('-'));
         std::istringstream iss(command);
         args.insert(args.end(), std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>());
