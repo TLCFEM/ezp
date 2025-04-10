@@ -1187,6 +1187,20 @@
 
 
 <h1 id="mumps">mumps</h1>
+<p>The <code>mumps</code> solver supports the following input types.</p>
+<ul>
+<li>data type: DSZC</li>
+<li>index type: <code>std::int32_t</code> (32-bit, typically <code>int</code>)</li>
+</ul>
+<p><a href="https://mumps-solver.org/"><code>MUMPS</code></a> supports both 32-bit and 64-bit integer indexing.
+There are some caveats.</p>
+<ol>
+<li>If 64-bit integer is enabled via <code>MUMPS_INTSIZE64</code>, all integers are 64-bit, thus MKL and MPI need to use 64-bit integer for indexing as well.
+   This may cause compatibility problems as 1) MPI with 64-bit integer may not be available on various platforms, 2) other libraries may only need linkage to conventional 32-bit version.</li>
+<li>Even if 64-bit integer is <strong>not</strong> enabled, <code>MUMPS</code> uses 64-bit integer for <code>nnz</code>, thus as long as the size of the matrix does not exceed 2 billion, the 32-bit integer version is sufficient.</li>
+</ol>
+<p>To allow maximum compatibility, <code>MUMPS_INTSIZE64</code> is <strong>not</strong> enabled, even if <code>EZP_USE_64BIT_INT</code> is switched on.
+Thus the underlying <code>mumps</code> library needs to be linked to 32-bit ScaLAPACK and MPI.</p>
 <h2 id="solver-options">Solver Options</h2>
 <p>There are two ways to configure the solver.</p>
 <h3 id="member-methods">Member Methods</h3>
