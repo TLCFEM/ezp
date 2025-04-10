@@ -47,6 +47,18 @@ namespace ezp::detail {
             loc.ipiv.resize(loc.rows + loc.block);
         }
 
+        auto gather_pivot() {
+            const auto ipiv_l = ctx.desc_l(loc.n, 1, loc.block, loc.rows);
+            const auto ipiv_g = ctx.desc_g(loc.n, 1);
+
+            std::vector<IT> ipiv;
+            if(0 == ctx.rank) ipiv.resize(loc.n);
+
+            ctx.copy_to(loc.ipiv.data(), ipiv_l.data(), ipiv.data(), ipiv_g.data());
+
+            return ipiv;
+        }
+
         using base_t::to_full;
 
     public:

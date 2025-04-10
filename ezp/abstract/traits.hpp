@@ -317,6 +317,8 @@ namespace ezp {
             for(auto i = 0u; i < A.size(); ++i) B.data[i] = A[i];
         }
 
+        auto copy_to(const IT* A, const IT* desc_a, IT* B, const IT* desc_b) { pigemr2d(desc_a + 2, desc_a + 3, A, &ONE, &ONE, desc_a, B, &ONE, &ONE, desc_b, &context); }
+
         [[nodiscard]] bool is_valid() const { return my_row >= 0 && my_col >= 0; }
 
         /**

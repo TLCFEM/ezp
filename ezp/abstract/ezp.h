@@ -111,6 +111,7 @@ using complex16 = std::complex<double>;
 #define igamn2d EZP(igamn2d)
 #define igamx2d EZP(igamx2d)
 #define igebr2d EZP(igebr2d)
+#define pigemr2d EZP(pigemr2d)
 
 #ifdef __cplusplus
 extern "C" {
@@ -189,6 +190,7 @@ void pzpotrs(const char* uplo, const int_t* n, const int_t* nrhs, const complex1
 void igamn2d(const int_t* ConTxt, const char* scope, const char* top, const int_t* m, const int_t* n, int_t* A, const int_t* lda, int_t* rA, int_t* cA, const int_t* ldia, const int_t* rdest, const int_t* cdest);
 void igamx2d(const int_t* ConTxt, const char* scope, const char* top, const int_t* m, const int_t* n, int_t* A, const int_t* lda, int_t* rA, int_t* cA, const int_t* ldia, const int_t* rdest, const int_t* cdest);
 void igebr2d(const int_t* ConTxt, const char* scope, const char* top, const int_t* m, const int_t* n, int_t* A, const int_t* lda, const int_t* rsrc, const int_t* csrc);
+void pigemr2d(const int_t* m, const int_t* n, const int_t* a, const int_t* ia, const int_t* ja, const int_t* desca, int_t* b, const int_t* ib, const int_t* jb, const int_t* descb, const int_t* ictxt);
 
 void cluster_sparse_solver(void*, const std::int32_t*, const std::int32_t*, const std::int32_t*, const std::int32_t*, const std::int32_t*, const void*, const std::int32_t*, const std::int32_t*, std::int32_t*, const std::int32_t*, std::int32_t*, const std::int32_t*, void*, void*, const std::int32_t*, std::int32_t*);
 void cluster_sparse_solver_64(void*, const std::int64_t*, const std::int64_t*, const std::int64_t*, const std::int64_t*, const std::int64_t*, const void*, const std::int64_t*, const std::int64_t*, std::int64_t*, const std::int64_t*, std::int64_t*, const std::int64_t*, void*, void*, const std::int32_t*, std::int64_t*);

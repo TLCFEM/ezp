@@ -65,8 +65,11 @@ int main() {
     // solver.solve(full_mat{N, N, A.data()}, full_mat{N, NRHS, B.data()});
     const auto info = solver.solve({N, N, A.data()}, {N, NRHS, B.data()});
 
+    const auto det = solver.det({N, N, A.data()});
+
     if(0 == env.rank() && 0 == info) {
         std::cout << std::setprecision(10) << "Info: " << info << '\n';
+        std::cout << "Determinant: " << det << '\n';
         std::cout << "Solution:\n";
         for(const double i : B) std::cout << i << '\n';
     }
