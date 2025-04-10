@@ -25,12 +25,6 @@
    test from an external code whether MUMPS_INT is 64bits or not */
 #define MUMPS_INTSIZE32
 
-#ifdef EZP_INT64
-#ifndef MUMPS_INTSIZE64
-#define MUMPS_INTSIZE64
-#endif
-#endif
-
 #ifdef MUMPS_INTSIZE64
 #define MUMPS_INT int64_t
 #else
