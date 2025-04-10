@@ -58,11 +58,15 @@ template<data_t DT, char ODER = 'R'> auto random_pgesv() {
             std::uniform_real_distribution dist_v(0.f, 1.f);
 
             for(auto I = 0; I < N; ++I)
-                for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen);
+                for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen) + .5f;
         }
 
-        const auto info = solver_t().solve({N, N, A.data()}, {N, NRHS, B.data()});
+        auto solver = solver_t();
 
+        const auto info = solver.solve({N, N, A.data()}, {N, NRHS, B.data()});
+        const auto det = solver.det({N, N, A.data()});
+
+        if(0 == env.rank() && std::is_same_v<DT, double>) printf("Determinant: %e\n", det);
         if(0 == env.rank()) REQUIRE(info == 0);
     }
 }
