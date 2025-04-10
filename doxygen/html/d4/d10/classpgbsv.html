@@ -176,8 +176,11 @@ See: <a href="https://github.com/Reference-ScaLAPACK/scalapack/issues/116">https
 <div class="line">    <span class="comment">// solver.solve(band_mat{N, N, KL, KU, A.data()}, full_mat{N, NRHS, B.data()});</span></div>
 <div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> info = solver.solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});</div>
 <div class="line"> </div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> det = solver.det({N, N, KL, KU, A.data()});</div>
+<div class="line"> </div>
 <div class="line">    <span class="keywordflow">if</span>(0 == env.rank() &amp;&amp; 0 == info) {</div>
 <div class="line">        std::cout &lt;&lt; std::setprecision(6) &lt;&lt; std::fixed &lt;&lt; <span class="stringliteral">&quot;Info: &quot;</span> &lt;&lt; info &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Determinant: &quot;</span> &lt;&lt; det &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
 <div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Solution:\n&quot;</span>;</div>
 <div class="line">        <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">double</span> i : B) std::cout &lt;&lt; i &lt;&lt; <span class="stringliteral">&#39;\n&#39;</span>;</div>
 <div class="line">    }</div>
@@ -185,7 +188,7 @@ See: <a href="https://github.com/Reference-ScaLAPACK/scalapack/issues/116">https
 <div class="line">    <span class="keywordflow">return</span> info;</div>
 <div class="line">}</div>
 <div class="line"> </div>
-<div class="ttc" id="aclassezp_1_1pgbsv_1_1indexer_html"><div class="ttname"><a href="../../d4/d94/classezp_1_1pgbsv_1_1indexer.html">ezp::pgbsv::indexer</a></div><div class="ttdef"><b>Definition</b> pgbsv.hpp:104</div></div>
+<div class="ttc" id="aclassezp_1_1pgbsv_1_1indexer_html"><div class="ttname"><a href="../../d4/d94/classezp_1_1pgbsv_1_1indexer.html">ezp::pgbsv::indexer</a></div><div class="ttdef"><b>Definition</b> pgbsv.hpp:116</div></div>
 <div class="ttc" id="aclassezp_1_1pgbsv_html"><div class="ttname"><a href="../../d1/d7e/classezp_1_1pgbsv.html">ezp::pgbsv</a></div><div class="ttdef"><b>Definition</b> pgbsv.hpp:70</div></div>
 <div class="ttc" id="apgbsv_8hpp_html"><div class="ttname"><a href="../../d0/d4f/pgbsv_8hpp.html">pgbsv.hpp</a></div></div>
 </div><!-- fragment --><dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
