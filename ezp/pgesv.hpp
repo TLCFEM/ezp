@@ -66,14 +66,14 @@ namespace ezp {
          * @param A A rvalue reference to a `full_mat` object representing the matrix.
          * @return The determinant of the matrix as a value of type `DT`.
          *
-         * @note If the context (`ctx`) is invalid, the function returns 1 as the
+         * @note If the context (`ctx`) is invalid, the function returns 0 as the
          *       determinant by default.
          * @note This function assumes that the matrix `A` is square.
          * @note The computation is performed on the root process (rank 0), and
          *       the result is returned to all processes.
          */
         auto det(full_mat<DT, IT>&& A) {
-            DT determinant{1};
+            DT determinant{0};
 
             if(!this->ctx.is_valid()) return determinant;
 
@@ -84,6 +84,7 @@ namespace ezp {
             if(0 == this->ctx.rank) {
                 const auto idx = typename base_t::indexer{A};
                 auto swaps = IT{0};
+                determinant = DT{1};
                 for(auto I = IT{0}; I < this->loc.n; ++I) {
                     determinant *= A.data[idx(I, I)];
                     if(ipiv[I] != I + 1) ++swaps;
