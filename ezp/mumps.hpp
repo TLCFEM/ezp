@@ -360,7 +360,7 @@ namespace ezp {
          *       - `infog[33]` to determine the power of 2 scaling factor.
          *       - If `DT` is a floating-point type, the imaginary part is set to zero.
          */
-        auto det() {
+        auto det() const {
             const auto a = id.rinfog[11];
             const auto b = floating_t<DT> ? DT{0} : id.rinfog[12];
             const auto c = std::pow(DT{2}, id.infog[33]);

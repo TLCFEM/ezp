@@ -51,6 +51,50 @@ namespace ezp {
 
         using base_t::solve;
 
+        /**
+         * @brief Computes the determinant of a matrix.
+         *
+         * This function calculates the determinant of a given matrix `A` using
+         * LU decomposition. The matrix is gathered from distributed memory
+         * into a global matrix on the root process. The determinant is computed
+         * by multiplying the diagonal elements of the LU-decomposed matrix and
+         * adjusting the sign based on the number of row swaps performed during
+         * the decomposition.
+         *
+         * @tparam DT The data type of the matrix elements.
+         * @tparam IT The integer type used for indexing and pivoting.
+         * @param A A rvalue reference to a `full_mat` object representing the matrix.
+         * @return The determinant of the matrix as a value of type `DT`.
+         *
+         * @note If the context (`ctx`) is invalid, the function returns 0 as the
+         *       determinant by default.
+         * @note This function assumes that the matrix `A` is square.
+         * @note The computation is performed on the root process (rank 0), and
+         *       the result is returned to all processes.
+         */
+        auto det(full_mat<DT, IT>&& A) {
+            DT determinant{0};
+
+            if(!this->ctx.is_valid()) return determinant;
+
+            this->ctx.gather(this->loc.a, this->loc.desc_a, A, this->ctx.desc_g(this->loc.n, this->loc.n));
+
+            const auto ipiv = this->gather_pivot();
+
+            if(0 == this->ctx.rank) {
+                const auto idx = typename base_t::indexer{A};
+                auto swaps = IT{0};
+                determinant = DT{1};
+                for(auto I = IT{0}; I < this->loc.n; ++I) {
+                    determinant *= A.data[idx(I, I)];
+                    if(ipiv[I] != I + 1) ++swaps;
+                }
+                if(swaps % 2 == 1) determinant = -determinant;
+            }
+
+            return determinant;
+        }
+
         IT solve(full_mat<DT, IT>&& A, full_mat<DT, IT>&& B) override {
             if(!this->ctx.is_valid()) return 0;
 
