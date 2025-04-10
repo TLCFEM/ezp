@@ -21,9 +21,9 @@ endif ()
 if (EZP_USE_64BIT_INT)
     add_compile_definitions(MUMPS_INTSIZE64 PORD_INTSIZE64)
     if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-integer-8")
+        add_compile_options($<$<COMPILE_LANGUAGE:Fortran>:-fdefault-integer-8>)
     elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -integer-size 64")
+        add_compile_options($<$<COMPILE_LANGUAGE:Fortran>:-integer-size 64>)
     endif ()
 endif ()
 
@@ -211,11 +211,8 @@ set_source_files_properties(smumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARI
 set_source_files_properties(zmumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARITH=MUMPS_ARITH_z")
 set_source_files_properties(cmumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARITH=MUMPS_ARITH_c")
 
-message(STATUS "MUMPS Fortran Flags: ${CMAKE_Fortran_FLAGS}")
-
 add_library(${PROJECT_NAME} STATIC ${mumps_c} ${mumps_f} ${mumps_mod})
-
-target_link_libraries(${PROJECT_NAME} gfortran)
+target_link_libraries(${PROJECT_NAME} PRIVATE gfortran MPI::MPI_C MPI::MPI_Fortran)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wno-unused-function>)

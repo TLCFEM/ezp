@@ -31,6 +31,7 @@ endif ()
 add_compile_options(-w)
 
 add_library(${PROJECT_NAME} STATIC ${lis_src})
+target_link_libraries(${PROJECT_NAME} PRIVATE MPI::MPI_C MPI::MPI_Fortran)
 
 if (EZP_ENABLE_OPENMP_LIS)
     if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
