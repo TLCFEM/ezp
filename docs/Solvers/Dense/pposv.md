@@ -1,5 +1,10 @@
 # pposv
 
+The `pposv` solver supports the following input types.
+
+* data type: DSZC
+* index type: `std::int32_t`, `std::int64_t`
+
 The `pposv` solves a square symmetric positive definite matrix using Cholesky decomposition.
 The matrix of size $N$ is stored in a memory block of size $N^2$.
 

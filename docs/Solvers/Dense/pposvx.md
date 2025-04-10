@@ -1,5 +1,10 @@
 # pposvx
 
+The `pposvx` solver supports the following input types.
+
+* data type: DSZC
+* index type: `std::int32_t`, `std::int64_t`
+
 The `pposvx` solves a square matrix using LU decomposition with partial pivoting.
 The matrix of size $N$ is stored in a memory block of size $N^2$.
 The solver can apply equilibration and iterative refinement.

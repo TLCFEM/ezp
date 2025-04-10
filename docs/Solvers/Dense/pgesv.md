@@ -1,5 +1,10 @@
 # pgesv
 
+The `pgesv` solver supports the following input types.
+
+* data type: DSZC
+* index type: `std::int32_t`, `std::int64_t`
+
 The `pgesv` solves a square matrix using LU decomposition with partial pivoting.
 The matrix of size $N$ is stored in a memory block of size $N^2$.
 
