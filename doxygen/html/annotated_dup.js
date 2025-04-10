@@ -27,7 +27,7 @@ var annotated_dup =
       [ "mumps", "d6/dbe/classezp_1_1mumps.html", "d6/dbe/classezp_1_1mumps" ],
       [ "pdbsv", "de/d4c/classezp_1_1pdbsv.html", "de/d4c/classezp_1_1pdbsv" ],
       [ "pgbsv", "d1/d7e/classezp_1_1pgbsv.html", "d1/d7e/classezp_1_1pgbsv" ],
-      [ "pgesv", "d5/d48/classezp_1_1pgesv.html", null ],
+      [ "pgesv", "d5/d48/classezp_1_1pgesv.html", "d5/d48/classezp_1_1pgesv" ],
       [ "pgesvx", "d5/d6a/classezp_1_1pgesvx.html", null ],
       [ "ppbsv", "d3/df1/classezp_1_1ppbsv.html", "d3/df1/classezp_1_1ppbsv" ],
       [ "pposv", "de/d12/classezp_1_1pposv.html", null ],
