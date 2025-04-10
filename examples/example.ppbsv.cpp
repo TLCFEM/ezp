@@ -42,7 +42,7 @@ public:
     auto init(const int_t rows, const int cols) {
         n_rows = rows;
         n_cols = cols;
-        if(0 == env.rank()) storage.resize(rows * cols);
+        storage.resize(rows * cols);
     }
 
     explicit general_mat(const int_t rows = 0, const int cols = 0) { init(rows, cols); }
