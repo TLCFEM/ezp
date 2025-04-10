@@ -35,7 +35,7 @@ int main() {
 
     int N = 10, NRHS = 1;
 
-    std::vector<int_t> ia, ja;
+    std::vector<int> ia, ja;
     std::vector<double> a, b;
 
     const auto populate = [&] {
@@ -54,7 +54,7 @@ int main() {
     // initialise one-based COO matrix on the root process
     populate();
 
-    auto solver = mumps<double, int_t>();
+    auto solver = mumps<double, int>();
     solver(3) = 0; // msglvl
 
     // need to wrap the data in sparse_coo_mat objects

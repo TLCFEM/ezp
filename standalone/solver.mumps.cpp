@@ -133,7 +133,7 @@ int main(const int argc, char** argv) {
         command += argv[i];
     }
 
-    return prepare<int_t>(command);
+    return prepare<int>(command);
 }
 
 //! @}

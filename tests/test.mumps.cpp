@@ -36,12 +36,12 @@ template<data_t DT> auto random_mumps() {
 
     blacs_env<>::do_not_manage_mpi();
 
-    auto solver = mumps<DT, int_t>();
+    auto solver = mumps<DT, int>();
     mumps_set("--printing-level 0", solver);
 
     for(auto K = 0; K < REPEAT; ++K) {
-        auto seed = static_cast<int_t>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count());
-        comm_world.allreduce(mpl::max<int_t>(), seed);
+        auto seed = static_cast<int>(duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count());
+        comm_world.allreduce(mpl::max<int>(), seed);
         std::mt19937 gen(seed);
 
         const auto NRHS = std::uniform_int_distribution(1, 10)(gen);
@@ -49,7 +49,7 @@ template<data_t DT> auto random_mumps() {
 
         if(0 == comm_world.rank()) printf("Seed: %d, N: %d, NRHS: %d\n", seed, N, NRHS);
 
-        std::vector<int_t> ia, ja;
+        std::vector<int> ia, ja;
         std::vector<DT> a, b;
 
         if(0 == comm_world.rank()) {
