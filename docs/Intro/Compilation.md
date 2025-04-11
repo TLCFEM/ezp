@@ -38,10 +38,10 @@ This is cumbersome.
 Simply install the library and you are ready to go.
 
 ```bash
-sudo zypper in -y libscalapack2_2_2_0-gnu-mpich-hpc-devel-static git cmake
+sudo zypper in -y gcc-c++ gcc-fortran cmake libscalapack2-openmpi5-devel-static openblas_openmp-devel-static
 git clone --recurse-submodules --depth 1 https://github.com/TLCFEM/ezp.git
 mkdir /ezp/build && /ezp/build
-cmake -DEZP_TEST=ON -DEZP_USE_SYSTEM_LIBS=ON -DMPI_HOME=/usr/lib/hpc/gnu14/mpi/mpich/4.3.0/ -DCMAKE_PREFIX_PATH="/usr/lib/hpc/gnu14/mpich/scalapack/2.2.0/lib64/;/usr/lib/hpc/gnu14/openblas/0.3.29/lib64/" .. && cmake --build . --config Release
+cmake -DEZP_STANDALONE=ON -DEZP_USE_SYSTEM_LIBS=ON -DMPI_HOME=/usr/lib64/mpi/gcc/openmpi5/ -DCMAKE_PREFIX_PATH="/usr/lib64/mpi/gcc/openmpi5/lib64/;/usr/lib64/openblas-openmp/" .. && cmake --build . --config Release
 ```
 
 `Fedora 41` has an environment that is close to usable.

@@ -1,6 +1,6 @@
 FROM opensuse/tumbleweed AS build
 
-RUN zypper in -y gcc-c++ cmake libscalapack2_2_2_0-gnu-mpich-hpc-devel-static
+RUN zypper in -y gcc-c++ gcc-fortran cmake libscalapack2-openmpi5-devel-static openblas_openmp-devel-static
 
 COPY . /ezp
 
@@ -10,15 +10,15 @@ RUN mkdir build && cd build && \
     cmake \
     -DEZP_STANDALONE=ON \
     -DEZP_USE_SYSTEM_LIBS=ON \
-    -DMPI_HOME=/usr/lib/hpc/gnu14/mpi/mpich/4.3.0/ \
-    -DCMAKE_PREFIX_PATH="/usr/lib/hpc/gnu14/mpich/scalapack/2.2.0/lib64/;/usr/lib/hpc/gnu14/openblas/0.3.29/lib64/" \
+    -DMPI_HOME=/usr/lib64/mpi/gcc/openmpi5/ \
+    -DCMAKE_PREFIX_PATH="/usr/lib64/mpi/gcc/openmpi5/lib64/;/usr/lib64/openblas-openmp/" \
     -DCMAKE_INSTALL_PREFIX=/ezp-install \
     .. && cmake --build . --target install
 
 FROM opensuse/tumbleweed AS runtime
 
-RUN zypper in -y libscalapack2_2_2_0-gnu-mpich-hpc
+RUN zypper in -y libscalapack2-openmpi5 libopenblas_openmp0 openmpi5
 
-ENV LD_LIBRARY_PATH=/usr/lib/hpc/gnu14/mpich/scalapack/2.2.0/lib64/:/usr/lib/hpc/gnu14/openblas/0.3.29/lib64/
+ENV LD_LIBRARY_PATH=/usr/lib64/mpi/gcc/openmpi5/lib64/
 
 COPY --from=build /ezp-install/* /bin
