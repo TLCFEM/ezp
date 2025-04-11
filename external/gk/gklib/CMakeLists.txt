@@ -11,7 +11,8 @@ endif ()
 
 if (GK_ENABLE_OPENMP)
     add_compile_definitions(__OPENMP__)
-    add_compile_options(-fopenmp)
+    find_package(OpenMP REQUIRED COMPONENTS C)
+    link_libraries(OpenMP::OpenMP_C)
 endif ()
 
 include(CheckIncludeFile)
