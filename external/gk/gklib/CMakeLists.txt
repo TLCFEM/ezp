@@ -5,6 +5,9 @@ project(gklib C)
 include_directories(.)
 
 option(GK_ENABLE_OPENMP "Enable OpenMP" ON)
+if (EZP_ENABLE_OPENMP_GK)
+    set(GK_ENABLE_OPENMP ON)
+endif ()
 
 if (GK_ENABLE_OPENMP)
     add_compile_definitions(__OPENMP__)

@@ -42,10 +42,11 @@ if (EZP_ADD_UNDERSCORE)
     add_compile_definitions(EZP_UNDERSCORE)
 endif ()
 
-option(EZP_ENABLE_OPENMP "Use OpenMP whenever possible." OFF)
+option(EZP_ENABLE_OPENMP "Use OpenMP whenever possible." ON)
 if (EZP_ENABLE_OPENMP)
     option(EZP_ENABLE_OPENMP_MUMPS "Use OpenMP for MUMPS." ON)
     option(EZP_ENABLE_OPENMP_LIS "Use OpenMP for LIS." ON)
+    option(EZP_ENABLE_OPENMP_GK "Use OpenMP for GKlib." ON)
 endif ()
 
 find_package(MPI REQUIRED COMPONENTS C Fortran)
