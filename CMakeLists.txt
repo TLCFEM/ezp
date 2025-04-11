@@ -92,8 +92,9 @@ endif ()
 
 option(EZP_USE_SYSTEM_LIBS "Use system libraries." OFF)
 
-add_subdirectory(external/mumps)
+add_subdirectory(external/gk)
 add_subdirectory(external/lis)
+add_subdirectory(external/mumps)
 
 find_package(MKL QUIET)
 if (MKL_FOUND)
