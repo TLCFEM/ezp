@@ -236,6 +236,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif ()
 
 if (EZP_ENABLE_OPENMP_MUMPS)
-    find_package(OpenMP REQUIRED COMPONENTS C)
-    target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_C)
+    find_package(OpenMP REQUIRED COMPONENTS C Fortran)
+    target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_C OpenMP::OpenMP_Fortran)
 endif ()
