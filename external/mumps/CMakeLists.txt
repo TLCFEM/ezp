@@ -6,7 +6,10 @@ add_compile_options(-w)
 
 add_compile_definitions(Add_)
 add_compile_definitions(pord)
-# add_compile_definitions(metis)
+add_compile_definitions(metis)
+add_compile_definitions(parmetis)
+
+include_directories(../gk/include)
 
 if (MKL_INTERFACE STREQUAL ilp64)
     set(MKL_INTERFACE lp64)
@@ -226,7 +229,7 @@ else ()
     endif ()
     target_link_libraries(${PROJECT_NAME} PRIVATE lapack blas)
 endif ()
-target_link_libraries(${PROJECT_NAME} PRIVATE gfortran MPI::MPI_C MPI::MPI_Fortran)
+target_link_libraries(${PROJECT_NAME} PRIVATE parmetis gfortran MPI::MPI_C MPI::MPI_Fortran)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wno-unused-function>)
