@@ -97,7 +97,7 @@ add_subdirectory(external/gk)
 add_subdirectory(external/lis)
 add_subdirectory(external/mumps)
 
-find_package(MKL QUIET)
+find_package(MKL QUIET PATHS "/opt/intel/oneapi/mkl/latest")
 if (MKL_FOUND)
     message(STATUS "Using MKL.")
     link_libraries(MKL::MKL_SCALAPACK)
