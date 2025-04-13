@@ -157,7 +157,8 @@ $(document).ready(function(){initNavTree('df/d0c/classmumps.html','../../'); ini
 <div class="line">    populate();</div>
 <div class="line"> </div>
 <div class="line">    <span class="keyword">auto</span> solver = <a class="code hl_class" href="../../df/d0c/classmumps.html">mumps&lt;double, int&gt;</a>();</div>
-<div class="line">    solver(3) = 0; <span class="comment">// msglvl</span></div>
+<div class="line">    solver.icntl_printing_level(0); <span class="comment">// suppress output</span></div>
+<div class="line">    solver.icntl_determinant_computation(1);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// need to wrap the data in sparse_coo_mat objects</span></div>
 <div class="line">    <span class="keyword">auto</span> info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});</div>
@@ -166,6 +167,7 @@ $(document).ready(function(){initNavTree('df/d0c/classmumps.html','../../'); ini
 <div class="line">        <span class="keywordflow">if</span>(0 != comm_world.rank()) <span class="keywordflow">return</span>;</div>
 <div class="line"> </div>
 <div class="line">        std::cout &lt;&lt; std::fixed &lt;&lt; std::setprecision(10) &lt;&lt; <span class="stringliteral">&quot;Info: &quot;</span> &lt;&lt; info &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;sign(det()): &quot;</span> &lt;&lt; solver.sign_det() &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
 <div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Solution:\n&quot;</span>;</div>
 <div class="line">        <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">double</span> i : b) std::cout &lt;&lt; i &lt;&lt; <span class="stringliteral">&#39;\n&#39;</span>;</div>
 <div class="line">    };</div>
