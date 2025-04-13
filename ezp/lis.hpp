@@ -280,9 +280,44 @@ struct LIS_SOLVER_STRUCT {
 
 typedef LIS_SOLVER_STRUCT* LIS_SOLVER;
 
+struct LIS_ESOLVER_STRUCT {
+    LIS_MATRIX A, B;
+    LIS_VECTOR x, xx, d;
+    LIS_SCALAR* evalue;
+    LIS_VECTOR* evector;
+    LIS_REAL* resid;
+    LIS_VECTOR* work;
+    LIS_REAL* rhistory;
+    LIS_INT worklen;
+    LIS_INT options[13];
+    LIS_SCALAR params[3];
+    LIS_INT retcode;
+    LIS_INT* iter;
+    LIS_INT* iter2;
+    double time;
+    LIS_INT* nesol;
+    double itime;
+    double ptime;
+    double p_c_time;
+    double p_i_time;
+    LIS_INT eprecision;
+    LIS_SCALAR ishift;
+    LIS_REAL nrm2;
+    LIS_REAL tol;
+};
+
+typedef struct LIS_ESOLVER_STRUCT* LIS_ESOLVER;
+
 extern "C" {
 LIS_INT lis_finalize(void);
 LIS_INT lis_initialize(int* argc, char** argv[]);
+LIS_INT lis_esolve(LIS_MATRIX A, LIS_VECTOR x, LIS_SCALAR* evalue0, LIS_ESOLVER esolver);
+LIS_INT lis_esolver_create(LIS_ESOLVER* esolver);
+LIS_INT lis_esolver_destroy(LIS_ESOLVER esolver);
+LIS_INT lis_esolver_get_evalues(LIS_ESOLVER esolver, LIS_VECTOR v);
+LIS_INT lis_esolver_get_evectors(LIS_ESOLVER esolver, LIS_MATRIX M);
+LIS_INT lis_esolver_set_option(const char* text, LIS_ESOLVER esolver);
+LIS_INT lis_gesolve(LIS_MATRIX A, LIS_MATRIX B, LIS_VECTOR x, LIS_SCALAR* evalue0, LIS_ESOLVER esolver);
 LIS_INT lis_matrix_assemble(LIS_MATRIX A);
 LIS_INT lis_matrix_create(LIS_Comm comm, LIS_MATRIX* Amat);
 LIS_INT lis_matrix_destroy(LIS_MATRIX Amat);
@@ -295,6 +330,7 @@ LIS_INT lis_solver_destroy(LIS_SOLVER solver);
 LIS_INT lis_solver_set_option(const char* text, LIS_SOLVER solver);
 LIS_INT lis_vector_create(LIS_Comm comm, LIS_VECTOR* vec);
 LIS_INT lis_vector_destroy(LIS_VECTOR vec);
+LIS_INT lis_vector_duplicate(void* vin, LIS_VECTOR* vout);
 LIS_INT lis_vector_set_size(LIS_VECTOR vec, LIS_INT local_n, LIS_INT global_n);
 LIS_INT lis_vector_set(LIS_VECTOR vec, LIS_SCALAR* value);
 LIS_INT lis_vector_unset(LIS_VECTOR vec);
@@ -322,40 +358,6 @@ namespace ezp {
             return env;
         }
 
-        class lis_vector final {
-            LIS_VECTOR v{};
-
-            bool is_set = false;
-
-            auto unset() {
-                if(is_set) lis_vector_unset(v);
-                is_set = false;
-            }
-
-        public:
-            explicit lis_vector(const LIS_INT n) {
-                lis_vector_create(get_lis_env().native_handle(), &v);
-                lis_vector_set_size(v, 0 == get_lis_env().rank() ? n : 0, 0);
-            }
-
-            lis_vector(const lis_vector&) = delete;
-            lis_vector(lis_vector&&) = delete;
-            lis_vector& operator=(const lis_vector&) = delete;
-            lis_vector& operator=(lis_vector&&) = delete;
-
-            ~lis_vector() {
-                unset();
-                lis_vector_destroy(v);
-            }
-
-            auto set(LIS_SCALAR* value) {
-                unset();
-                is_set = true;
-                lis_vector_set(v, 0 == get_lis_env().rank() ? value : nullptr);
-                return v;
-            }
-        };
-
         class lis_matrix final {
             LIS_MATRIX a_mat{};
 
@@ -367,26 +369,76 @@ namespace ezp {
                 is_set = false;
             }
 
-        public:
-            lis_matrix() = default;
+            auto create() { return lis_matrix_create(get_lis_env().native_handle(), &a_mat); }
 
-            lis_matrix(const lis_matrix&) {}
+        public:
+            lis_matrix() { create(); }
+
+            lis_matrix(const lis_matrix&)
+                : lis_matrix() {}
             lis_matrix(lis_matrix&&) = delete;
             lis_matrix& operator=(const lis_matrix&) = delete;
             lis_matrix& operator=(lis_matrix&&) = delete;
 
             ~lis_matrix() { unset(); }
 
+            explicit lis_matrix(const sparse_csr_mat<LIS_SCALAR, LIS_INT>& A) { set(A); }
+
             [[nodiscard]] auto get() const { return a_mat; }
 
-            auto set(const sparse_csr_mat<LIS_SCALAR, LIS_INT>& A) {
+            void set(const sparse_csr_mat<LIS_SCALAR, LIS_INT>& A) {
                 unset();
+                create();
                 const bool is_root = 0 == get_lis_env().rank();
-                lis_matrix_create(get_lis_env().native_handle(), &a_mat);
                 lis_matrix_set_size(a_mat, is_root ? A.n : 0, 0);
                 lis_matrix_set_csr(is_root ? A.nnz : 0, A.row_ptr, A.col_idx, A.data, a_mat);
                 lis_matrix_assemble(a_mat);
                 is_set = true;
+            }
+
+            auto copy_to(std::vector<LIS_SCALAR>&) const {}
+        };
+
+        class lis_vector final {
+            LIS_VECTOR v{};
+
+            bool is_set = false;
+
+            auto unset() {
+                if(is_set) lis_vector_unset(v);
+                is_set = false;
+            }
+
+        public:
+            explicit lis_vector(const LIS_INT n = 0) {
+                lis_vector_create(get_lis_env().native_handle(), &v);
+                if(n > 0) lis_vector_set_size(v, 0 == get_lis_env().rank() ? n : 0, 0);
+            }
+
+            explicit lis_vector(const lis_matrix& A) { lis_vector_duplicate(A.get(), &v); }
+
+            lis_vector(const lis_vector&) = delete;
+            lis_vector(lis_vector&&) = delete;
+            lis_vector& operator=(const lis_vector&) = delete;
+            lis_vector& operator=(lis_vector&&) = delete;
+
+            ~lis_vector() {
+                unset();
+                lis_vector_destroy(v);
+            }
+
+            [[nodiscard]] auto get() const { return v; }
+
+            auto& set(LIS_SCALAR* value) {
+                unset();
+                is_set = true;
+                lis_vector_set(v, 0 == get_lis_env().rank() ? value : nullptr);
+                return *this;
+            }
+
+            auto copy_to(std::vector<LIS_SCALAR>& data) const {
+                data.resize(v->n);
+                std::copy_n(v->value, data.size(), data.data());
             }
         };
 
@@ -396,34 +448,87 @@ namespace ezp {
         public:
             lis_solver() { lis_solver_create(&solver); }
 
-            lis_solver(const lis_solver&) { lis_solver_create(&solver); };
+            lis_solver(const lis_solver&)
+                : lis_solver() {};
             lis_solver(lis_solver&&) = delete;
             lis_solver& operator=(const lis_solver&) = delete;
             lis_solver& operator=(lis_solver&&) = delete;
 
             ~lis_solver() { lis_solver_destroy(solver); }
 
-            explicit lis_solver(const std::string_view setting) {
-                lis_solver_create(&solver);
-                set_option(setting);
-            }
+            explicit lis_solver(const std::string_view setting)
+                : lis_solver() { set_option(setting); }
 
             void set_option(const std::string_view setting) const { lis_solver_set_option(setting.data(), solver); }
 
-            auto solve(LIS_MATRIX A, LIS_VECTOR B, LIS_VECTOR X) const { return lis_solve(A, B, X, solver); }
+            auto solve(const lis_matrix& A, const lis_vector& B, const lis_vector& X) const { return lis_solve(A.get(), B.get(), X.get(), solver); }
+        };
+
+        class lis_esolver final {
+            LIS_ESOLVER solver{};
+
+        public:
+            lis_esolver() { lis_esolver_create(&solver); }
+
+            lis_esolver(const lis_esolver&)
+                : lis_esolver() {};
+            lis_esolver(lis_esolver&&) = delete;
+            lis_esolver& operator=(const lis_esolver&) = delete;
+            lis_esolver& operator=(lis_esolver&&) = delete;
+
+            ~lis_esolver() { lis_esolver_destroy(solver); }
+
+            explicit lis_esolver(const std::string_view setting)
+                : lis_esolver() { set_option(setting); }
+
+            void set_option(const std::string_view setting) const { lis_esolver_set_option(setting.data(), solver); }
+
+            auto solve(const lis_matrix& A) const {
+                lis_vector X(A);
+                LIS_SCALAR E;
+
+                return lis_esolve(A.get(), X.get(), &E, solver);
+            }
+
+            auto solve(const lis_matrix& A, const lis_matrix& B) const {
+                lis_vector X(A);
+                LIS_SCALAR E;
+
+                return lis_gesolve(A.get(), B.get(), X.get(), &E, solver);
+            }
+
+            auto get_evalues(std::vector<LIS_SCALAR>& eval) {
+                lis_vector tmp;
+                const auto info = lis_esolver_get_evalues(solver, tmp.get());
+                if(0 == info) tmp.copy_to(eval);
+                return info;
+            }
+
+            auto get_evectors(std::vector<LIS_SCALAR>& evec) {
+                lis_matrix tmp;
+                const auto info = lis_esolver_get_evectors(solver, tmp.get());
+                if(0 == info) tmp.copy_to(evec);
+                return info;
+            }
+        };
+
+        class lis_base {
+        protected:
+            const detail::lis_env& env = detail::get_lis_env();
+
+            [[nodiscard]] auto sync_error(LIS_INT error) const {
+                env.comm_world.allreduce(mpl::min<LIS_INT>(), error);
+                return error;
+            }
+
+        public:
+            lis_base() = default;
         };
     } // namespace detail
 
-    class lis final {
-        const detail::lis_env& env = detail::get_lis_env();
-
+    class lis final : public detail::lis_base {
         detail::lis_solver solver;
         detail::lis_matrix a_loc;
-
-        [[nodiscard]] auto sync_error(LIS_INT error) const {
-            env.comm_world.allreduce(mpl::min<LIS_INT>(), error);
-            return error;
-        }
 
     public:
         lis() = default;
@@ -433,13 +538,7 @@ namespace ezp {
 
         void set_option(const std::string_view setting) const { solver.set_option(setting); }
 
-        LIS_INT solve(sparse_csr_mat<LIS_SCALAR, LIS_INT>&& A, full_mat<LIS_SCALAR, LIS_INT>&& B) {
-            LIS_INT error = 0;
-            if(0 == env.rank() && A.row_ptr[A.n] != A.nnz) error = -1;
-
-            error = sync_error(error);
-            if(error < 0) return error;
-
+        auto solve(sparse_csr_mat<LIS_SCALAR, LIS_INT>&& A, full_mat<LIS_SCALAR, LIS_INT>&& B) {
             a_loc.set(std::move(A));
 
             return solve(std::move(B));
@@ -456,14 +555,45 @@ namespace ezp {
                 std::copy_n(B.data, b_ref.size(), b_ref.data());
             }
 
-            auto b_loc = detail::lis_vector(B.n_rows);
-            auto x_loc = detail::lis_vector(B.n_rows);
+            detail::lis_vector b_loc{B.n_rows}, x_loc{B.n_rows};
 
             for(decltype(B.n_rows) I = 0; I < B.n_rows * B.n_cols; I += B.n_rows) {
-                error = solver.solve(a_loc.get(), b_loc.set(b_ref.data() + I), x_loc.set(B.data + I));
+                error = solver.solve(a_loc, b_loc.set(b_ref.data() + I), x_loc.set(B.data + I));
 
                 if(0 != error) break;
             }
+
+            return error;
+        }
+    };
+
+    class lis_eig final : public detail::lis_base {
+        detail::lis_esolver solver;
+
+    public:
+        lis_eig() = default;
+
+        explicit lis_eig(const std::string_view setting)
+            : solver(setting) {}
+
+        void set_option(const std::string_view setting) const { solver.set_option(setting); }
+
+        auto solve(sparse_csr_mat<LIS_SCALAR, LIS_INT>&& A, std::vector<LIS_SCALAR>& eig_val) {
+            detail::lis_matrix a_loc(A);
+
+            auto error = solver.solve(a_loc);
+
+            if(0 == error) solver.get_evalues(eig_val);
+
+            return error;
+        }
+
+        auto solve(sparse_csr_mat<LIS_SCALAR, LIS_INT>&& A, sparse_csr_mat<LIS_SCALAR, LIS_INT>&& B, std::vector<LIS_SCALAR>& eig_val) {
+            detail::lis_matrix a_loc(A), b_loc(B);
+
+            auto error = solver.solve(a_loc, b_loc);
+
+            if(0 == error) solver.get_evalues(eig_val);
 
             return error;
         }
