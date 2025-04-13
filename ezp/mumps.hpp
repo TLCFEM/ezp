@@ -361,12 +361,18 @@ namespace ezp {
          *       - If `DT` is a floating-point type, the imaginary part is set to zero.
          */
         auto det() const {
+            using WT = work_t<DT>;
+
             const auto a = id.rinfog[11];
             const auto b = floating_t<DT> ? DT{0} : id.rinfog[12];
-            const auto c = std::pow(DT{2}, id.infog[33]);
+            const auto c = std::pow(WT{2}, id.infog[33]);
 
-            return std::complex<DT>{a, b} * c;
+            return std::complex<WT>{a, b} * c;
         }
+
+        auto sign_det() const
+            requires floating_t<DT>
+        { return id.rinfog[11] > work_t<DT>{0} ? 1 : -1; }
     };
 } // namespace ezp
 

@@ -55,7 +55,8 @@ int main() {
     populate();
 
     auto solver = mumps<double, int>();
-    solver(3) = 0; // msglvl
+    solver.icntl_printing_level(0); // suppress output
+    solver.icntl_determinant_computation(1);
 
     // need to wrap the data in sparse_coo_mat objects
     auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
@@ -64,6 +65,7 @@ int main() {
         if(0 != comm_world.rank()) return;
 
         std::cout << std::fixed << std::setprecision(10) << "Info: " << info << '\n';
+        std::cout << "sign(det()): " << solver.sign_det() << '\n';
         std::cout << "Solution:\n";
         for(const double i : b) std::cout << i << '\n';
     };
