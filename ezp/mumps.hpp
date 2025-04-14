@@ -114,6 +114,8 @@ namespace ezp {
             id.sym = sym;
             // force par=1 if there is only one process
             id.par = comm_world.size() == 1 ? 1 : par;
+            // default to parallel computation
+            icntl_parallel_ordering_tool(2);
             perform_job(-1);
         }
 
@@ -241,10 +243,10 @@ namespace ezp {
             id.icntl[27] = config;
             return *this;
         }
-        // auto& icntl_parallel_ordering_tool(const auto config) {
-        //     id.icntl[28] = config;
-        //     return *this;
-        // }
+        auto& icntl_parallel_ordering_tool(const auto config) {
+            id.icntl[28] = config;
+            return *this;
+        }
         auto& icntl_inverse_computation(const auto config) {
             id.icntl[29] = config;
             return *this;
