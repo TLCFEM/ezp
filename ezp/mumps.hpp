@@ -114,8 +114,6 @@ namespace ezp {
             id.sym = sym;
             // force par=1 if there is only one process
             id.par = comm_world.size() == 1 ? 1 : par;
-            // default to parallel computation
-            icntl_parallel_ordering_tool(2);
             perform_job(-1);
         }
 
