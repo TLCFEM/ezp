@@ -11,10 +11,10 @@
 <!-- Node0 -->
 <g id="Node000000" class="node">
 <title>Node0</title>
-<g id="a_Node000000"><a xlink:href="df/d7f/structezp_1_1detail_1_1mumps__struc.html" target="_top" xlink:title=" ">
+<g id="a_Node000000"><a xlink:href="df/d5e/structezp_1_1detail_1_1mumps__struc_3_01double_01_4.html" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="110,-30 0,-30 0,0 110,0 110,-30"/>
 <text text-anchor="start" x="8" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">ezp::detail::mumps</text>
-<text text-anchor="middle" x="55" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">_struc&lt; DT &gt;</text>
+<text text-anchor="middle" x="55" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">_struc&lt; double &gt;</text>
 </a>
 </g>
 </g>

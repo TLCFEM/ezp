@@ -4,6 +4,7 @@ var annotated_dup =
       [ "detail", null, [
         [ "abstract_solver", "d0/df0/classezp_1_1detail_1_1abstract__solver.html", null ],
         [ "band_solver", "d0/db0/classezp_1_1detail_1_1band__solver.html", null ],
+        [ "cli_arg", "d7/dee/structezp_1_1detail_1_1cli__arg.html", null ],
         [ "csr_comparator", "db/d43/classezp_1_1detail_1_1csr__comparator.html", null ],
         [ "full_solver", "df/df0/classezp_1_1detail_1_1full__solver.html", "df/df0/classezp_1_1detail_1_1full__solver" ],
         [ "lis_env", "de/dca/structezp_1_1detail_1_1lis__env.html", null ],

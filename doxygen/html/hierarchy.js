@@ -30,6 +30,7 @@ var hierarchy =
       [ "ezp::blacs_env< IT >", "da/d77/classezp_1_1blacs__env.html", null ]
     ] ],
     [ "ezp::blacs_context< IT >", "df/dc0/classezp_1_1blacs__context.html", null ],
+    [ "ezp::detail::cli_arg", "d7/dee/structezp_1_1detail_1_1cli__arg.html", null ],
     [ "ezp::detail::csr_comparator< IT >", "db/d43/classezp_1_1detail_1_1csr__comparator.html", null ],
     [ "general_mat", "d8/d10/classgeneral__mat.html", null ],
     [ "ezp::detail::full_solver< DT, IT, ODER >::indexer", "d5/d06/classezp_1_1detail_1_1full__solver_1_1indexer.html", null ],
