@@ -58,7 +58,7 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=${{ env.MPI_HOME }} -DEZP_USE_64BIT_INT=${{ matrix.index }} ..
           cmake --build . --target all
       - name: Test
-        if: matrix.build == 'Debug' && matrix.mpi == 'mpich' && matrix.index == 'OFF'
+        if: matrix.build == 'Debug' && matrix.index == 'OFF'
         run: |
           export PATH=${{ env.MPI_HOME }}/bin:$PATH
           cd build
