@@ -241,10 +241,10 @@ namespace ezp {
             id.icntl[27] = config;
             return *this;
         }
-        auto& icntl_parallel_ordering_tool(const auto config) {
-            id.icntl[28] = config;
-            return *this;
-        }
+        // auto& icntl_parallel_ordering_tool(const auto config) {
+        //     id.icntl[28] = config;
+        //     return *this;
+        // }
         auto& icntl_inverse_computation(const auto config) {
             id.icntl[29] = config;
             return *this;
