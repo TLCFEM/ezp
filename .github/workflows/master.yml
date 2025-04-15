@@ -60,7 +60,11 @@ jobs:
       - name: Test
         if: matrix.build == 'Debug' && matrix.index == 'OFF'
         run: |
-          export PATH=${{ env.MPI_HOME }}/bin:$PATH
+          if [ "${{ matrix.mpi }}" == "impi" ]; then
+            source /opt/intel/oneapi/setvars.sh
+          else
+            export PATH=${{ env.MPI_HOME }}/bin:$PATH
+          fi
           cd build
           for SRC in `find . -type f -executable -iname "*example*"`; do $SRC; done
           mpirun -n 2 ./catch2
