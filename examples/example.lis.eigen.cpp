@@ -55,7 +55,7 @@ int main() {
     // initialise zero-based CSR matrix on the root process
     populate();
 
-    auto solver = lis_eig("-eprint all -e ai -ss 1 -emaxiter 100");
+    auto solver = lis_eig("-eprint mem -e ai -ie si -ss 4 -emaxiter 100");
 
     // need to wrap the data in sparse_csr_mat objects
     auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, b);
