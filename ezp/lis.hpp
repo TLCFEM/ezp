@@ -395,8 +395,6 @@ namespace ezp {
                 lis_matrix_assemble(a_mat);
                 is_set = true;
             }
-
-            auto copy_to(std::vector<LIS_SCALAR>&) const {}
         };
 
         class lis_vector final {
@@ -434,11 +432,6 @@ namespace ezp {
                 is_set = true;
                 lis_vector_set(v, 0 == get_lis_env().rank() ? value : nullptr);
                 return *this;
-            }
-
-            auto copy_to(std::vector<LIS_SCALAR>& data) const {
-                data.resize(v->n);
-                std::copy_n(v->value, data.size(), data.data());
             }
         };
 
@@ -498,17 +491,11 @@ namespace ezp {
             }
 
             auto get_evalues(std::vector<LIS_SCALAR>& eval) {
-                lis_vector tmp;
-                const auto info = lis_esolver_get_evalues(solver, tmp.get());
-                if(0 == info) tmp.copy_to(eval);
-                return info;
-            }
+                static constexpr auto LIS_EOPTIONS_SUBSPACE{2};
 
-            auto get_evectors(std::vector<LIS_SCALAR>& evec) {
-                lis_matrix tmp;
-                const auto info = lis_esolver_get_evectors(solver, tmp.get());
-                if(0 == info) tmp.copy_to(evec);
-                return info;
+                eval.resize(solver->options[LIS_EOPTIONS_SUBSPACE]);
+
+                std::copy_n(solver->evalue, eval.size(), eval.data());
             }
         };
 

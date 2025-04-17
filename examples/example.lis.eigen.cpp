@@ -33,7 +33,7 @@ using namespace ezp;
 int main() {
     const auto& comm_world{mpl::environment::comm_world()};
 
-    int N = 10;
+    int N = 100;
 
     std::vector<int> ia, ja;
     std::vector<double> a, b;
@@ -55,7 +55,7 @@ int main() {
     // initialise zero-based CSR matrix on the root process
     populate();
 
-    auto solver = lis_eig("-eprint mem -e ai -ie si -ss 4 -emaxiter 100");
+    auto solver = lis_eig("-eprint mem -e ai -ie ii -ss 20 -emaxiter 100");
 
     // need to wrap the data in sparse_csr_mat objects
     auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, b);
