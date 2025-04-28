@@ -37,8 +37,10 @@ var hierarchy =
     [ "ezp::pdbsv< DT, IT >::indexer", "d1/ddf/classezp_1_1pdbsv_1_1indexer.html", null ],
     [ "ezp::pgbsv< DT, IT >::indexer", "d4/d94/classezp_1_1pgbsv_1_1indexer.html", null ],
     [ "ezp::ppbsv< DT, IT, UL >::indexer", "da/d2f/classezp_1_1ppbsv_1_1indexer.html", null ],
-    [ "ezp::lis", "d1/de4/classezp_1_1lis.html", null ],
     [ "lis", "d5/d19/classlis.html", null ],
+    [ "ezp::detail::lis_base", "d2/daa/classezp_1_1detail_1_1lis__base.html", [
+      [ "ezp::lis", "d1/de4/classezp_1_1lis.html", null ]
+    ] ],
     [ "LIS_COMMTABLE_STRUCT", "d1/d04/structLIS__COMMTABLE__STRUCT.html", null ],
     [ "ezp::detail::lis_env", "de/dca/structezp_1_1detail_1_1lis__env.html", null ],
     [ "ezp::detail::lis_matrix", "d1/d8e/classezp_1_1detail_1_1lis__matrix.html", null ],

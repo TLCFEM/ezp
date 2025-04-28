@@ -7,6 +7,7 @@ var annotated_dup =
         [ "cli_arg", "d7/dee/structezp_1_1detail_1_1cli__arg.html", null ],
         [ "csr_comparator", "db/d43/classezp_1_1detail_1_1csr__comparator.html", null ],
         [ "full_solver", "df/df0/classezp_1_1detail_1_1full__solver.html", "df/df0/classezp_1_1detail_1_1full__solver" ],
+        [ "lis_base", "d2/daa/classezp_1_1detail_1_1lis__base.html", null ],
         [ "lis_env", "de/dca/structezp_1_1detail_1_1lis__env.html", null ],
         [ "lis_matrix", "d1/d8e/classezp_1_1detail_1_1lis__matrix.html", null ],
         [ "lis_solver", "d6/dd6/classezp_1_1detail_1_1lis__solver.html", null ],
