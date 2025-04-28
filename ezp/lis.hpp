@@ -322,6 +322,45 @@ namespace ezp {
             return env;
         }
 
+        class lis_matrix final {
+            LIS_MATRIX a_mat{};
+
+            bool is_set = false;
+
+            auto unset() {
+                if(is_set) lis_matrix_unset(a_mat);
+                lis_matrix_destroy(a_mat);
+                is_set = false;
+            }
+
+            auto create() { return lis_matrix_create(get_lis_env().native_handle(), &a_mat); }
+
+        public:
+            lis_matrix() { create(); }
+
+            lis_matrix(const lis_matrix&)
+                : lis_matrix() {}
+            lis_matrix(lis_matrix&&) = delete;
+            lis_matrix& operator=(const lis_matrix&) = delete;
+            lis_matrix& operator=(lis_matrix&&) = delete;
+
+            ~lis_matrix() { unset(); }
+
+            explicit lis_matrix(const sparse_csr_mat<LIS_SCALAR, LIS_INT>& A) { set(A); }
+
+            [[nodiscard]] auto get() const { return a_mat; }
+
+            void set(const sparse_csr_mat<LIS_SCALAR, LIS_INT>& A) {
+                unset();
+                create();
+                const bool is_root = 0 == get_lis_env().rank();
+                lis_matrix_set_size(a_mat, is_root ? A.n : 0, 0);
+                lis_matrix_set_csr(is_root ? A.nnz : 0, A.row_ptr, A.col_idx, A.data, a_mat);
+                lis_matrix_assemble(a_mat);
+                is_set = true;
+            }
+        };
+
         class lis_vector final {
             LIS_VECTOR v{};
 
@@ -333,9 +372,9 @@ namespace ezp {
             }
 
         public:
-            explicit lis_vector(const LIS_INT n) {
+            explicit lis_vector(const LIS_INT n = 0) {
                 lis_vector_create(get_lis_env().native_handle(), &v);
-                lis_vector_set_size(v, 0 == get_lis_env().rank() ? n : 0, 0);
+                if(n > 0) lis_vector_set_size(v, 0 == get_lis_env().rank() ? n : 0, 0);
             }
 
             lis_vector(const lis_vector&) = delete;
@@ -348,45 +387,13 @@ namespace ezp {
                 lis_vector_destroy(v);
             }
 
-            auto set(LIS_SCALAR* value) {
+            [[nodiscard]] auto get() const { return v; }
+
+            auto& set(LIS_SCALAR* value) {
                 unset();
                 is_set = true;
                 lis_vector_set(v, 0 == get_lis_env().rank() ? value : nullptr);
-                return v;
-            }
-        };
-
-        class lis_matrix final {
-            LIS_MATRIX a_mat{};
-
-            bool is_set = false;
-
-            auto unset() {
-                if(is_set) lis_matrix_unset(a_mat);
-                lis_matrix_destroy(a_mat);
-                is_set = false;
-            }
-
-        public:
-            lis_matrix() = default;
-
-            lis_matrix(const lis_matrix&) {}
-            lis_matrix(lis_matrix&&) = delete;
-            lis_matrix& operator=(const lis_matrix&) = delete;
-            lis_matrix& operator=(lis_matrix&&) = delete;
-
-            ~lis_matrix() { unset(); }
-
-            [[nodiscard]] auto get() const { return a_mat; }
-
-            auto set(const sparse_csr_mat<LIS_SCALAR, LIS_INT>& A) {
-                unset();
-                const bool is_root = 0 == get_lis_env().rank();
-                lis_matrix_create(get_lis_env().native_handle(), &a_mat);
-                lis_matrix_set_size(a_mat, is_root ? A.n : 0, 0);
-                lis_matrix_set_csr(is_root ? A.nnz : 0, A.row_ptr, A.col_idx, A.data, a_mat);
-                lis_matrix_assemble(a_mat);
-                is_set = true;
+                return *this;
             }
         };
 
@@ -396,34 +403,39 @@ namespace ezp {
         public:
             lis_solver() { lis_solver_create(&solver); }
 
-            lis_solver(const lis_solver&) { lis_solver_create(&solver); };
+            lis_solver(const lis_solver&)
+                : lis_solver() {};
             lis_solver(lis_solver&&) = delete;
             lis_solver& operator=(const lis_solver&) = delete;
             lis_solver& operator=(lis_solver&&) = delete;
 
             ~lis_solver() { lis_solver_destroy(solver); }
 
-            explicit lis_solver(const std::string_view setting) {
-                lis_solver_create(&solver);
-                set_option(setting);
-            }
+            explicit lis_solver(const std::string_view setting)
+                : lis_solver() { set_option(setting); }
 
             void set_option(const std::string_view setting) const { lis_solver_set_option(setting.data(), solver); }
 
-            auto solve(LIS_MATRIX A, LIS_VECTOR B, LIS_VECTOR X) const { return lis_solve(A, B, X, solver); }
+            auto solve(const lis_matrix& A, const lis_vector& B, const lis_vector& X) const { return lis_solve(A.get(), B.get(), X.get(), solver); }
+        };
+
+        class lis_base {
+        protected:
+            const detail::lis_env& env = detail::get_lis_env();
+
+            [[nodiscard]] auto sync_error(LIS_INT error) const {
+                env.comm_world.allreduce(mpl::min<LIS_INT>(), error);
+                return error;
+            }
+
+        public:
+            lis_base() = default;
         };
     } // namespace detail
 
-    class lis final {
-        const detail::lis_env& env = detail::get_lis_env();
-
+    class lis final : public detail::lis_base {
         detail::lis_solver solver;
         detail::lis_matrix a_loc;
-
-        [[nodiscard]] auto sync_error(LIS_INT error) const {
-            env.comm_world.allreduce(mpl::min<LIS_INT>(), error);
-            return error;
-        }
 
     public:
         lis() = default;
@@ -433,13 +445,7 @@ namespace ezp {
 
         void set_option(const std::string_view setting) const { solver.set_option(setting); }
 
-        LIS_INT solve(sparse_csr_mat<LIS_SCALAR, LIS_INT>&& A, full_mat<LIS_SCALAR, LIS_INT>&& B) {
-            LIS_INT error = 0;
-            if(0 == env.rank() && A.row_ptr[A.n] != A.nnz) error = -1;
-
-            error = sync_error(error);
-            if(error < 0) return error;
-
+        auto solve(sparse_csr_mat<LIS_SCALAR, LIS_INT>&& A, full_mat<LIS_SCALAR, LIS_INT>&& B) {
             a_loc.set(std::move(A));
 
             return solve(std::move(B));
@@ -456,11 +462,10 @@ namespace ezp {
                 std::copy_n(B.data, b_ref.size(), b_ref.data());
             }
 
-            auto b_loc = detail::lis_vector(B.n_rows);
-            auto x_loc = detail::lis_vector(B.n_rows);
+            detail::lis_vector b_loc{B.n_rows}, x_loc{B.n_rows};
 
             for(decltype(B.n_rows) I = 0; I < B.n_rows * B.n_cols; I += B.n_rows) {
-                error = solver.solve(a_loc.get(), b_loc.set(b_ref.data() + I), x_loc.set(B.data + I));
+                error = solver.solve(a_loc, b_loc.set(b_ref.data() + I), x_loc.set(B.data + I));
 
                 if(0 != error) break;
             }

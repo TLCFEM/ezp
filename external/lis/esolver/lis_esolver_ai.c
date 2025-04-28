@@ -242,7 +242,7 @@ LIS_INT lis_eai(LIS_ESOLVER esolver) {
         i = i + 1;
 
         /* eigenvalues on the diagonal of H */
-        if(fabs(h[i + (i - 1) * ss]) < tol) {
+        if(i == ss || fabs(h[i + (i - 1) * ss]) < tol) {
             if(output) {
                 lis_printf(comm, "Arnoldi: mode number          = %D\n", i - 1);
 #ifdef _COMPLEX
@@ -299,16 +299,16 @@ LIS_INT lis_eai(LIS_ESOLVER esolver) {
 
     if(output) { lis_printf(comm, "computing refined eigenpairs using inner eigensolver:\n\n"); }
 
-    lis_esolver_create(&esolver2);
-    esolver2->options[LIS_EOPTIONS_ESOLVER] = niesolver;
-    esolver2->options[LIS_EOPTIONS_SUBSPACE] = 1;
-    esolver2->options[LIS_EOPTIONS_MAXITER] = emaxiter;
-    esolver2->options[LIS_EOPTIONS_OUTPUT] = esolver->options[LIS_EOPTIONS_OUTPUT];
-    esolver2->params[LIS_EPARAMS_RESID - LIS_EOPTIONS_LEN] = tol;
-
     /* compute refined (real) eigenpairs */
 
     for(i = 0; i < ss; i++) {
+        lis_esolver_create(&esolver2);
+        esolver2->options[LIS_EOPTIONS_ESOLVER] = niesolver;
+        esolver2->options[LIS_EOPTIONS_SUBSPACE] = 1;
+        esolver2->options[LIS_EOPTIONS_MAXITER] = emaxiter;
+        esolver2->options[LIS_EOPTIONS_OUTPUT] = esolver->options[LIS_EOPTIONS_OUTPUT];
+        esolver2->params[LIS_EPARAMS_RESID - LIS_EOPTIONS_LEN] = tol;
+
         lis_vector_duplicate(A, &esolver->evector[i]);
         esolver2->ishift = esolver->evalue[i];
         lis_esolve(A, esolver->evector[i], &evalue, esolver2);
@@ -342,11 +342,11 @@ LIS_INT lis_eai(LIS_ESOLVER esolver) {
             lis_printf(comm, "Arnoldi: number of iterations = %D\n", esolver2->iter[0]);
             lis_printf(comm, "Arnoldi: relative residual    = %e\n\n", (double)esolver2->resid[0]);
         }
+
+        lis_esolver_destroy(esolver2);
     }
 
     lis_vector_copy(esolver->evector[0], esolver->x);
-
-    lis_esolver_destroy(esolver2);
 
     lis_free(h);
     lis_free(hq);
