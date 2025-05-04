@@ -52,7 +52,7 @@
 const auto& comm_world{mpl::environment::comm_world()};
 const auto& parent = mpl::inter_communicator::parent();
 
-template<typename DT, typename IT> int run(const IT (&config)[5], IT (&iparm)[64]) {
+template<typename DT, typename IT> int run(const IT (&config)[5], IT (&iparm)[64], const std::string_view command) {
     const auto mtype = config[0];
     const auto msglvl = config[1];
     const auto n = config[2];
@@ -80,6 +80,7 @@ template<typename DT, typename IT> int run(const IT (&config)[5], IT (&iparm)[64
 
     ezp::pardiso<DT, IT> solver(mtype, msglvl);
     for(auto i = 0; i < 64; i++) solver(i) = iparm[i];
+    pardiso_set(std::string(command), solver);
 
     const auto error = solver.solve({n, nnz, ia.data(), ja.data(), a.data()}, {n, nrhs, b.data()});
 
@@ -91,7 +92,7 @@ template<typename DT, typename IT> int run(const IT (&config)[5], IT (&iparm)[64
     return 0;
 }
 
-template<typename IT> auto prepare() {
+template<typename IT> auto prepare(const std::string_view command) {
     const auto all = mpl::communicator(parent, mpl::communicator::order_high);
 
     IT config[5]{};
@@ -101,23 +102,29 @@ template<typename IT> auto prepare() {
     all.bcast(0, iparm);
 
     if(config[0] == 1 || config[0] == 1 || config[0] == 2 || config[0] == -2 || config[0] == 11) {
-        if(0 == iparm[27]) return run<double>(config, iparm);
-        return run<float>(config, iparm);
+        if(0 == iparm[27]) return run<double>(config, iparm, command);
+        return run<float>(config, iparm, command);
     }
 
-    if(0 == iparm[27]) return run<complex16>(config, iparm);
-    return run<complex8>(config, iparm);
+    if(0 == iparm[27]) return run<complex16>(config, iparm, command);
+    return run<complex8>(config, iparm, command);
 }
 
-int main(int argc, char**) {
+int main(int argc, char** argv) {
     if(!parent.is_valid()) {
         printf("This program must be invoked by the host application.\n");
         return 0;
     }
 
-    if(argc > 1) return prepare<std::int64_t>();
+    std::string command{};
+    for(int i = 1; i < argc; i++) {
+        command += ' ';
+        command += argv[i];
+    }
 
-    return prepare<std::int32_t>();
+    if(argc > 1) return prepare<std::int64_t>(command);
+
+    return prepare<std::int32_t>(command);
 }
 #else
 #include <iostream>
