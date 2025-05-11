@@ -7,7 +7,9 @@ if (NOT CMAKE_SYSTEM_NAME MATCHES "Linux")
 endif ()
 
 include_directories(${PROJECT_SOURCE_DIR})
-include_directories(include)
+if (EXISTS ${PROJECT_SOURCE_DIR}/include)
+    include_directories(include)
+endif ()
 include_directories(mpl)
 
 add_compile_definitions(MPICH_SKIP_MPICXX)
