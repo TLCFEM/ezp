@@ -104,6 +104,7 @@ template<bool one_based> auto prepare(const std::string_view file_name) {
     return std::make_tuple(n, nnz, std::move(row), std::move(col), std::move(val));
 }
 
+#ifdef EZP_MKL
 auto benchmark_pardiso(const int_t n, const int_t nnz, std::vector<int_t>& row, std::vector<int_t>& col, std::vector<flt_t>& val) {
     std::vector b(n, flt_t{1});
     auto solver = ezp::pardiso<flt_t, int_t>(ezp::real_and_nonsymmetric, ezp::no_output);
@@ -139,6 +140,7 @@ auto benchmark_pardiso(const int_t n, const int_t nnz, std::vector<int_t>& row, 
     if(ezp::get_env<>().rank() == 0) std::cout << "PARDISO Solve Info: " << info << '\n';
 #endif
 }
+#endif
 
 auto benchmark_mumps(const int_t n, const int_t nnz, std::vector<int_t>& row, std::vector<int_t>& col, std::vector<flt_t>& val) {
     std::vector b(n, flt_t{1});
@@ -174,7 +176,9 @@ TEST_CASE("Sparse Benchmark", "[Benchmarking]") {
 
     try {
         auto [n, nnz, row, col, val] = prepare<false>("../.dirty/DKTS3.mtx");
+#ifdef EZP_MKL
         benchmark_pardiso(n, nnz, row, col, val);
+#endif
         benchmark_mumps(n, nnz, row, col, val);
     }
     catch(...) {
