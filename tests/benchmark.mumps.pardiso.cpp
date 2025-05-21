@@ -79,10 +79,10 @@ template<bool one_based> auto prepare(const std::string_view file_name) {
 
     std::string line;
     std::getline(file, line);
-    int_t n, nnz;
+    int n, nnz;
     std::istringstream(line) >> n >> n >> nnz;
 
-    std::vector<int_t> row, col;
+    std::vector<int> row, col;
     std::vector<flt_t> val;
 
     if(ezp::get_env<>().rank() == 0) {
@@ -92,7 +92,7 @@ template<bool one_based> auto prepare(const std::string_view file_name) {
         col.reserve(nnz);
         val.reserve(nnz);
         while(std::getline(file, line)) {
-            int_t i, j;
+            int i, j;
             flt_t v;
             std::istringstream(line) >> i >> j >> v;
             row.push_back(i + base);
@@ -105,7 +105,7 @@ template<bool one_based> auto prepare(const std::string_view file_name) {
 }
 
 #ifdef EZP_MKL
-auto benchmark_pardiso(const int_t n, const int_t nnz, std::vector<int_t>& row, std::vector<int_t>& col, std::vector<flt_t>& val) {
+auto benchmark_pardiso(const int n, const int nnz, std::vector<int>& row, std::vector<int>& col, std::vector<flt_t>& val) {
     std::vector b(n, flt_t{1});
     auto solver = ezp::pardiso<flt_t, int_t>(ezp::real_and_nonsymmetric, ezp::no_output);
 
@@ -142,13 +142,13 @@ auto benchmark_pardiso(const int_t n, const int_t nnz, std::vector<int_t>& row, 
 }
 #endif
 
-auto benchmark_mumps(const int_t n, const int_t nnz, std::vector<int_t>& row, std::vector<int_t>& col, std::vector<flt_t>& val) {
+auto benchmark_mumps(const int n, const int nnz, std::vector<int>& row, std::vector<int>& col, std::vector<flt_t>& val) {
     std::vector b(n, flt_t{1});
     auto solver = ezp::mumps<double, int>();
 
     solver.icntl_printing_level(1);
 
-    int_t info;
+    int info;
     BENCHMARK("MUMPS Full Solve") {
         info = solver.solve({n, nnz, row.data(), col.data(), val.data()}, {n, 1, b.data()});
         REQUIRE(0 == info);
