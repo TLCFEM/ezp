@@ -42,7 +42,7 @@ namespace ezp {
             , col(col)
             , data(data) {}
 
-        auto is_valid() { return row && col && data; }
+        auto is_valid() const { return row && col && data; }
     };
 
     namespace detail {
@@ -102,6 +102,8 @@ namespace ezp {
         template<data_t DT2, index_t IT2> explicit sparse_csr_mat(const sparse_coo_mat<DT2, IT2>& coo, const bool one_based = false, const bool full = false)
             : n(IT{coo.n})
             , nnz(IT{coo.nnz}) {
+            if(!coo.is_valid()) return;
+
             std::vector<IT2> index(nnz);
             std::iota(index.begin(), index.end(), IT2(0));
             ezp_sort(index.begin(), index.end(), detail::csr_comparator(coo.row, coo.col));
