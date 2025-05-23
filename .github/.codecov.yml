@@ -14,3 +14,4 @@ ignore:
   - "misc"
   - "standalone"
   - "external"
+  - "tests/benchmark*.cpp"
