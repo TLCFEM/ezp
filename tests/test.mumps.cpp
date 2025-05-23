@@ -66,7 +66,11 @@ template<data_t DT> auto random_mumps() {
             std::fill(b.begin(), b.end(), 1.);
         }
 
-        const auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
+        [[maybe_unused]] auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
+
+        if(0 == comm_world.rank()) REQUIRE(info == 0);
+
+        info = solver.solve({N, NRHS, b.data()});
 
         if(0 == comm_world.rank()) REQUIRE(info == 0);
     }
