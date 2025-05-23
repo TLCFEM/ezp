@@ -127,6 +127,14 @@ auto benchmark_pardiso(const int n, const int nnz, std::vector<int>& row, std::v
         info = solver.solve({n, 1, b.data()});
         REQUIRE(0 == info);
     };
+    // BENCHMARK("PARDISO Full Solve Repeat") {
+    //     info = solver.solve(ezp::sparse_csr_mat<flt_t, int_t>{coo_mat, true, false}, {n, 1, b.data()});
+    //     REQUIRE(0 == info);
+    // };
+    // BENCHMARK("PARDISO Factored Solve Repeat") {
+    //     info = solver.solve({n, 1, b.data()});
+    //     REQUIRE(0 == info);
+    // };
 
 #ifndef EZP_ENABLE_TEST
     if(ezp::get_env<>().rank() == 0) std::cout << "PARDISO Solve Info: " << info << '\n';
@@ -149,6 +157,14 @@ auto benchmark_mumps(const int n, const int nnz, std::vector<int>& row, std::vec
         info = solver.solve({n, 1, b.data()});
         REQUIRE(0 == info);
     };
+    // BENCHMARK("MUMPS Full Solve Repeat") {
+    //     info = solver.solve({n, nnz, row.data(), col.data(), val.data()}, {n, 1, b.data()});
+    //     REQUIRE(0 == info);
+    // };
+    // BENCHMARK("MUMPS Factored Solve Repeat") {
+    //     info = solver.solve({n, 1, b.data()});
+    //     REQUIRE(0 == info);
+    // };
 
 #ifndef EZP_ENABLE_TEST
     if(ezp::get_env<>().rank() == 0) std::cout << "MUMPS Solve Info: " << info << '\n';
@@ -159,7 +175,7 @@ TEST_CASE("Sparse Benchmark", "[Benchmarking]") {
     ezp::blacs_env<>::do_not_manage_mpi();
 
     try {
-        auto [n, nnz, row, col, val] = prepare<true>("../misc/system5A0.mtx");
+        auto [n, nnz, row, col, val] = prepare<false>("../.dirty/DKTS3.mtx");
 #ifdef EZP_MKL
         benchmark_pardiso(n, nnz, row, col, val);
 #endif
