@@ -85,6 +85,11 @@ jobs:
     runs-on: ubuntu-24.04
     if: github.event_name == 'push'
     steps:
+      - name: Delete All
+        uses: strumwolf/delete-deployment-environment@v3
+        with:
+          token: ${{ secrets.ALL }}
+          environment: github-pages
       - name: Clone
         uses: actions/checkout@v4
       - name: Setup
