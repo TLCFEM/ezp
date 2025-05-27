@@ -1,8 +1,11 @@
 # Motivation
 
 As of this writing, it is necessary to directly call `ScaLAPACK` subroutines via the `C` interface if one wants to solve linear systems using `ScaLAPACK`.
-Since both `MPI` and `LAPACK`/`BLAS` have fabulous `C++` wrappers (see [`mpl`](https://github.com/rabauke/mpl) and [`Armadillo`](https://arma.sourceforge.net/download.html)), it would be nice if `ScaLAPACK` can be used in a similar OO manner.
+It is, however, not a trivial task, compared to solving similar problems using `LAPACK`.
+One needs to figure out how to distribute the matrix over the process grid, and allocate the necessary buffers (with appropriate sizes) for the `ScaLAPACK` subroutines.
+It requires quite a bit of boilerplate code, which is not only tedious to write, but also error-prone.
 
+Since both `MPI` and `LAPACK`/`BLAS` have fabulous `C++` wrappers (see [`mpl`](https://github.com/rabauke/mpl) and [`Armadillo`](https://arma.sourceforge.net/download.html)), it would be nice if `ScaLAPACK` can be used in a similar OO manner.
 Such a wrapper is advantageous and beneficial in the context of `C++` applications due to the following reasons.
 
 1. It avoids direct interactions with the `C` API, which requires manual memory management.
