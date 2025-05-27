@@ -1220,8 +1220,11 @@
 
 <h1 id="motivation">Motivation</h1>
 <p>As of this writing, it is necessary to directly call <code>ScaLAPACK</code> subroutines via the <code>C</code> interface if one wants to solve linear systems using <code>ScaLAPACK</code>.
-Since both <code>MPI</code> and <code>LAPACK</code>/<code>BLAS</code> have fabulous <code>C++</code> wrappers (see <a href="https://github.com/rabauke/mpl"><code>mpl</code></a> and <a href="https://arma.sourceforge.net/download.html"><code>Armadillo</code></a>), it would be nice if <code>ScaLAPACK</code> can be used in a similar OO manner.</p>
-<p>Such a wrapper is advantageous and beneficial in the context of <code>C++</code> applications due to the following reasons.</p>
+It is, however, not a trivial task, compared to solving similar problems using <code>LAPACK</code>.
+One needs to figure out how to distribute the matrix over the process grid, and allocate the necessary buffers (with appropriate sizes) for the <code>ScaLAPACK</code> subroutines.
+It requires quite a bit of boilerplate code, which is not only tedious to write, but also error-prone.</p>
+<p>Since both <code>MPI</code> and <code>LAPACK</code>/<code>BLAS</code> have fabulous <code>C++</code> wrappers (see <a href="https://github.com/rabauke/mpl"><code>mpl</code></a> and <a href="https://arma.sourceforge.net/download.html"><code>Armadillo</code></a>), it would be nice if <code>ScaLAPACK</code> can be used in a similar OO manner.
+Such a wrapper is advantageous and beneficial in the context of <code>C++</code> applications due to the following reasons.</p>
 <ol>
 <li>It avoids direct interactions with the <code>C</code> API, which requires manual memory management.
    The caller has to follow pretty much the same procedural style.</li>
