@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -23,7 +23,7 @@ C
      &  PTRAST, STEP, PIMASTER, PAMASTER, NSTK, COMP,
      &  IFLAG, IERROR, MYID, COMM, PERM, IPOOL, LPOOL, LEAF,
      &  NBFIN, ICNTL, KEEP,KEEP8,DKEEP,
-     &  root, OPASSW, OPELIW,
+     &  root, roota, OPASSW, OPELIW,
      &  ITLOC, RHS_MUMPS,
      &  FILS, DAD, PTRARW, PTRAIW,
      &  PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -34,18 +34,20 @@ C
      &               , LRGROUPS
      &  )
       USE DMUMPS_BUF
-      USE DMUMPS_LOAD
+      USE MUMPS_LOAD
       USE DMUMPS_LR_DATA_M
       USE DMUMPS_DYNAMIC_MEMORY_M, ONLY : DMUMPS_DM_SET_DYNPTR
       USE DMUMPS_FAC_FRONT_AUX_M, ONLY : DMUMPS_GET_SIZE_SCHUR_IN_FRONT
 #if ! defined(NO_FDM_MAPROW)
       USE MUMPS_FAC_MAPROW_DATA_M
 #endif
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
       IMPLICIT NONE
 #if ! defined(NO_FDM_MAPROW)
 #endif
-      TYPE (DMUMPS_ROOT_STRUC ) :: root
+      TYPE (MUMPS_ROOT_STRUC ) :: root
+      TYPE (DMUMPS_ROOT_STRUC ) :: roota
       INTEGER LBUFR, LBUFR_BYTES
       INTEGER ICNTL( 60 ), KEEP(500)
       INTEGER(8) KEEP8(150)
@@ -74,6 +76,7 @@ C
       INTEGER INODE_PERE, ISON
       INTEGER :: NFS4FATHER
       INTEGER NBROWS_ALREADY_SENT
+      INTEGER NBCOLS_ALREADY_SENT, NBLRB_ALREADY_SENT
       INTEGER NSLAVES_PERE, NFRONT_PERE, NASS_PERE
       INTEGER LIST_SLAVES_PERE( * )
       INTEGER LMAP 
@@ -136,9 +139,6 @@ C
       IS_ofType5or6 = ((TYPESPLIT.EQ.5).OR.(TYPESPLIT.EQ.6))
       LP = ICNTL(1)
       IF (ICNTL(4) .LE. 0) LP = -1
-      CB_IS_LR = (IW(PTRIST(STEP(ISON))+XXLR).EQ.1 .OR.
-     &                   IW(PTRIST(STEP(ISON))+XXLR).EQ.3)
-      IWXXF_HANDLER = IW(PTRIST(STEP(ISON))+XXF)
 #if ! defined(NO_FDM_MAPROW)
 #endif
       ALLOCATE(SLAVES_PERE(0:max(1,NSLAVES_PERE)), stat=allocok)
@@ -193,7 +193,7 @@ C
      &    IPOOL, LPOOL, LEAF,
      &    NBFIN, MYID, SLAVEF,
      &
-     &    root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR,ICNTL,KEEP,KEEP8,DKEEP,ND, FRERE, LPTRAR,
@@ -263,7 +263,7 @@ C
      &    IFLAG, IERROR, COMM,
      &    PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &    root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR,ICNTL,KEEP,KEEP8,DKEEP,ND, FRERE, LPTRAR,
@@ -378,7 +378,7 @@ C
      &      IFLAG, IERROR, COMM,
      &      PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &    
-     &      root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &      root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &      FILS, DAD, PTRARW, PTRAIW,
      &      PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &      INTARR, DBLARR,ICNTL,KEEP,KEEP8,DKEEP,ND, FRERE, LPTRAR,
@@ -417,11 +417,20 @@ C
           GOTO 600
         ENDIF
       ENDIF
+      NBCOLS_ALREADY_SENT = 0
+      NBLRB_ALREADY_SENT  = 0
+      CB_IS_LR = (IW(PTRIST(STEP(ISON))+XXLR).EQ.1 .OR.
+     &                   IW(PTRIST(STEP(ISON))+XXLR).EQ.3)
+      IWXXF_HANDLER = IW(PTRIST(STEP(ISON))+XXF)
       DO I = NSLAVES_PERE, 0, -1   
         PDEST = SLAVES_PERE( I )
         IF ( PDEST .NE. MYID ) THEN
            DESCLU = .FALSE.
            NBROWS_ALREADY_SENT = 0
+           IF (CB_IS_LR) THEN
+             NBCOLS_ALREADY_SENT = 0
+             NBLRB_ALREADY_SENT  = 0
+           ENDIF
            IF (I == NSLAVES_PERE) THEN
              NROWS_TO_SEND=LMAP_LOC-NBROW(I)+1
            ELSE
@@ -447,13 +456,13 @@ C
                 CYCLE
              ENDIF
              IF (CB_IS_LR) THEN
-              CALL DMUMPS_BUF_SEND_CONTRIB_TYPE2( 
-     &                 NBROWS_ALREADY_SENT,
+              CALL DMUMPS_BUF_SEND_CONTRIB_TYPE2( NBROWS_ALREADY_SENT, 
+     &                 NBCOLS_ALREADY_SENT, NBLRB_ALREADY_SENT,
      &                 DESCLU, INODE_PERE,
      &                 NFRONT_PERE, NASS_PERE, NFS4FATHER,
      &                 NSLAVES_PERE, ISON,
      &                 NROWS_TO_SEND, LMAP_LOC, MAP,
-     &                 PERM_LOC(min(LMAP_LOC,NBROW(I))),
+     &                 min(LMAP_LOC,NBROW(I)),
      &                 IW( PTRIST(STEP(ISON))),
      &                 ADummy, 1_8,
      &                 I, PDEST, PDEST_MASTER, 
@@ -461,8 +470,7 @@ C
      &                 KEEP,KEEP8, STEP, N, SLAVEF,
      &                 ISTEP_TO_INIV2, TAB_POS_IN_PERE, PACKED_CB,
      &                 KEEP253_LOC, NVSCHUR, 
-     &                 ITYPE_SON, MYID,
-     &                 NPIV_CHECK = IW(PTLUST(STEP(ISON))+3+KEEP(IXSZ)))
+     &                 ITYPE_SON, MYID )
              ELSE
                CALL DMUMPS_DM_SET_DYNPTR(
      &                   IW(PTRIST(STEP(ISON))+XXS), 
@@ -471,12 +479,13 @@ C
      &                   IW(PTRIST(STEP(ISON))+XXD),
      &                   IW(PTRIST(STEP(ISON))+XXR), 
      &                   SON_A, IACHK, RECSIZE ) 
-               CALL DMUMPS_BUF_SEND_CONTRIB_TYPE2( NBROWS_ALREADY_SENT,
+              CALL DMUMPS_BUF_SEND_CONTRIB_TYPE2( NBROWS_ALREADY_SENT, 
+     &                 NBCOLS_ALREADY_SENT, NBLRB_ALREADY_SENT,
      &                 DESCLU, INODE_PERE,
      &                 NFRONT_PERE, NASS_PERE, NFS4FATHER,
      &                 NSLAVES_PERE, ISON,
      &                 NROWS_TO_SEND, LMAP_LOC, MAP,
-     &                 PERM_LOC(min(LMAP_LOC,NBROW(I))),
+     &                 min(LMAP_LOC,NBROW(I)),
      &                 IW( PTRIST(STEP(ISON))),
      &                 SON_A(IACHK:IACHK+RECSIZE-1_8),
      &                 RECSIZE,
@@ -561,7 +570,8 @@ C
      &           IFLAG, IERROR, COMM,
      &           PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &           root, OPASSW, OPELIW, ITLOC, RHS_MUMPS, FILS, DAD,
+     &           root, roota,
+     &           OPASSW, OPELIW, ITLOC, RHS_MUMPS, FILS, DAD,
      &           PTRARW, PTRAIW,
      &           PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &           INTARR,DBLARR,ICNTL,KEEP,KEEP8,DKEEP,ND,FRERE,LPTRAR,
@@ -605,6 +615,7 @@ C
         ENDIF
       ENDIF
       IF (CB_IS_LR) THEN
+        IF (IWXXF_HANDLER.LE.0) CALL MUMPS_ABORT()
         CALL DMUMPS_BLR_FREE_CB_LRB(IWXXF_HANDLER,
      &             .FALSE., KEEP8, KEEP(34))
         IF ((KEEP(486).EQ.3).OR.KEEP(486).EQ.0) THEN
@@ -652,7 +663,7 @@ C
      &  PTRIST, PTLUST, PTRFAC,
      &  PTRAST, STEP, PIMASTER, PAMASTER, NSTK, COMP,
      &  IFLAG, IERROR, MYID, COMM, PERM, IPOOL, LPOOL, LEAF,
-     &  NBFIN, ICNTL, KEEP,KEEP8,DKEEP, root,
+     &  NBFIN, ICNTL, KEEP,KEEP8,DKEEP, root, roota,
      &  OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &  FILS, DAD, PTRARW, PTRAIW,
      &  PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -663,16 +674,18 @@ C
      &               , LRGROUPS
      &  )
       USE DMUMPS_BUF
-      USE DMUMPS_LOAD
+      USE MUMPS_LOAD
       USE DMUMPS_LR_TYPE
-      USE DMUMPS_LR_STATS
+      USE MUMPS_LR_STATS
       USE DMUMPS_FAC_FRONT_AUX_M, ONLY : DMUMPS_GET_SIZE_SCHUR_IN_FRONT
       USE DMUMPS_LR_DATA_M
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
       USE DMUMPS_DYNAMIC_MEMORY_M, ONLY : DMUMPS_DM_SET_DYNPTR
      &                                  , DMUMPS_DM_FREE_BLOCK
       IMPLICIT NONE
-      TYPE (DMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (DMUMPS_ROOT_STRUC) :: roota
       INTEGER COMM_LOAD, ASS_IRECV
       INTEGER ICNTL( 60 ), KEEP(500)
       INTEGER(8) KEEP8(150)
@@ -725,7 +738,8 @@ C
       INTEGER :: IERR
       INTEGER :: STATUS(MPI_STATUS_SIZE)
       INTEGER NOSLA, I, ISTCHK, ISTCHK_LOC
-      INTEGER NBROWS_ALREADY_SENT 
+      INTEGER NBROWS_ALREADY_SENT
+      INTEGER NBCOLS_ALREADY_SENT, NBLRB_ALREADY_SENT
       INTEGER INDICE_PERE
       INTEGER INDICE_PERE_ARRAY_ARG(1)
       INTEGER PDEST, PDEST_MASTER, NFRONT
@@ -1155,16 +1169,22 @@ C
      &        SLAVEF, KEEP(199), KEEP(28), KEEP(76), KEEP(80),
      &        KEEP(47), STEP, INODE_PERE+N )
             IF (KEEP(47) .GE. 3) THEN
-              CALL DMUMPS_LOAD_POOL_UPD_NEW_POOL(
+              CALL MUMPS_LOAD_POOL_UPD_NEW_POOL(
      &       IPOOL, LPOOL, 
      &       PROCNODE_STEPS, KEEP,KEEP8, SLAVEF, COMM_LOAD,
      &       MYID, STEP, N, ND, FILS )
             ENDIF
           END IF
+      NBCOLS_ALREADY_SENT = 0
+      NBLRB_ALREADY_SENT = 0
       DO I = 0, NSLAVES_PERE
         PDEST = SLAVES_PERE( I )
         IF ( PDEST .NE. MYID ) THEN
            NBROWS_ALREADY_SENT = 0
+           IF (CB_IS_LR) THEN
+             NBCOLS_ALREADY_SENT = 0
+             NBLRB_ALREADY_SENT = 0
+           ENDIF
  95        CONTINUE
            NFRONT = IW(PIMASTER(STEP(ISON))+KEEP(IXSZ))
            NELIM  = IW(PIMASTER(STEP(ISON))+1+KEEP(IXSZ))
@@ -1179,19 +1199,19 @@ C
      &                                 KEEP(199) )
            IF (CB_IS_LR) THEN
              CALL DMUMPS_BUF_SEND_CONTRIB_TYPE2(NBROWS_ALREADY_SENT,
+     &               NBCOLS_ALREADY_SENT, NBLRB_ALREADY_SENT,
      &               DESCLU, INODE_PERE,
      &               NFRONT_PERE, NASS_PERE, NFS4FATHER, 
      &                    NSLAVES_PERE,
      &               ISON, NROWS_TO_SEND, LMAP_LOC,
-     &               MAP, PERM_LOC(min(LMAP_LOC,NBROW(I))),
+     &               MAP, min(LMAP_LOC,NBROW(I)),
      &               IW(PIMASTER(STEP(ISON))),
      &               ADummy, 1_8,
      &               I, PDEST, PDEST_MASTER, COMM, IERR,
      &               KEEP,KEEP8, STEP, N, SLAVEF,
      &               ISTEP_TO_INIV2, TAB_POS_IN_PERE,
      &               PACKED_CB, KEEP(253), NVSCHUR,
-     &               ITYPE_SON, MYID,
-     &               NPIV_CHECK = IW(PTLUST(STEP(ISON))+3+KEEP(IXSZ)))
+     &               ITYPE_SON, MYID )
            ELSE
              CALL DMUMPS_DM_SET_DYNPTR(
      &                   IW(PTRIST(STEP(ISON))+XXS), 
@@ -1201,11 +1221,12 @@ C
      &                   IW(PTRIST(STEP(ISON))+XXR), 
      &                   SON_A, IACHK, RECSIZE )
              CALL DMUMPS_BUF_SEND_CONTRIB_TYPE2(NBROWS_ALREADY_SENT,
+     &               NBCOLS_ALREADY_SENT, NBLRB_ALREADY_SENT,
      &               DESCLU, INODE_PERE,
      &               NFRONT_PERE, NASS_PERE, NFS4FATHER, 
      &                    NSLAVES_PERE,
      &               ISON, NROWS_TO_SEND, LMAP_LOC,
-     &               MAP, PERM_LOC(min(LMAP_LOC,NBROW(I))),
+     &               MAP, min(LMAP_LOC,NBROW(I)),
      &               IW(PIMASTER(STEP(ISON))),
      &               SON_A(IACHK:IACHK+RECSIZE-1_8), 
      &               RECSIZE,
@@ -1256,7 +1277,7 @@ C
      &          PTRAST, STEP, PIMASTER, PAMASTER, NSTK, COMP,
      &          IFLAG, IERROR, COMM,
      &          PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
-     &          root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &          root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &          FILS, DAD, PTRARW, PTRAIW,
      &          PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &          INTARR,DBLARR,ICNTL,KEEP,KEEP8,DKEEP,ND,FRERE,
@@ -1324,9 +1345,9 @@ C
       USE DMUMPS_BUF, ONLY: DMUMPS_BUF_MAX_ARRAY_MINSIZE,
      &                              BUF_MAX_ARRAY
       USE DMUMPS_LR_TYPE
-      USE DMUMPS_LR_STATS
+      USE MUMPS_LR_STATS
       USE DMUMPS_LR_DATA_M
-      USE DMUMPS_LOAD, ONLY : DMUMPS_LOAD_POOL_UPD_NEW_POOL
+      USE MUMPS_LOAD, ONLY : MUMPS_LOAD_POOL_UPD_NEW_POOL
       USE DMUMPS_DYNAMIC_MEMORY_M, ONLY : DMUMPS_DM_SET_DYNPTR
      &                 , DMUMPS_DM_SET_PTR, DMUMPS_DM_FREE_BLOCK
       IMPLICIT NONE
@@ -1924,7 +1945,7 @@ C
      &           SLAVEF, KEEP(199), KEEP(28), KEEP(76), KEEP(80),
      &           KEEP(47), STEP, IFATH+N )
                IF (KEEP(47) .GE. 3) THEN
-                 CALL DMUMPS_LOAD_POOL_UPD_NEW_POOL(
+                 CALL MUMPS_LOAD_POOL_UPD_NEW_POOL(
      &          IPOOL, LPOOL, 
      &          PROCNODE_STEPS, KEEP,KEEP8, SLAVEF, COMM_LOAD,
      &          MYID, STEP, N, ND, FILS )

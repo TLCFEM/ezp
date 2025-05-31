@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -11,14 +11,16 @@ C  released under the CeCILL-C license
 C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
-      SUBROUTINE DMUMPS_ASS_ROOT( root, KEEP50,
+      SUBROUTINE DMUMPS_ASS_ROOT( root, roota, KEEP50,
      &                     NROW_SON, NCOL_SON, INDROW_SON, 
      &                     INDCOL_SON, NSUPCOL, VAL_SON, VAL_ROOT,
      &                     LOCAL_M, LOCAL_N,
      &                     RHS_ROOT, NLOC_ROOT, CBP )
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
       IMPLICIT NONE
-      TYPE (DMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (DMUMPS_ROOT_STRUC) :: roota
       INTEGER, INTENT(IN) :: KEEP50
       INTEGER NCOL_SON, NROW_SON, NSUPCOL
       INTEGER, intent(in) :: CBP   
@@ -65,7 +67,7 @@ C
       RECURSIVE SUBROUTINE DMUMPS_BUILD_AND_SEND_CB_ROOT
      &  ( COMM_LOAD, ASS_IRECV, N, ISON, IROOT,
      &    PTRI, PTRR,
-     &    root, NBROW, NBCOL, SHIFT_LIST_ROW_SON,
+     &    root, roota, NBROW, NBCOL, SHIFT_LIST_ROW_SON,
      &    SHIFT_LIST_COL_SON, SHIFT_VAL_SON_ARG, LDA_ARG, TAG,
      &    MYID, COMM, BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
      &    IWPOS, IWPOSCB, IPTRLU, LRLU, LRLUS, IW, LIW, A, LA,
@@ -84,14 +86,16 @@ C
      &     )
       USE DMUMPS_OOC        
       USE DMUMPS_BUF
-      USE DMUMPS_LOAD
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_LOAD
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
       USE DMUMPS_DYNAMIC_MEMORY_M, ONLY : DMUMPS_DM_SET_DYNPTR
       IMPLICIT NONE
       INTEGER KEEP(500), ICNTL(60)
       INTEGER(8) KEEP8(150)
       DOUBLE PRECISION  DKEEP(230)
-      TYPE (DMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (DMUMPS_ROOT_STRUC) :: roota
       INTEGER COMM_LOAD, ASS_IRECV
       INTEGER N, ISON, IROOT, TAG
       INTEGER PTRI( KEEP(28) )
@@ -417,7 +421,7 @@ C
         end if
         IF ( PTRIST(STEP(IROOT)).EQ.0.AND.
      &       PTLUST_S(STEP(IROOT)).EQ.0) THEN
-           CALL DMUMPS_ROOT_ALLOC_STATIC(root, IROOT, N, IW, LIW,
+           CALL DMUMPS_ROOT_ALLOC_STATIC(root, roota, IROOT, N, IW, LIW,
      &               A, LA,
      &               FILS, DAD, MYID, SLAVEF, PROCNODE_STEPS,
      &               LPTRAR, NELT, FRTPTR, FRTELT,
@@ -445,7 +449,7 @@ C
      &        SLAVEF, KEEP(199), KEEP(28), KEEP(76), KEEP(80), KEEP(47),
      &        STEP, IROOT+N )
               IF (KEEP(47) .GE. 3) THEN
-                 CALL DMUMPS_LOAD_POOL_UPD_NEW_POOL(
+                 CALL MUMPS_LOAD_POOL_UPD_NEW_POOL(
      &                IPOOL, LPOOL, 
      &                PROCNODE_STEPS, KEEP,KEEP8, SLAVEF, COMM_LOAD,
      &                MYID, STEP, N, ND, FILS )
@@ -462,7 +466,7 @@ C
             NRLOCAL = PTRROW( IROW + 2 ) - PTRROW( IROW + 1 )
             NCLOCAL = PTRCOL( JCOL + 2 ) - PTRCOL( JCOL + 1 )
             CALL DMUMPS_ROOT_LOCAL_ASSEMBLY( N,
-     &        root%SCHUR_POINTER(1),
+     &        roota%SCHUR_POINTER(1),
      &        LOCAL_M, LOCAL_N,
      &        root%NPCOL, root%NPROW, root%MBLOCK, root%NBLOCK,
      &        NBCOL, NBROW,
@@ -476,7 +480,7 @@ C
      &        NSUPROW(IROW+1), NSUPCOL(JCOL+1),
      &        root%RG2L(1), TRANSPOSE_ASM,
      &        KEEP,
-     &        root%RHS_ROOT(1,1), root%RHS_NLOC,
+     &        roota%RHS_ROOT(1,1), root%RHS_NLOC,
      &        NELIM_ROOT, NELIM_ROW, NELIM_COL )
        ELSE
         IF ( PTRIST(STEP( IROOT )) .GE. 0 ) THEN
@@ -505,7 +509,7 @@ C
      &        NSUPROW(IROW+1), NSUPCOL(JCOL+1),
      &        root%RG2L(1), TRANSPOSE_ASM,
      &        KEEP,
-     &        root%RHS_ROOT(1,1), root%RHS_NLOC,
+     &        roota%RHS_ROOT(1,1), root%RHS_NLOC,
      &        NELIM_ROOT, NELIM_ROW, NELIM_COL )
         END IF
        ENDIF
@@ -576,7 +580,7 @@ C
      &            PTRIST, PTLUST_S, PTRFAC, PTRAST, STEP,
      &            PIMASTER, PAMASTER, NSTK,
      &            COMP, IFLAG, IERROR, COMM, PERM, IPOOL, LPOOL,
-     &            LEAF, NBFIN, MYID, SLAVEF, root,
+     &            LEAF, NBFIN, MYID, SLAVEF, root, roota,
      &            OPASSW, OPELIW, ITLOC, RHS_MUMPS, FILS, DAD,
      &            PTRARW,PTRAIW,
      &            PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -823,10 +827,10 @@ C
      &  K50, K46, K51
      &     , K60, IDNPROW, IDNPCOL, IDMBLOCK, IDNBLOCK
      & )
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
       IMPLICIT NONE
       INTEGER MYID, MYID_ROOT
-      TYPE (DMUMPS_ROOT_STRUC)::root
+      TYPE (MUMPS_ROOT_STRUC)::root
       INTEGER COMM_ROOT
       INTEGER N, IROOT, NPROCS, K50, K46, K51
       INTEGER FILS( N )
@@ -912,10 +916,11 @@ C
       ENDIF
       RETURN
       END SUBROUTINE DMUMPS_INIT_ROOT_ANA
-      SUBROUTINE DMUMPS_INIT_ROOT_FAC( N, MYID, root, FILS, KEEP )
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      SUBROUTINE DMUMPS_INIT_ROOT_FAC( N, MYID, root,
+     &                                 FILS, KEEP )
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
       IMPLICIT NONE
-      TYPE ( DMUMPS_ROOT_STRUC ):: root
+      TYPE ( MUMPS_ROOT_STRUC ):: root
       INTEGER, INTENT(IN) :: N, MYID, KEEP(500)
       INTEGER FILS( N )
       INTEGER INODE, I
@@ -1146,7 +1151,7 @@ C
         DEALLOCATE(WK)
       RETURN
       END SUBROUTINE DMUMPS_GATHER_ROOT
-      SUBROUTINE DMUMPS_ROOT_ALLOC_STATIC(root, IROOT, N,
+      SUBROUTINE DMUMPS_ROOT_ALLOC_STATIC(root, roota, IROOT, N,
      &                  IW, LIW, A, LA,
      &                  FILS, DAD, MYID, SLAVEF, PROCNODE_STEPS,
      &                  LPTRAR, NELT, FRTPTR, FRTELT,
@@ -1157,13 +1162,15 @@ C
      &                  IWPOS, IWPOSCB, PTRIST, PTRAST,
      &                  STEP, PIMASTER, PAMASTER, ITLOC, RHS_MUMPS,
      &                  COMP, LRLUS, IFLAG, KEEP,KEEP8,DKEEP,IERROR )
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INTEGER MYID
       INTEGER KEEP(500)
       INTEGER(8) KEEP8(150)
       DOUBLE PRECISION DKEEP(230)
-      TYPE (DMUMPS_ROOT_STRUC ) :: root
+      TYPE (MUMPS_ROOT_STRUC ) :: root
+      TYPE (DMUMPS_ROOT_STRUC ) :: roota
       INTEGER(8) :: LA, LRLU, IPTRLU, LRLUS
       INTEGER IROOT, LIW, N, IWPOS, IWPOSCB
       INTEGER IW( LIW )
@@ -1205,9 +1212,9 @@ C
           ELSE
             root%RHS_NLOC = 1
           ENDIF
-          IF (associated( root%RHS_ROOT) ) 
-     &             DEALLOCATE (root%RHS_ROOT)
-          ALLOCATE(root%RHS_ROOT(LOCAL_M,root%RHS_NLOC), 
+          IF (associated( roota%RHS_ROOT) ) 
+     &             DEALLOCATE (roota%RHS_ROOT)
+          ALLOCATE(roota%RHS_ROOT(LOCAL_M,root%RHS_NLOC), 
      &              stat=allocok)
           IF ( allocok.GT.0) THEN
             IFLAG=-13
@@ -1215,9 +1222,9 @@ C
             RETURN
           ENDIF
           IF (KEEP(253).NE.0) THEN
-            root%RHS_ROOT = ZERO
+            roota%RHS_ROOT = ZERO
             CALL DMUMPS_ASM_RHS_ROOT (  N, FILS, 
-     &           root, KEEP, KEEP8, RHS_MUMPS, 
+     &           root, roota, KEEP, KEEP8, RHS_MUMPS, 
      &           IFLAG, IERROR )
             IF ( IFLAG .LT. 0 ) RETURN
           ENDIF
@@ -1252,20 +1259,23 @@ C
               CALL DMUMPS_SET_TO_ZERO(A(IPTRLU+1_8), LOCAL_M,
      &        LOCAL_M, LOCAL_N, KEEP)
             ELSE
-              CALL DMUMPS_SET_TO_ZERO(root%SCHUR_POINTER(1),
+              CALL DMUMPS_SET_TO_ZERO(roota%SCHUR_POINTER(1),
      &        root%SCHUR_LLD, LOCAL_M, LOCAL_N, KEEP)
             ENDIF
             IF (KEEP(55) .eq. 0) THEN
               IF (KEEP(60) .EQ. 0) THEN
-                CALL DMUMPS_ASM_ARR_ROOT( N, root, IROOT, STEP(IROOT),
+                CALL DMUMPS_ASM_ARR_ROOT( N, root, roota,
+     &          IROOT, STEP(IROOT),
      &          A(IPTRLU+1_8), LOCAL_M, LOCAL_M, LOCAL_N,
      &          FILS,
      &          KEEP, PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &          INTARR, DBLARR,
      &          KEEP8(27), KEEP8(26), MYID )
               ELSE
-                CALL DMUMPS_ASM_ARR_ROOT( N, root, IROOT, STEP(IROOT),
-     &          root%SCHUR_POINTER(1), root%SCHUR_LLD, LOCAL_M, LOCAL_N,
+                CALL DMUMPS_ASM_ARR_ROOT( N, root, roota,
+     &          IROOT, STEP(IROOT),
+     &          roota%SCHUR_POINTER(1), root%SCHUR_LLD,
+     &          LOCAL_M, LOCAL_N,
      &          FILS,
      &          KEEP, PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &          INTARR, DBLARR,
@@ -1273,14 +1283,14 @@ C
               ENDIF
             ELSE
               IF (KEEP(60) .EQ. 0) THEN
-                CALL DMUMPS_ASM_ELT_ROOT( N, root,
+                CALL DMUMPS_ASM_ELT_ROOT( N, root, roota,
      &          A(IPTRLU+1_8), LOCAL_M, LOCAL_M, LOCAL_N,
      &          LPTRAR, NELT, FRTPTR, FRTELT,
      &          PTRAIW, PTRARW, INTARR, DBLARR,
      &          KEEP8(27), KEEP8(26), KEEP, KEEP8, MYID )
               ELSE
-                CALL DMUMPS_ASM_ELT_ROOT( N, root,
-     &           root%SCHUR_POINTER(1), root%SCHUR_LLD,
+                CALL DMUMPS_ASM_ELT_ROOT( N, root, roota,
+     &           roota%SCHUR_POINTER(1), root%SCHUR_LLD,
      &           root%SCHUR_MLOC, root%SCHUR_NLOC,
      &           LPTRAR, NELT, FRTPTR, FRTELT,
      &           PTRAIW, PTRARW, INTARR, DBLARR,
@@ -1290,16 +1300,18 @@ C
           ENDIF
       RETURN
       END SUBROUTINE DMUMPS_ROOT_ALLOC_STATIC
-      SUBROUTINE DMUMPS_ASM_ELT_ROOT( N, root, 
+      SUBROUTINE DMUMPS_ASM_ELT_ROOT( N, root, roota,
      &       VALROOT, LOCAL_M_LLD, LOCAL_M, LOCAL_N,
      &       LPTRAR, NELT, FRTPTR, FRTELT,
      &       PTRAIW, PTRARW,
      &       INTARR, DBLARR, LINTARR, LDBLARR,
      &       KEEP, KEEP8,
      &       MYID)
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
       IMPLICIT NONE
-      TYPE (DMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (DMUMPS_ROOT_STRUC) :: roota
       INTEGER :: N, MYID, LOCAL_M, LOCAL_N, KEEP(500)
       INTEGER :: LOCAL_M_LLD
       INTEGER(8) KEEP8(150)
@@ -1370,14 +1382,16 @@ C
       RETURN
       END SUBROUTINE DMUMPS_ASM_ELT_ROOT
       SUBROUTINE DMUMPS_ASM_RHS_ROOT
-     &           ( N, FILS, root, KEEP, KEEP8, RHS_MUMPS, 
+     &           ( N, FILS, root, roota, KEEP, KEEP8, RHS_MUMPS, 
      &             IFLAG, IERROR )
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INTEGER N, KEEP(500), IFLAG, IERROR
       INTEGER(8) :: KEEP8(150)
       INTEGER FILS(N)
-      TYPE (DMUMPS_ROOT_STRUC ) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (DMUMPS_ROOT_STRUC) :: roota
       DOUBLE PRECISION :: RHS_MUMPS(KEEP8(85))
       INTEGER JCOL, IPOS_ROOT, JPOS_ROOT,
      &        IROW_GRID, JCOL_GRID, ILOCRHS, JLOCRHS,
@@ -1397,7 +1411,7 @@ C
            JLOCRHS = root%NBLOCK * ( ( JPOS_ROOT - 1 ) /
      &                 ( root%NBLOCK * root%NPCOL ) )
      &               + mod( JPOS_ROOT - 1, root%NBLOCK ) + 1
-          root%RHS_ROOT(ILOCRHS, JLOCRHS) =
+          roota%RHS_ROOT(ILOCRHS, JLOCRHS) =
      &                 RHS_MUMPS(INODE+(JCOL-1)*KEEP(254))
         ENDDO
  100    CONTINUE
@@ -1405,14 +1419,16 @@ C
       ENDDO
       RETURN
       END SUBROUTINE DMUMPS_ASM_RHS_ROOT
-      SUBROUTINE DMUMPS_ASM_ARR_ROOT( N, root, IROOT, STEP_IROOT,
+      SUBROUTINE DMUMPS_ASM_ARR_ROOT( N, root, roota, IROOT, STEP_IROOT,
      &   VALROOT, LOCAL_M_LLD, LOCAL_M, LOCAL_N, FILS,
      &       KEEP, PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &       INTARR, DBLARR, LINTARR, LDBLARR,
      &       MYID)
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
       IMPLICIT NONE
-      TYPE (DMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (DMUMPS_ROOT_STRUC) :: roota
       INTEGER :: N, MYID, IROOT, STEP_IROOT, LOCAL_M, LOCAL_N
       INTEGER :: LOCAL_M_LLD
       INTEGER FILS( N )

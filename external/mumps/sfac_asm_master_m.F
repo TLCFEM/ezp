@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -14,8 +14,8 @@ C
       MODULE SMUMPS_FAC_ASM_MASTER_M
       CONTAINS
       SUBROUTINE SMUMPS_FAC_ASM_NIV1( COMM_LOAD, ASS_IRECV,
-     &    N, INODE, IW, LIW, A, LA, INFO, ND, 
-     &    FILS, FRERE, DAD, MAXFRW, root,
+     &    UU, N, INODE, IW, LIW, A, LA, INFO, ND, 
+     &    FILS, FRERE, DAD, MAXFRW, root, roota,
      &    OPASSW, OPELIW, PTRIST, PTLUST, PTRFAC, PTRAST, 
      &    STEP, PIMASTER, PAMASTER,PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -36,18 +36,20 @@ C
       USE SMUMPS_DYNAMIC_MEMORY_M, ONLY : SMUMPS_DM_SET_PTR,
      &                                    SMUMPS_DM_FREE_BLOCK
       USE MUMPS_BUILD_SORT_INDEX_M
-      USE SMUMPS_BUF
-      USE SMUMPS_LOAD
+      USE MUMPS_BUF_COMMON, ONLY: MUMPS_BUF_SEND_MAPLIG
+      USE MUMPS_LOAD
       USE SMUMPS_LR_CORE, ONLY : IS_FRONT_BLR_CANDIDATE,
      &                           SMUMPS_BLR_ASM_NIV1
       USE SMUMPS_LR_DATA_M, ONLY : SMUMPS_BLR_INIT_FRONT,
      &                             SMUMPS_BLR_SAVE_NFS4FATHER
-      USE SMUMPS_STRUC_DEF, ONLY : SMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       USE SMUMPS_ANA_LR,    ONLY : GET_CUT
       USE SMUMPS_LR_CORE,   ONLY : MAX_CLUSTER
       USE MUMPS_LR_COMMON,  ONLY : COMPUTE_BLR_VCS
       IMPLICIT NONE
-      TYPE (SMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (SMUMPS_ROOT_STRUC) :: roota
       INTEGER COMM_LOAD, ASS_IRECV
       INTEGER IZERO 
       PARAMETER (IZERO=0)
@@ -56,6 +58,7 @@ C
       INTEGER KEEP(500), ICNTL(60)
       INTEGER(8) KEEP8(150)
       REAL    DKEEP(230)
+      REAL    UU
       INTEGER, INTENT(INOUT) :: INFO(2)
       INTEGER INODE,MAXFRW,
      &        IWPOSCB, COMP
@@ -162,6 +165,7 @@ C
       INTEGER, POINTER, DIMENSION(:) :: BEGS_BLR
       INTEGER :: NB_BLR, NPARTSCB, NPARTSASS, MAXI_CLUSTER, 
      &           IBCKSZ2, MINSIZE
+      INTEGER PIVOT_OPTION
       REAL ZERO
       PARAMETER( ZERO = 0.0E0 )
       INTEGER NELT, LPTRAR
@@ -361,7 +365,7 @@ C
               CALL MUMPS_GET_FLOPS_COST(ND(STEP(INODE))+KEEP(253),
      &                                 NPIV,NPIV,
      &                                 KEEP(50),1,FLOP1_EFF)
-              CALL SMUMPS_LOAD_UPDATE(0,.FALSE.,FLOP1-FLOP1_EFF,
+              CALL MUMPS_LOAD_UPDATE(0,.FALSE.,FLOP1-FLOP1_EFF,
      &             KEEP,KEEP8)
            ENDIF
         IWPOS = IWPOS - ((2*NFRONT)-(2*NFRONT_EFF))
@@ -388,6 +392,12 @@ C
       ICT11 = IOLDPS + HF - 1 + NFRONT
       CALL SMUMPS_SET_PARPIVT1 ( INODE, NFRONT, NASS1, KEEP, 
      &                           LR_ACTIVATED, PARPIV_T1) 
+      PIVOT_OPTION  = KEEP(468)
+      IF (UU.EQ.ZERO) THEN 
+        PIVOT_OPTION=0
+      ELSE IF (PARPIV_T1.NE.0) THEN
+         PIVOT_OPTION = min(PIVOT_OPTION,2)
+      ENDIF
       NFRONT8=int(NFRONT,8)
       LAELL8 = NFRONT8 * NFRONT8
       IF(PARPIV_T1.NE.0) THEN
@@ -428,7 +438,7 @@ C
       POSELT = POSFAC
       POSFAC = POSFAC + LAELL8
       SSARBR=MUMPS_INSSARBR(PROCNODE_STEPS(STEP(INODE)),KEEP(199))
-      CALL SMUMPS_LOAD_MEM_UPDATE(SSARBR,.FALSE.,
+      CALL MUMPS_LOAD_MEM_UPDATE(SSARBR,.FALSE.,
      &     LA-LRLUS, 
      &     0_8,
      &     LAELL8-SIZE_ISON_TOP8, 
@@ -841,7 +851,7 @@ C
      &         PTRIST, PTLUST, PTRFAC, PTRAST, STEP,
      &         PIMASTER, PAMASTER, NSTK_S, COMP,
      &         INFO(1), INFO(2), MYID, COMM, PERM, IPOOL, LPOOL,
-     &         LEAF, NBFIN, ICNTL, KEEP, KEEP8, DKEEP, root,
+     &         LEAF, NBFIN, ICNTL, KEEP, KEEP8, DKEEP, root, roota,
      &         OPASSW, OPELIW, ITLOC, RHS_MUMPS, FILS, DAD,
      &         PTRARW, PTRAIW,
      &         PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -858,8 +868,8 @@ C
            DO WHILE (IERR.EQ.-1)
             PTRCOL = PIMASTER(STEP(ISON)) + HS + NROWS + NPIVS + NELIM
             PDEST  = PIMASTER(STEP(ISON)) + 6 + KEEP(IXSZ)
-            CALL  SMUMPS_BUF_SEND_MAPLIG( 
-     &           INODE, NFRONT, NASS1, NFS4FATHER, 
+            CALL MUMPS_BUF_SEND_MAPLIG(
+     &           INODE, NFRONT, NASS1, NFS4FATHER,
      &           ISON, MYID,
      &       IZERO, IDUMMY, IW(PTRCOL), NCBSON,
      &       COMM, IERR, IW(PDEST), NSLSON, SLAVEF, 
@@ -883,7 +893,7 @@ C
      &         PERM,
      &         IPOOL, LPOOL, LEAF,
      &         NBFIN, MYID, SLAVEF,
-     &         root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &         root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &         FILS, DAD, PTRARW, PTRAIW,
      &         PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &         INTARR, DBLARR, ICNTL, KEEP, KEEP8,DKEEP, ND, FRERE,
@@ -1023,7 +1033,7 @@ C
      &    ND, FILS, FRERE, DAD,
      &    CAND,
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE,
-     &    MAXFRW, root,
+     &    MAXFRW, root, roota,
      &    OPASSW, OPELIW, PTRIST, PTLUST, PTRFAC,
      &    PTRAST, STEP, PIMASTER, PAMASTER, PTRARW, NSTK_S,
      &    PTRAIW, PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -1037,17 +1047,20 @@ C
      &    )
 !$    USE OMP_LIB
       USE MUMPS_BUILD_SORT_INDEX_M
-      USE SMUMPS_BUF
-      USE SMUMPS_LOAD
+      USE MUMPS_BUF_COMMON, ONLY: MUMPS_BUF_SEND_MAPLIG,
+     &                            MUMPS_BUF_SEND_DESC_BANDE
+      USE MUMPS_LOAD
       USE SMUMPS_LR_CORE, ONLY : IS_FRONT_BLR_CANDIDATE
-      USE SMUMPS_STRUC_DEF, ONLY : SMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       USE SMUMPS_DYNAMIC_MEMORY_M, ONLY : SMUMPS_DM_SET_PTR,
      &                                    SMUMPS_DM_IS_DYNAMIC
       USE SMUMPS_ANA_LR,    ONLY : GET_CUT
       USE SMUMPS_LR_CORE,   ONLY : MAX_CLUSTER
       USE MUMPS_LR_COMMON,  ONLY : COMPUTE_BLR_VCS
       IMPLICIT NONE
-      TYPE (SMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (SMUMPS_ROOT_STRUC) :: roota
       INTEGER COMM_LOAD, ASS_IRECV
       INTEGER N,LIW,NSTEPS, NBFIN
       INTEGER KEEP(500), ICNTL(60)
@@ -1094,7 +1107,6 @@ C
       LOGICAL LPOK
       INTEGER NCBSON_MAX
       INTEGER IN,NUMSTK,NASS,ISON,IFSON,NASS1,IELL
-      INTEGER :: IBC_SOURCE
       REAL, DIMENSION(:), POINTER :: SON_A
       INTEGER :: MAXWASTEDPROCS
       PARAMETER (MAXWASTEDPROCS=1)
@@ -1267,7 +1279,7 @@ C
          IF (allocok > 0 ) THEN
             GOTO 245
          ENDIF
-         CALL SMUMPS_SPLIT_PREP_PARTITION (
+         CALL MUMPS_SPLIT_PREP_PARTITION (
      &      INODE, STEP, N, SLAVEF, 
      &      PROCNODE_STEPS, KEEP, DAD, FILS,
      &      CAND(1,INIV2), ICNTL, COPY_CAND,
@@ -1276,7 +1288,7 @@ C
      &                                    )
          NCB_SPLIT = NCB-NUMORG_SPLIT
          SIZE_LIST_SPLIT = SIZE_TMP_SLAVES_LIST - NBSPLIT
-         CALL SMUMPS_LOAD_SET_PARTITION( NCBSON_MAX, SLAVEF, KEEP,KEEP8,
+         CALL MUMPS_LOAD_SET_PARTITION( NCBSON_MAX, SLAVEF, KEEP,KEEP8,
      &     ICNTL, COPY_CAND,
      &     MEM_DISTRIB(0), NCB_SPLIT, NFRONT, NSLAVES,
      &     TAB_POS_IN_PERE(1,INIV2),
@@ -1284,7 +1296,7 @@ C
      &     SIZE_LIST_SPLIT,INODE
      &     )
          DEALLOCATE (COPY_CAND)
-         CALL SMUMPS_SPLIT_POST_PARTITION (
+         CALL MUMPS_SPLIT_POST_PARTITION (
      &      INODE, STEP, N, SLAVEF, NBSPLIT, NCB,
      &      PROCNODE_STEPS, KEEP, DAD, FILS,
      &      ICNTL, 
@@ -1304,7 +1316,7 @@ C
          IF (KEEP(376) .EQ. 1) THEN
            NFRONT = IW( PIMASTER(STEP(IFSON)) + KEEP(IXSZ))
          ENDIF
-         CALL SMUMPS_SPLIT_PROPAGATE_PARTI (
+         CALL MUMPS_SPLIT_PROPAGATE_PARTI (
      &      INODE, TYPESPLIT, IFSON, 
      &      CAND(1,INIV2), NMB_OF_CAND_ORIG,
      &      IW(PDEST), NSLSON,
@@ -1317,7 +1329,7 @@ C
      &                                    )
         ENDIF
        ELSE
-        CALL SMUMPS_LOAD_SET_PARTITION( NCBSON_MAX, SLAVEF, KEEP,KEEP8,
+        CALL MUMPS_LOAD_SET_PARTITION( NCBSON_MAX, SLAVEF, KEEP,KEEP8,
      &     ICNTL, CAND(1,INIV2),
      &     MEM_DISTRIB(0), NCB, NFRONT, NSLAVES,
      &     TAB_POS_IN_PERE(1,INIV2),
@@ -1387,7 +1399,7 @@ C
              IF (allocok > 0 ) THEN
                 GOTO 245
              ENDIF
-             CALL SMUMPS_SPLIT_PREP_PARTITION (
+             CALL MUMPS_SPLIT_PREP_PARTITION (
      &          INODE, STEP, N, SLAVEF, 
      &          PROCNODE_STEPS, KEEP, DAD, FILS,
      &          CAND(1,INIV2), ICNTL, COPY_CAND,
@@ -1396,7 +1408,7 @@ C
      &                                    )
              NCB_SPLIT = NCB-NUMORG_SPLIT
              SIZE_LIST_SPLIT = SIZE_TMP_SLAVES_LIST - NBSPLIT
-             CALL SMUMPS_LOAD_SET_PARTITION( NCBSON_MAX, 
+             CALL MUMPS_LOAD_SET_PARTITION( NCBSON_MAX, 
      &         SLAVEF, KEEP,KEEP8,
      &         ICNTL, COPY_CAND,
      &         MEM_DISTRIB(0), NCB_SPLIT, NFRONT_EFF, NSLAVES,
@@ -1405,7 +1417,7 @@ C
      &         SIZE_LIST_SPLIT,INODE 
      &         )
              DEALLOCATE (COPY_CAND)
-             CALL SMUMPS_SPLIT_POST_PARTITION (
+             CALL MUMPS_SPLIT_POST_PARTITION (
      &          INODE, STEP, N, SLAVEF, NBSPLIT, NCB,
      &          PROCNODE_STEPS, KEEP, DAD, FILS,
      &          ICNTL, 
@@ -1413,7 +1425,7 @@ C
      &          NSLAVES
      &                                    )
             ELSE
-             CALL SMUMPS_LOAD_SET_PARTITION( NCBSON_MAX,
+             CALL MUMPS_LOAD_SET_PARTITION( NCBSON_MAX,
      &       SLAVEF, KEEP, KEEP8, ICNTL,
      &       CAND(1,INIV2),
      &       MEM_DISTRIB(0), NCB, NFRONT_EFF, NSLAVES,
@@ -1479,19 +1491,19 @@ C
          ENDIF
         ENDIF
       ENDIF
-        CALL SMUMPS_LOAD_MASTER_2_ALL(MYID, SLAVEF, COMM_LOAD,
+        CALL MUMPS_LOAD_MASTER_2_ALL(MYID, SLAVEF, COMM_LOAD,
      &     TAB_POS_IN_PERE(1,ISTEP_TO_INIV2(STEP(INODE))),
      &     NASS1, KEEP, KEEP8, IW(IOLDPS+6+KEEP(IXSZ)), NSLAVES,INODE)
       IF(KEEP(86).EQ.1)THEN
          IF(mod(KEEP(24),2).eq.0)THEN
-            CALL SMUMPS_LOAD_SEND_MD_INFO(SLAVEF,
+            CALL MUMPS_LOAD_SEND_MD_INFO(SLAVEF,
      &           CAND(SLAVEF+1,INIV2),
      &           CAND(1,INIV2),
      &           TAB_POS_IN_PERE(1,ISTEP_TO_INIV2(STEP(INODE))),
      &           NASS1, KEEP,KEEP8, TMP_SLAVES_LIST, 
      &           NSLAVES,INODE)
          ELSEIF((KEEP(24).EQ.0).OR.(KEEP(24).EQ.1))THEN
-            CALL SMUMPS_LOAD_SEND_MD_INFO(SLAVEF,
+            CALL MUMPS_LOAD_SEND_MD_INFO(SLAVEF,
      &           SLAVEF-1,
      &           TMP_SLAVES_LIST,
      &           TAB_POS_IN_PERE(1,ISTEP_TO_INIV2(STEP(INODE))),
@@ -1539,7 +1551,7 @@ C
       IW(IOLDPS+XXF) = -99999
       IW(IOLDPS+XXLR)= LRSTATUS
       IW(IOLDPS+XXG) = MemNotPinned
-      CALL SMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,LA-LRLUS,0_8,LAELL8,
+      CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,LA-LRLUS,0_8,LAELL8,
      &     KEEP,KEEP8,LRLUS)
       POSEL1 = POSELT - int(LDAFS,8)
 #if defined(ZERO_TRIANGLE)
@@ -1748,7 +1760,6 @@ C
       PTRCOL = IOLDPS + HF + NFRONT 
       PTRROW = IOLDPS + HF + NASS1 
       PDEST  = IOLDPS + 6 + KEEP(IXSZ)
-      IBC_SOURCE = MYID
       DO ISLAVE = 1, NSLAVES
               CALL MUMPS_BLOC2_GET_SLAVE_INFO( 
      &                KEEP,KEEP8, INODE, STEP, N, SLAVEF,
@@ -1761,25 +1772,25 @@ C
         DO WHILE (IERR .EQ.-1)
          IF ( KEEP(50) .eq. 0 ) THEN
            NBCOL =  NFRONT
-           CALL SMUMPS_BUF_SEND_DESC_BANDE( INODE,
+           CALL MUMPS_BUF_SEND_DESC_BANDE( INODE,
      &      sum(SONROWS_PER_ROW(FIRST_INDEX:FIRST_INDEX+NBLIG-1)),
      &      NBLIG, IW(PTRROW), NBCOL, IW(PTRCOL), NASS1,
      &      IZERO, IDUMMY, 
      &      NSLAVES, 
      &      ESTIM_NFS4FATHER_ATSON,   
-     &      IW(PDEST), IBC_SOURCE, NFRONT, COMM, KEEP, IERR
+     &      IW(PDEST), NFRONT, COMM, KEEP, IERR
      &      , IW(IOLDPS+XXLR)
      &      )
          ELSE
            NBCOL = NASS1+SHIFT_INDEX+NBLIG
-           CALL SMUMPS_BUF_SEND_DESC_BANDE( INODE,
+           CALL MUMPS_BUF_SEND_DESC_BANDE( INODE,
      &      sum(SONROWS_PER_ROW(FIRST_INDEX:FIRST_INDEX+NBLIG-1)),
      &      NBLIG, IW(PTRROW), NBCOL, IW(PTRCOL), NASS1,
      &      NSLAVES-ISLAVE, 
      &      IW( PTLUST(STEP(INODE))+6+KEEP(IXSZ)+ISLAVE), 
      &      NSLAVES, 
      &      ESTIM_NFS4FATHER_ATSON,
-     &      IW(PDEST), IBC_SOURCE, NFRONT, COMM, KEEP, IERR
+     &      IW(PDEST), NFRONT, COMM, KEEP, IERR
      &      , IW(IOLDPS+XXLR)
      &      )
          ENDIF
@@ -1799,7 +1810,7 @@ C
      &     INFO(2), COMM,
      &     PERM,
      &     IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
-     &     root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &     root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &     FILS, DAD, PTRARW, PTRAIW,
      &     PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &     INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
@@ -1870,7 +1881,7 @@ C
      &      PIMASTER, PAMASTER, NSTK_S, COMP,
      &      INFO(1), INFO(2), MYID, COMM, PERM,
      &      IPOOL, LPOOL, LEAF,
-     &      NBFIN, ICNTL, KEEP, KEEP8, DKEEP, root,
+     &      NBFIN, ICNTL, KEEP, KEEP8, DKEEP, root, roota,
      &      OPASSW, OPELIW,
      &      ITLOC, RHS_MUMPS, FILS, DAD,
      &      PTRARW, PTRAIW,
@@ -1884,7 +1895,7 @@ C
            IERR = -1
            DO WHILE (IERR.EQ.-1)
             PTRCOL = PIMASTER(STEP(ISON)) + HS + NROWS + NPIVS + NELIM
-            CALL  SMUMPS_BUF_SEND_MAPLIG( 
+            CALL MUMPS_BUF_SEND_MAPLIG( 
      &           INODE, NFRONT,NASS1,NFS4FATHER,
      &           ISON, MYID,
      &      NSLAVES, IW( PTLUST(STEP(INODE)) + 6 +KEEP(IXSZ)),
@@ -1908,7 +1919,7 @@ C
      &        INFO(2), COMM,
      &        PERM,
      &        IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
-     &        root,OPASSW, OPELIW, ITLOC, RHS_MUMPS, FILS, DAD,
+     &        root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS, FILS, DAD,
      &        PTRARW, PTRAIW,
      &        PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &        INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
@@ -1929,7 +1940,7 @@ C
           DO WHILE (IERR.EQ.-1)
             PTRCOL = PIMASTER(STEP(ISON)) + HS + NROWS + NPIVS + NELIM
             PDEST  = PIMASTER(STEP(ISON)) + 6 + KEEP(IXSZ)
-            CALL  SMUMPS_BUF_SEND_MAPLIG( 
+            CALL MUMPS_BUF_SEND_MAPLIG( 
      &           INODE, NFRONT, NASS1, NFS4FATHER,
      &           ISON, MYID,
      &      NSLAVES, IW(PTLUST(STEP(INODE))+6+KEEP(IXSZ)),
@@ -1954,7 +1965,7 @@ C
      &        INFO(2), COMM,
      &        PERM,
      &        IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
-     &        root,OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &        root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &        FILS, DAD, PTRARW, PTRAIW,
      &        PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &        INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
@@ -1990,7 +2001,7 @@ C
      &        PTRIST, PTLUST, PTRFAC, PTRAST, STEP,
      &        PIMASTER, PAMASTER, NSTK_S, COMP, INFO(1), INFO(2),
      &        MYID, COMM, PERM, IPOOL, LPOOL, LEAF,
-     &        NBFIN, ICNTL, KEEP,KEEP8,DKEEP, root,
+     &        NBFIN, ICNTL, KEEP,KEEP8,DKEEP, root, roota,
      &        OPASSW, OPELIW, ITLOC, RHS_MUMPS, FILS, DAD,
      &        PTRARW, PTRAIW,
      &        PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,

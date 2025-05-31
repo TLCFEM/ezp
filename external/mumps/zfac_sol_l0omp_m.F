@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -25,7 +25,7 @@ C
 #endif
       CONTAINS
       SUBROUTINE ZMUMPS_INIT_L0_OMP_FACTORS(id_L0_OMP_FACTORS)
-      USE ZMUMPS_STRUC_DEF, ONLY : ZMUMPS_L0OMPFAC_T
+      USE ZMUMPS_INTR_TYPES, ONLY : ZMUMPS_L0OMPFAC_T
       IMPLICIT NONE
       TYPE (ZMUMPS_L0OMPFAC_T), DIMENSION(:), POINTER ::
      &                                             id_L0_OMP_FACTORS
@@ -38,7 +38,7 @@ C
       RETURN
       END SUBROUTINE ZMUMPS_INIT_L0_OMP_FACTORS
       SUBROUTINE ZMUMPS_FREE_L0_OMP_FACTORS(id_L0_OMP_FACTORS)
-      USE ZMUMPS_STRUC_DEF, ONLY : ZMUMPS_L0OMPFAC_T
+      USE ZMUMPS_INTR_TYPES, ONLY : ZMUMPS_L0OMPFAC_T
       IMPLICIT NONE
       TYPE (ZMUMPS_L0OMPFAC_T), DIMENSION(:), POINTER ::
      &                                              id_L0_OMP_FACTORS
@@ -63,7 +63,7 @@ C
      &                 ,TOTAL_FILE_SIZE,TOTAL_STRUC_SIZE
      &                 ,size_read,size_allocated,size_written
      &                 ,INFO)
-      USE ZMUMPS_STRUC_DEF, ONLY : ZMUMPS_L0OMPFAC_T
+      USE ZMUMPS_INTR_TYPES, ONLY : ZMUMPS_L0OMPFAC_T
       IMPLICIT NONE
       TYPE (ZMUMPS_L0OMPFAC_T), DIMENSION(:), POINTER :: L0_OMP_FACTORS
       INTEGER,intent(IN)::unit,MYID
@@ -243,7 +243,7 @@ C
      &            ,TOTAL_FILE_SIZE,TOTAL_STRUC_SIZE
      &            ,size_read,size_allocated,size_written
      &            ,INFO)
-      USE ZMUMPS_STRUC_DEF, ONLY : ZMUMPS_L0OMPFAC_T
+      USE ZMUMPS_INTR_TYPES, ONLY : ZMUMPS_L0OMPFAC_T
       IMPLICIT NONE
       TYPE (ZMUMPS_L0OMPFAC_T) :: L0_OMP_FACTORS_1THREAD
       INTEGER,intent(IN)::unit,MYID

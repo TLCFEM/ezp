@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -16,18 +16,19 @@ C
 #include 've.h'
 #endif
 #endif
-      SUBROUTINE DMUMPS_INI_DRIVER( id )
+      SUBROUTINE DMUMPS_INI_DRIVER( id, idintr )
       USE DMUMPS_STRUC_DEF
+      USE DMUMPS_INTR_TYPES, ONLY: DMUMPS_INTR_STRUC
 C
 C  Purpose:
 C  =======
 C
 C  Initialize an instance of the DMUMPS package.
 C
-      USE DMUMPS_BUF
       IMPLICIT NONE
       INCLUDE 'mpif.h'
-      TYPE (DMUMPS_STRUC) id
+      TYPE (DMUMPS_STRUC)      :: id
+      TYPE (DMUMPS_INTR_STRUC) :: idintr
       INTEGER MASTER, IERR,PAR_loc,SYM_loc
       PARAMETER( MASTER = 0 )
       INTEGER color
@@ -107,9 +108,6 @@ C     Similar behaviour for LREDRHS (value will
 C     be checked in DMUMPS_CHECK_REDRHS)
       id%LREDRHS = 0
 C
-C     Module needs to know the size of an INTEGER
-      CALL DMUMPS_BUF_INIT( id%KEEP( 34 ), id%KEEP(35) )
-C
       id%INST_Number = -1
 C
 C     Define the options for Metis
@@ -188,6 +186,7 @@ C     Info for pruning tree
       id%LNA=0
       NULLIFY(id%PROCNODE_STEPS)
       NULLIFY(id%S)
+      NULLIFY(id%LPS)
       NULLIFY(id%PTLUST_S)
       NULLIFY(id%PTRFAC)
       NULLIFY(id%DEPTH_FIRST)
@@ -227,13 +226,11 @@ C     Must be nullified because of routine
 C     DMUMPS_SIZE_IN_STRUCT
       NULLIFY(id%CB_SON_SIZE)
 C
-C     Components of the root
+C     Components of the arithmetic-dependent root
 C
-      NULLIFY(id%root%RHS_CNTR_MASTER_ROOT)
-      NULLIFY(id%root%RHS_ROOT)
-      NULLIFY(id%root%RG2L)
-      NULLIFY(id%root%IPIV)
-      NULLIFY(id%root%SCHUR_POINTER)
+      CALL DMUMPS_INI_ROOT(idintr%roota)
+      NULLIFY(idintr%root%RG2L)
+      NULLIFY(idintr%root%IPIV)
       NULLIFY(id%SCHUR_CINTERFACE)
 C
 C     Element-entry
@@ -277,7 +274,7 @@ C
       NULLIFY(id%PERM_L0_OMP)
       NULLIFY(id%PTR_LEAFS_L0_OMP)
       NULLIFY(id%L0_OMP_MAPPING)
-      NULLIFY(id%L0_OMP_FACTORS)
+      NULLIFY(idintr%L0_OMP_FACTORS)
       NULLIFY(id%I4_L0_OMP)
       NULLIFY(id%I8_L0_OMP)
       id%LPOOL_B_L0_OMP = 0
@@ -293,25 +290,16 @@ C
 C
 C     Initializations for Rank detection/null space
 C
-C         -----------------------------
-C         RCOND is a threshold such that:
-C                   A * P = Q * [ R11 R12 ]
-C                               [  0  R22 ]
-C         with R11 defined as the largest leading submatrix whose estimated
-C         condition number is less than 1/RCOND.
-C         -------------------------------------------
-      id%ROOT%QR_RCOND = 1.0D-11
       NULLIFY(id%SINGULAR_VALUES)
-      CALL DMUMPS_RR_INIT_POINTERS(id)
 C     Architecture data
       NULLIFY(id%MEM_DIST)
 C     Must be nullified because of routine
 C     DMUMPS_SIZE_IN_STRUCT
       NULLIFY(id%SUP_PROC)
       id%Deficiency = 0
-      id%root%LPIV = -1
-      id%root%yes  = .FALSE.
-      id%root%gridinit_done  = .FALSE.
+      idintr%root%LPIV = -1
+      idintr%root%yes  = .FALSE.
+      idintr%root%gridinit_done  = .FALSE.
 C     NOT IN SAVE/RESTORE
       id%ASSOCIATED_OOC_FILES=.FALSE.
 C
@@ -346,3 +334,13 @@ C       WRITE on unit 6 since ICNTL(1:4) are not set by the user yet
       ENDIF
       RETURN
       END SUBROUTINE DMUMPS_INI_DRIVER
+      SUBROUTINE DMUMPS_INI_ROOT(roota)
+      USE DMUMPS_INTR_TYPES, ONLY: DMUMPS_ROOT_STRUC
+      IMPLICIT NONE
+      TYPE(DMUMPS_ROOT_STRUC) :: roota
+      NULLIFY(roota%RHS_CNTR_MASTER_ROOT)
+      NULLIFY(roota%RHS_ROOT)
+      NULLIFY(roota%SCHUR_POINTER)
+      CALL DMUMPS_RR_INIT_POINTERS(roota)
+      RETURN
+      END SUBROUTINE DMUMPS_INI_ROOT

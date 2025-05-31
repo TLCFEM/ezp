@@ -1,9 +1,9 @@
 !
-!  This file is part of MUMPS 5.7.3, released
-!  on Mon Jul 15 11:44:21 UTC 2024
+!  This file is part of MUMPS 5.8.0, released
+!  on Tue May  6 08:27:40 UTC 2025
 !
 !
-!  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+!  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 !  Mumps Technologies, University of Bordeaux.
 !
 !  This version of MUMPS is provided to you free of charge. It is
@@ -11,7 +11,6 @@
 !  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 !  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 !
-      INCLUDE 'cmumps_root.h'
       TYPE CMUMPS_STRUC
         SEQUENCE
 !
@@ -190,6 +189,7 @@
         INTEGER(8), DIMENSION(:), POINTER :: PTRFAC
 !       main real working arrays for factorization/solve phases
         COMPLEX, DIMENSION(:), POINTER :: S
+        COMPLEX(kind=4), DIMENSION(:), POINTER :: LPS
 !       Information on mapping
         INTEGER, DIMENSION(:), POINTER :: PROCNODE
 !       Input matrix ready for numerical assembly 
@@ -249,8 +249,8 @@
         INTEGER, DIMENSION(:,:), POINTER :: SUP_PROC, pad14
 !    Lists of nodes where processors work. Built/used in solve phase.
         INTEGER, DIMENSION(:), POINTER :: IPTR_WORKING, WORKING
-!    Root structure(internal)
-        TYPE (CMUMPS_ROOT_STRUC) :: root
+!    Internal data structures accessor
+        CHARACTER, DIMENSION(:), POINTER :: INTR_ENCODING
 !    Low-rank
         INTEGER, POINTER, DIMENSION(:) :: LRGROUPS
         INTEGER :: NBGRP,pad13
@@ -259,10 +259,9 @@
 !    Pointer array encoding BLR factors pointers
         CHARACTER, DIMENSION(:), POINTER :: BLRARRAY_ENCODING
 !    Multicore
-        TYPE(CMUMPS_L0OMPFAC_T),DIMENSION(:),POINTER :: L0_OMP_FACTORS
         INTEGER :: LPOOL_A_L0_OMP, LPOOL_B_L0_OMP
         INTEGER :: L_PHYS_L0_OMP
-        INTEGER :: L_VIRT_L0_OMP                                    
+        INTEGER :: L_VIRT_L0_OMP
         INTEGER :: LL0_OMP_MAPPING, LL0_OMP_FACTORS
         INTEGER(8) :: THREAD_LA
 ! Estimates before L0_OMP

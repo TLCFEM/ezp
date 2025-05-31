@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -11,12 +11,13 @@ C  released under the CeCILL-C license
 C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
-      SUBROUTINE ZMUMPS_SOLVE_DRIVER(id)
+      SUBROUTINE ZMUMPS_SOLVE_DRIVER(id,idintr)
       USE ZMUMPS_STRUC_DEF
+      USE ZMUMPS_INTR_TYPES, ONLY: ZMUMPS_INTR_STRUC
       USE ZMUMPS_SOL_ES
 C     Lock Initialization (_LI) and Desruction (_LD)
-      USE ZMUMPS_SOL_L0OMP_M, ONLY: ZMUMPS_SOL_L0OMP_LI,
-     &                              ZMUMPS_SOL_L0OMP_LD
+      USE MUMPS_SOL_L0OMP_M, ONLY: MUMPS_SOL_L0OMP_LI,
+     &                             MUMPS_SOL_L0OMP_LD
 C
 C  Purpose
 C  =======
@@ -27,7 +28,10 @@ C
 C
 c
 C
-      USE ZMUMPS_BUF
+      USE MUMPS_BUF_COMMON, ONLY : MUMPS_BUF_ALLOC_SMALL_BUF,
+     &               MUMPS_BUF_ALLOC_CB, MUMPS_BUF_INIT,
+     &               MUMPS_BUF_DEALL_CB,
+     &               MUMPS_BUF_DEALL_SMALL_BUF
       USE ZMUMPS_OOC
       USE MUMPS_MEMORY_MOD
       USE ZMUMPS_LR_DATA_M, only : ZMUMPS_BLR_STRUC_TO_MOD
@@ -43,9 +47,12 @@ C     -------------------
 C     Explicit interfaces
 C     -------------------
       INTERFACE
-      SUBROUTINE ZMUMPS_SIZE_IN_STRUCT( id, NB_INT,NB_CMPLX,NB_CHAR )
-      USE ZMUMPS_STRUC_DEF
-      TYPE (ZMUMPS_STRUC) :: id
+      SUBROUTINE ZMUMPS_SIZE_IN_STRUCT( id, idintr,
+     &                                  NB_INT,NB_CMPLX,NB_CHAR )
+      USE ZMUMPS_STRUC_DEF, ONLY: ZMUMPS_STRUC
+      USE ZMUMPS_INTR_TYPES, ONLY: ZMUMPS_INTR_STRUC
+      TYPE (ZMUMPS_STRUC)      :: id
+      TYPE (ZMUMPS_INTR_STRUC) :: idintr
       INTEGER(8)        :: NB_INT,NB_CMPLX,NB_CHAR
       END SUBROUTINE ZMUMPS_SIZE_IN_STRUCT
       SUBROUTINE ZMUMPS_CHECK_DENSE_RHS
@@ -70,6 +77,7 @@ C  Parameters
 C  ==========
 C
       TYPE (ZMUMPS_STRUC), TARGET :: id
+      TYPE (ZMUMPS_INTR_STRUC) :: idintr
 C
 C  Local variables
 C  ===============
@@ -89,7 +97,7 @@ C     pointers in IS
 C     pointers in id%S
       INTEGER(8) :: LA, LA_PASSED
       INTEGER LIW_PASSED
-      INTEGER(8) :: LWCB8_MIN, LWCB8, LWCB8_SOL_C
+      INTEGER(8) :: LWCB8_MIN, LWCB8
 C     buffer sizes
       INTEGER ZMUMPS_LBUF, ZMUMPS_LBUF_INT
       INTEGER(8) :: ZMUMPS_LBUF_8
@@ -109,6 +117,7 @@ C     Meaningful only with tree pruning and sparse RHS
       LOGICAL CALL_NODES_FWD_BWD, FIRST_CALL_NODES_FWD_BWD
 C     true if ZMUMPS_SOL_C called during postprocessing
       LOGICAL FROM_PP
+      LOGICAL ALLOCATE_S
 C
 C     TIMINGS
       DOUBLE PRECISION TIMEIT, TIMEEA, TIMEEA1, TIMELCOND
@@ -316,8 +325,10 @@ C     Interval associated to the subblocks of RHS a node has to process
       INTEGER NBRHS, NBRHS_EFF, BEG_RHS, NB_RHSSKIPPED,
      &        LD_RHS,
      &        MASTER_ROOT, MASTER_ROOT_IN_COMM
+C     NRHS_COLS_SOL_C is used to estimate NRHS_EFF
+C     before the loop on RHS column blocks
+      INTEGER NRHS_COLS_SOL_C 
       INTEGER SIZE_ROOT, LD_REDRHS
-      INTEGER(8) :: IPT_RHS_ROOT
       INTEGER(8) :: IBEG, IBEG_RHSINTR, KDEC, IBEG_loc, IBEG_REDRHS
       INTEGER NCOL_RHS_loc
       INTEGER LD_RHS_loc, JBEG_RHS_loc
@@ -330,8 +341,8 @@ C     Interval associated to the subblocks of RHS a node has to process
       INTEGER(8) NB_BYTES_MAX   !MAX size of data allocated during solve
       INTEGER(8) NB_BYTES_EXTRA !For Step2Node, which may be freed later
       INTEGER(8) NB_BYTES_LOC   !For temp. computations
-      INTEGER(8) NB_INT, NB_CMPLX, NB_CHAR, K34_8, K35_8
-      INTEGER(8) K16_8, ITMP8, NB_BYTES_ON_ENTRY
+      INTEGER(8) NB_INT, NB_CMPLX, NB_CHAR, K34_8, K35_8, K149_8, K151_8
+      INTEGER(8) K16_8, ITMP8, SUM_ITMP8, NB_BYTES_ON_ENTRY
 #if defined(V_T)
 C  Vampir
       INTEGER soln_drive_class, glob_comm_ini, perm_scal_ini, soln_dist,
@@ -357,12 +368,17 @@ C     Lnodes_FWD/Lnodes_BWD = -1 => all nodes to be processed
 C    NSOL_loc will be equal to KEEP(89) in case ICNTL(21)=1
       INTEGER :: NSOL_loc
       LOGICAL WORK_WCB_ALLOCATED, IS_INIT_OOC_DONE
+      LOGICAL PTR_RHS_ROOT_ALLOCATED
       LOGICAL :: IS_LR_MOD_TO_STRUC_DONE
       INTEGER :: KEEP350_SAVE
       LOGICAL STOP_AT_NEXT_EMPTY_COL
       INTEGER  MTYPE_LOC
       INTEGER(4) :: I4
       INTEGER  MAT_ALLOC_LOC, MAT_ALLOC
+      INTEGER :: NZ_THIS_BLOCK_ARG, NBCOL_INBLOC_ARG, LStep2node_ARG
+      INTEGER, POINTER :: Step2node_ARG(:), IRHS_PTR_COPY_ARG(:),
+     &                    IRHS_SPARSE_COPY_ARG(:)
+      INTEGER :: NB_FS_RHSINTR_F_ARG, NB_FS_RHSINTR_TOT_ARG
       INTEGER MUMPS_PROCNODE
       EXTERNAL MUMPS_PROCNODE
 C
@@ -404,6 +420,9 @@ C     and/or when LSCAL is false
       IRHS_SPARSE_COPY_ALLOCATED=.FALSE.
       RHS_SPARSE_COPY => CDUMMY_TARGET
       RHS_SPARSE_COPY_ALLOCATED=.FALSE.
+C     ALLOCATE_S will be set to true if S needs be allocated.
+C     It is then tested to free S befgore returning
+      ALLOCATE_S = .FALSE.
       NULLIFY(RHS_IR)
       NULLIFY(WORK_WCB)
 #if defined(USE_OLD_SCALING)
@@ -421,6 +440,7 @@ C     and/or when LSCAL is false
       IS_LR_MOD_TO_STRUC_DONE = .FALSE.
       WK_USER_PROVIDED   = .FALSE.
       WORK_WCB_ALLOCATED = .FALSE.
+      PTR_RHS_ROOT_ALLOCATED = .FALSE.
       CNTL =>id%CNTL
       KEEP =>id%KEEP
       KEEP8=>id%KEEP8
@@ -444,8 +464,10 @@ C     and/or when LSCAL is false
       NB_BYTES_MAX   = 0_8
       NB_BYTES_EXTRA = 0_8
       K34_8    = int(KEEP(34), 8)
-      K35_8    = int(KEEP(35), 8)
+      K35_8    = int(KEEP(35), 8) ! complex factor
       K16_8    = int(KEEP(16), 8)
+      K149_8   = int(KEEP(149),8) ! complex in instance
+      K151_8   = int(KEEP(151),8) ! complex in instance
       NBENT_RHSINTR = 0
 C     Used by DISTRIBUTED_SOLUTION to skip empty columns
 C     that are skipped (case of sparse RHS)
@@ -453,7 +475,7 @@ C     that are skipped (case of sparse RHS)
 C     next 4 initialisations needed in case of error
 C     to free space allocated
       LSCAL              = .FALSE.
-      WORK_WCB_ALLOCATED = .FALSE.
+C
       ICNTL21  = -99998  ! will be bcasted later to slaves
       IBEG_RHSINTR =-152525_8  ! Should not be used
       BUILD_POSINRHSINTR      = .TRUE.
@@ -484,8 +506,9 @@ C     Old unoptimized version before 5.0.2 not available anymore
       KEEP350_SAVE = KEEP(350)
 C     
 C     Compute the number of integers and nb of reals in the structure
-      CALL ZMUMPS_SIZE_IN_STRUCT (id, NB_INT, NB_CMPLX, NB_CHAR)
-      NB_BYTES = NB_BYTES + NB_INT * K34_8 + NB_CMPLX * K35_8 + NB_CHAR
+      CALL ZMUMPS_SIZE_IN_STRUCT (id, idintr, NB_INT, NB_CMPLX, NB_CHAR)
+      NB_BYTES = NB_BYTES + NB_INT * K34_8 + NB_CMPLX * K149_8 + NB_CHAR
+!     KE15: size of a cmplx in current MUMPS instance
       NB_BYTES_ON_ENTRY = NB_BYTES !used to check alloc/dealloc count ok
       NB_BYTES_MAX = max(NB_BYTES_MAX,NB_BYTES)
 C     ======================================
@@ -1362,6 +1385,8 @@ C        for A-1, and, in dev_version, passed to sol_c to compute
 C        some stats
          IF((KEEP(235).NE.0).OR.(KEEP(237).NE.0)) THEN
            IF(.NOT.associated(id%IPTR_WORKING)) THEN
+C            Not computed at a previous solve:
+C            recompute id%IPTR_WORKING and id%WORKING
              CALL ZMUMPS_BUILD_MAPPING_INFO(id)
            END IF
            idIPTR_WORKING => id%IPTR_WORKING
@@ -1421,7 +1446,7 @@ C     ------------------------------------
      &                    id%PROCNODE_STEPS(id%STEP( KEEP(38))),
      &                    KEEP(199) )
             IF (id%MYID_NODES .eq. MASTER_ROOT) THEN
-              SIZE_ROOT = id%root%TOT_ROOT_SIZE
+              SIZE_ROOT = idintr%root%TOT_ROOT_SIZE
             ELSE IF ((id%MYID.EQ.MASTER).AND.KEEP(60).NE.0) THEN
 C             SIZE_ROOT also used for KEEP(221).NE.0
               SIZE_ROOT=id%KEEP(116)
@@ -1529,64 +1554,69 @@ C            then we must receive.
 C            We feel that this is not so critical.
 C
         NB_K133     = 3
-C
 C       To this we must add one time KEEP(133) to store
 C       the RHS of the root node if the root is local.
 C       Furthermore this quantity has to be multiplied by the
 C       blocking size in case of multiple RHS.
-C
         IF ( KEEP( 38 ) .NE. 0 .OR. KEEP( 20 ) .NE. 0 ) THEN
           IF ( MASTER_ROOT .eq. id%MYID_NODES ) THEN
-            IF (
-     &          .NOT. associated(id%root%RHS_CNTR_MASTER_ROOT)
-     &         ) THEN
+              IF (
+     &          .NOT. associated(idintr%roota%RHS_CNTR_MASTER_ROOT)
+     &          ) THEN
                 NB_K133 = NB_K133 + 1
-            ENDIF
+              ENDIF
           END IF
         ENDIF
-CPA2ALL: int(min(NRHS_NONEMPTY,NBRHS),8) instead of NBRHS
-C       LWCB8_MIN = int(NB_K133,8)*int(KEEP(133),8)*int(NBRHS,8)
+C       --------------------------------------
+C       NRHS_COLS_SOL_C is the maximum number
+C       of colums for the call to ZMUMPS_SOL_C
+C       --------------------------------------
+        NRHS_COLS_SOL_C = min(NRHS_NONEMPTY,NBRHS)
+C
+C
         LWCB8_MIN = int(NB_K133,8)*int(KEEP(133),8)*
-     &        int(min(NRHS_NONEMPTY,NBRHS),8)
+     &              int(NRHS_COLS_SOL_C,8)
 C
-C
-C       ---------------------------------------------------------------
-C       Set WK_USER_PROVIDED to true when workspace WK_USER is provided
-C       by user
-C       We can accept WK_USER to be provided on only one proc and
-C       different values of WK_USER per processor. Note that we are
-C       inside a block "IF (I_AM_SLAVE)"
-        WK_USER_PROVIDED = (id%LWK_USER.NE.0)
-        IF (id%LWK_USER.EQ.0) THEN
-          ITMP8 = 0_8
-        ELSE IF (id%LWK_USER.GT.0) THEN
+      ENDIF
+C     ---------------------------------------------------------------
+C     Set WK_USER_PROVIDED to true when workspace WK_USER is provided
+C     We can accept WK_USER to be provided on only some process and
+C     different values of WK_USER per process.
+      WK_USER_PROVIDED = (id%LWK_USER.NE.0 .AND.I_AM_SLAVE)
+      IF (WK_USER_PROVIDED) THEN
+        IF (id%LWK_USER.GT.0) THEN
           ITMP8= int(id%LWK_USER,8)
         ELSE
           ITMP8 = -int(id%LWK_USER,8)* 1000000_8
         ENDIF
-C       Incore: Check if the provided size is equal to that used during
-C               facto (case of ITMP8/=0 and KEEP8(24)/=ITMP8)
-C               But also check case of space not provided during solve
-C               but was provided during facto
-C                (case of ITMP8=0 and KEEP8(24)/=0)
-        IF (KEEP(201).EQ.0) THEN  ! incore
-C         Compare provided size with previous size
-          IF (ITMP8.NE.KEEP8(24)) THEN
-C           -- error when reusing space allocated
-            INFO(1) = -41
-            INFO(2) = id%LWK_USER
-            GOTO 99    ! jump to propinfo
-                       ! (S is used in between and not allocated)
-                       ! NO COMM must occur then before next propinfo
-                       ! it happens in Mila's code but only with
-                       ! KEEP(209) > 0
-          ENDIF
-        ELSE
-          KEEP8(24)=ITMP8
+      ELSE
+        ITMP8 = 0_8
+      ENDIF
+      CALL MPI_REDUCE ( ITMP8, SUM_ITMP8, 1, MPI_INTEGER8,
+     &                  MPI_SUM, MASTER, id%COMM, IERR )
+C     Incore: Check if the provided size is equal to that used during
+C             facto (case of ITMP8/=0 and KEEP8(24)/=ITMP8)
+C             But also check case of space not provided during solve
+C             but was provided during facto
+C              (case of ITMP8=0 and KEEP8(24)/=0)
+      IF (KEEP(201).EQ.0) THEN  ! incore
+C       Compare provided size with previous size
+        IF (ITMP8.NE.KEEP8(24)) THEN
+C         -- error when reusing space allocated
+          INFO(1) = -41
+          INFO(2) = id%LWK_USER
         ENDIF
-C       KEEP8(24) holds the size of WK_USER provided by user.
-C
-        MAXS = 0_8
+      ELSE
+        KEEP8(24)=ITMP8
+      ENDIF
+      CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
+     &                   id%COMM,id%MYID)
+      IF (INFO(1) < 0) GOTO 90
+      IF (.NOT. I_AM_SLAVE) KEEP8(124)=SUM_ITMP8
+C     all procs: KEEP8(24) holds the size of WK_USER provided by user.
+C     master only: KEEP8(124) indicates if WK_USER provided on some proc
+      MAXS = 0_8
+      IF (I_AM_SLAVE) THEN
         IF (WK_USER_PROVIDED) THEN
            MAXS = KEEP8(24)
            IF (MAXS.LT. KEEP8(20)) THEN
@@ -1596,25 +1626,19 @@ C
                   CALL  MUMPS_SET_IERROR(ITMP8, INFO(2))
            ENDIF
            IF (INFO(1) .GE. 0 ) id%S => id%WK_USER(1:KEEP8(24))
-        ELSE IF (associated(id%S)) THEN
-C          Avoid the use of "size(id%S)" because it returns
-C          a default integer that may overflow. Also "size(id%S,kind=8)"
-C          will only be available with Fortran 2003 compilers.
+           ALLOCATE_S = .FALSE.
+        ELSE IF (KEEP8(23) .GT. 0) THEN
            MAXS = KEEP8(23)
+C          S is already allocated, of size KEEP8(23)
+           ALLOCATE_S = .FALSE.
+        ELSE IF (KEEP(201).EQ.0) THEN ! incore
+C           id%S might have been freed during factorization and
+C           reallocated of size KEEP8(31) ( if KEEP8(31)>0 )
+            IF (KEEP8(31).EQ.0) THEN
+              MAXS = 1
+              ALLOCATE_S = .TRUE.
+            ENDIF 
         ELSE
-          ! S not allocated and WK_USER not provided ==> must be in OOC
-          IF (KEEP(201).EQ.0) THEN ! incore
-C           id%S might have been deallocated during factorization and 
-C           reeallocated of size KEEP8(31) (if KEEP8(31)>0)
-            IF (KEEP8(31).NE.0) THEN 
-C            factors (of size KEEP8(31)) should have been stored in S
-             WRITE(*,*) ' Internal error, id%S not allocated ',
-     &                ' on entry to solve phase (in core) '
-             CALL MUMPS_ABORT()
-C           ELSE
-C            no factors stored in S that can thus be not associated
-           ENDIF
-          ELSE
 C         -- OOC and WK_USER not provided:
 C            define size (S) and allocate it
 C           ---- modify size of MAXS: in a simple
@@ -1622,7 +1646,7 @@ C           ---- system-based version, we want to
 C           ---- use a small size for MAXS, to
 C           ---- avoid the system pagecache to be
 C           ---- polluted by 'our memory'
-C
+            ALLOCATE_S = .TRUE.
             IF ( KEEP(209).EQ.-1 .AND. WORKSPACE_MINIMAL_PREFERRED)
      &        THEN
 C             We need space to load at least the largest factor
@@ -1636,45 +1660,33 @@ C             Use suggested value of MAXS provided in KEEP(209)
             ENDIF
 C
             MAXS = max(MAXS, id%KEEP8(20)+1_8)
-            ALLOCATE (id%S(MAXS), stat = allocok)
-            KEEP8(23)=MAXS
-            IF ( allocok .GT. 0 ) THEN
-              IF (LPOK) THEN
-                 WRITE(LP,*) id%MYID,': problem allocation of S ',
-     &                'at solve'
-              ENDIF
-              INFO(1) = -13
-              CALL MUMPS_SET_IERROR(MAXS, INFO(2))
-              NULLIFY(id%S)
-              KEEP8(23)=0_8
-            ENDIF
-            NB_BYTES = NB_BYTES + KEEP8(23) * K35_8
-            NB_BYTES_MAX = max(NB_BYTES_MAX,NB_BYTES)
 C           --- end of OOC case
+        ENDIF
+        IF ( ALLOCATE_S ) THEN 
+            ALLOCATE (id%S(MAXS), stat = allocok)
+          IF ( allocok .GT. 0 ) THEN
+            IF (LPOK) THEN
+               WRITE(LP,*) id%MYID,': problem allocation of S ',
+     &              'at solve'
+            ENDIF
+            INFO(1) = -13
+            CALL MUMPS_SET_IERROR(MAXS, INFO(2))
+            KEEP8(23)=0_8
+            ALLOCATE_S = .FALSE.
+          ELSE
+            KEEP8(23)=MAXS
           ENDIF
-C         -- end of id%S already associated
+          NB_BYTES = NB_BYTES + KEEP8(23) * K35_8
+          NB_BYTES_MAX = max(NB_BYTES_MAX,NB_BYTES)
         ENDIF
 C
-C       On the slaves, S is divided as follows:
-C       S(1..LA) holds the factors,
-C       S(LA+1..MAXS) is free workspace
-        IF(KEEP(201).EQ.0)THEN
-           LA  = KEEP8(31)
-           IF (.NOT.WK_USER_PROVIDED) THEN
-             IF (LA.EQ.0_8) THEN
-C              freee space in id%S
-               IF (associated(id%S)) THEN
-                 DEALLOCATE (id%S) 
-                 NB_BYTES  = NB_BYTES - MAXS * K35_8
-               ENDIF
-               MAXS     = 1_8
-               KEEP8(23)= MAXS
-               ALLOCATE (id%S(MAXS), stat = allocok)
-               NB_BYTES  = NB_BYTES + MAXS * K35_8
-             ENDIF
-           ENDIF
+        IF (KEEP(201).EQ.0) THEN
+C          On the slaves, S is divided as follows:
+C          S(1..LA) holds the factors,
+C          S(LA+1..MAXS) is free workspace
+           LA = KEEP8(31)
         ELSE
-C          MAXS has normally be dimensionned to store only factors.
+C          MAXS has normally been dimensionned to store only factors.
            LA = MAXS
            IF(MAXS.GT.KEEP8(31)+KEEP8(20)*int(KEEP(107)+1,8))THEN
 C            If we have a very large MAXS, the size reserved for
@@ -1690,20 +1702,51 @@ C
 C       We need to allocate a workspace of size LWCB8 for the solve phase.
 C       Either it is available at the end of MAXS, or we perform a
 C       dynamic allocation.
-        IF ( MAXS-LA .GT. LWCB8_MIN ) THEN
+        IF ( MAXS-LA .GT. LWCB8_MIN
+     &     ) THEN
            LWCB8 = MAXS - LA
            WORK_WCB => id%S(LA+1_8:LA+LWCB8)
            WORK_WCB_ALLOCATED=.FALSE.
         ELSE
            LWCB8 = LWCB8_MIN
-           ALLOCATE(WORK_WCB(LWCB8), stat = allocok)
+             ALLOCATE(WORK_WCB(LWCB8), stat=allocok)
            IF (allocok < 0 ) THEN
-              INFO(1)=-13
-              CALL MUMPS_SET_IERROR(LWCB8,INFO(2))
+             INFO(1)=-13
+             CALL MUMPS_SET_IERROR(LWCB8,INFO(2))
+           ELSE
+             WORK_WCB_ALLOCATED=.TRUE.
+             NB_BYTES = NB_BYTES + LWCB8*K151_8
+             NB_BYTES_MAX = max(NB_BYTES_MAX,NB_BYTES)
            ENDIF
-           WORK_WCB_ALLOCATED=.TRUE.
-           NB_BYTES = NB_BYTES + LWCB8*K35_8
-           NB_BYTES_MAX = max(NB_BYTES_MAX,NB_BYTES)
+        ENDIF
+C       ---------------------------------
+C       Space for the RHS of special root
+C       ---------------------------------
+        IF ( id%MYID_NODES .EQ. MASTER_ROOT ) THEN
+C         This is a special root (otherwise MASTER_ROOT < 0)
+          IF ( associated(idintr%roota%RHS_CNTR_MASTER_ROOT) ) THEN
+C           RHS_CNTR_MASTER_ROOT may have been allocated
+C           during the factorization phase.
+            PTR_RHS_ROOT => idintr%roota%RHS_CNTR_MASTER_ROOT
+#           if defined(MUMPS_NOF2003)
+            LPTR_RHS_ROOT =
+     &      int(size(idintr%roota%RHS_CNTR_MASTER_ROOT),8)
+#           else
+            LPTR_RHS_ROOT =
+     &      size(idintr%roota%RHS_CNTR_MASTER_ROOT,kind=8)
+#           endif
+          ELSE
+C             In this case, the space for RHS_CNTR_MASTER_ROOT
+C             is always part of WORKWCB, which can itself be
+C             part of id%S or not.
+              LPTR_RHS_ROOT = NRHS_COLS_SOL_C * int(SIZE_ROOT,8)
+              PTR_RHS_ROOT => WORK_WCB(LWCB8-LPTR_RHS_ROOT+1_8:LWCB8)
+C             Reduce size of WORK_WCB
+              LWCB8=LWCB8-LPTR_RHS_ROOT
+          ENDIF
+        ELSE
+          LPTR_RHS_ROOT = 1_8
+          PTR_RHS_ROOT => CDUMMY_TARGET
         ENDIF
       ENDIF ! I_AM_SLAVE
 C -----------------------------------
@@ -1717,7 +1760,13 @@ C -----------------------------------
           CALL ZMUMPS_INIT_FACT_AREA_SIZE_S(LA)
 C         -- This includes thread creation
 C         -- for asynchronous strategies
-          CALL ZMUMPS_OOC_INIT_SOLVE(id)
+          CALL ZMUMPS_OOC_INIT_SOLVE(id%ICNTL(1), id%ICNTL(4), id%N,
+     &    id%NSLAVES, id%MYID, id%OOC_NB_FILE_TYPE, id%KEEP, id%KEEP8,
+     &    id%INFO, id%STEP, id%PROCNODE_STEPS, id%OOC_SIZE_OF_BLOCK,
+     &    id%OOC_INODE_SEQUENCE, id%OOC_VADDR,
+     &    id%OOC_MAX_NB_NODES_FOR_ZONE, id%OOC_TOTAL_NB_NODES,
+     &    id%OOC_NB_FILES, id%OOC_FILE_NAME_LENGTH, id%OOC_FILE_NAMES,
+     &    id%COMM_NODES, idintr%root%yes) 
           IS_INIT_OOC_DONE = .TRUE.
         ENDIF ! KEEP(201).GT.0
       ENDIF
@@ -1738,7 +1787,7 @@ C
           ENDIF
 C         Access to OOC data in module during solve
           CALL MUMPS_FDM_STRUC_TO_MOD('F',id%FDM_F_ENCODING)
-          CALL ZMUMPS_BLR_STRUC_TO_MOD(id%BLRARRAY_ENCODING)
+            CALL ZMUMPS_BLR_STRUC_TO_MOD(id%BLRARRAY_ENCODING)
           IS_LR_MOD_TO_STRUC_DONE = .TRUE.
         ENDIF
       ENDIF
@@ -1963,20 +2012,21 @@ C          (note also that KEEP(243).NE.0 only when PERMUTE_RHS is on)
           ENDIF
         ENDIF
       ENDIF
+      CALL MUMPS_BUF_INIT( id%KEEP( 34 ), id%KEEP(151) )
 C       --------------------------------------
 C       Compute an upperbound of message size
 C       for forward and backward solutions:
 C       --------------------------------------
         MSG_MAX_BYTES_SOLVE8 = int(( 4 + KEEP(133) ) * KEEP(34),8) +
-     &                         int(KEEP(133)*KEEP(35),8) * int(NBRHS,8)
+     &                         int(KEEP(133)*KEEP(151),8) * int(NBRHS,8)
      &  + int(16*KEEP(34),8) ! for request id, pointer to next + safety
-C       Note that
         IF ( MSG_MAX_BYTES_SOLVE8 .GT.
      &                int(huge(I4),8)) THEN
           INFO(1) = -18
+C         Max NBRHS to avoid overflow:
           INFO(2) = ( huge(I4) -
-     &    ( 16 + 4 + KEEP(133) ) ) / 
-     &    ( KEEP(133) * KEEP(35) )
+     &    ( 16 + 4 + KEEP(133) ) * KEEP(34) ) / 
+     &    ( KEEP(133) * KEEP(151) )
         ENDIF
         IF (INFO(1) .LT.0 ) GOTO 111
         MSG_MAX_BYTES_SOLVE = int(MSG_MAX_BYTES_SOLVE8)
@@ -1996,13 +2046,13 @@ C         Note that MSG_MAX_BYTES_GTHRSOL < MSG_MAX_BYTES_SOLVE
 C         so that it should not overflow
           KMAX_246_247 = max(KEEP(246),KEEP(247))
           MSG_MAX_BYTES_GTHRSOL =  ( 2 + KMAX_246_247 ) * KEEP(34) +
-     &                             KMAX_246_247 * NBRHS * KEEP(35)
+     &                             KMAX_246_247 * NBRHS * KEEP(149)
         ELSE IF (ICNTL21.EQ.0) THEN
 C         Each message from a slave is of size max 4:
 C            2 integers  : I,J
 C            1 complex   : (Aij)-1
 C            1 terminaison
-          MSG_MAX_BYTES_GTHRSOL =  (  3  * KEEP(34) + KEEP(35) )
+          MSG_MAX_BYTES_GTHRSOL =  (  3  * KEEP(34) + KEEP(149) )
         ELSE
 C         Not needed in case of distributed solution and A-1
 C         because the entries of A −1 are 
@@ -2033,7 +2083,7 @@ C       Dimension send buffer for small integers, e.g. TRACINE
 C       ------------------------------------------------------
         ZMUMPS_LBUF_INT = ( 20 + id%NSLAVES * id%NSLAVES  * 4 )
      &                 * KEEP(34)
-        CALL ZMUMPS_BUF_ALLOC_SMALL_BUF( ZMUMPS_LBUF_INT, IERR )
+        CALL MUMPS_BUF_ALLOC_SMALL_BUF( ZMUMPS_LBUF_INT, IERR )
         IF ( IERR .NE. 0 ) THEN
           INFO(1) = -13
           INFO(2) = ZMUMPS_LBUF_INT
@@ -2072,7 +2122,7 @@ C       to enable computation of integer size.
      &                      - 10_8*int(KEEP(34),8)
      &                     )
         ZMUMPS_LBUF   = int(ZMUMPS_LBUF_8, kind(ZMUMPS_LBUF))
-        CALL ZMUMPS_BUF_ALLOC_CB( ZMUMPS_LBUF, IERR )
+        CALL MUMPS_BUF_ALLOC_CB( ZMUMPS_LBUF, IERR )
         IF ( IERR .NE. 0 ) THEN
           INFO(1) = -13
           INFO(2) = ZMUMPS_LBUF/KEEP(34) + 1
@@ -2270,13 +2320,13 @@ C       -----------
 C       Define a work array of size maximum global frontal
 C       size (KEEP(133)) for the call to ZMUMPS_SOL_C
 C       This used to be of size id%N.
-        ALLOCATE(SRW3(KEEP(133)), stat = allocok )
+          ALLOCATE(SRW3(KEEP(133)), stat = allocok )
         IF ( allocok .GT. 0 ) THEN
           INFO(1)=-13
           INFO(2)=KEEP(133)
           GOTO 111
         END IF
-        NB_BYTES = NB_BYTES + int(size(SRW3),8)*K35_8
+        NB_BYTES = NB_BYTES + int(KEEP(133),8)*K151_8
         NB_BYTES_MAX = max(NB_BYTES_MAX,NB_BYTES)
 C     -----------------
 C     End of slave code
@@ -2833,10 +2883,16 @@ C          L0-threads was requested for solve phase
 C          and will be effective only if KEEP(400) >0 
 C          which indicates that L0-threads was 
 C          performed during analysis+factorization
-           IF ( KEEP(400) .GT. 0 ) THEN
-C           Check if number of threads is consistent with
+           IF ( KEEP(400) .GT. 0 .AND. KEEP(369).EQ.0 ) THEN
+C{          Check if number of threads is consistent with
 C           the one used during factorization for all procs
-C{
+C              Note that if  KEEP(369)>0 
+C              KEEP(400) was set based on 
+C              KEEP(369) and KEEP(381) so that 
+C              omp_set_num_threads(KEEP(400)) will be called 
+C              explicitly before L0_OMP section
+C           and KEEP(400) cannot be check here in this way
+C 
             NOMP = 1
 !$          NOMP=omp_get_max_threads()
               IF (KEEP(400).NE.NOMP) THEN
@@ -2848,6 +2904,7 @@ C               NOMP should be the one from analysis
      &" tree parallelism changed from",KEEP(400)," at analysis to", 
      &  NOMP
               ENDIF
+C}
            ENDIF
 C          error check
            CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
@@ -2856,7 +2913,7 @@ C          error check
 C}
           ENDIF
       IF (KEEP(400) .GT. 0) THEN
-        CALL ZMUMPS_SOL_L0OMP_LI(KEEP(400))
+        CALL MUMPS_SOL_L0OMP_LI(KEEP(400))
       ENDIF
 C     ==============================
 C     MAIN LOOP:
@@ -2884,7 +2941,7 @@ C       -- BEG_RHS   : Column index of the first RHS in the list of
 C                      non empty RHS (RHS_loc) to
 C                      be processed during this iteration
 C       -- NBRHS_EFF : Effective block size at current iteration
-C                      that we be set to nb of contiguous non empty 
+C                      that will be set to nb of contiguous non empty 
 C                      columns
 C        In case of sparse RHS (KEEP(248)==1) NBRHS_EFF only refers to
 C                non-empty columns and is used to compute NBCOL_INBLOC
@@ -3076,7 +3133,7 @@ C
           NBCOL        = 0
           NBCOL_INBLOC = 0
           NZ_THIS_BLOCK = 0
-C         With exploit sparsity we skip empty rows up to reaching
+C         With exploit sparsity we skip empty columns up to reaching
 C         the first non empty column; then we process a block of
 C         maximum size NBRHS_EFF except if we reach another empty
 C         column. (We are not sure to have a copy allocated
@@ -3231,15 +3288,17 @@ C     Initialize IRHS_SPARSE_COPY
                   DO I=JBEG_RHS, JBEG_RHS + NBCOL_INBLOC -1
                     COLSIZE = id%IRHS_PTR(PERM_RHS(I)+1)
      &                       - id%IRHS_PTR(PERM_RHS(I))
-                    IRHS_SPARSE_COPY(IPOS:IPOS+COLSIZE-1) =
-     &              id%IRHS_SPARSE(id%IRHS_PTR(PERM_RHS(I)):
-     &              id%IRHS_PTR(PERM_RHS(I)+1) -1)
+                    DO K=0,COLSIZE-1
+                      IRHS_SPARSE_COPY(IPOS+K) =
+     &                id%IRHS_SPARSE(id%IRHS_PTR(PERM_RHS(I))+K)
+                    ENDDO
                     IPOS = IPOS + COLSIZE
                   ENDDO
                 ELSE
-                  IRHS_SPARSE_COPY = id%IRHS_SPARSE(
-     &              id%IRHS_PTR(JBEG_RHS):
-     &              id%IRHS_PTR(JBEG_RHS)+NZ_THIS_BLOCK-1)
+                  DO K=1,NZ_THIS_BLOCK
+                      IRHS_SPARSE_COPY(K) = id%IRHS_SPARSE(
+     &                id%IRHS_PTR(JBEG_RHS)+K-1)
+                  ENDDO
                 ENDIF
             ELSE
                 IRHS_SPARSE_COPY
@@ -3311,9 +3370,10 @@ C               -- will done and scaled later.
                     COLSIZE = id%IRHS_PTR(PERM_RHS(I)+1)
      &                      - id%IRHS_PTR(PERM_RHS(I))
                     IF (COLSIZE .EQ. 0) CYCLE
-                    RHS_SPARSE_COPY(IPOS:IPOS+COLSIZE-1) =
-     &              id%RHS_SPARSE(id%IRHS_PTR(PERM_RHS(I)):
-     &              id%IRHS_PTR(PERM_RHS(I)+1) -1)
+                    DO K=0, COLSIZE-1
+                      RHS_SPARSE_COPY(IPOS+K) =
+     &                id%RHS_SPARSE(id%IRHS_PTR(PERM_RHS(I))+K)
+                    ENDDO
                     IPOS = IPOS + COLSIZE
                   ENDDO
 #if defined(USE_OLD_SCALING)
@@ -3615,7 +3675,7 @@ C       - GLOB2LOC_RHS/SOL, RHSINTR and related data
 C       - For distributed RHS, initialize RHSMAPINFO (at 1st block)
 C       =========================================================
 C         
-C         Fwd in facto: in this case we peronrly peonly POSINRHSINTR need be computed
+C         Fwd in facto: in this case only POSINRHSINTR need be computed
 C
 C         (GLOB2LOC_RHS/SOL indirection arrays should
 C         have been allocated once outside loop)
@@ -4604,38 +4664,6 @@ C             to the roots.
             ENDIF ! End of null space (test on KEEP(111))
         ENDIF  ! I am slave
         TIMESCATTER2=MPI_WTIME()-TIMESCATTER1+TIMESCATTER2
-C       -------------------------------------------
-C       Reserve space at the end of WORK_WCB on the
-C       master of the root node. It will be used to
-C       store the reduced RHS.
-C       -------------------------------------------
-        IF ( I_AM_SLAVE ) THEN
-          LWCB8_SOL_C = LWCB8
-          IF ( id%MYID_NODES .EQ. MASTER_ROOT ) THEN
-C           This is a special root (otherwise MASTER_ROOT < 0)
-            IF ( associated(id%root%RHS_CNTR_MASTER_ROOT) ) THEN
-C             RHS_CNTR_MASTER_ROOT may have been allocated
-C             during the factorization phase.
-              PTR_RHS_ROOT => id%root%RHS_CNTR_MASTER_ROOT
-#             if defined(MUMPS_NOF2003)
-              LPTR_RHS_ROOT = int(size(id%root%RHS_CNTR_MASTER_ROOT),8)
-#             else
-              LPTR_RHS_ROOT = size(id%root%RHS_CNTR_MASTER_ROOT,kind=8)
-#             endif
-            ELSE
-C             Otherwise, we use workspace in WCB
-              LPTR_RHS_ROOT = int(NBRHS_EFF,8) * int(SIZE_ROOT,8)
-              IPT_RHS_ROOT  = LWCB8 - LPTR_RHS_ROOT + 1_8
-              PTR_RHS_ROOT => WORK_WCB(IPT_RHS_ROOT:LWCB8)
-              LWCB8_SOL_C = LWCB8_SOL_C - LPTR_RHS_ROOT
-            ENDIF
-          ELSE
-            LPTR_RHS_ROOT = 1_8
-            IPT_RHS_ROOT = LWCB8 ! Will be passed, but not accessed
-            PTR_RHS_ROOT => WORK_WCB(IPT_RHS_ROOT:LWCB8)
-            LWCB8_SOL_C = LWCB8_SOL_C - LPTR_RHS_ROOT
-          ENDIF
-        ENDIF
         IF (KEEP(221) .EQ. 2 .AND. KEEP(60).NE.0 ) THEN
 C         Copy/send REDRHS in PTR_RHS_ROOT
 C         (column by column if leading dimension LD_REDRHS
@@ -4696,44 +4724,40 @@ C         -- other procs are not concerned
         ENDIF
         TIMEC1=MPI_WTIME()
         IF ( I_AM_SLAVE ) THEN
+C         {
           LIW_PASSED = max( LIW, 1 )
           LA_PASSED  = max( LA, 1_8 )
 C
+          FROM_PP = .FALSE.
+          NBSPARSE_LOC = (DO_NBSPARSE.AND.NBRHS_EFF.GT.1)
+C         -----------------------------------------
+C         Define arguments to have a single call to
+C         SOL_C with and without exploit sparsity.
+C         -----------------------------------------
           IF (Lnodes_FWD.EQ.-1 .AND. Lnodes_BWD.EQ.-1) THEN
-C
-C         --- Normal case : we do not exploit sparsity during
-C             foward and backward steps
-C
-            FROM_PP = .FALSE.
-            NBSPARSE_LOC = (DO_NBSPARSE.AND.NBRHS_EFF.GT.1)
-            CALL ZMUMPS_SOL_C(id%root, id%N, id%S(1), LA_PASSED, IS(1),
-     & LIW_PASSED, WORK_WCB(1), LWCB8_SOL_C, IWCB, LIWCB, NBRHS_EFF,
-     & id%NA(1),id%LNA,id%NE_STEPS(1), SRW3, MTYPE, ICNTL(1), FROM_PP,
-     & id%STEP(1), id%FRERE_STEPS(1), id%DAD_STEPS(1), id%FILS(1),
-     & id%PTLUST_S(1), id%PTRFAC(1), IWK_SOLVE, LIWK_SOLVE, PTRACB,
-     & LIWK_PTRACB, id%PROCNODE_STEPS(1), id%NSLAVES, INFO(1),KEEP(1),
-     & KEEP8(1), id%DKEEP(1), id%COMM_NODES, id%MYID, id%MYID_NODES,
-     & BUFR(1), LBUFR, LBUFR_BYTES, id%ISTEP_TO_INIV2(1),
-     & id%TAB_POS_IN_PERE(1,1), IBEG_ROOT_DEF, IEND_ROOT_DEF,
-     & IROOT_DEF_RHS_COL1, PTR_RHS_ROOT(1), LPTR_RHS_ROOT, SIZE_ROOT,
-     & MASTER_ROOT, id%RHSINTR(IBEG_RHSINTR), id%LD_RHSINTR,
-     & id%GLOB2LOC_RHS(1), id%GLOB2LOC_SOL(1)
-     &  , -1, -1,
-     &  IDUMMY(1), IDUMMY(1)
-     & , 1, 1, 1, 1, IDUMMY, 1, JDUMMY, KDUMMY, 1, LDUMMY, 1, MDUMMY
-     & , 1, 1, NBSPARSE_LOC, PTR_RHS_BOUNDS(1), LPTR_RHS_BOUNDS
+            NZ_THIS_BLOCK_ARG = 1
+            NBCOL_INBLOC_ARG = 1
+            Step2node_ARG => IDUMMY_TARGET
+            LStep2node_ARG = 1
+            IRHS_SPARSE_COPY_ARG => IDUMMY_TARGET
+            IRHS_PTR_COPY_ARG => IDUMMY_TARGET
+            NB_FS_RHSINTR_F_ARG = 1
+            NB_FS_RHSINTR_TOT_ARG = 1
 #if defined(STAT_ES_SOLVE)
-     & , IDUMMY, 1, JDUMMY, 1
+            SIZE_WORKING = 1
+            SIZE_IPTR_WORKING = 1
+            idIPTR_WORKING => IDUMMY_TARGET
+            idWORKING => IDUMMY_TARGET
 #endif
-     & , id%IPOOL_B_L0_OMP(1), id%LPOOL_B_L0_OMP, id%IPOOL_A_L0_OMP(1),
-     & id%LPOOL_A_L0_OMP, id%L_VIRT_L0_OMP, id%VIRT_L0_OMP(1),
-     & id%L_PHYS_L0_OMP, id%PHYS_L0_OMP(1), id%PERM_L0_OMP(1),
-     & id%PTR_LEAFS_L0_OMP(1), id%L0_OMP_MAPPING(1), id%LL0_OMP_MAPPING,
-     & id%L0_OMP_FACTORS(1), id%LL0_OMP_FACTORS
-     &    )
           ELSE
-C           Exploit sparsity of the RHS (all cases)
-C           Remark that JBEG_RHS is already initialized
+            NZ_THIS_BLOCK_ARG = NZ_THIS_BLOCK
+            NBCOL_INBLOC_ARG = NBCOL_INBLOC
+            Step2node_ARG => id%Step2node
+            LStep2node_ARG = KEEP(28)
+            IRHS_SPARSE_COPY_ARG => IRHS_SPARSE_COPY
+            IRHS_PTR_COPY_ARG => IRHS_PTR_COPY
+            NB_FS_RHSINTR_F_ARG   = NB_FS_RHSINTR_F
+            NB_FS_RHSINTR_TOT_ARG = NB_FS_RHSINTR_TOT
 #if defined(STAT_ES_SOLVE)
             SIZE_WORKING = 1
             SIZE_IPTR_WORKING = 1
@@ -4744,38 +4768,38 @@ C           Remark that JBEG_RHS is already initialized
               END IF
             ENDIF
 #endif
-C
-            FROM_PP = .FALSE.
-            NBSPARSE_LOC = (DO_NBSPARSE.AND.NBRHS_EFF.GT.1)
-            CALL ZMUMPS_SOL_C(id%root, id%N, id%S(1), LA_PASSED,IS(1),
-     & LIW_PASSED,WORK_WCB(1),LWCB8_SOL_C,IWCB,LIWCB,NBRHS_EFF,id%NA(1),
-     & id%LNA,id%NE_STEPS(1),SRW3,MTYPE,ICNTL(1),FROM_PP,id%STEP(1),
-     & id%FRERE_STEPS(1), id%DAD_STEPS(1), id%FILS(1), id%PTLUST_S(1),
-     & id%PTRFAC(1), IWK_SOLVE, LIWK_SOLVE, PTRACB, LIWK_PTRACB,
-     & id%PROCNODE_STEPS(1),id%NSLAVES,INFO(1),KEEP(1), KEEP8(1),
-     & id%DKEEP(1),id%COMM_NODES,id%MYID,id%MYID_NODES,BUFR(1),LBUFR,
-     & LBUFR_BYTES, id%ISTEP_TO_INIV2(1), id%TAB_POS_IN_PERE(1,1),
-     & IBEG_ROOT_DEF,IEND_ROOT_DEF,IROOT_DEF_RHS_COL1,PTR_RHS_ROOT(1),
-     & LPTR_RHS_ROOT, SIZE_ROOT, MASTER_ROOT, id%RHSINTR(IBEG_RHSINTR),
-     & id%LD_RHSINTR, id%GLOB2LOC_RHS(1), id%GLOB2LOC_SOL(1),
-     &  Lnodes_FWD, Lnodes_BWD,
-     &  nodes_FWD_PTR(1), nodes_BWD_PTR(1),
-     & NZ_THIS_BLOCK, NBCOL_INBLOC, id%NRHS, JBEG_RHS, id%Step2node(1),
-     & id%KEEP(28),IRHS_SPARSE_COPY(1),IRHS_PTR_COPY(1), size(PERM_RHS),
-     & PERM_RHS, size(UNS_PERM_INV), UNS_PERM_INV, NB_FS_RHSINTR_F,
-     & NB_FS_RHSINTR_TOT,NBSPARSE_LOC,PTR_RHS_BOUNDS(1),LPTR_RHS_BOUNDS
+          ENDIF
+            CALL ZMUMPS_SOL_C(idintr%root,idintr%roota,id%N,id%S(1),
+     &LA_PASSED,IS(1),LIW_PASSED,WORK_WCB(1),LWCB8,IWCB,LIWCB,
+     &NBRHS_EFF,id%NA(1),id%LNA,id%NE_STEPS(1),SRW3, MTYPE, ICNTL(1),
+     &FROM_PP,id%STEP(1),id%FRERE_STEPS(1),id%DAD_STEPS(1),id%FILS(1),
+     &id%PTLUST_S(1),id%PTRFAC(1),IWK_SOLVE,LIWK_SOLVE,PTRACB,
+     &LIWK_PTRACB,id%PROCNODE_STEPS(1),id%NSLAVES,INFO(1),KEEP(1),
+     &KEEP8(1),id%DKEEP(1),id%COMM_NODES,id%MYID,id%MYID_NODES,BUFR(1),
+     &LBUFR,LBUFR_BYTES,id%ISTEP_TO_INIV2(1),id%TAB_POS_IN_PERE(1,1),
+     &IBEG_ROOT_DEF,IEND_ROOT_DEF,IROOT_DEF_RHS_COL1, PTR_RHS_ROOT(1),
+     &LPTR_RHS_ROOT,SIZE_ROOT,MASTER_ROOT,id%RHSINTR(IBEG_RHSINTR),
+     &id%LD_RHSINTR,id%GLOB2LOC_RHS(1),id%GLOB2LOC_SOL(1),
+     &Lnodes_FWD, Lnodes_BWD, nodes_FWD_PTR(1), nodes_BWD_PTR(1),
+     &NZ_THIS_BLOCK_ARG, NBCOL_INBLOC_ARG, JBEG_RHS, Step2node_ARG(1),
+     &LStep2node_ARG, IRHS_SPARSE_COPY_ARG(1), IRHS_PTR_COPY_ARG(1),
+     &size(PERM_RHS), PERM_RHS, size(UNS_PERM_INV), UNS_PERM_INV,
+     &NB_FS_RHSINTR_F, NB_FS_RHSINTR_TOT, NBSPARSE_LOC,
+     &PTR_RHS_BOUNDS(1), LPTR_RHS_BOUNDS
 #if defined(STAT_ES_SOLVE)
-     & ,idIPTR_WORKING(1),SIZE_IPTR_WORKING,idWORKING(1),SIZE_WORKING
-C     & ,id%IPTR_WORKING(1),SIZE_IPTR_WORKING,id%WORKING(1),SIZE_WORKING
+     &,idIPTR_WORKING(1),SIZE_IPTR_WORKING,idWORKING(1),SIZE_WORKING
 #endif
-     & ,id%IPOOL_B_L0_OMP(1),id%LPOOL_B_L0_OMP,id%IPOOL_A_L0_OMP(1),
-     & id%LPOOL_A_L0_OMP,id%L_VIRT_L0_OMP,id%VIRT_L0_OMP(1),
+     & , id%IPOOL_B_L0_OMP(1), id%LPOOL_B_L0_OMP, id%IPOOL_A_L0_OMP(1),
+     & id%LPOOL_A_L0_OMP, id%L_VIRT_L0_OMP, id%VIRT_L0_OMP(1),
      & id%L_PHYS_L0_OMP, id%PHYS_L0_OMP(1), id%PERM_L0_OMP(1),
      & id%PTR_LEAFS_L0_OMP(1), id%L0_OMP_MAPPING(1), id%LL0_OMP_MAPPING,
-     & id%L0_OMP_FACTORS(1), id%LL0_OMP_FACTORS
-     &       )
-          ENDIF   ! end of exploit sparsity (pruning nodes of the tree)
-        END IF
+     & idintr%L0_OMP_FACTORS(1), id%LL0_OMP_FACTORS
+     &    )
+C
+C      ================================================================
+C
+C         }
+        END IF ! I_AM_SLAVE
 C       -----------------
 C       End of slave code
 C       -----------------
@@ -5187,8 +5211,6 @@ C         Initializations and allocations
               GOTO 777
             ENDIF
             NB_BYTES = NB_BYTES + int(2*id%N,8)*K16_8
-            IF ( PROKG .AND. ICNTL10 .GT. 0 )
-     &      WRITE( MPG, 240) 'MAXIMUM NUMBER OF STEPS =', NITREF
 C           end allocations on Master
           END IF
           ALLOCATE(C_LOCWK54(id%N),stat = allocok)
@@ -5318,13 +5340,20 @@ C         Initializations for the IR
           NOITER = 0
           IFLAG_IR = 0
           TESTConv = .FALSE.
-C         Test of convergence should be made
-          IF (( id%MYID .eq. MASTER ).AND.(ICNTL10.GT.0)) THEN
-            TESTConv = .TRUE.
-            ARRET = CNTL(2)
-            IF (ARRET .LT. 0.0D0) THEN
-              ARRET = sqrt(epsilon(0.0D0))
-            END IF
+          IF ( id%MYID .eq. MASTER ) THEN
+            IF (ICNTL10.GT.0) THEN
+C             Test of convergence should be made
+              TESTConv = .TRUE.
+              ARRET = CNTL(2)
+              IF (ARRET .LT. 0.0D0) THEN
+                ARRET = sqrt(epsilon(0.0D0))
+              END IF
+              IF ( PROKG ) THEN
+                WRITE( MPG, 240) NITREF, ARRET,id%DKEEP(22)
+              ENDIF
+            ELSE IF ( PROKG ) THEN
+              WRITE( MPG, 245) NITREF
+            ENDIF
           ENDIF
 C  =========================================================
 C         Starting IR
@@ -5771,6 +5800,13 @@ C           If ICNTL11/=1 these stats haven't been computed
               END IF
             END IF
           END IF ! MASTER && ICNTL11.GT.0
+          IF ( PROKG ) THEN
+            WRITE( MPG, * )
+            IF (abs(ICNTL10) .GT.0 ) WRITE( MPG, 101 ) id%DKEEP(114)
+            IF (ICNTL11 .GT.0 ) WRITE( MPG, 102 ) id%DKEEP(120)
+            IF (ICNTL11 .EQ.1 ) WRITE( MPG, 103 ) id%DKEEP(121)
+            WRITE( MPG, * )
+          ENDIF
           IF ( PROKG .AND. abs(ICNTL10) .GT.0 ) WRITE( MPG, 131 )
 C===================================================
 C Perform error analysis after iterative refinements
@@ -6061,7 +6097,7 @@ C
       END IF
  90   CONTINUE
       IF (KEEP(400) .GT. 0) THEN
-        CALL ZMUMPS_SOL_L0OMP_LD(KEEP(400))
+        CALL MUMPS_SOL_L0OMP_LD(KEEP(400))
       ENDIF
       IF (INFO(1) .LT.0 ) THEN
          IF (INFO(1) .EQ. -80) INFO(1) = -81
@@ -6100,7 +6136,7 @@ C     -- related to exploit sparsity
       IF (KEEP(485) .EQ. 1) THEN
         KEEP(350) = KEEP350_SAVE
         IF (IS_LR_MOD_TO_STRUC_DONE) THEN
-          CALL ZMUMPS_BLR_MOD_TO_STRUC(id%BLRARRAY_ENCODING)
+            CALL ZMUMPS_BLR_MOD_TO_STRUC(id%BLRARRAY_ENCODING)
           CALL MUMPS_FDM_MOD_TO_STRUC('F',id%FDM_F_ENCODING,
      &             id%INFO(1))
         ENDIF
@@ -6201,8 +6237,8 @@ C       -----------------------
 C       Deallocate send buffers
 C       -----------------------
         IF (id%NSLAVES .GT. 1) THEN
-          CALL ZMUMPS_BUF_DEALL_CB( IERR )
-          CALL ZMUMPS_BUF_DEALL_SMALL_BUF( IERR )
+          CALL MUMPS_BUF_DEALL_CB( IERR )
+          CALL MUMPS_BUF_DEALL_SMALL_BUF( IERR )
         ENDIF
       END IF
 C
@@ -6230,10 +6266,10 @@ C       --------------------
       END IF
       IF (I_AM_SLAVE) THEN
 C       Deallocate temporary workspace SRW3
-        IF (allocated(SRW3)) THEN
-          NB_BYTES = NB_BYTES - int(size(SRW3),8)*K35_8
-          DEALLOCATE(SRW3)
-        ENDIF
+          IF (allocated(SRW3)) THEN
+            NB_BYTES = NB_BYTES - int(size(SRW3),8)*K151_8
+            DEALLOCATE(SRW3)
+          ENDIF
 #if defined(USE_OLD_SCALING)
 C       Free local scaling arrays
         IF (LSCAL .AND. ICNTL21 .NE. 0) THEN
@@ -6251,22 +6287,16 @@ C       Free memory until next call to ZMUMPS
         IF (WK_USER_PROVIDED) THEN
 C         S points to WK_USER provided by user
 C         KEEP8(24) holds size of WK_USER
-C         it should be saved and is used
-C         in incore to check that size provided is consistent
+C         it should be kept on exit because it will be used
+C         at a future solve to check that size provided is consistent
 C         (see error -41)
           NULLIFY(id%S)
-        ELSE IF (associated(id%S).AND.KEEP(201).GT.0) THEN
-C         OOC: free space for S that was allocated
+        ELSE IF (ALLOCATE_S) THEN
+C         S was allocated, free it
           NB_BYTES = NB_BYTES - KEEP8(23)*K35_8
           id%KEEP8(23)=0_8
-          DEALLOCATE(id%S)
-          NULLIFY(id%S)
-        ELSE IF ( associated(id%S) .AND. KEEP8(31) .EQ. 0_8 .AND.
-     &            .NOT. WK_USER_PROVIDED .AND. KEEP(201).EQ.0 ) THEN
-C         In that case, MAXS was allocated of size 1
-C         at the beginning of the solve, free it.
-          DEALLOCATE (id%S) 
-          NULLIFY(id%S)
+            DEALLOCATE(id%S)
+            NULLIFY(id%S)
           NB_BYTES  = NB_BYTES - KEEP8(23) * K35_8
           KEEP8(23) = 0_8
         ENDIF
@@ -6297,12 +6327,19 @@ C       -- to be used for future expansion
          ENDIF
         ENDIF
         IF ( WORK_WCB_ALLOCATED ) THEN
-          NB_BYTES = NB_BYTES - int(size(WORK_WCB),8)*K35_8
-          DEALLOCATE( WORK_WCB )
+            NB_BYTES = NB_BYTES - int(size(WORK_WCB),8)*K151_8
+            DEALLOCATE( WORK_WCB )
+            NULLIFY   ( WORK_WCB )
+        ELSE
+C         Otherwise, WORK_WCB may point to some
+C         position inside id%S, nullify it
+          NULLIFY( WORK_WCB )
         ENDIF
-C       Otherwise, WORK_WCB may point to some
-C       position inside id%S, nullify it
-        NULLIFY( WORK_WCB )
+        IF ( PTR_RHS_ROOT_ALLOCATED ) THEN
+          DEALLOCATE(PTR_RHS_ROOT)
+          NB_BYTES = NB_BYTES - LPTR_RHS_ROOT * K151_8
+        ENDIF
+        NULLIFY(PTR_RHS_ROOT)
       ENDIF
 #if defined(STAT_ES_SOLVE)
       IF (
@@ -6351,11 +6388,19 @@ C       set RINFOG(24), RINFOG(25), RINFOG(26)
  153  FORMAT ('  --- (32)                                     =',I12)
  160  FORMAT (' RHS'/(1X,1P,5D14.6))
  170  FORMAT (/' ERROR ANALYSIS' )
- 240  FORMAT (1X, A42,I4)
- 270  FORMAT (//' BEGIN ITERATIVE REFINEMENT' )
+ 240  FORMAT (
+     & 2X, "Maximum number of steps                         = ",I4/,
+     & 2X, "Effective stopping criterion (based on CNTL(2)) = ",E14.6/
+     & 2x, "Slow convergence threshold (W1+W2 ratio)        = ",E14.6)
+ 245  FORMAT (
+     & 2X, "Number of steps is fixed                        = ",I4)
+ 270  FORMAT (/' BEGIN ITERATIVE REFINEMENT' )
   81  FORMAT (/' STATISTICS AFTER ITERATIVE REFINEMENT ')
- 131  FORMAT (/' END   ITERATIVE REFINEMENT ')
- 141  FORMAT(1X, A52,I4)
+ 101  FORMAT(' Time for Iterative Refinement        =',F12.4)
+ 102  FORMAT(' Time for Error Analysis              =',F12.4)
+ 103  FORMAT(' Time for Condition Number            =',F12.4)
+ 131  FORMAT (' END   ITERATIVE REFINEMENT '/)
+ 141  FORMAT(1X, A52,I4) ! Number of steps performed
       CONTAINS
         SUBROUTINE ZMUMPS_CHECK_DISTRHS(
      &       idNloc_RHS,
@@ -6575,8 +6620,9 @@ C
           ENDIF
           FROM_PP=.TRUE.
           NBSPARSE_LOC = .FALSE.
-          CALL ZMUMPS_SOL_C(id%root, id%N, id%S(1), LA_PASSED, id%IS(1),
-     & LIW_PASSED,WORK_WCB(1),LWCB8_SOL_C,IWCB,LIWCB,NBRHS_EFF,id%NA(1),
+          CALL ZMUMPS_SOL_C(idintr%root,idintr%roota,
+     & id%N,id%S(1),LA_PASSED,id%IS(1),
+     & LIW_PASSED,WORK_WCB(1),LWCB8,IWCB,LIWCB,NBRHS_EFF,id%NA(1),
      & id%LNA,id%NE_STEPS(1),SRW3,SOLVET,ICNTL(1),FROM_PP,id%STEP(1),
      & id%FRERE_STEPS(1),id%DAD_STEPS(1),id%FILS(1),id%PTLUST_S(1),
      & id%PTRFAC(1), IWK_SOLVE(1), LIWK_SOLVE, PTRACB, LIWK_PTRACB,
@@ -6589,7 +6635,7 @@ C      Next 3 arguments are not used in this call
      & id%LD_RHSINTR,PTR_POSINRHSINTR_FWD(1),PTR_POSINRHSINTR_BWD(1),
      & -1, -1,
      & IDUMMY(1), IDUMMY(1),
-     & 1,1,1,1, IDUMMY, 1, JDUMMY, KDUMMY, 1, LDUMMY, 1, MDUMMY, 1,1,
+     & 1,1,1, IDUMMY, 1, JDUMMY, KDUMMY, 1, LDUMMY, 1, MDUMMY, 1,1,
      & NBSPARSE_LOC, PTR_RHS_BOUNDS(1), LPTR_RHS_BOUNDS
 #if defined(STAT_ES_SOLVE)
      & , IDUMMY, 1, JDUMMY, 1
@@ -6598,7 +6644,7 @@ C      Next 3 arguments are not used in this call
      & id%LPOOL_A_L0_OMP, id%L_VIRT_L0_OMP, id%VIRT_L0_OMP(1),
      & id%L_PHYS_L0_OMP, id%PHYS_L0_OMP(1), id%PERM_L0_OMP(1),
      & id%PTR_LEAFS_L0_OMP(1), id%L0_OMP_MAPPING(1), id%LL0_OMP_MAPPING,
-     & id%L0_OMP_FACTORS(1), id%LL0_OMP_FACTORS
+     & idintr%L0_OMP_FACTORS(1), id%LL0_OMP_FACTORS
      &    )
         END IF
 C       ------------------

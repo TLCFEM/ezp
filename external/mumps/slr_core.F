@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -18,7 +18,7 @@ C (see header of the routine).
       MODULE SMUMPS_LR_CORE
       USE MUMPS_LR_COMMON
       USE SMUMPS_LR_TYPE
-      USE SMUMPS_LR_STATS
+      USE MUMPS_LR_STATS
       USE SMUMPS_LR_DATA_M
 !$    USE OMP_LIB
       IMPLICIT NONE
@@ -52,6 +52,8 @@ C
 C     Local variables
         LOGICAL :: COMPRESS_PANEL, COMPRESS_CB
         LRSTATUS = 0
+C       Type 3 node is not BLR
+        IF (NIV.EQ.3) RETURN
         COMPRESS_PANEL = .FALSE.
         IF ((BLRON.NE.0).and.( 
      &        ((K492.LT.0).and.INODE.EQ.abs(K492))
@@ -268,6 +270,28 @@ C
         ENDDO
         DEALLOCATE(NEW_CUT)
       END SUBROUTINE REGROUPING2
+      SUBROUTINE UPD_MRY_LU_LRGAIN( BLR_PANEL, NBBLOCKS
+     &           )
+C Updates the memory gain associated with a given BLR panel
+        INTEGER,INTENT(IN) :: NBBLOCKS
+        TYPE(LRB_TYPE),  INTENT(IN) :: BLR_PANEL(:)
+        DOUBLE PRECISION :: MRY
+        INTEGER :: I
+C
+        MRY    = 0.0D0
+        DO I = 1, NBBLOCKS
+          IF (BLR_PANEL(I)%ISLR) THEN
+            MRY = MRY + dble(BLR_PANEL(I)%M*BLR_PANEL(I)%N 
+     &            - BLR_PANEL(I)%K*(BLR_PANEL(I)%M + BLR_PANEL(I)%N)) 
+          ELSE ! islr
+            MRY = MRY + 0.0d0
+          ENDIF ! islr
+        ENDDO
+!$OMP   ATOMIC UPDATE
+        MRY_LU_LRGAIN  = MRY_LU_LRGAIN  + MRY
+!$OMP   END ATOMIC
+      RETURN
+      END SUBROUTINE UPD_MRY_LU_LRGAIN
       SUBROUTINE SMUMPS_LRTRSM(A, LA, POSELT_LOCAL, NFRONT, LDA, LRB, 
      &                NIV, SYM, LorU, IW, OFFSET_IW) 
 C     -----------
@@ -352,7 +376,7 @@ C             2x2 pivot
           ENDIF
         ENDIF
       ENDIF
-      CALL UPD_FLOP_TRSM(LRB, LorU)
+      CALL UPD_FLOP_TRSM(LRB%M, LRB%N, LRB%K, LRB%ISLR, LorU)
       END SUBROUTINE SMUMPS_LRTRSM
       SUBROUTINE SMUMPS_LRGEMM_SCALING(LRB, SCALED, A, LA, DIAG, 
      &          LD_DIAG, IW2, POSELTT, NFRONT, BLOCK, MAXI_CLUSTER) 
@@ -845,11 +869,13 @@ C       Alloc ok!!
      &              POSELTT+int(I-1,8)*int(NFRONT,8)+int(M-1,8) ) = ZERO
                 END DO  
                 ACC_LRB%K = RANK
-                CALL UPD_FLOP_COMPRESS(ACC_LRB, CB_COMPRESS=CB_COMPRESS)
+                CALL UPD_FLOP_COMPRESS(ACC_LRB%M, ACC_LRB%N, ACC_LRB%K, 
+     &                       ACC_LRB%ISLR, CB_COMPRESS=CB_COMPRESS)
               ELSE
                 ACC_LRB%K = RANK
                 ACC_LRB%ISLR = .FALSE.
-                CALL UPD_FLOP_COMPRESS(ACC_LRB, CB_COMPRESS=CB_COMPRESS)
+                CALL UPD_FLOP_COMPRESS(ACC_LRB%M, ACC_LRB%N, ACC_LRB%K, 
+     &                       ACC_LRB%ISLR, CB_COMPRESS=CB_COMPRESS)
                 ACC_LRB%ISLR = .TRUE.
                 ACC_LRB%K = 0
               ENDIF
@@ -1018,14 +1044,17 @@ C     Alloc NOT ok!!
      &             RANK, BUILDQ, .TRUE., LRB3=ACC_LRB,
      &             MAXI_RANK=MAXI_RANK, MAXI_CLUSTER=MAXI_CLUSTER)
                 IF (IFLAG.LT.0) GOTO 100
-                CALL UPD_FLOP_UPDATE(LRB1, LRB2, 
+                CALL UPD_FLOP_UPDATE(LRB1%M, LRB1%N, LRB1%K, LRB1%ISLR,
+     &                  LRB2%M, LRB2%N, LRB2%K, LRB2%ISLR,
      &                  MIDBLK_COMPRESS-1, RANK, BUILDQ,
      &                  .TRUE., .FALSE., REC_ACC=.TRUE.) 
               ENDIF
               IF (.NOT. SKIP1)
-     &          CALL UPD_FLOP_COMPRESS(LRB1, REC_ACC=.TRUE.)
+     &          CALL UPD_FLOP_COMPRESS(LRB1%M, LRB1%N, LRB1%K, 
+     &                    LRB1%ISLR, REC_ACC=.TRUE.)
               IF (.NOT. SKIP2)
-     &          CALL UPD_FLOP_COMPRESS(LRB2, REC_ACC=.TRUE.)
+     &          CALL UPD_FLOP_COMPRESS(LRB2%M, LRB2%N, LRB2%K, 
+     &                    LRB2%ISLR, REC_ACC=.TRUE.)
               deallocate(Q1,Q2)
               IF (BUILDQ1) deallocate(R1)
               IF (BUILDQ2) deallocate(R2)

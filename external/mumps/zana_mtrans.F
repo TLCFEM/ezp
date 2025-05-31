@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -1089,7 +1089,12 @@ C
 C Local variables 
       INTEGER    :: I,J,J1,JORD,K,KK
       INTEGER(8) :: II, IN1, IN2
+      INTEGER, PARAMETER  :: KXX = 100 ! default
+      DOUBLE PRECISION       :: R
+      INTEGER    :: MAXNUM
       EXTERNAL ZMUMPS_MTRANSX
+      R = dble(KXX)/dble(100)
+      MAXNUM = min(N, INT(N*R))
       DO 10 I = 1,M
         CV(I) = 0
         IPERM(I) = 0
@@ -1130,7 +1135,7 @@ C Local variables
    40       CONTINUE
    50       CONTINUE
             J = PR(J)
-            IF (J.EQ.-1) GO TO 1000
+            IF (J.EQ.-1) GO TO 999 
    60     CONTINUE
    70   CONTINUE
    80   CONTINUE
@@ -1139,11 +1144,15 @@ C Local variables
         NUM = NUM + 1
         DO 90 K = 1,JORD
           J = PR(J)
-          IF (J.EQ.-1) GO TO 1000
+          IF (J.EQ.-1) GO TO 999 
           II = IP(J) + int(LENC(J) - OUT(J) - 2,8)
           I = IRN(II)
           IPERM(I) = J
    90   CONTINUE
+ 999    CONTINUE
+        IF (KXX.GE.100) GOTO 1000
+C       we may stop if NUM large enough
+        IF (NUM.GE.MAXNUM) EXIT
  1000 CONTINUE
       IF (M.EQ.N .and. NUM.EQ.N) GO TO 2000
       CALL ZMUMPS_MTRANSX(M,N,IPERM,CV,ARP)
@@ -1154,6 +1163,10 @@ C Local variables
       INTEGER M,N
       INTEGER RW(M),CW(N),IPERM(M)
       INTEGER I,J,K
+      INTEGER, PARAMETER  :: KXX = 100 
+      INTEGER SIG
+      SIG = -1
+      IF (KXX.LT.100) SIG = 1
       DO 10 J = 1,N
         CW(J) = 0
    10 CONTINUE
@@ -1172,12 +1185,12 @@ C Local variables
         IF (CW(J).NE.0) GO TO 30
         K = K + 1
         I = RW(K)
-        IPERM(I) = -J
+        IPERM(I) = J*SIG
    30 CONTINUE
       DO 40 J = N+1,M
         K = K + 1
         I = RW(K)
-        IPERM(I) = -J
+        IPERM(I) = J*SIG
    40 CONTINUE
       RETURN
       END SUBROUTINE ZMUMPS_MTRANSX

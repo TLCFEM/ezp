@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -13,7 +13,7 @@ C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       SUBROUTINE ZMUMPS_MCAST2(DATA, LDATA, MPITYPE, ROOT, COMMW, TAG,
      &SLAVEF, KEEP)
-      USE ZMUMPS_BUF
+      USE MUMPS_BUF_COMMON, ONLY : MUMPS_BUF_SEND_1INT
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       INTEGER IERR
@@ -24,7 +24,7 @@ C
       DO 10 DEST = 0, SLAVEF - 1
         IF (DEST .NE. ROOT) THEN
           IF ( LDATA .EQ. 1 .and. MPITYPE .EQ. MPI_INTEGER ) THEN
-            CALL ZMUMPS_BUF_SEND_1INT( DATA(1), DEST, TAG, 
+            CALL MUMPS_BUF_SEND_1INT( DATA(1), DEST, TAG, 
      &                                COMMW, KEEP, IERR )
           ELSE
             WRITE(*,*) 'Error : bad argument to ZMUMPS_MCAST2'

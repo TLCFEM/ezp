@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -20,7 +20,7 @@ C
      &   COMP, STEP, PIMASTER, PAMASTER, POSFAC,
      &   MYID, COMM, IFLAG, IERROR, NBFIN,
      &
-     &    PTLUST_S, PTRFAC, root, OPASSW, OPELIW,
+     &    PTLUST_S, PTRFAC, root, roota, OPASSW, OPELIW,
      &    ITLOC, RHS_MUMPS, FILS, DAD,
      &    PTRARW, PTRAIW, PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR,
@@ -32,19 +32,22 @@ C
      &    )
       USE CMUMPS_OOC, ONLY : IO_BLOCK
       USE MUMPS_OOC_COMMON, ONLY : TYPEF_L, STRAT_TRY_WRITE
-      USE CMUMPS_LOAD
+      USE MUMPS_LOAD
+      USE MUMPS_BUF_COMMON, ONLY : MUMPS_BUF_SEND_1INT
       USE CMUMPS_LR_CORE
       USE CMUMPS_LR_TYPE
-      USE CMUMPS_LR_STATS
+      USE MUMPS_LR_STATS
       USE CMUMPS_FAC_LR
       USE CMUMPS_ANA_LR, ONLY : GET_CUT
       USE CMUMPS_LR_DATA_M
-      USE CMUMPS_STRUC_DEF, ONLY : CMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE CMUMPS_INTR_TYPES, ONLY : CMUMPS_ROOT_STRUC
       USE CMUMPS_DYNAMIC_MEMORY_M, ONLY : CMUMPS_DM_SET_DYNPTR
 !$    USE OMP_LIB
       IMPLICIT NONE
       INCLUDE 'mumps_headers.h'
-      TYPE (CMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (CMUMPS_ROOT_STRUC) :: roota
       INTEGER ICNTL( 60 ), KEEP( 500 )
       INTEGER(8) KEEP8(150)
       REAL DKEEP(230)
@@ -90,7 +93,8 @@ C
       INCLUDE 'mumps_tags.h'
       INTEGER :: STATUS(MPI_STATUS_SIZE)
       INTEGER INODE, POSITION, NPIV, IERR, LP
-      INTEGER NCOL
+      INTEGER NCOL_RECV, JBEG_BLOCK, NCOL_GEMM, SHIFT_LPOS, SHIFT_UPOS
+      INTEGER SHIFT_BEGS_BLR_U
       INTEGER :: IFLAG_OOC
       INTEGER(8) :: POSBLOCFACTO
       INTEGER :: LD_BLOCFACTO 
@@ -103,20 +107,21 @@ C
       INTEGER (8) :: LPOS, UPOS, LPOS2, IPOS, KPOS
       INTEGER ICT11
       INTEGER I, IPIV, FPERE
-      LOGICAL LASTBL, KEEP_BEGS_BLR_L
+      LOGICAL LASTPANEL, KEEP_BEGS_BLR_L, KEEP_BEGS_BLR_COL
+      LOGICAL LASTBL_INPANEL, LASTBL_INLASTPANEL
       LOGICAL BLOCKING, SET_IRECV, MESSAGE_RECEIVED
       COMPLEX ONE,ALPHA
       PARAMETER (ONE=(1.0E0,0.0E0), ALPHA=(-1.0E0,0.0E0))
       INTEGER LIWFAC, STRAT, NextPivDummy
       TYPE(IO_BLOCK) :: MonBloc
       LOGICAL LAST_CALL
-      INTEGER LRELAY_INFO
       INTEGER :: INFO_TMP(2)
       INTEGER :: IDUMMY(1)
       INTEGER :: NELIM, NPARTSASS_MASTER, NPARTSASS_MASTER_AUX,
      &           IPANEL, 
      &           CURRENT_BLR, 
      &           NB_BLR_L, NB_BLR_U, NB_BLR_COL
+      INTEGER :: NBCOL_in_LRB, SIZE_BEGS_BLR_COL
       TYPE (LRB_TYPE), POINTER, DIMENSION(:,:) :: CB_LRB
       TYPE (LRB_TYPE), DIMENSION(:), POINTER :: BLR_U, BLR_L
       LOGICAL :: LR_ACTIVATED, COMPRESS_CB, COMPRESS_PANEL
@@ -132,24 +137,40 @@ C
       INTEGER NPARTSASS, NPARTSCB, MAXI_CLUSTER, LWORK,
      &        MAXI_CLUSTER_L, MAXI_CLUSTER_U, MAXI_CLUSTER_COL
       INTEGER  :: allocok
-      KEEP_BEGS_BLR_L = .FALSE.
+      KEEP_BEGS_BLR_COL = .FALSE.
+      KEEP_BEGS_BLR_L   = .FALSE.
       nullify(BEGS_BLR_L)
-      NB_BLR_U = -7654321
+      NB_BLR_U         = -7654321
+      SHIFT_BEGS_BLR_U = 0
       NULLIFY(BEGS_BLR_U)
+      NULLIFY(BEGS_BLR_COL)
+      MAXI_CLUSTER = 0
+      CURRENT_BLR  = 1 
       FPERE    = -1
       POSITION = 0
       CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, INODE, 1,
      &                 MPI_INTEGER, COMM, IERR )
       CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, NPIV, 1,
      &                 MPI_INTEGER, COMM, IERR )
-      LASTBL = (NPIV.LE.0)
-      IF (LASTBL) THEN 
+      LASTPANEL = (NPIV.LE.0)
+      IF (LASTPANEL) THEN 
          NPIV = -NPIV
          CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, FPERE, 1,
      &                 MPI_INTEGER, COMM, IERR )
       ENDIF
-      CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, NCOL, 1,
+      CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, NCOL_RECV, 1,
      &                 MPI_INTEGER, COMM, IERR )
+      CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, JBEG_BLOCK, 1,
+     &                 MPI_INTEGER, COMM, IERR )
+      IF (JBEG_BLOCK.EQ.1) THEN
+        NCOL_GEMM = NCOL_RECV - NPIV
+        SHIFT_LPOS = NPIV
+        SHIFT_UPOS = NPIV
+      ELSE
+        NCOL_GEMM = NCOL_RECV
+        SHIFT_LPOS = JBEG_BLOCK-1
+        SHIFT_UPOS = 0
+      ENDIF
       CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, NELIM, 1,
      &                 MPI_INTEGER, COMM, IERR )
       CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, 
@@ -161,9 +182,13 @@ C
      &                 1, MPI_INTEGER, COMM, IERR )
       LR_ACTIVATED    = (LR_ACTIVATED_INT.EQ.1)
       IF ( LR_ACTIVATED ) THEN
-        LA_BLOCFACTO = int(NPIV,8) * int(NPIV+NELIM,8)
+       IF (JBEG_BLOCK.NE.1) THEN
+          LA_BLOCFACTO = 0_8
+        ELSE
+          LA_BLOCFACTO = int(NPIV,8) * int(NPIV+NELIM,8)
+        ENDIF
       ELSE
-        LA_BLOCFACTO = int(NPIV,8) * int(NCOL,8)
+        LA_BLOCFACTO = int(NPIV,8) * int(NCOL_RECV,8)
       ENDIF
       CALL CMUMPS_GET_SIZE_NEEDED(
      &      NPIV, LA_BLOCFACTO, .FALSE.,
@@ -182,25 +207,57 @@ C
       KEEP8(68) = max(KEEP8(69), KEEP8(68))
       POSBLOCFACTO = POSFAC
       POSFAC = POSFAC + LA_BLOCFACTO
-      CALL CMUMPS_LOAD_MEM_UPDATE(.FALSE., .FALSE.,
+      CALL MUMPS_LOAD_MEM_UPDATE(.FALSE., .FALSE.,
      &               LA-LRLUS,0_8,LA_BLOCFACTO,KEEP,KEEP8,LRLUS)
+      IF ( LR_ACTIVATED ) THEN
+        CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, 
+     &                 SIZE_BEGS_BLR_COL, 1,
+     &                 MPI_INTEGER, COMM, IERR )
+        IF (SIZE_BEGS_BLR_COL.GT.0) THEN
+          ALLOCATE(BEGS_BLR_COL(SIZE_BEGS_BLR_COL+2+IPANEL-1), 
+     &        stat=allocok)
+          IF (allocok > 0 ) THEN
+             IFLAG = -13
+             IERROR = SIZE_BEGS_BLR_COL+2
+             LP = ICNTL(1)
+             IF (ICNTL(4) .LE. 0) LP=-1
+             IF (LP > 0) WRITE(LP,*) MYID,
+     &            ': ERROR allocation during CMUMPS_PROCESS_BLOCFACTO'
+             GOTO 700
+          ENDIF
+          IF (IPANEL.GT.1) THEN
+            BEGS_BLR_COL(1:IPANEL-1) = 1
+          ENDIF
+          BEGS_BLR_COL(IPANEL) = 1
+          BEGS_BLR_COL(IPANEL+1) = NPIV+NELIM+1 
+          DO I = 1, SIZE_BEGS_BLR_COL
+             CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, 
+     &                 NBCOL_in_LRB, 1,
+     &                 MPI_INTEGER, COMM, IERR )
+              BEGS_BLR_COL(I+IPANEL+1) = 
+     &                 BEGS_BLR_COL(I+IPANEL) + NBCOL_in_LRB
+          ENDDO
+        ENDIF
+      ENDIF
       IF ((NPIV .EQ. 0) 
      &     ) THEN
         IPIV=1
       ELSE
         IPIV = IWPOS
         IWPOS = IWPOS + NPIV
-        IF (NPIV .GT. 0) THEN
+        IF (NPIV .GT. 0.AND.JBEG_BLOCK.EQ.1) THEN
           CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
      &                 IW( IPIV ), NPIV,
      &                 MPI_INTEGER, COMM, IERR )
         ENDIF
-        IF ( LR_ACTIVATED ) THEN
+        IF ( LR_ACTIVATED .AND. JBEG_BLOCK.EQ.1) THEN
             CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
      &                 A(POSBLOCFACTO), NPIV*(NPIV+NELIM),
      &                 MPI_COMPLEX,
      &                 COMM, IERR )
             LD_BLOCFACTO = NPIV+NELIM
+        ENDIF
+        IF ( LR_ACTIVATED ) THEN
             CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
      &                 NB_BLR_U, 1, MPI_INTEGER,
      &                 COMM, IERR )
@@ -224,23 +281,23 @@ C
      &              ': ERROR allocation during CMUMPS_PROCESS_BLOCFACTO'
                GOTO 700
             ENDIF
-            CALL CMUMPS_MPI_UNPACK_LR(BUFR, LBUFR, LBUFR_BYTES, 
+            CALL CMUMPS_MPI_UNPACK_LR_PARTIAL 
+     &                        (BUFR, LBUFR, LBUFR_BYTES, 
      &                             POSITION, NPIV, NELIM, 'H',
      &                             BLR_U(1), NB_BLR_U, 
+     &                             JBEG_BLOCK,
      &                             BEGS_BLR_U(1),
      &                             KEEP8, COMM, IERR, IFLAG, IERROR)
+            IF (JBEG_BLOCK.NE.1) SHIFT_BEGS_BLR_U = 1
             IF (IFLAG.LT.0) GOTO 700
         ELSE
           CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
-     &                 A(POSBLOCFACTO), NPIV*NCOL,
+     &                 A(POSBLOCFACTO), NPIV*NCOL_RECV,
      &                 MPI_COMPLEX,
      &                 COMM, IERR )
-          LD_BLOCFACTO = NCOL
+          LD_BLOCFACTO = NCOL_RECV
         ENDIF
       ENDIF 
-      CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, 
-     &                 LRELAY_INFO, 1,
-     &                 MPI_INTEGER, COMM, IERR )
       IF (PTRIST(STEP( INODE )) .EQ. 0) THEN
           CALL CMUMPS_TREAT_DESCBAND( INODE, COMM_LOAD,
      &    ASS_IRECV,
@@ -252,7 +309,7 @@ C
      &    IFLAG, IERROR, COMM,
      &    PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &    root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR, ICNTL,KEEP,KEEP8,DKEEP,ND, FRERE_STEPS,
@@ -260,7 +317,7 @@ C
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE, .TRUE.
      &               , LRGROUPS
      &    )
-          IF ( IFLAG .LT. 0 ) GOTO 600
+          IF ( IFLAG .LT. 0 ) GOTO 550
       ENDIF
       IF ( IW( PTRIST(STEP(INODE)) + 3 +KEEP(IXSZ)) .EQ. 0 ) THEN
        DO WHILE ( IW(PTRIST(STEP(INODE)) + XXNBPR) .NE. 0)
@@ -279,7 +336,7 @@ C
      &    IFLAG, IERROR, COMM,
      &    PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &    root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR, ICNTL,KEEP,KEEP8,DKEEP,ND, FRERE_STEPS,
@@ -287,7 +344,7 @@ C
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE, .TRUE. 
      &               , LRGROUPS
      &      )
-        IF ( IFLAG .LT. 0 ) GOTO 600
+        IF ( IFLAG .LT. 0 ) GOTO 550
        END  DO
       ENDIF
         SET_IRECV = .TRUE.
@@ -305,7 +362,7 @@ C
      &    IFLAG, IERROR, COMM,
      &    PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &    root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR,ICNTL,KEEP,KEEP8,DKEEP,ND, FRERE_STEPS,
@@ -324,6 +381,8 @@ C
      &          ( .NOT.LR_ACTIVATED.OR.  (.NOT.COMPRESS_PANEL).OR.
      &            (KEEP(486).NE.2) 
      &          )
+      LASTBL_INPANEL     = JBEG_BLOCK+NCOL_RECV.GT.LCONT1
+      LASTBL_INLASTPANEL = LASTPANEL .AND. LASTBL_INPANEL
       IF ( NASS1 < 0 ) THEN
         NASS1 = -NASS1
         IW( IOLDPS + 1 + KEEP(IXSZ)) = NASS1
@@ -345,11 +404,21 @@ C
       ENDIF
       NROW1  = IW( IOLDPS + 2 +KEEP(IXSZ))
       NPIV1  = IW( IOLDPS + 3 +KEEP(IXSZ))
+      COMPRESS_CB = .FALSE.
+      IF (LR_ACTIVATED) THEN 
+        COMPRESS_CB    = ((IW(IOLDPS+XXLR).EQ.1).OR.
+     &                    (IW(IOLDPS+XXLR).EQ.3))
+        IF (COMPRESS_CB.AND.NPIV.EQ.0) THEN
+           COMPRESS_CB = .FALSE.
+           IW(IOLDPS+XXLR) = IW(IOLDPS+XXLR) -1
+        ENDIF
+      ENDIF
       NSLAV1 = IW( IOLDPS + 5 + KEEP(IXSZ))
       HS     = 6 + NSLAV1 + KEEP(IXSZ)
       NCOL1  = LCONT1 + NPIV1
       IF (NPIV.GT.0) THEN
-        ICT11 = IOLDPS+HS+NROW1+NPIV1 - 1
+        IF (JBEG_BLOCK.EQ.1) THEN
+          ICT11 = IOLDPS+HS+NROW1+NPIV1 - 1
           DO I = 1, NPIV
             IF (IW(IPIV+I-1).EQ.I) CYCLE
             ISW = IW(ICT11+I)
@@ -359,24 +428,20 @@ C
             KPOS = POSELT + int(NPIV1 + IW(IPIV+I-1) - 1,8)
             CALL cswap(NROW1, A_PTR(IPOS), NCOL1, A_PTR(KPOS), NCOL1)
           ENDDO
+        ENDIF
         LPOS2 = POSELT + int(NPIV1,8)
-        LPOS  = LPOS2 + int(NPIV,8)
-        IF ((.NOT. LR_ACTIVATED).OR.KEEP(475).EQ.0) THEN
-              CALL ctrsm('L','L','N','N', NPIV, NROW1, ONE,
+        LPOS  = LPOS2  + int(SHIFT_LPOS,8)
+        IF ( (JBEG_BLOCK.EQ.1) .AND.
+     &       ((.NOT. LR_ACTIVATED).OR.KEEP(475).EQ.0)
+     &     ) THEN
+            CALL ctrsm('L','L','N','N', NPIV, NROW1, ONE,
      &             A(POSBLOCFACTO), LD_BLOCFACTO,
      &             A_PTR(LPOS2), NCOL1)
         ENDIF
       ENDIF 
-      COMPRESS_CB = .FALSE.
-      IF ( LR_ACTIVATED) THEN 
-        COMPRESS_CB    = ((IW(IOLDPS+XXLR).EQ.1).OR.
-     &                    (IW(IOLDPS+XXLR).EQ.3))
-        IF (COMPRESS_CB.AND.NPIV.EQ.0) THEN
-           COMPRESS_CB = .FALSE.
-           IW(IOLDPS+XXLR) = IW(IOLDPS+XXLR) -1
-        ENDIF
+      IF (LR_ACTIVATED) THEN
         IF (NPIV.NE.0) THEN
-        IF ( (NPIV1.EQ.0) 
+        IF ( (NPIV1.EQ.0).AND.(JBEG_BLOCK.EQ.1) 
      &     ) THEN
           IOLDPS = PTRIST(STEP(INODE))
           CALL GET_CUT(IW(IOLDPS+HS:IOLDPS+HS+NROW1-1), 0,
@@ -386,27 +451,6 @@ C
      &                        NROW1-0, KEEP(488), .TRUE., KEEP(472),
      &                        NCOL1, KEEP(1))
           NB_BLR_L =  NPARTSCB
-          IF (IPANEL.EQ.1) THEN
-           BEGS_BLR_COL=>BEGS_BLR_U
-          ELSE
-           ALLOCATE(BEGS_BLR_COL(size(BEGS_BLR_U)+IPANEL-1),
-     &               stat=allocok)
-           IF (allocok > 0 ) THEN
-               IFLAG = -13
-               IERROR = size(BEGS_BLR_U)+IPANEL-1
-               LP = ICNTL(1)
-               IF (ICNTL(4) .LE. 0) LP=-1
-               IF (LP > 0) WRITE(LP,*) MYID,
-     &           ': ERROR allocation during CMUMPS_PROCESS_BLOCFACTO'
-               GOTO 700
-            ENDIF
-            BEGS_BLR_COL(1:IPANEL-1) = 1
-            DO I=1,size(BEGS_BLR_U)
-               BEGS_BLR_COL(IPANEL+I-1) =  BEGS_BLR_U(I)
-            ENDDO
-          ENDIF
-          INFO_TMP(1) = IFLAG
-          INFO_TMP(2) = IERROR
           IF (IFLAG.LT.0) GOTO 700
           CALL CMUMPS_BLR_SAVE_INIT(IW(IOLDPS+XXF), 
      &           .FALSE.,       
@@ -417,11 +461,7 @@ C
      &           BEGS_BLR_COL, 
      &           huge(NPARTSASS_MASTER),
      &           INFO_TMP)
-          IFLAG  = INFO_TMP(1) 
-          IERROR = INFO_TMP(2) 
-          IF (IPANEL.NE.1) THEN
-            DEALLOCATE(BEGS_BLR_COL)
-          ENDIF
+          IF (associated(BEGS_BLR_COL)) DEALLOCATE(BEGS_BLR_COL)
           IF (IFLAG.LT.0) GOTO 700
         ELSE           
           CALL CMUMPS_BLR_RETRIEVE_BEGS_BLR_L (IW(IOLDPS+XXF), 
@@ -431,19 +471,25 @@ C
           NPARTSASS = 1
           NPARTSCB  = NB_BLR_L
         ENDIF 
-      ENDIF
-      ENDIF
-      IF ( (NPIV .GT. 0)
+        ENDIF 
+        ENDIF 
+        IF ( (NPIV .GT. 0)
      &   ) THEN
         IF (LR_ACTIVATED) THEN
+        IF ( (JBEG_BLOCK.EQ.1)
+     &     ) THEN
         call MAX_CLUSTER(BEGS_BLR_L,NB_BLR_L+1,MAXI_CLUSTER_L)
-        call MAX_CLUSTER(BEGS_BLR_U,NB_BLR_U+1,MAXI_CLUSTER_U)
-        IF (LASTBL.AND.COMPRESS_CB) THEN
+        call MAX_CLUSTER(BEGS_BLR_U(1+SHIFT_BEGS_BLR_U:NB_BLR_U+2),
+     &                   NB_BLR_U+1-SHIFT_BEGS_BLR_U,
+     &                   MAXI_CLUSTER_U)
+        IF (SHIFT_BEGS_BLR_U.EQ.1) 
+     &      MAXI_CLUSTER_U = max(MAXI_CLUSTER_U,NPIV+NELIM)
+        IF (LASTBL_INLASTPANEL.AND.COMPRESS_CB) THEN
           MAXI_CLUSTER=max(MAXI_CLUSTER_U+NELIM,MAXI_CLUSTER_L)
         ELSE
           MAXI_CLUSTER=max(MAXI_CLUSTER_U,MAXI_CLUSTER_L)
         ENDIF
-        LWORK = MAXI_CLUSTER*MAXI_CLUSTER
+        LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
         OMP_NUM = 1
 #if ! defined(BLR_NOOPENMP)
 !$      OMP_NUM = OMP_GET_MAX_THREADS()
@@ -495,20 +541,17 @@ C
 #if ! defined(BLR_NOOPENMP)
 !$OMP MASTER
 #endif
-        IF ( (KEEP(486).EQ.2) 
-     &     ) THEN
           CALL CMUMPS_BLR_SAVE_PANEL_LORU (
      &         IW(IOLDPS+XXF),
      &         0, 
-     &         IPANEL, BLR_L)
-        ENDIF
+     &         IPANEL, BLR_L, 0) 
 #if ! defined(BLR_NOOPENMP)
 !$OMP END MASTER
 !$OMP BARRIER
 #endif
           IF (IFLAG.LT.0) GOTO 300
-          IF (KEEP(475).GE.1) THEN
-              CALL CMUMPS_BLR_PANEL_LRTRSM(A, LA, POSBLOCFACTO, 
+          IF ((KEEP(475).GE.1).AND.(JBEG_BLOCK.EQ.1)) THEN
+            CALL CMUMPS_BLR_PANEL_LRTRSM(A, LA, POSBLOCFACTO, 
      &              LD_BLOCFACTO, -6666, 
      &              NB_BLR_L+1,  
      &              BLR_L, CURRENT_BLR, CURRENT_BLR+1, NB_BLR_L+1, 
@@ -532,10 +575,19 @@ C
 !$OMP END PARALLEL
 #endif          
           IF (IFLAG.LT.0) GOTO 700
-        ENDIF
-      ENDIF
+      ELSE 
+          CALL CMUMPS_BLR_RETRIEVE_PANEL_LORU(
+     &           IW(IOLDPS+XXF),
+     &           0, 
+     &           IPANEL, BLR_L)
+          CURRENT_BLR=1 
+      ENDIF 
+      ENDIF 
+      ENDIF 
       IF ( (KEEP(201).eq.1) .AND. 
-     &    (OOCWRITE_COMPATIBLE_WITH_BLR .OR. NPIV.EQ.0) ) THEN
+     &    (OOCWRITE_COMPATIBLE_WITH_BLR .OR. NPIV.EQ.0) 
+     &    .AND. (JBEG_BLOCK.EQ.1) 
+     &   ) THEN
         MonBloc%INODE = INODE
         MonBloc%MASTER = .FALSE.
         MonBloc%Typenode = 2
@@ -546,7 +598,7 @@ C
         MonBloc%LastPanelWritten_L = -9999 
         MonBloc%LastPanelWritten_U = -9999 
         NULLIFY(MonBloc%INDICES)
-        MonBloc%Last = LASTBL
+        MonBloc%Last = LASTPANEL 
         STRAT = STRAT_TRY_WRITE 
         NextPivDummy      = -8888 
         LIWFAC = IW(IOLDPS+XXI)
@@ -563,9 +615,9 @@ C
       IF ( (NPIV .GT. 0)
      &   ) THEN
         IF (LR_ACTIVATED) THEN
-          IF (NELIM.GT.0) THEN
-            UPOS = 1_8+int(NPIV,8)
-              CALL CMUMPS_BLR_UPD_NELIM_VAR_L_I(
+          IF (NELIM.GT.0.AND.JBEG_BLOCK.EQ.1) THEN
+            UPOS = 1_8+int(SHIFT_UPOS,8)
+            CALL CMUMPS_BLR_UPD_NELIM_VAR_L_I(
      &        A(POSBLOCFACTO), LA_BLOCFACTO, UPOS,
      &        A_PTR(POSELT), LA_PTR, LPOS-POSELT+1_8,
      &        IFLAG, IERROR, LD_BLOCFACTO, NCOL1,
@@ -582,7 +634,7 @@ C
      &        BEGS_BLR_L(1), size(BEGS_BLR_L),
      &        BEGS_BLR_U(1), size(BEGS_BLR_U), CURRENT_BLR, 
      &        BLR_L(1), NB_BLR_L+1, 
-     &        BLR_U(1), NB_BLR_U+1, 
+     &        BLR_U(1), NB_BLR_U+1,  
      &        0,      
      &        .TRUE., 
      &        NPIV1,  
@@ -594,18 +646,20 @@ C
 #endif          
           IF (IFLAG.LT.0) GOTO 700
         ELSE 
-              UPOS = POSBLOCFACTO+int(NPIV,8)
-              CALL cgemm('N','N', NCOL-NPIV, NROW1, NPIV,
-     &             ALPHA,A(UPOS), NCOL,
+            UPOS = POSBLOCFACTO+int(SHIFT_UPOS,8)
+            CALL cgemm('N','N', NCOL_GEMM, NROW1, NPIV,
+     &             ALPHA,A(UPOS), NCOL_RECV,
      &             A_PTR(LPOS2), NCOL1, ONE, A_PTR(LPOS), NCOL1)
         ENDIF 
       ENDIF 
-      IW(IOLDPS+KEEP(IXSZ) ) = IW(IOLDPS+KEEP(IXSZ) ) - NPIV
-      IW(IOLDPS + 3+KEEP(IXSZ) ) = IW(IOLDPS+3+KEEP(IXSZ) ) + NPIV
-      IF (LASTBL) THEN
-        IW(IOLDPS+1+KEEP(IXSZ) ) = IW(IOLDPS + 3+KEEP(IXSZ) )
+      IF (LASTBL_INPANEL) THEN
+        IW(IOLDPS + KEEP(IXSZ))    = IW(IOLDPS + KEEP(IXSZ)) - NPIV
+        IW(IOLDPS + 3 + KEEP(IXSZ))= IW(IOLDPS + 3 + KEEP(IXSZ)) + NPIV
+        IF (LASTPANEL) THEN
+          IW(IOLDPS+1+KEEP(IXSZ) ) = IW(IOLDPS+3+KEEP(IXSZ) )
+        ENDIF
       ENDIF
-      IF ( .not. LASTBL .AND. 
+      IF ( .not. LASTBL_INLASTPANEL .AND. 
      &   (IW(IOLDPS+1+KEEP(IXSZ)) .EQ. IW(IOLDPS + 3+KEEP(IXSZ))) ) THEN
         write(*,*) 'Internal ERROR 1 **** IN BLACFACTO '
         CALL MUMPS_ABORT()
@@ -615,10 +669,7 @@ C
      &     ) THEN
           CALL DEALLOC_BLR_PANEL( BLR_U, NB_BLR_U, KEEP8, KEEP(34))
           DEALLOCATE(BLR_U)
-          IF (KEEP(486).EQ.3) THEN
-            CALL DEALLOC_BLR_PANEL( BLR_L, NB_BLR_L, KEEP8, KEEP(34))
-            DEALLOCATE(BLR_L)
-          ELSE
+           IF (KEEP(486).NE.3) THEN
             CALL UPD_MRY_LU_LRGAIN(BLR_L, NPARTSCB
      &               )
           ENDIF
@@ -628,16 +679,27 @@ C
         LRLUS = LRLUS + LA_BLOCFACTO
         KEEP8(69) = KEEP8(69) - LA_BLOCFACTO
         POSFAC = POSFAC - LA_BLOCFACTO
-        CALL CMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+        CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &             LA-LRLUS,0_8,-LA_BLOCFACTO,KEEP,KEEP8,LRLUS)
         IWPOS = IWPOS - NPIV
-      FLOP1 = dble( NPIV1*NROW1 ) +
+      IF (LASTBL_INPANEL) THEN
+        FLOP1 = dble( NPIV1*NROW1 ) +
      &        dble(NROW1*NPIV1)*dble(2*NCOL1-NPIV1-1)
      &   -
      &        dble((NPIV1+NPIV)*NROW1 ) -
      &        dble(NROW1*(NPIV1+NPIV))*dble(2*NCOL1-NPIV1-NPIV-1)
-      CALL CMUMPS_LOAD_UPDATE( 1, .FALSE., FLOP1, KEEP,KEEP8 )
-      IF (LASTBL) THEN
+        CALL MUMPS_LOAD_UPDATE( 1, .FALSE., FLOP1, KEEP,KEEP8 )
+      ENDIF
+      IF (LR_ACTIVATED.AND.LASTBL_INPANEL.AND.
+     &     (KEEP(486).EQ.3)
+     &   ) THEN
+          IF (NPIV.NE.0) THEN
+           CALL CMUMPS_BLR_FORCE_FREE_PANEL_L(IW(IOLDPS+XXF), IPANEL, 
+     &                            KEEP8, KEEP(34)) 
+           nullify(BLR_L)
+          ENDIF
+      ENDIF
+      IF (LASTBL_INLASTPANEL) THEN
         IF (KEEP(486).NE.0) THEN
           IF (LR_ACTIVATED) THEN
             CALL STATS_COMPUTE_FLOP_SLAVE_TYPE2(NROW1, NCOL1, NASS1,
@@ -647,22 +709,26 @@ C
      &              KEEP(50), INODE)
           ENDIF
         ENDIF
-       IF (LR_ACTIVATED) THEN
+        IF (LR_ACTIVATED) THEN
          IF (COMPRESS_CB) THEN
            CALL CMUMPS_BLR_RETRIEVE_BEGS_BLR_C (IW(IOLDPS+XXF), 
      &                  BEGS_BLR_COL, NPARTSASS_MASTER_AUX)
+           KEEP_BEGS_BLR_COL = .TRUE.
            BEGS_BLR_COL(1+NPARTSASS_MASTER) = 
      &               BEGS_BLR_COL(1+NPARTSASS_MASTER) - NELIM
            NB_BLR_COL = size(BEGS_BLR_COL) - 1
-           IF (NPIV.EQ.0) THEN
-             call MAX_CLUSTER(BEGS_BLR_L,NB_BLR_L+1,MAXI_CLUSTER_L)
-             call MAX_CLUSTER(BEGS_BLR_COL,NB_BLR_COL,MAXI_CLUSTER_COL)
-             IF (COMPRESS_CB) THEN
-              MAXI_CLUSTER=max(MAXI_CLUSTER_COL+NELIM,MAXI_CLUSTER_L)
-             ELSE
-              MAXI_CLUSTER=max(MAXI_CLUSTER_COL,MAXI_CLUSTER_L)
-             ENDIF
-             LWORK = MAXI_CLUSTER*MAXI_CLUSTER
+            call MAX_CLUSTER(BEGS_BLR_L,NB_BLR_L+1,MAXI_CLUSTER_L)
+            call MAX_CLUSTER(BEGS_BLR_COL,NB_BLR_COL,MAXI_CLUSTER_COL)
+            MAXI_CLUSTER_COL=MAXI_CLUSTER_COL+NELIM
+            IF ( (MAXI_CLUSTER.LT.MAXI_CLUSTER_COL).OR.
+     &           (MAXI_CLUSTER.LT.MAXI_CLUSTER_L) ) THEN
+             MAXI_CLUSTER = max(MAXI_CLUSTER_COL,MAXI_CLUSTER_L) 
+             IF (allocated(RWORK))  DEALLOCATE(RWORK)
+             IF (allocated(WORK)) DEALLOCATE(WORK)
+             IF (allocated(TAU)) DEALLOCATE(TAU)
+             IF (allocated(JPVT)) DEALLOCATE(JPVT)
+             IF (allocated(BLOCK)) DEALLOCATE(BLOCK)
+             LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
              OMP_NUM = 1
 #if ! defined(BLR_NOOPENMP)
 !$           OMP_NUM = OMP_GET_MAX_THREADS()
@@ -685,7 +751,7 @@ C
      &          ': ERROR allocation during CMUMPS_PROCESS_BLOCFACTO'
                GOTO 700
              ENDIF
-           ENDIF
+           ENDIF 
            allocate(CB_LRB(NB_BLR_L,NB_BLR_COL-NPARTSASS_MASTER),
      &                 stat=allocok)
            IF (allocok > 0) THEN
@@ -694,7 +760,7 @@ C
              GOTO 700
            ENDIF
            CALL CMUMPS_BLR_SAVE_CB_LRB(IW(IOLDPS+XXF),CB_LRB)
-         ENDIF
+         ENDIF 
 #if ! defined(BLR_NOOPENMP)
 !$OMP PARALLEL
 #endif
@@ -726,11 +792,10 @@ C
      &                          0, 
      &                          KEEP8, KEEP(34) )
          ENDIF
-       ENDIF
-         CALL CMUMPS_END_FACTO_SLAVE(
-     &    COMM_LOAD, ASS_IRECV, 
+        ENDIF
+        CALL CMUMPS_END_FACTO_SLAVE( COMM_LOAD, ASS_IRECV, 
      &    N, INODE, FPERE, 
-     &    root, 
+     &    root, roota,
      &    MYID, COMM,
      &    
      &    BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
@@ -741,18 +806,25 @@ C
      &    IPOOL, LPOOL, LEAF, NBFIN, SLAVEF,
      &    OPASSW, OPELIW, ITLOC, RHS_MUMPS, FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
-     &    INTARR, DBLARR,ICNTL,KEEP,KEEP8,DKEEP,ND, FRERE_STEPS,
+     &    INTARR,DBLARR,ICNTL,KEEP,KEEP8,DKEEP,ND,FRERE_STEPS,
      &    LPTRAR, NELT, FRTPTR, FRTELT, 
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE
      &               , LRGROUPS
-     &     )
+     &      )
       ENDIF 
+      GOTO 550
+ 700  CONTINUE
+      CALL CMUMPS_BDC_ERROR( MYID, SLAVEF, COMM, KEEP )
+ 550  CONTINUE
       IF (LR_ACTIVATED) THEN
         IF (allocated(RWORK))  DEALLOCATE(RWORK)
         IF (allocated(WORK)) DEALLOCATE(WORK)
         IF (allocated(TAU)) DEALLOCATE(TAU)
         IF (allocated(JPVT)) DEALLOCATE(JPVT)
         IF (allocated(BLOCK)) DEALLOCATE(BLOCK)
+        IF (associated(BEGS_BLR_COL)) THEN
+           IF (.NOT. KEEP_BEGS_BLR_COL) DEALLOCATE(BEGS_BLR_COL)
+        ENDIF
         IF (associated(BEGS_BLR_L)) THEN
             IF (.NOT. KEEP_BEGS_BLR_L) DEALLOCATE(BEGS_BLR_L)
         ENDIF
@@ -761,10 +833,6 @@ C
           IF (associated(BEGS_BLR_U)) DEALLOCATE(BEGS_BLR_U)
         ENDIF
       ENDIF
- 600  CONTINUE
-      RETURN
- 700  CONTINUE
-      CALL CMUMPS_BDC_ERROR( MYID, SLAVEF, COMM, KEEP )
       RETURN
       END SUBROUTINE CMUMPS_PROCESS_BLOCFACTO
       SUBROUTINE CMUMPS_MPI_UNPACK_LR(
@@ -841,3 +909,81 @@ C
       ENDDO
       RETURN
       END SUBROUTINE CMUMPS_MPI_UNPACK_LR
+      SUBROUTINE CMUMPS_MPI_UNPACK_LR_PARTIAL(
+     &           BUFR, LBUFR, LBUFR_BYTES, POSITION,
+     &                             NPIV, NELIM, DIR, 
+     &                             BLR_U, NB_BLOCK_U, 
+     &                             JBEG_BLOCK, 
+     &                             BEGS_BLR_U, KEEP8,
+     &                             COMM, IERR, IFLAG, IERROR)
+      USE CMUMPS_LR_CORE, ONLY : LRB_TYPE, ALLOC_LRB
+      USE CMUMPS_LR_TYPE
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: LBUFR
+      INTEGER, INTENT(IN) :: LBUFR_BYTES
+      INTEGER, INTENT(IN) :: BUFR(LBUFR)
+      INTEGER, INTENT(INOUT) :: POSITION
+      INTEGER, INTENT(IN)    :: NB_BLOCK_U, NELIM, NPIV, JBEG_BLOCK
+      CHARACTER(len=1) :: DIR
+      INTEGER, INTENT(IN) :: COMM
+      INTEGER, INTENT(INOUT) :: IFLAG, IERROR
+      INTEGER, INTENT(OUT) :: IERR
+      TYPE (LRB_TYPE), INTENT(OUT), 
+     &          DIMENSION(max(NB_BLOCK_U,1)):: BLR_U
+      INTEGER, INTENT(OUT), DIMENSION(NB_BLOCK_U+2)  :: BEGS_BLR_U 
+      INTEGER(8) :: KEEP8(150)
+      LOGICAL :: ISLR
+      INTEGER :: ISLR_INT, I
+      INTEGER :: K, M, N
+      INCLUDE 'mpif.h'
+      INCLUDE 'mumps_tags.h'
+      IERR = 0
+      IF (size(BLR_U) .NE. 
+     &     MAX(NB_BLOCK_U,1) ) THEN
+        WRITE(*,*) "Internal error 1 in CMUMPS_MPI_UNPACK",
+     &             NB_BLOCK_U,size(BLR_U)
+        CALL MUMPS_ABORT()
+      ENDIF
+      BEGS_BLR_U(1) = 1
+      BEGS_BLR_U(2) = NPIV+NELIM+1 
+      IF (JBEG_BLOCK.NE.1) THEN
+        BEGS_BLR_U(2) = JBEG_BLOCK
+      ENDIF
+      DO I = 1, NB_BLOCK_U
+         CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
+     &                 ISLR_INT, 1, MPI_INTEGER, COMM, IERR )
+        CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
+     &                 K, 1,
+     &                 MPI_INTEGER, COMM, IERR )
+        CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
+     &                 M, 1,
+     &                 MPI_INTEGER, COMM, IERR )
+        CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
+     &                 N, 1,
+     &                 MPI_INTEGER, COMM, IERR )
+        BEGS_BLR_U(I+2) = BEGS_BLR_U(I+1) + M
+        IF (ISLR_INT .eq. 1) THEN
+          ISLR = .TRUE.
+        ELSE
+          ISLR = .FALSE.
+        ENDIF
+        CALL ALLOC_LRB( BLR_U(I), K, M, N, ISLR, 
+     &             IFLAG, IERROR, KEEP8 )
+        IF (IFLAG.LT.0) RETURN
+        IF (ISLR) THEN
+          IF (K .GT. 0) THEN
+            CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
+     &                     BLR_U(I)%Q(1,1), M*K, MPI_COMPLEX,
+     &                     COMM, IERR )
+            CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
+     &                     BLR_U(I)%R(1,1), N*K, MPI_COMPLEX,
+     &                     COMM, IERR)
+          ENDIF
+        ELSE
+          CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
+     &                     BLR_U(I)%Q(1,1), M*N, MPI_COMPLEX,
+     &                     COMM, IERR)
+        ENDIF
+      ENDDO
+      RETURN
+      END SUBROUTINE CMUMPS_MPI_UNPACK_LR_PARTIAL

@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -17,7 +17,6 @@ C
 !$   &                    OMP_INIT_LOCK, OMP_DESTROY_LOCK, OMP_TEST_LOCK
       IMPLICIT NONE
 !$     INTEGER(KIND=OMP_LOCK_KIND) :: LOCK_FOR_L0OMP
-      INTEGER, PARAMETER :: FILENAMELENGTH=1300
       INTEGER NOT_IN_MEM,BEING_READ,NOT_USED,PERMUTED,USED,
      &     USED_NOT_PERMUTED,ALREADY_USED
       PARAMETER (NOT_IN_MEM=0,BEING_READ=-1,NOT_USED=-2,
@@ -110,26 +109,45 @@ C
       INTEGER(8) :: LA
       FACT_AREA_SIZE=LA
       END SUBROUTINE SMUMPS_INIT_FACT_AREA_SIZE_S
-      SUBROUTINE SMUMPS_OOC_INIT_FACTO(id, MAXS)
+      SUBROUTINE SMUMPS_OOC_INIT_FACTO(idICNTL1, idICNTL4,
+     &           idN, idNSLAVES,
+     &           idMYID, MAXS, idOOC_NB_FILE_TYPE,
+     &           idKEEP, idKEEP8, idSTEP, idPROCNODE_STEPS,
+     &           idOOC_SIZE_OF_BLOCK,
+     &           idOOC_VADDR, idINFO, idOOC_TMPDIR, idOOC_PREFIX,
+     &           idOOC_NB_FILES, idOOC_INODE_SEQUENCE)
+     &
       USE SMUMPS_STRUC_DEF
       USE SMUMPS_OOC_BUFFER
       IMPLICIT NONE
+      INTEGER :: idICNTL1, idICNTL4, idN, idNSLAVES, idMYID
+      INTEGER :: idOOC_NB_FILE_TYPE
+      INTEGER, TARGET :: idKEEP(500)
+      INTEGER :: idINFO(2)
+      INTEGER(8), TARGET :: idKEEP8(150)
+      INTEGER, POINTER, DIMENSION(:) :: idSTEP, idPROCNODE_STEPS
+      INTEGER(8),DIMENSION(:,:), POINTER :: idOOC_SIZE_OF_BLOCK
+        INTEGER(8), DIMENSION(:,:),   POINTER :: idOOC_VADDR
+      INTEGER(8), INTENT(IN) :: MAXS  
       INTEGER OOC_TMPDIR_MAX_LENGTH, OOC_PREFIX_MAX_LENGTH
       PARAMETER (OOC_TMPDIR_MAX_LENGTH=1023, OOC_PREFIX_MAX_LENGTH=255)
-      INTEGER(8), intent(in) :: MAXS  
-      TYPE(SMUMPS_STRUC), TARGET :: id
+      CHARACTER(LEN=OOC_TMPDIR_MAX_LENGTH) :: idOOC_TMPDIR
+      CHARACTER(LEN=OOC_PREFIX_MAX_LENGTH) :: idOOC_PREFIX
+      INTEGER, DIMENSION(:), POINTER :: idOOC_NB_FILES
+      INTEGER, DIMENSION(:,:),   POINTER :: idOOC_INODE_SEQUENCE
       INTEGER IERR
       INTEGER allocok
       INTEGER DIM_TMPDIR,DIM_PREFIX
       INTEGER, DIMENSION(:), ALLOCATABLE :: FILE_FLAG_TAB
       INTEGER TMP
       INTEGER KEEP211_LOC
-      ICNTL1=id%ICNTL(1)
+      ICNTL1 = idICNTL1
+      IF (idICNTL4 .LT. 1) idICNTL1=0
       MAX_SIZE_FACTOR_OOC=0_8
-      N_OOC=id%N
+      N_OOC=idN
       SOLVE=.FALSE.
       IERR=0
-      IF (id%KEEP(400).GT.0) THEN
+      IF (idKEEP(400).GT.0) THEN
 !$      CALL OMP_INIT_LOCK( LOCK_FOR_L0OMP )
       ENDIF
       IF(allocated(IO_REQ))THEN
@@ -159,110 +177,110 @@ C
       IF(allocated(I_CUR_HBUF_NEXTPOS))THEN
          DEALLOCATE(I_CUR_HBUF_NEXTPOS)
       ENDIF
-      OOC_NB_FILE_TYPE=id%OOC_NB_FILE_TYPE
+      OOC_NB_FILE_TYPE=idOOC_NB_FILE_TYPE
       IF(IERR.LT.0)THEN
          IF (ICNTL1 > 0)
      &   WRITE(ICNTL1,*)MYID_OOC,': ',ERR_STR_OOC(1:DIM_ERR_STR_OOC)
-         id%INFO(1) = IERR
-         id%INFO(2) = 0
+         idINFO(1) = IERR
+         idINFO(2) = 0
          RETURN
       ENDIF
       CALL MUMPS_OOC_INIT_FILETYPE(TYPEF_L, TYPEF_U, TYPEF_CB,
-     &     id%KEEP(201), id%KEEP(251), id%KEEP(50), TYPEF_INVALID )
-      IF (id%KEEP(201).EQ.2) THEN
+     &     idKEEP(201), idKEEP(251), idKEEP(50), TYPEF_INVALID )
+      IF (idKEEP(201).EQ.2) THEN
         OOC_FCT_TYPE=1
       ENDIF
-      STEP_OOC=>id%STEP
-      PROCNODE_OOC=>id%PROCNODE_STEPS
-      MYID_OOC=id%MYID
-      SLAVEF_OOC=id%NSLAVES
-      KEEP_OOC => id%KEEP
-      SIZE_OF_BLOCK=>id%OOC_SIZE_OF_BLOCK
-      OOC_VADDR=>id%OOC_VADDR
-      IF(id%KEEP(107).GT.0)THEN
-         SIZE_SOLVE_EMM=max(id%KEEP8(19),int(dble(MAXS)*
+      STEP_OOC=>idSTEP
+      PROCNODE_OOC=>idPROCNODE_STEPS
+      MYID_OOC=idMYID
+      SLAVEF_OOC=idNSLAVES
+      KEEP_OOC => idKEEP
+      SIZE_OF_BLOCK=>idOOC_SIZE_OF_BLOCK
+      OOC_VADDR=>idOOC_VADDR
+      IF(idKEEP(107).GT.0)THEN
+         SIZE_SOLVE_EMM=max(idKEEP8(19),int(dble(MAXS)*
      &        0.9d0*0.2d0,8))
          SIZE_ZONE_SOLVE=max(SIZE_SOLVE_EMM,
      &        int((dble(MAXS)*0.9d0-
-     &        dble(SIZE_SOLVE_EMM))/dble(id%KEEP(107)),8))
+     &        dble(SIZE_SOLVE_EMM))/dble(idKEEP(107)),8))
          IF(SIZE_ZONE_SOLVE.EQ.SIZE_SOLVE_EMM)THEN
-            SIZE_SOLVE_EMM=id%KEEP8(19)
+            SIZE_SOLVE_EMM=idKEEP8(19)
             SIZE_ZONE_SOLVE=int((dble(MAXS)*0.9d0-
-     &           dble(SIZE_SOLVE_EMM))/dble(id%KEEP(107)),8)
+     &           dble(SIZE_SOLVE_EMM))/dble(idKEEP(107)),8)
          ENDIF
       ELSE
          SIZE_ZONE_SOLVE=int(dble(MAXS)*0.9d0,8)
          SIZE_SOLVE_EMM=SIZE_ZONE_SOLVE
       ENDIF
-      SMUMPS_ELEMENTARY_DATA_SIZE = id%KEEP(35)
+      SMUMPS_ELEMENTARY_DATA_SIZE = idKEEP(35)
       SIZE_OF_BLOCK=0_8
-      ALLOCATE(id%OOC_NB_FILES(OOC_NB_FILE_TYPE), stat=allocok)
+      ALLOCATE(idOOC_NB_FILES(OOC_NB_FILE_TYPE), stat=allocok)
       IF (allocok .GT. 0) THEN
          IF (ICNTL1.GT.0) THEN
             WRITE(ICNTL1,*) 'PB allocation in SMUMPS_INIT_OOC'
          ENDIF
-         id%INFO(1) = -13
-         id%INFO(2) = OOC_NB_FILE_TYPE
+         idINFO(1) = -13
+         idINFO(2) = OOC_NB_FILE_TYPE
          RETURN
       ENDIF
-      id%OOC_NB_FILES=0
+      idOOC_NB_FILES=0
       OOC_VADDR_PTR=0_8
-      CALL SMUMPS_SET_STRAT_IO_FLAGS( id%KEEP(99), STRAT_IO_ASYNC,
+      CALL SMUMPS_SET_STRAT_IO_FLAGS( idKEEP(99), STRAT_IO_ASYNC,
      &                                WITH_BUF, LOW_LEVEL_STRAT_IO )
       TMP_SIZE_FACT=0_8
       TMP_NB_NODES=0
       MAX_NB_NODES_FOR_ZONE=0
-      OOC_INODE_SEQUENCE=>id%OOC_INODE_SEQUENCE
+      OOC_INODE_SEQUENCE=>idOOC_INODE_SEQUENCE
       ALLOCATE(I_CUR_HBUF_NEXTPOS(OOC_NB_FILE_TYPE),
      &     stat=allocok)
       IF (allocok .GT. 0) THEN
          IF (ICNTL1.GT.0) THEN
             WRITE(ICNTL1,*) 'PB allocation in SMUMPS_INIT_OOC'
          ENDIF
-         id%INFO(1) = -13
-         id%INFO(2) = OOC_NB_FILE_TYPE
+         idINFO(1) = -13
+         idINFO(2) = OOC_NB_FILE_TYPE
          RETURN
       ENDIF
       I_CUR_HBUF_NEXTPOS = 1
       IF(WITH_BUF)THEN
-         CALL SMUMPS_INIT_OOC_BUF(id%INFO(1),id%INFO(2),IERR)
+         CALL SMUMPS_INIT_OOC_BUF(idINFO(1),idINFO(2),IERR)
          IF(IERR.LT.0)THEN
             RETURN
          ENDIF
       ENDIF
       DIM_ERR_STR_OOC = ERR_STR_OOC_MAX_LEN
       CALL MUMPS_LOW_LEVEL_INIT_ERR_STR(DIM_ERR_STR_OOC,ERR_STR_OOC)
-      DIM_TMPDIR=len(trim(id%OOC_TMPDIR))
-      DIM_PREFIX=len(trim(id%OOC_PREFIX))
-      CALL MUMPS_LOW_LEVEL_INIT_PREFIX(DIM_PREFIX, id%OOC_PREFIX)
-      CALL MUMPS_LOW_LEVEL_INIT_TMPDIR(DIM_TMPDIR, id%OOC_TMPDIR)
+      DIM_TMPDIR=len(trim(idOOC_TMPDIR))
+      DIM_PREFIX=len(trim(idOOC_PREFIX))
+      CALL MUMPS_LOW_LEVEL_INIT_PREFIX(DIM_PREFIX, idOOC_PREFIX)
+      CALL MUMPS_LOW_LEVEL_INIT_TMPDIR(DIM_TMPDIR, idOOC_TMPDIR)
       ALLOCATE(FILE_FLAG_TAB(OOC_NB_FILE_TYPE),
      &     stat=allocok)
       IF (allocok .GT. 0) THEN
          IF (ICNTL1 .GT. 0) THEN
             WRITE(ICNTL1,*) 'PB allocation in SMUMPS_INIT_OOC'
          ENDIF
-         id%INFO(1) = -13
-         id%INFO(2) = OOC_NB_FILE_TYPE
+         idINFO(1) = -13
+         idINFO(2) = OOC_NB_FILE_TYPE
          RETURN
       ENDIF
       FILE_FLAG_TAB(1:OOC_NB_FILE_TYPE)=0
       IERR=0
-      TMP=int(id%KEEP8(11)/1000000_8)+1
-      IF((id%KEEP(201).EQ.1).AND.(id%KEEP(50).EQ.0)
+      TMP=int(idKEEP8(11)/1000000_8)+1
+      IF((idKEEP(201).EQ.1).AND.(idKEEP(50).EQ.0)
      &   ) THEN
          TMP=max(1,TMP/2)
       ENDIF
       CALL MUMPS_LOW_LEVEL_INIT_OOC_C(MYID_OOC,TMP,
-     &     id%KEEP(35),LOW_LEVEL_STRAT_IO,KEEP211_LOC,OOC_NB_FILE_TYPE,
-     &     FILE_FLAG_TAB,id%KEEP(255),IERR)
+     &     idKEEP(35),LOW_LEVEL_STRAT_IO,KEEP211_LOC,OOC_NB_FILE_TYPE,
+     &     FILE_FLAG_TAB,idKEEP(255),IERR)
       IF(IERR.LT.0)THEN
          IF (ICNTL1 .GT. 0 ) THEN
            WRITE(ICNTL1,*)MYID_OOC,': PB in MUMPS_LOW_LEVEL_INIT_OOC_C'
            WRITE(ICNTL1,*)MYID_OOC,': ',ERR_STR_OOC(1:DIM_ERR_STR_OOC)
          ENDIF
-         id%INFO(1) = IERR
-         id%INFO(2) = 0
+         idINFO(1) = IERR
+         idINFO(2) = 0
          RETURN
       ENDIF
       DEALLOCATE(FILE_FLAG_TAB)
@@ -428,15 +446,26 @@ C
       END IF
       RETURN
       END SUBROUTINE SMUMPS_OOC_CLEAN_PENDING
-      SUBROUTINE SMUMPS_OOC_END_FACTO(id,IERR)
+      SUBROUTINE SMUMPS_OOC_END_FACTO(idKEEP,idKEEP8,
+     &           idOOC_MAX_NB_NODES_FOR_ZONE,
+     &           idOOC_TOTAL_NB_NODES,
+     &           idOOC_FILE_NAMES,idINFO,
+     &           idOOC_FILE_NAME_LENGTH,
+     &           idOOC_NB_FILES,
+     &           IERR)
       USE SMUMPS_OOC_BUFFER
-      USE SMUMPS_STRUC_DEF
       IMPLICIT NONE
-      TYPE(SMUMPS_STRUC), TARGET :: id
+      INTEGER :: idKEEP(500), idINFO(2)
+      INTEGER(8) :: idKEEP8(150)
+      INTEGER ::  idOOC_MAX_NB_NODES_FOR_ZONE
+      INTEGER,DIMENSION(:), POINTER :: idOOC_TOTAL_NB_NODES
+      CHARACTER,DIMENSION(:,:), POINTER :: idOOC_FILE_NAMES  
+      INTEGER,DIMENSION(:), POINTER :: idOOC_FILE_NAME_LENGTH
+      INTEGER,DIMENSION(:), POINTER :: idOOC_NB_FILES
       INTEGER, intent(out) :: IERR
       INTEGER I,SOLVE_OR_FACTO
       IERR=0
-      IF (id%KEEP(400).GT.0) THEN
+      IF (idKEEP(400).GT.0) THEN
 !$      CALL OMP_DESTROY_LOCK( LOCK_FOR_L0OMP )
       ENDIF
       IF(WITH_BUF)THEN
@@ -469,16 +498,18 @@ C
      &   WRITE(ICNTL1,*)MYID_OOC,': ',ERR_STR_OOC(1:DIM_ERR_STR_OOC)
          GOTO 500
       ENDIF
-      id%OOC_MAX_NB_NODES_FOR_ZONE=max(MAX_NB_NODES_FOR_ZONE,
+      idOOC_MAX_NB_NODES_FOR_ZONE=max(MAX_NB_NODES_FOR_ZONE,
      &     TMP_NB_NODES)
       IF(allocated(I_CUR_HBUF_NEXTPOS))THEN
          DO I=1,OOC_NB_FILE_TYPE
-            id%OOC_TOTAL_NB_NODES(I)=I_CUR_HBUF_NEXTPOS(I)-1
+            idOOC_TOTAL_NB_NODES(I)=I_CUR_HBUF_NEXTPOS(I)-1
          ENDDO
          DEALLOCATE(I_CUR_HBUF_NEXTPOS)
       ENDIF
-      id%KEEP8(20)=MAX_SIZE_FACTOR_OOC
-      CALL SMUMPS_STRUC_STORE_FILE_NAME(id,IERR)
+      idKEEP8(20)=MAX_SIZE_FACTOR_OOC
+      CALL SMUMPS_STRUC_STORE_FILE_NAME( idOOC_NB_FILES,
+     &     idOOC_FILE_NAMES, idOOC_FILE_NAME_LENGTH,
+     &     idINFO, IERR)
       IF(IERR.LT.0)THEN
          GOTO 500
       ENDIF
@@ -492,81 +523,31 @@ C
       ENDIF
       RETURN
       END SUBROUTINE SMUMPS_OOC_END_FACTO
-      SUBROUTINE SMUMPS_OOC_CLEAN_FILES(id,IERR)
-      USE SMUMPS_STRUC_DEF
+      SUBROUTINE SMUMPS_OOC_INIT_SOLVE(idICNTL1, idICNTL4, idN,
+     & idNSLAVES, idMYID, idOOC_NB_FILE_TYPE, idKEEP, idKEEP8,
+     & idINFO, idSTEP, idPROCNODE_STEPS, idOOC_SIZE_OF_BLOCK,
+     & idOOC_INODE_SEQUENCE,
+     & idOOC_VADDR, idOOC_MAX_NB_NODES_FOR_ZONE, idOOC_TOTAL_NB_NODES,
+     & idOOC_NB_FILES, idOOC_FILE_NAME_LENGTH, idOOC_FILE_NAMES,
+     & idCOMM_NODES, idrootyes)
       IMPLICIT NONE
-      EXTERNAL MUMPS_OOC_REMOVE_FILE_C
-      TYPE(SMUMPS_STRUC), TARGET :: id
-      INTEGER IERR
-      INTEGER I,J,I1,K
-      CHARACTER(len=1):: TMP_NAME(FILENAMELENGTH)
-      IERR=0
-      K=1
-      IF(.NOT. id%ASSOCIATED_OOC_FILES) THEN
-        IF(associated(id%OOC_FILE_NAMES).AND.
-     &       associated(id%OOC_FILE_NAME_LENGTH))THEN
-           DO I1=1,id%OOC_NB_FILE_TYPE
-              DO I=1,id%OOC_NB_FILES(I1)
-                 DO J=1,id%OOC_FILE_NAME_LENGTH(K)
-                    TMP_NAME(J)=id%OOC_FILE_NAMES(K,J)
-                 ENDDO
-                 CALL MUMPS_OOC_REMOVE_FILE_C(IERR, TMP_NAME(1))
-                 IF(IERR.LT.0)THEN
-                    IF (ICNTL1.GT.0)THEN
-                       WRITE(ICNTL1,*)MYID_OOC,': ',
-     &                      ERR_STR_OOC(1:DIM_ERR_STR_OOC)
-                       RETURN
-                    ENDIF
-                 ENDIF
-                 K=K+1
-              ENDDO
-           ENDDO
-        ENDIF
-      ENDIF
-      IF(associated(id%OOC_FILE_NAMES))THEN
-         DEALLOCATE(id%OOC_FILE_NAMES)
-         NULLIFY(id%OOC_FILE_NAMES)
-      ENDIF
-      IF(associated(id%OOC_FILE_NAME_LENGTH))THEN
-         DEALLOCATE(id%OOC_FILE_NAME_LENGTH)
-         NULLIFY(id%OOC_FILE_NAME_LENGTH)
-      ENDIF      
-      IF(associated(id%OOC_NB_FILES))THEN
-         DEALLOCATE(id%OOC_NB_FILES)
-         NULLIFY(id%OOC_NB_FILES)
-      ENDIF
-      RETURN
-      END SUBROUTINE SMUMPS_OOC_CLEAN_FILES
-      SUBROUTINE SMUMPS_CLEAN_OOC_DATA(id,IERR)
-      USE SMUMPS_STRUC_DEF
-      IMPLICIT NONE
-      TYPE(SMUMPS_STRUC), TARGET :: id
-      INTEGER IERR
-      IERR=0
-      CALL SMUMPS_OOC_CLEAN_FILES(id,IERR)
-      IF(associated(id%OOC_TOTAL_NB_NODES))THEN
-         DEALLOCATE(id%OOC_TOTAL_NB_NODES)
-         NULLIFY(id%OOC_TOTAL_NB_NODES)
-      ENDIF
-      IF(associated(id%OOC_INODE_SEQUENCE))THEN
-         DEALLOCATE(id%OOC_INODE_SEQUENCE)
-         NULLIFY(id%OOC_INODE_SEQUENCE)
-      ENDIF
-      IF(associated(id%OOC_SIZE_OF_BLOCK))THEN
-         DEALLOCATE(id%OOC_SIZE_OF_BLOCK)
-         NULLIFY(id%OOC_SIZE_OF_BLOCK)
-      ENDIF
-      IF(associated(id%OOC_VADDR))THEN
-         DEALLOCATE(id%OOC_VADDR)
-         NULLIFY(id%OOC_VADDR)
-      ENDIF
-      RETURN
-      END SUBROUTINE SMUMPS_CLEAN_OOC_DATA
-      SUBROUTINE SMUMPS_OOC_INIT_SOLVE(id)
-      USE SMUMPS_STRUC_DEF
-      IMPLICIT NONE
+      INTEGER    :: idICNTL1, idICNTL4, idN, idNSLAVES, idMYID
+      INTEGER    :: idOOC_NB_FILE_TYPE
+      INTEGER, TARGET :: idKEEP(500)
+      INTEGER(8) :: idKEEP8(150)
+      INTEGER    :: idINFO(2)
+      INTEGER,POINTER,DIMENSION(:) :: idSTEP, idPROCNODE_STEPS
+      INTEGER(8),DIMENSION(:,:), POINTER :: idOOC_SIZE_OF_BLOCK
+      INTEGER, DIMENSION(:,:),   POINTER :: idOOC_INODE_SEQUENCE
+      INTEGER(8), DIMENSION(:,:),POINTER :: idOOC_VADDR
+      INTEGER :: idOOC_MAX_NB_NODES_FOR_ZONE
+      INTEGER, DIMENSION(:), POINTER :: idOOC_TOTAL_NB_NODES
+      INTEGER :: idCOMM_NODES
+      LOGICAL :: idrootyes
+      INTEGER,DIMENSION(:), POINTER :: idOOC_NB_FILES
+      INTEGER,DIMENSION(:), POINTER :: idOOC_FILE_NAME_LENGTH
+      CHARACTER,DIMENSION(:,:), POINTER :: idOOC_FILE_NAMES  
       INCLUDE 'mpif.h'
-      TYPE(SMUMPS_STRUC), TARGET :: id
       INTEGER TMP,I,J
       INTEGER(8) :: TMP_SIZE8
       INTEGER allocok,IERR
@@ -574,9 +555,10 @@ C
       INTEGER MUMPS_PROCNODE
       INTEGER MASTER_ROOT
       IERR=0
-      ICNTL1=id%ICNTL(1)
+      ICNTL1=idICNTL1
+      IF (idICNTL4 > 1) ICNTL1 = 0
       SOLVE=.TRUE.
-      N_OOC=id%N
+      N_OOC=idN
       IF(allocated(LRLUS_SOLVE))THEN
          DEALLOCATE(LRLUS_SOLVE)
       ENDIF
@@ -658,65 +640,66 @@ C
       IF(associated(OOC_INODE_SEQUENCE))THEN
          NULLIFY(OOC_INODE_SEQUENCE)
       ENDIF
-      OOC_NB_FILE_TYPE=id%OOC_NB_FILE_TYPE
+      OOC_NB_FILE_TYPE=idOOC_NB_FILE_TYPE
       CALL MUMPS_OOC_INIT_FILETYPE(TYPEF_L, TYPEF_U, TYPEF_CB,
-     &     id%KEEP(201), id%KEEP(251), id%KEEP(50), TYPEF_INVALID )
+     &     idKEEP(201), idKEEP(251), idKEEP(50), TYPEF_INVALID )
       DIM_ERR_STR_OOC = ERR_STR_OOC_MAX_LEN
       CALL MUMPS_LOW_LEVEL_INIT_ERR_STR(DIM_ERR_STR_OOC,ERR_STR_OOC)
-      CALL SMUMPS_OOC_OPEN_FILES_FOR_SOLVE(id)
-      IF(id%INFO(1).LT.0)THEN
+      CALL SMUMPS_OOC_OPEN_FILES_FOR_SOLVE(idINFO, idOOC_NB_FILES,
+     &     idMYID, idKEEP, idOOC_FILE_NAME_LENGTH, idOOC_FILE_NAMES )
+      IF(idINFO(1).LT.0)THEN
          RETURN
       ENDIF
-      STEP_OOC=>id%STEP
-      PROCNODE_OOC=>id%PROCNODE_STEPS
-      SLAVEF_OOC=id%NSLAVES
-      MYID_OOC=id%MYID
-      KEEP_OOC => id%KEEP
-      SIZE_OF_BLOCK=>id%OOC_SIZE_OF_BLOCK
-      OOC_INODE_SEQUENCE=>id%OOC_INODE_SEQUENCE
-      OOC_VADDR=>id%OOC_VADDR
-      ALLOCATE(IO_REQ(id%KEEP(28)),
+      STEP_OOC=>idSTEP
+      PROCNODE_OOC=>idPROCNODE_STEPS
+      SLAVEF_OOC=idNSLAVES
+      MYID_OOC=idMYID
+      KEEP_OOC => idKEEP
+      SIZE_OF_BLOCK=>idOOC_SIZE_OF_BLOCK
+      OOC_INODE_SEQUENCE=>idOOC_INODE_SEQUENCE
+      OOC_VADDR=>idOOC_VADDR
+      ALLOCATE(IO_REQ(idKEEP(28)),
      &     stat=allocok)
       IF (allocok .GT. 0) THEN
          IF (ICNTL1.GT.0) THEN
             WRITE(ICNTL1,*) 'PB allocation in SMUMPS_OOC_INIT_SOLVE'
          ENDIF
-         id%INFO(1) = -13
-         id%INFO(2) = id%KEEP(28)
+         idINFO(1) = -13
+         idINFO(2) = idKEEP(28)
          RETURN
       ENDIF
-      SMUMPS_ELEMENTARY_DATA_SIZE = id%KEEP(35)
-      MAX_NB_NODES_FOR_ZONE=id%OOC_MAX_NB_NODES_FOR_ZONE
-      TOTAL_NB_OOC_NODES=>id%OOC_TOTAL_NB_NODES
-      CALL SMUMPS_SET_STRAT_IO_FLAGS( id%KEEP(204), STRAT_IO_ASYNC,
+      SMUMPS_ELEMENTARY_DATA_SIZE = idKEEP(35)
+      MAX_NB_NODES_FOR_ZONE=idOOC_MAX_NB_NODES_FOR_ZONE
+      TOTAL_NB_OOC_NODES=>idOOC_TOTAL_NB_NODES
+      CALL SMUMPS_SET_STRAT_IO_FLAGS( idKEEP(204), STRAT_IO_ASYNC,
      & WITH_BUF, LOW_LEVEL_STRAT_IO)
-      IF(id%KEEP(107).GT.0)THEN
-         SIZE_SOLVE_EMM=max(id%KEEP8(20),
+      IF(idKEEP(107).GT.0)THEN
+         SIZE_SOLVE_EMM=max(idKEEP8(20),
      &        FACT_AREA_SIZE / 5_8)
          SIZE_ZONE_SOLVE=max(SIZE_SOLVE_EMM,
      &        int((dble(FACT_AREA_SIZE)-
-     &        dble(SIZE_SOLVE_EMM))/dble(id%KEEP(107)),8))
+     &        dble(SIZE_SOLVE_EMM))/dble(idKEEP(107)),8))
          SIZE_ZONE_SOLVE=max(SIZE_ZONE_SOLVE,0_8)
          IF(SIZE_ZONE_SOLVE.EQ.SIZE_SOLVE_EMM)THEN
-            SIZE_SOLVE_EMM=id%KEEP8(20)
+            SIZE_SOLVE_EMM=idKEEP8(20)
             SIZE_ZONE_SOLVE=int((real(FACT_AREA_SIZE)-
-     &           real(SIZE_SOLVE_EMM))/real(id%KEEP(107)),8)
+     &           real(SIZE_SOLVE_EMM))/real(idKEEP(107)),8)
             SIZE_ZONE_SOLVE=max(SIZE_ZONE_SOLVE,0_8)
          ENDIF
       ELSE
          SIZE_ZONE_SOLVE=FACT_AREA_SIZE
          SIZE_SOLVE_EMM=SIZE_ZONE_SOLVE
       ENDIF
-      IF(SIZE_SOLVE_EMM.LT.id%KEEP8(20))THEN
+      IF(SIZE_SOLVE_EMM.LT.idKEEP8(20))THEN
          IF (ICNTL1.GT.0)
      &   WRITE(ICNTL1,*)MYID_OOC,': More space needed for
      & solution step in SMUMPS_OOC_INIT_SOLVE'
-         id%INFO(1) = -11
-         CALL MUMPS_SET_IERROR(id%KEEP8(20), id%INFO(2))
+         idINFO(1) = -11
+         CALL MUMPS_SET_IERROR(idKEEP8(20), idINFO(2))
       ENDIF
       TMP=MAX_NB_NODES_FOR_ZONE
       CALL MPI_ALLREDUCE(TMP,MAX_NB_NODES_FOR_ZONE,1,
-     &     MPI_INTEGER,MPI_MAX,id%COMM_NODES, IERR)
+     &     MPI_INTEGER,MPI_MAX,idCOMM_NODES, IERR)
       NB_Z=KEEP_OOC(107)+1
       ALLOCATE(POS_IN_MEM(MAX_NB_NODES_FOR_ZONE*NB_Z),
      &     INODE_TO_POS(KEEP_OOC(28)),
@@ -725,8 +708,8 @@ C
          IF (ICNTL1.GT.0) THEN
             WRITE(ICNTL1,*) 'PB allocation in SMUMPS_OOC_INIT_SOLVE'
          ENDIF
-         id%INFO(1) = -13
-         id%INFO(2) = id%KEEP(28)+(MAX_NB_NODES_FOR_ZONE*NB_Z)
+         idINFO(1) = -13
+         idINFO(2) = idKEEP(28)+(MAX_NB_NODES_FOR_ZONE*NB_Z)
          RETURN
       ENDIF
       ALLOCATE(OOC_STATE_NODE(KEEP_OOC(28)),stat=allocok)
@@ -734,8 +717,8 @@ C
          IF (ICNTL1.GT.0) THEN
             WRITE(ICNTL1,*) 'PB allocation in SMUMPS_OOC_INIT_SOLVE'
          ENDIF
-         id%INFO(1) = -13
-         id%INFO(2) = id%KEEP(28)
+         idINFO(1) = -13
+         idINFO(2) = idKEEP(28)
          RETURN
       ENDIF
       OOC_STATE_NODE(1:KEEP_OOC(28))=0
@@ -751,8 +734,8 @@ C
          IF (ICNTL1.GT.0) THEN
             WRITE(ICNTL1,*) 'PB allocation in SMUMPS_OOC_INIT_SOLVE'
          ENDIF
-         id%INFO(1) = -13
-         id%INFO(2) = 9*(NB_Z+1)
+         idINFO(1) = -13
+         idINFO(2) = 9*(NB_Z+1)
          RETURN
       ENDIF
       IERR=0
@@ -770,11 +753,11 @@ C
          IF (ICNTL1.GT.0) THEN
             WRITE(ICNTL1,*) 'PB allocation in SMUMPS_OOC_INIT_SOLVE'
          ENDIF
-         id%INFO(1) = -13
-         id%INFO(2) = 6*(NB_Z+1)
+         idINFO(1) = -13
+         idINFO(2) = 6*(NB_Z+1)
          RETURN
       ENDIF
-      MIN_SIZE_READ=min(max((1024_8*1024_8)/int(id%KEEP(35),8),
+      MIN_SIZE_READ=min(max((1024_8*1024_8)/int(idKEEP(35),8),
      &                       SIZE_ZONE_SOLVE/3_8),
      &                  SIZE_ZONE_SOLVE)
       TMP_SIZE8=1_8
@@ -824,7 +807,7 @@ C
       ENDIF
       IF ( KEEP_OOC(60).EQ.0 .AND.
      &     ( 
-     &     (KEEP_OOC(38).NE.0 .AND.  id%root%yes) 
+     &     (KEEP_OOC(38).NE.0 .AND.  idrootyes) 
      &     .OR.
      &     (KEEP_OOC(20).NE.0 .AND. MYID_OOC.EQ.MASTER_ROOT)) 
      &     ) 
@@ -2782,10 +2765,13 @@ C
       ENDIF
       RETURN
       END SUBROUTINE SMUMPS_SOLVE_INIT_OOC_BWD
-      SUBROUTINE SMUMPS_STRUC_STORE_FILE_NAME(id,IERR)
-      USE SMUMPS_STRUC_DEF
+      SUBROUTINE SMUMPS_STRUC_STORE_FILE_NAME(idOOC_NB_FILES,
+     & idOOC_FILE_NAMES, idOOC_FILE_NAME_LENGTH, idINFO, IERR)
       IMPLICIT NONE
-      TYPE(SMUMPS_STRUC), TARGET :: id
+      INTEGER,DIMENSION(:), POINTER :: idOOC_NB_FILES
+      CHARACTER,DIMENSION(:,:), POINTER :: idOOC_FILE_NAMES  
+      INTEGER,DIMENSION(:), POINTER :: idOOC_FILE_NAME_LENGTH
+      INTEGER :: idINFO(2)
       INTEGER, intent(out) :: IERR
       INTEGER I,DIM,J,TMP,SIZE,K,I1
       CHARACTER(len=1):: TMP_NAME(FILENAMELENGTH)
@@ -2795,101 +2781,107 @@ C
       DO J=1,OOC_NB_FILE_TYPE
          TMP=J-1
          CALL MUMPS_OOC_GET_NB_FILES_C(TMP,I)
-         id%OOC_NB_FILES(J)=I
+         idOOC_NB_FILES(J)=I
          SIZE=SIZE+I
       ENDDO
-      IF(associated(id%OOC_FILE_NAMES))THEN
-         DEALLOCATE(id%OOC_FILE_NAMES)
-         NULLIFY(id%OOC_FILE_NAMES)
+      IF(associated(idOOC_FILE_NAMES))THEN
+         DEALLOCATE(idOOC_FILE_NAMES)
+         NULLIFY(idOOC_FILE_NAMES)
       ENDIF
-      ALLOCATE(id%OOC_FILE_NAMES(SIZE,FILENAMELENGTH),stat=IERR)
+      ALLOCATE(idOOC_FILE_NAMES(SIZE,FILENAMELENGTH),stat=IERR)
       IF (IERR .GT. 0) THEN
          IF (ICNTL1.GT.0) THEN
             WRITE(ICNTL1,*) 'PB allocation in ',
      &           'SMUMPS_STRUC_STORE_FILE_NAME'
          ENDIF
          IERR=-1
-         IF(id%INFO(1).GE.0)THEN
-            id%INFO(1) = -13
-            id%INFO(2) = SIZE*FILENAMELENGTH
+         IF(idINFO(1).GE.0)THEN
+            idINFO(1) = -13
+            idINFO(2) = SIZE*FILENAMELENGTH
             RETURN
          ENDIF
       ENDIF
-      IF(associated(id%OOC_FILE_NAME_LENGTH))THEN
-         DEALLOCATE(id%OOC_FILE_NAME_LENGTH)
-         NULLIFY(id%OOC_FILE_NAME_LENGTH)
+      IF(associated(idOOC_FILE_NAME_LENGTH))THEN
+         DEALLOCATE(idOOC_FILE_NAME_LENGTH)
+         NULLIFY(idOOC_FILE_NAME_LENGTH)
       ENDIF
-      ALLOCATE(id%OOC_FILE_NAME_LENGTH(SIZE),stat=IERR)
+      ALLOCATE(idOOC_FILE_NAME_LENGTH(SIZE),stat=IERR)
       IF (IERR .GT. 0) THEN
          IERR=-1
-         IF(id%INFO(1).GE.0) THEN
+         IF(idINFO(1).GE.0) THEN
             IF (ICNTL1.GT.0) THEN
                WRITE(ICNTL1,*)
      &              'PB allocation in SMUMPS_STRUC_STORE_FILE_NAME'
             ENDIF
-            id%INFO(1) = -13
-            id%INFO(2) = SIZE
+            idINFO(1) = -13
+            idINFO(2) = SIZE
             RETURN
          ENDIF
       ENDIF
       K=1
       DO I1=1,OOC_NB_FILE_TYPE
          TMP=I1-1
-         DO I=1,id%OOC_NB_FILES(I1)
+         DO I=1,idOOC_NB_FILES(I1)
             CALL MUMPS_OOC_GET_FILE_NAME_C(TMP,I,DIM,TMP_NAME(1))
             DO J=1,DIM+1
-               id%OOC_FILE_NAMES(K,J)=TMP_NAME(J)
+               idOOC_FILE_NAMES(K,J)=TMP_NAME(J)
             ENDDO
-            id%OOC_FILE_NAME_LENGTH(K)=DIM+1
+            idOOC_FILE_NAME_LENGTH(K)=DIM+1
             K=K+1
          ENDDO
       ENDDO
+      RETURN
       END SUBROUTINE SMUMPS_STRUC_STORE_FILE_NAME
-      SUBROUTINE SMUMPS_OOC_OPEN_FILES_FOR_SOLVE(id)
-      USE SMUMPS_STRUC_DEF
+      SUBROUTINE SMUMPS_OOC_OPEN_FILES_FOR_SOLVE(idINFO, idOOC_NB_FILES,
+     &           idMYID, idKEEP, idOOC_FILE_NAME_LENGTH,
+     &           idOOC_FILE_NAMES)
       IMPLICIT NONE
-      TYPE(SMUMPS_STRUC), TARGET :: id
+      INTEGER :: idINFO(2), idMYID
+      INTEGER, DIMENSION(:), POINTER :: idOOC_NB_FILES
+      INTEGER, DIMENSION(:), POINTER :: idOOC_FILE_NAME_LENGTH
+      CHARACTER,DIMENSION(:,:), POINTER :: idOOC_FILE_NAMES  
+      INTEGER :: idKEEP(500)
       CHARACTER(len=1):: TMP_NAME(FILENAMELENGTH)
       INTEGER I,I1,TMP,J,K,L,DIM,IERR
       INTEGER, DIMENSION(:),ALLOCATABLE :: NB_FILES
       ALLOCATE(NB_FILES(OOC_NB_FILE_TYPE),stat=IERR)
       IF (IERR .GT. 0) THEN
          IERR=-1
-         IF(id%INFO(1).GE.0)THEN
+         IF(idINFO(1).GE.0)THEN
             IF (ICNTL1.GT.0) THEN
                WRITE(ICNTL1,*)
      &              'PB allocation in SMUMPS_OOC_OPEN_FILES_FOR_SOLVE'
             ENDIF
-            id%INFO(1) = -13
-            id%INFO(2) = OOC_NB_FILE_TYPE
+            idINFO(1) = -13
+            idINFO(2) = OOC_NB_FILE_TYPE
             RETURN
          ENDIF
       ENDIF
       IERR=0
-      NB_FILES=id%OOC_NB_FILES
-      I=id%MYID
-      K=id%KEEP(35)
-      L=mod(id%KEEP(204),3)
+      NB_FILES=idOOC_NB_FILES
+      I=idMYID
+      K=idKEEP(35)
+      L=mod(idKEEP(204),3)
       CALL MUMPS_OOC_ALLOC_POINTERS_C(OOC_NB_FILE_TYPE,NB_FILES,IERR)
       IF(IERR.LT.0)THEN
          IF (ICNTL1.GT.0)
      &   WRITE(ICNTL1,*)MYID_OOC,': ',ERR_STR_OOC(1:DIM_ERR_STR_OOC)
-         id%INFO(1)=IERR
+         idINFO(1)=IERR
          RETURN
       ENDIF
-      CALL MUMPS_OOC_INIT_VARS_C(I,K,L,id%KEEP(211),id%KEEP(255),IERR)
+      CALL MUMPS_OOC_INIT_VARS_C(I,K,L,idKEEP(211),idKEEP(255),IERR)
       IF(IERR.LT.0)THEN
          IF (ICNTL1.GT.0)
      &   WRITE(ICNTL1,*)MYID_OOC,': ',ERR_STR_OOC(1:DIM_ERR_STR_OOC)
-         id%INFO(1)=IERR
+         idINFO(1)=IERR
          RETURN
       ENDIF
       K=1
       DO I1=1,OOC_NB_FILE_TYPE
          DO I=1,NB_FILES(I1)
-            DIM=id%OOC_FILE_NAME_LENGTH(K)
+            DIM=idOOC_FILE_NAME_LENGTH(K)
             DO J=1,DIM
-               TMP_NAME(J)=id%OOC_FILE_NAMES(K,J)
+               TMP_NAME(J)=idOOC_FILE_NAMES(K,J)
             ENDDO
             TMP=I1-1
             CALL MUMPS_OOC_SET_FILE_NAME_C(TMP,I,DIM,IERR,TMP_NAME(1))
@@ -2897,7 +2889,7 @@ C
                IF (ICNTL1.GT.0)
      &         WRITE(ICNTL1,*)MYID_OOC,': ',
      &         ERR_STR_OOC(1:DIM_ERR_STR_OOC)
-               id%INFO(1)=IERR
+               idINFO(1)=IERR
                RETURN
             ENDIF
             K=K+1
@@ -2907,7 +2899,7 @@ C
       IF(IERR.LT.0)THEN
          IF (ICNTL1.GT.0)
      &   WRITE(ICNTL1,*)MYID_OOC,': ',ERR_STR_OOC(1:DIM_ERR_STR_OOC)
-         id%INFO(1)=IERR
+         idINFO(1)=IERR
          RETURN
       ENDIF
       DEALLOCATE(NB_FILES)

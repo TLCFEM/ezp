@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -22,7 +22,7 @@ C
      &    IFLAG, IERROR, COMM,
      &    PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &    root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
@@ -31,11 +31,13 @@ C
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE
      &               , LRGROUPS
      &    )
-      USE SMUMPS_LOAD
-      USE SMUMPS_STRUC_DEF, ONLY : SMUMPS_ROOT_STRUC
+      USE MUMPS_LOAD
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INCLUDE 'mumps_headers.h'
-      TYPE (SMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (SMUMPS_ROOT_STRUC) :: roota
       INTEGER MSGSOU, MSGTAG, MSGLEN
       INTEGER LBUFR, LBUFR_BYTES
       INTEGER BUFR( LBUFR )
@@ -96,7 +98,7 @@ C
       INTEGER :: STATUS(MPI_STATUS_SIZE)
       LP = ICNTL(1)
       SUBNAME="??????"
-      CALL SMUMPS_LOAD_RECV_MSGS(COMM_LOAD)
+      CALL MUMPS_LOAD_RECV_MSGS(COMM_LOAD)
       IF ( MSGTAG .EQ. RACINE ) THEN
           POSITION = 0
           CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, NBRECU,
@@ -119,7 +121,7 @@ C
      &           PROCNODE_STEPS, SLAVEF, KEEP(199), KEEP(28), KEEP(76),
      &           KEEP(80), KEEP(47), STEP, FPERE )
             IF (KEEP(47) .GE. 3) THEN
-               CALL SMUMPS_LOAD_POOL_UPD_NEW_POOL(
+               CALL MUMPS_LOAD_POOL_UPD_NEW_POOL(
      &              IPOOL, LPOOL,
      &              PROCNODE_STEPS, KEEP,KEEP8, SLAVEF, COMM_LOAD,
      &              MYID, STEP, N, ND, FILS )
@@ -130,7 +132,7 @@ C
      &           KEEP(28), KEEP(50), KEEP(253), FLOP1,
      &           IW, LIW, KEEP(IXSZ) )
             IF (FPERE.NE.KEEP(20))
-     &        CALL SMUMPS_LOAD_UPDATE(1,.FALSE.,FLOP1,KEEP,KEEP8)
+     &        CALL MUMPS_LOAD_UPDATE(1,.FALSE.,FLOP1,KEEP,KEEP8)
           ENDIF
       ELSEIF ( MSGTAG .EQ. END_NIV2_LDLT ) THEN
           INODE = BUFR( 1 )
@@ -139,7 +141,7 @@ C
      &         KEEP(28), KEEP(76), KEEP(80), KEEP(47),
      &         STEP, -INODE )
           IF (KEEP(47) .GE. 3) THEN
-             CALL SMUMPS_LOAD_POOL_UPD_NEW_POOL(
+             CALL MUMPS_LOAD_POOL_UPD_NEW_POOL(
      &            IPOOL, LPOOL,
      &            PROCNODE_STEPS, KEEP,KEEP8, SLAVEF, COMM_LOAD,
      &            MYID, STEP, N, ND, FILS )
@@ -183,7 +185,7 @@ C
      &   COMP, STEP, PIMASTER, PAMASTER, POSFAC,
      &   MYID, COMM , IFLAG, IERROR, NBFIN,
      &
-     &    PTLUST, PTRFAC, root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    PTLUST, PTRFAC, root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR,
@@ -201,7 +203,8 @@ C
      &   COMP, STEP, PIMASTER, PAMASTER, POSFAC,
      &   MYID, COMM, IFLAG, IERROR, NBFIN,
      &
-     &    PTLUST, PTRFAC, root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    PTLUST, PTRFAC,
+     &    root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR,
@@ -219,7 +222,7 @@ C
      &   COMP, STEP, PIMASTER, PAMASTER, POSFAC,
      &   MYID, COMM, IFLAG, IERROR, NBFIN,
      &
-     &    PTLUST, PTRFAC, root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    PTLUST, PTRFAC, root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR,
@@ -235,7 +238,7 @@ C
      &       SLAVEF, IWPOS, IWPOSCB, IPTRLU, LRLU, LRLUS, POSFAC,
      &       N, IW, LIW, A, LA, PTRIST,
      &       PTLUST, PTRFAC, PTRAST,
-     &       STEP, PIMASTER, PAMASTER, PERM, COMP, root,
+     &       STEP, PIMASTER, PAMASTER, PERM, COMP, root, roota,
      &       OPASSW, OPELIW, ITLOC, RHS_MUMPS, NSTK_S, FILS, DAD,
      &       PTRARW, PTRAIW,
      &       PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -276,7 +279,8 @@ C
      &    PTRIST, PTLUST, PTRFAC, PTRAST, STEP, PIMASTER, PAMASTER,
      &    NSTK_S, COMP,
      &    IFLAG, IERROR, MYID, COMM, PERM,
-     &    IPOOL, LPOOL, LEAF, NBFIN, ICNTL, KEEP,KEEP8,DKEEP, root,
+     &    IPOOL, LPOOL, LEAF, NBFIN, ICNTL, KEEP,KEEP8,DKEEP,
+     &    root, roota,
      &    OPASSW, OPELIW,
      &    ITLOC, RHS_MUMPS, FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -290,7 +294,7 @@ C
       ELSE IF ( MSGTAG .EQ. ROOT_CONT_STATIC ) THEN
         CALL SMUMPS_PROCESS_CONTRIB_TYPE3(
      &        BUFR, LBUFR, LBUFR_BYTES,
-     &        root, N, IW, LIW, A, LA, 
+     &        root, roota, N, IW, LIW, A, LA, 
      &        LRLU, IPTRLU, IWPOS, IWPOSCB,
      &        PTRIST, PTLUST, PTRFAC, PTRAST,
      &        STEP, PIMASTER, PAMASTER,
@@ -315,7 +319,7 @@ C
      &                   MSGSOU, ROOT_2SLAVE,
      &                   COMM, STATUS, IERR )
           CALL SMUMPS_PROCESS_ROOT2SLAVE( TMP( 1 ), TMP( 2 ),
-     &    root,
+     &    root, roota,
      &    BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
      &    IWPOS, IWPOSCB, IPTRLU,
      &    LRLU, LRLUS, N, IW, LIW, A, LA, PTRIST,
@@ -335,7 +339,7 @@ C
         END IF
         CALL SMUMPS_PROCESS_CONTRIB_TYPE3(
      &       BUFR, LBUFR, LBUFR_BYTES,
-     &       root, N, IW, LIW, A, LA, 
+     &       root, roota, N, IW, LIW, A, LA, 
      &       LRLU, IPTRLU, IWPOS, IWPOSCB,
      &       PTRIST, PTLUST, PTRFAC, PTRAST, STEP, PIMASTER, PAMASTER,
      &       COMP, LRLUS, IPOOL, LPOOL, LEAF,
@@ -353,7 +357,7 @@ C
          ISON  = BUFR( 1 )
          NELIM = BUFR( 2 )
          CALL SMUMPS_PROCESS_ROOT2SON( COMM_LOAD, ASS_IRECV,
-     &    ISON, NELIM, root,
+     &    ISON, NELIM, root, roota,
      &    BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
      &    IWPOS, IWPOSCB, IPTRLU,
      &    LRLU, LRLUS, N, IW, LIW, A, LA, PTRIST,
@@ -394,7 +398,7 @@ C
           TOT_ROOT_SIZE    = BUFR( 1 )
           TOT_CONT_TO_RECV = BUFR( 2 )
           CALL SMUMPS_PROCESS_ROOT2SLAVE( TOT_ROOT_SIZE,
-     &    TOT_CONT_TO_RECV, root,
+     &    TOT_CONT_TO_RECV, root, roota,
      &    BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
      &    IWPOS, IWPOSCB, IPTRLU,
      &    LRLU, LRLUS, N, IW, LIW, A, LA, PTRIST,
@@ -414,7 +418,7 @@ C
          ISON         = BUFR( 1 )
          NELIM        = BUFR( 2 )
          NSLAVES_PERE = BUFR( 3 )
-         CALL SMUMPS_PROCESS_RTNELIND( root,
+         CALL SMUMPS_PROCESS_RTNELIND( root, roota,
      &    ISON, NELIM, NSLAVES_PERE, BUFR(4), BUFR(4+BUFR(2)),
      &    BUFR(4+2*BUFR(2)),
      &
@@ -471,7 +475,7 @@ C
      &    IFLAG, IERROR, COMM,
      &    PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &    root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
@@ -480,11 +484,13 @@ C
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE
      &               , LRGROUPS
      &    )
-      USE SMUMPS_STRUC_DEF, ONLY : SMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       INCLUDE 'mumps_tags.h'
-      TYPE (SMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (SMUMPS_ROOT_STRUC) :: roota
       INTEGER :: STATUS(MPI_STATUS_SIZE)
       INTEGER KEEP(500), ICNTL(60)
       INTEGER(8) KEEP8(150)
@@ -554,7 +560,7 @@ C
      &      IERROR, COMM,
      &      PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &      root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &      root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &      FILS, DAD, PTRARW, PTRAIW,
      &      PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &      INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
@@ -574,7 +580,7 @@ C
      &    IFLAG, IERROR, COMM, PERM,
      &    IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &    root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
@@ -582,12 +588,14 @@ C
      &
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE,
      &    STACK_RIGHT_AUTHORIZED, LRGROUPS )
-      USE SMUMPS_LOAD
-      USE SMUMPS_STRUC_DEF, ONLY : SMUMPS_ROOT_STRUC
+      USE MUMPS_LOAD
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       INCLUDE 'mumps_tags.h'
-      TYPE (SMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (SMUMPS_ROOT_STRUC) :: roota
       INTEGER :: STATUS(MPI_STATUS_SIZE)
       LOGICAL, INTENT (IN)  :: BLOCKING
       LOGICAL, INTENT (IN)  :: SET_IRECV
@@ -640,7 +648,7 @@ C
        INTEGER IERR
        INTEGER :: STATUS_BIS(MPI_STATUS_SIZE)
        INTEGER, SAVE :: RECURS = 0
-      CALL SMUMPS_LOAD_RECV_MSGS(COMM_LOAD)
+      CALL MUMPS_LOAD_RECV_MSGS(COMM_LOAD)
       IF ( .NOT. STACK_RIGHT_AUTHORIZED ) THEN
           RETURN
       ENDIF
@@ -653,10 +661,6 @@ C
         GOTO 250
       ENDIF
       IF ( ASS_IRECV .NE. MPI_REQUEST_NULL) THEN
-        IF (KEEP(117).NE.0) THEN
-         WRITE(*,*) "Problem of active IRECV with KEEP(117)=",KEEP(117)
-         CALL MUMPS_ABORT()
-        ENDIF
         RIGHT_MESS = .TRUE.
         IF (BLOCKING) THEN
           CALL MPI_WAIT(ASS_IRECV,
@@ -706,7 +710,7 @@ C
      &      IERROR, COMM,
      &      PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &      root, OPASSW, OPELIW, ITLOC, RHS_MUMPS, FILS, DAD,
+     &      root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS, FILS, DAD,
      &      PTRARW, PTRAIW,
      &      PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &      INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
@@ -737,7 +741,7 @@ C
      &            IERROR, COMM,
      &            PERM, IPOOL, LPOOL,LEAF,NBFIN,MYID,SLAVEF,
      &
-     &            root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &            root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &            FILS, DAD, PTRARW, PTRAIW,
      &            PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &            INTARR, DBLARR, ICNTL,
@@ -774,7 +778,7 @@ C
      &      IERROR, COMM,
      &      PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &      root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &      root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &      FILS, DAD, PTRARW, PTRAIW,
      &      PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &      INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
@@ -804,7 +808,7 @@ C
      &    BUFR, LBUFR, LBUFR_BYTES,
      &    COMM,
      &    MYID, SLAVEF)
-      USE SMUMPS_BUF
+      USE MUMPS_BUF_COMMON, ONLY : MUMPS_BUF_SEND_1INT
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       INCLUDE 'mumps_tags.h'
@@ -831,7 +835,7 @@ C
       CALL MPI_BARRIER(COMM,IERR)
       DUMMY = 1
       DEST = mod(MYID+1, SLAVEF)
-      CALL SMUMPS_BUF_SEND_1INT
+      CALL MUMPS_BUF_SEND_1INT
      &    (DUMMY, DEST, TAG_DUMMY, COMM, KEEP, IERR)
       IF (NO_ACTIVE_IRECV) THEN
         CALL MPI_RECV( BUFR, LBUFR,
@@ -844,109 +848,3 @@ C
       KEEP(266)=KEEP(266)-1
       RETURN
       END SUBROUTINE SMUMPS_CANCEL_IRECV
-      SUBROUTINE SMUMPS_CLEAN_PENDING(
-     &    INFO1, KEEP, BUFR, LBUFR, LBUFR_BYTES,
-     &    COMM_NODES, COMM_LOAD, SLAVEF,
-     &    CLEAN_COMM_NODES, CLEAN_COMM_LOAD )
-      USE SMUMPS_BUF
-      IMPLICIT NONE
-      INTEGER, INTENT(IN)    :: LBUFR, LBUFR_BYTES
-      INTEGER, INTENT(OUT)   :: BUFR( LBUFR )
-      INTEGER, INTENT(IN)    :: COMM_NODES, COMM_LOAD, SLAVEF, INFO1
-      INTEGER, INTENT(INOUT) :: KEEP(500)
-      LOGICAL, INTENT(IN)    :: CLEAN_COMM_LOAD, CLEAN_COMM_NODES
-      INCLUDE 'mpif.h'
-      INCLUDE 'mumps_tags.h'
-      INTEGER :: STATUS(MPI_STATUS_SIZE)
-      LOGICAL :: FLAG, BUFFERS_EMPTY, BUFFERS_EMPTY_ON_ALL_PROCS
-      INTEGER :: MSGSOU_LOC, MSGTAG_LOC, MSGLEN_LOC
-      INTEGER ::  COMM_EFF
-      INTEGER :: IERR
-      INTEGER :: IBUF_EMPTY, IBUF_EMPTY_ON_ALL_PROCS
-      INTEGER :: TOTAL_SEND_MINUS_RECV266
-      INTEGER :: TOTAL_SEND_MINUS_RECV267
-      IF (SLAVEF.EQ.1) RETURN
-      IF (.NOT. CLEAN_COMM_NODES .AND. .NOT. CLEAN_COMM_LOAD) THEN
-        RETURN
-      ENDIF
-      DO WHILE (.TRUE.) 
-        FLAG = .TRUE.
-        DO WHILE ( FLAG )
-          FLAG = .FALSE.
-          IF (CLEAN_COMM_NODES) THEN
-            IF ( .NOT. FLAG ) THEN
-              COMM_EFF = COMM_NODES
-              CALL MPI_IPROBE(MPI_ANY_SOURCE,MPI_ANY_TAG,
-     &             COMM_NODES, FLAG, STATUS, IERR)
-            END IF
-          END IF
-          IF (CLEAN_COMM_LOAD) THEN
-            IF ( .NOT. FLAG ) THEN
-              COMM_EFF = COMM_LOAD
-              CALL MPI_IPROBE( MPI_ANY_SOURCE, MPI_ANY_TAG,
-     &             COMM_LOAD, FLAG, STATUS, IERR)
-            END IF
-          END IF
-          IF (FLAG) THEN
-            MSGSOU_LOC = STATUS( MPI_SOURCE )
-            MSGTAG_LOC = STATUS( MPI_TAG )
-            IF (COMM_EFF .EQ. COMM_NODES) THEN
-              KEEP(266) = KEEP(266) - 1
-            ELSE
-              KEEP(267) = KEEP(267) - 1
-            ENDIF
-            CALL MPI_GET_COUNT( STATUS, MPI_PACKED, MSGLEN_LOC, IERR )
-            IF (MSGLEN_LOC .LE. LBUFR_BYTES) THEN
-              CALL MPI_RECV( BUFR, LBUFR_BYTES,
-     &             MPI_PACKED, MSGSOU_LOC,
-     &             MSGTAG_LOC, COMM_EFF, STATUS, IERR )
-            ENDIF
-          ENDIF
-        END DO
-        CALL SMUMPS_BUF_ALL_EMPTY( CLEAN_COMM_NODES,
-     &                             CLEAN_COMM_LOAD,
-     &                             BUFFERS_EMPTY )
-        IF ( BUFFERS_EMPTY ) THEN
-          IBUF_EMPTY = 0
-        ELSE
-          IBUF_EMPTY = 1
-        ENDIF
-        IF (CLEAN_COMM_NODES) THEN
-          COMM_EFF = COMM_NODES
-        ELSE
-          COMM_EFF = COMM_LOAD
-        ENDIF
-        CALL MPI_ALLREDUCE(IBUF_EMPTY,
-     &                     IBUF_EMPTY_ON_ALL_PROCS,
-     &                     1, MPI_INTEGER, MPI_MAX,
-     &                     COMM_EFF, IERR)
-        IF ( IBUF_EMPTY_ON_ALL_PROCS == 0) THEN
-          BUFFERS_EMPTY_ON_ALL_PROCS = .TRUE.
-        ELSE
-          BUFFERS_EMPTY_ON_ALL_PROCS = .FALSE.
-        ENDIF
-        IF (BUFFERS_EMPTY_ON_ALL_PROCS) THEN
-          IF (CLEAN_COMM_NODES) THEN
-            CALL MPI_ALLREDUCE(KEEP(266),
-     &                     TOTAL_SEND_MINUS_RECV266,
-     &                     1, MPI_INTEGER, MPI_SUM,
-     &                     COMM_EFF, IERR)
-          ELSE
-            TOTAL_SEND_MINUS_RECV266 = 0
-          ENDIF
-          IF (CLEAN_COMM_LOAD) THEN
-            CALL MPI_ALLREDUCE(KEEP(267), 
-     &                     TOTAL_SEND_MINUS_RECV267,
-     &                     1, MPI_INTEGER, MPI_SUM,
-     &                     COMM_EFF, IERR)
-          ELSE
-             TOTAL_SEND_MINUS_RECV267 = 0
-          ENDIF
-          IF (TOTAL_SEND_MINUS_RECV266 .EQ. 0 .AND.
-     &        TOTAL_SEND_MINUS_RECV267 .EQ. 0) THEN
-            EXIT
-          ENDIF
-        ENDIF
-      ENDDO
-      RETURN
-      END SUBROUTINE SMUMPS_CLEAN_PENDING

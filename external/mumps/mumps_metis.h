@@ -1,14 +1,14 @@
 /*
  *
- *  This file is part of MUMPS 5.7.3, released
- *  on Mon Jul 15 11:44:21 UTC 2024
+ *  This file is part of MUMPS 5.8.0, released
+ *  on Tue May  6 08:27:40 UTC 2025
  *
  *
- *  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+ *  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
  *  Mumps Technologies, University of Bordeaux.
  *
  *  This version of MUMPS is provided to you free of charge. It is
- *  released under the CeCILL-C license 
+ *  released under the CeCILL-C license
  *  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
  *  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
  *
@@ -20,35 +20,22 @@
 #if defined(parmetis) || defined(parmetis3)
 #include "mpi.h"
 #define MUMPS_PARMETIS \
-  F_SYMBOL(parmetis,PARMETIS)
+    F_SYMBOL(parmetis, PARMETIS)
 void MUMPS_CALL
-MUMPS_PARMETIS(MUMPS_INT *first,      MUMPS_INT *vertloctab,
-               MUMPS_INT *edgeloctab, MUMPS_INT *numflag,
-               MUMPS_INT *options,    MUMPS_INT *order,
-               MUMPS_INT *sizes,      MUMPS_INT *comm,
-               MUMPS_INT *ierr);
+MUMPS_PARMETIS(MUMPS_INT* first, MUMPS_INT* vertloctab, MUMPS_INT* edgeloctab, MUMPS_INT* numflag, MUMPS_INT* options, MUMPS_INT* order, MUMPS_INT* sizes, MUMPS_INT* comm, MUMPS_INT* ierr);
 #define MUMPS_PARMETIS_VWGT \
-  F_SYMBOL(parmetis_vwgt,PARMETIS_VWGT)
+    F_SYMBOL(parmetis_vwgt, PARMETIS_VWGT)
 void MUMPS_CALL
-MUMPS_PARMETIS_VWGT(MUMPS_INT *first,      MUMPS_INT *vertloctab,
-               MUMPS_INT *edgeloctab, MUMPS_INT *numflag,
-               MUMPS_INT *options,    MUMPS_INT *order,
-               MUMPS_INT *sizes,      MUMPS_INT *comm,
-               MUMPS_INT *vwgt,
-               MUMPS_INT *ierr);
+MUMPS_PARMETIS_VWGT(MUMPS_INT* first, MUMPS_INT* vertloctab, MUMPS_INT* edgeloctab, MUMPS_INT* numflag, MUMPS_INT* options, MUMPS_INT* order, MUMPS_INT* sizes, MUMPS_INT* comm, MUMPS_INT* vwgt, MUMPS_INT* ierr);
 #endif
 #if defined(parmetis) || defined(metis) || defined(parmetis3) || defined(metis4)
 #define MUMPS_METIS_KWAY \
-  F_SYMBOL(metis_kway,METIS_KWAY)
+    F_SYMBOL(metis_kway, METIS_KWAY)
 void MUMPS_CALL
-MUMPS_METIS_KWAY(MUMPS_INT *n,     MUMPS_INT *iptr,
-                 MUMPS_INT *jcn,   MUMPS_INT *k,
-                 MUMPS_INT *part);
+MUMPS_METIS_KWAY(MUMPS_INT* n, MUMPS_INT* iptr, MUMPS_INT* jcn, MUMPS_INT* k, MUMPS_INT* part);
 #define MUMPS_METIS_KWAY_AB \
-  F_SYMBOL(metis_kway_ab,METIS_KWAY_AB)
+    F_SYMBOL(metis_kway_ab, METIS_KWAY_AB)
 void MUMPS_CALL
-MUMPS_METIS_KWAY_AB(MUMPS_INT *n,     MUMPS_INT *iptr,
-                 MUMPS_INT *jcn,   MUMPS_INT *k,
-                 MUMPS_INT *part,  MUMPS_INT *vwgt);
+MUMPS_METIS_KWAY_AB(MUMPS_INT* n, MUMPS_INT* iptr, MUMPS_INT* jcn, MUMPS_INT* k, MUMPS_INT* part, MUMPS_INT* vwgt);
 #endif
 #endif

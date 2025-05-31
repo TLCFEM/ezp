@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -677,38 +677,40 @@ C
       ENDIF
       RETURN
       END SUBROUTINE CMUMPS_FAC_MQ_LDLT_NIV2
-      SUBROUTINE  CMUMPS_SEND_FACTORED_BLK( COMM_LOAD, ASS_IRECV, N,
-     &             INODE, FPERE, IW, LIW, IOLDPS, POSELT, A, LA, LDA_FS,
-     &             IBEG_BLOCK, IEND, TIPIV, LPIV, LASTBL, NB_BLOC_FAC,
-     &             COMM, MYID, BUFR, LBUFR,LBUFR_BYTES,NBFIN,LEAF,
-     &             IFLAG, IERROR, IPOOL,LPOOL, 
-     &             SLAVEF, POSFAC, IWPOS, IWPOSCB, IPTRLU, LRLU,
-     &             LRLUS, COMP, PTRIST, PTRAST, PTLUST_S, PTRFAC,
-     &             STEP, PIMASTER, PAMASTER,
-     &             NSTK_S,PERM,PROCNODE_STEPS, root,
-     &             OPASSW, OPELIW, ITLOC, RHS_MUMPS,
-     &             FILS, DAD, PTRARW, PTRAIW,
-     &             PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
-     &             INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
-     &             LPTRAR, NELT, FRTPTR, FRTELT, 
-     &             ISTEP_TO_INIV2, TAB_POS_IN_PERE
-     &             , NELIM, LR_ACTIVATED, NPARTSASS, CURRENT_BLR_PANEL
-     &             , BLR_LorU 
-     &             , LRGROUPS
-     &            )
+      SUBROUTINE  CMUMPS_SEND_FACTORED_PANEL( COMM_LOAD, ASS_IRECV, N,
+     &          INODE, FPERE, IW, LIW, IOLDPS, POSELT, A, LA, LDA_FS,
+     &          IBEG_PANEL, IEND, TIPIV, LPIV, LASTPANEL, NB_BLOC_FAC,
+     &          COMM, MYID, BUFR, LBUFR,LBUFR_BYTES,NBFIN,LEAF,
+     &          IFLAG, IERROR, IPOOL,LPOOL, 
+     &          SLAVEF, POSFAC, IWPOS, IWPOSCB, IPTRLU, LRLU,
+     &          LRLUS, COMP, PTRIST, PTRAST, PTLUST_S, PTRFAC,
+     &          STEP, PIMASTER, PAMASTER,
+     &          NSTK_S,PERM,PROCNODE_STEPS, root, roota,
+     &          OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &          FILS, DAD, PTRARW, PTRAIW,
+     &          PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
+     &          INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
+     &          LPTRAR, NELT, FRTPTR, FRTELT, 
+     &          ISTEP_TO_INIV2, TAB_POS_IN_PERE
+     &          , NELIM, LR_ACTIVATED, NPARTSASS, CURRENT_BLR_PANEL
+     &          , BLR_LorU 
+     &          , LRGROUPS
+     &          )
       USE CMUMPS_BUF
-      USE CMUMPS_LOAD
+      USE MUMPS_LOAD
       USE CMUMPS_LR_TYPE
-      USE CMUMPS_STRUC_DEF, ONLY : CMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE CMUMPS_INTR_TYPES, ONLY : CMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INCLUDE 'mpif.h'
-      TYPE (CMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (CMUMPS_ROOT_STRUC) :: roota
       INTEGER COMM_LOAD, ASS_IRECV
-      INTEGER N, INODE, FPERE, LIW, IBEG_BLOCK, IEND, LPIV, 
+      INTEGER N, INODE, FPERE, LIW, IBEG_PANEL, IEND, LPIV, 
      &        IOLDPS, LDA_FS, NB_BLOC_FAC
       INTEGER(8) :: POSELT, LA
       INTEGER IW(LIW), TIPIV(LPIV)
-      LOGICAL LASTBL
+      LOGICAL LASTPANEL
       COMPLEX A(LA)
       INTEGER COMM, MYID, LBUFR, LBUFR_BYTES
       INTEGER NELT, LPTRAR
@@ -754,19 +756,22 @@ C
       LOGICAL BLOCKING, SET_IRECV, MESSAGE_RECEIVED
       DOUBLE PRECISION FLOP1,FLOP2
       LOGICAL COMPRESS_CB
+      INTEGER NBCOLS_ALREADY_SENT, NBLRB_ALREADY_SENT
       COMPRESS_CB    = ((IW(IOLDPS+XXLR).EQ.1).OR.
      &                    (IW(IOLDPS+XXLR).EQ.3))
       NSLAVES= IW(IOLDPS+5+KEEP(IXSZ))
+      NBCOLS_ALREADY_SENT = 0
+      NBLRB_ALREADY_SENT  = 0 
       IF (NSLAVES.EQ.0) THEN
-           WRITE(6,*) ' ERROR 1 in CMUMPS_SEND_FACTORED_BLK '
+           WRITE(6,*) ' ERROR 1 in CMUMPS_SEND_FACTORED_PANEL '
            CALL MUMPS_ABORT()
           ENDIF
-      NPIV   = IEND - IBEG_BLOCK + 1
-      NCOL   = LDA_FS - IBEG_BLOCK + 1
-      APOS   = POSELT + int(LDA_FS,8)*int(IBEG_BLOCK-1,8) +
-     &                  int(IBEG_BLOCK - 1,8)
-      IF (IBEG_BLOCK > 0) THEN
-       CALL MUMPS_GET_FLOPS_COST( LDA_FS, IBEG_BLOCK-1, LPIV,
+      NPIV   = IEND - IBEG_PANEL + 1
+      NCOL   = LDA_FS - IBEG_PANEL + 1
+      APOS   = POSELT + int(LDA_FS,8)*int(IBEG_PANEL-1,8) +
+     &                  int(IBEG_PANEL - 1,8)
+      IF (IBEG_PANEL > 0) THEN
+       CALL MUMPS_GET_FLOPS_COST( LDA_FS, IBEG_PANEL-1, LPIV,
      &                            KEEP(50),2,FLOP1)
       ELSE
         FLOP1=0.0D0
@@ -774,11 +779,11 @@ C
       CALL MUMPS_GET_FLOPS_COST( LDA_FS, IEND, LPIV,
      &                           KEEP(50),2,FLOP2)
       FLOP2 = FLOP1 - FLOP2
-      CALL CMUMPS_LOAD_UPDATE(1, .FALSE., FLOP2, KEEP,KEEP8)
+      CALL MUMPS_LOAD_UPDATE(1, .FALSE., FLOP2, KEEP,KEEP8)
       IF ((NPIV.GT.0) .OR. 
-     &    ((NPIV.EQ.0).AND.(LASTBL))
+     &    ((NPIV.EQ.0).AND.(LASTPANEL))
      &   ) THEN
-        IF ((NPIV.EQ.0).AND.(LASTBL)) THEN
+        IF ((NPIV.EQ.0).AND.(LASTPANEL)) THEN
           IF (COMPRESS_CB) THEN
           IW(IOLDPS+XXLR) = IW(IOLDPS+XXLR) -1
           COMPRESS_CB = .FALSE.
@@ -792,12 +797,13 @@ C
         DO WHILE (IERR .EQ.-1)
           WIDTH = NSLAVES   
           CALL CMUMPS_BUF_SEND_BLOCFACTO( INODE, LDA_FS, NCOL, 
-     &               NPIV, FPERE, LASTBL, TIPIV, A(APOS),
-     &               IW(PDEST), NSLAVES, KEEP,
-     &               NB_BLOC_FAC,
+     &               NPIV, FPERE, LASTPANEL, TIPIV, A(APOS),
+     &               IW(PDEST), NSLAVES, KEEP, NB_BLOC_FAC,
      &               NSLAVES, WIDTH, COMM,
      &               NELIM, NPARTSASS, CURRENT_BLR_PANEL,
      &               LR_ACTIVATED, BLR_LorU, 
+     &               NBCOLS_ALREADY_SENT, NBLRB_ALREADY_SENT,
+     &               IBEG_PANEL, COMPRESS_CB,
      &               ICNTL, IERR )
           IF (IERR.EQ.-1) THEN
             BLOCKING  = .FALSE.
@@ -815,7 +821,7 @@ C
      &       IERROR, COMM,
      &       PERM,
      &       IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
-     &       root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &       root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &       FILS, DAD, PTRARW, PTRAIW,
      &       PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &       INTARR, DBLARR, ICNTL, KEEP, KEEP8,DKEEP, ND, FRERE,
@@ -825,8 +831,8 @@ C
      &        )
             IF (MESSAGE_RECEIVED) THEN
               POSELT = PTRAST(STEP(INODE))
-              APOS   = POSELT + int(LDA_FS,8)*int(IBEG_BLOCK-1,8) +
-     &                 int(IBEG_BLOCK - 1,8)
+              APOS   = POSELT + int(LDA_FS,8)*int(IBEG_PANEL-1,8) +
+     &                 int(IBEG_PANEL - 1,8)
             ENDIF
             IF ( IFLAG .LT. 0 ) GOTO 500
           ENDIF
@@ -847,5 +853,5 @@ C
       CALL CMUMPS_BDC_ERROR( MYID, SLAVEF, COMM, KEEP )
   500 CONTINUE
       RETURN
-      END SUBROUTINE  CMUMPS_SEND_FACTORED_BLK
+      END SUBROUTINE  CMUMPS_SEND_FACTORED_PANEL
       END MODULE CMUMPS_FAC_FRONT_TYPE2_AUX_M

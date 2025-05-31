@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -232,7 +232,7 @@ C
      &       id%NSLAVES, id%KEEP(250).EQ.1, SIZEOFBLOCKS_AVAIL, 
      &       SIZEOFBLOCKS_PTR(1), LSIZEOFBLOCKS_PTR,
      &       INODE_Scalapack_CAND, NBSONS_Scalapack_CAND, 
-     &       id%KEEP(11))
+     &       id%KEEP(11), id%KEEP(191), id%KEEP(192), id%KEEP(193))
          CALL MUMPS_DEALLOC(CUMUL, NV, IPE, MEMCNT=MEMCNT)
          CALL SMUMPS_ANA_M(NE(1), ND(1), id%INFOG(6), id%INFOG(5),
      &        id%KEEP(2), id%KEEP(50), id%KEEP8(101), id%KEEP(108),
@@ -1142,6 +1142,8 @@ C
       RETURN
       END FUNCTION SMUMPS_CNT_KIDS
       SUBROUTINE SMUMPS_GET_SUBTREES(ord, id)
+      USE MUMPS_TOOLS_COMMON_M, ONLY : MUMPS_MERGESORT,
+     &                                 MUMPS_MERGESWAP
       IMPLICIT NONE
       TYPE(ORD_TYPE)     :: ord
       TYPE(SMUMPS_STRUC) :: id
@@ -1187,9 +1189,9 @@ C
          ord%LAST  = -1
          RETURN
       END IF
-      CALL SMUMPS_MERGESORT(NACTIVE, AWEIGHTS(1:NACTIVE),
+      CALL MUMPS_MERGESORT(NACTIVE, AWEIGHTS(1:NACTIVE),
      &     WORK(0:NACTIVE+1))
-      CALL SMUMPS_MERGESWAP(NACTIVE, WORK(0:NACTIVE+1),
+      CALL MUMPS_MERGESWAP(NACTIVE, WORK(0:NACTIVE+1),
      &     AWEIGHTS(1:NACTIVE), 
      &     ALIST(1:NACTIVE))
       RPROC       = NNODES   
@@ -1233,17 +1235,17 @@ C
             ALIST(NACTIVE)    = CURR
             AWEIGHTS(NACTIVE) = ord%NW(CURR)
          END DO
-         CALL SMUMPS_MERGESORT(NACTIVE, AWEIGHTS(1:NACTIVE),
+         CALL MUMPS_MERGESORT(NACTIVE, AWEIGHTS(1:NACTIVE),
      &        WORK(0:NACTIVE+1))
-         CALL SMUMPS_MERGESWAP(NACTIVE, WORK(0:NACTIVE+1),
+         CALL MUMPS_MERGESWAP(NACTIVE, WORK(0:NACTIVE+1),
      &        AWEIGHTS(1:NACTIVE), 
      &        ALIST(1:NACTIVE))
       END DO
       DO I=1, ANODE
          AWEIGHTS(I) = ord%NW(LIST(I))
       END DO
-      CALL SMUMPS_MERGESORT(ANODE, AWEIGHTS(1:ANODE), WORK(0:ANODE+1))
-      CALL SMUMPS_MERGESWAP(ANODE, WORK(0:ANODE+1), AWEIGHTS(1:ANODE), 
+      CALL MUMPS_MERGESORT(ANODE, AWEIGHTS(1:ANODE), WORK(0:ANODE+1))
+      CALL MUMPS_MERGESWAP(ANODE, WORK(0:ANODE+1), AWEIGHTS(1:ANODE), 
      &     ALIST(1:ANODE))
       IF (id%KEEP(339).NE.0) THEN
        Iprocdeb = ord%NPROCS-ANODE+1
@@ -2206,6 +2208,10 @@ C
 #if defined(ptscotch) || defined(parmetis) || defined(parmetis3)
       SUBROUTINE SMUMPS_BUILD_DIST_GRAPH(id, ord, FIRST, LAST, IPE,
      &     PE, WORK, LWORK)
+#if defined(DETERMINISTIC_PARALLEL_GRAPH)
+      USE MUMPS_TOOLS_COMMON_M, ONLY : MUMPS_MERGESORT,
+     &                                 MUMPS_MERGESWAP1
+#endif
       IMPLICIT NONE
       TYPE(SMUMPS_STRUC)      :: id
       TYPE(ORD_TYPE)          :: ord
@@ -2400,10 +2406,10 @@ C
 #if defined(DETERMINISTIC_PARALLEL_GRAPH)
       DO I=1, LAST(MYID+1)-FIRST(MYID+1)+1
          L = int(IPE(I+1)-IPE(I))
-         CALL SMUMPS_MERGESORT(L,
+         CALL MUMPS_MERGESORT(L,
      &        PE(IPE(I):IPE(I+1)-1),
      &        WORK(:))
-         CALL SMUMPS_MERGESWAP1(L, WORK(:),
+         CALL MUMPS_MERGESWAP1(L, WORK(:),
      &        PE(IPE(I):IPE(I+1)-1))
       END DO
 #endif
@@ -3316,116 +3322,6 @@ C
       RETURN
       END SUBROUTINE SMUMPS_GRAPH_DIST
 #endif     
-      SUBROUTINE SMUMPS_MERGESWAP(N, L, A1, A2)
-      INTEGER   :: I, LP, ISWAP, N
-      INTEGER   :: L(0:), A1(:), A2(:)
-      LP = L(0)
-      I  = 1
-      DO 
-         IF ((LP==0).OR.(I>N)) EXIT
-         DO 
-            IF (LP >= I) EXIT
-            LP = L(LP)
-         END DO
-         ISWAP    = A1(LP)
-         A1(LP)   = A1(I)
-         A1(I)    = ISWAP
-         ISWAP    = A2(LP)
-         A2(LP)   = A2(I)
-         A2(I)    = ISWAP
-         ISWAP    = L(LP)
-         L(LP) = L(I)
-         L(I)  = LP
-         LP = ISWAP 
-         I  = I + 1
-      ENDDO
-      END SUBROUTINE SMUMPS_MERGESWAP
-#if defined(DETERMINISTIC_PARALLEL_GRAPH)  
-      SUBROUTINE SMUMPS_MERGESWAP1(N, L, A)
-      INTEGER   :: I, LP, ISWAP, N
-      INTEGER   :: L(0:), A(:)
-      LP = L(0)
-      I  = 1
-      DO 
-         IF ((LP==0).OR.(I>N)) EXIT
-         DO 
-            IF (LP >= I) EXIT
-            LP = L(LP)
-         END DO
-         ISWAP    = A(LP)
-         A(LP)   = A(I)
-         A(I)    = ISWAP
-         ISWAP    = L(LP)
-         L(LP) = L(I)
-         L(I)  = LP
-         LP = ISWAP 
-         I  = I + 1
-      ENDDO
-      END SUBROUTINE SMUMPS_MERGESWAP1
-#endif
-      SUBROUTINE SMUMPS_MERGESORT(N, K, L)
-      INTEGER    :: N
-      INTEGER    :: K(:), L(0:)
-      INTEGER    :: P, Q, S, T
-      L(0) = 1
-      T = N + 1
-      DO  P = 1,N - 1
-         IF (K(P) <= K(P+1)) THEN
-            L(P) = P + 1
-         ELSE
-            L(T) = - (P+1)
-            T = P
-       END IF
-      END DO
-      L(T) = 0
-      L(N) = 0
-      IF (L(N+1) == 0) THEN
-         RETURN 
-      ELSE
-         L(N+1) = abs(L(N+1))
-      END IF
- 200  CONTINUE
-      S = 0
-      T = N+1
-      P = L(S)
-      Q = L(T)
-      IF(Q .EQ. 0) RETURN
- 300  CONTINUE
-      IF(K(P) .GT. K(Q)) GOTO 600 
-      L(S) = sign(P,L(S))
-      S = P
-      P = L(P)
-      IF (P .GT. 0) GOTO 300
-      L(S) = Q
-      S = T
-      DO
-         T = Q
-         Q = L(Q)
-         IF (Q .LE. 0) EXIT
-      END DO
-      GOTO 800
- 600  CONTINUE
-      L(S) = sign(Q, L(S))
-      S = Q
-      Q = L(Q)
-      IF (Q .GT. 0) GOTO 300
-      L(S) = P
-      S = T
-      DO
-         T = P
-         P = L(P)
-         IF (P .LE. 0) EXIT
-      END DO
- 800  CONTINUE
-      P = -P
-      Q = -Q
-      IF(Q.EQ.0) THEN
-         L(S) = sign(P, L(S))
-         L(T) = 0
-         GOTO 200
-      END IF
-      GOTO 300
-      END SUBROUTINE SMUMPS_MERGESORT
       FUNCTION MUMPS_GETSIZE(A)
       INTEGER, POINTER :: A(:)
       INTEGER          :: MUMPS_GETSIZE

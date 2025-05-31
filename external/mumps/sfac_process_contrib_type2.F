@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -17,7 +17,7 @@ C
      &   SLAVEF, IWPOS, IWPOSCB, IPTRLU, LRLU, LRLUS, POSFAC,
      &   N, IW, LIW, A, LA, PTRIST, PTLUST, PTRFAC, PTRAST,
      &   STEP, PIMASTER, PAMASTER, PERM,
-     &   COMP, root, OPASSW, OPELIW, ITLOC, RHS_MUMPS, NSTK_S,
+     &   COMP, root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS, NSTK_S,
      &   FILS, DAD, PTRARW, PTRAIW,
      &   PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &   INTARR, DBLARR, NBFIN,
@@ -27,15 +27,17 @@ C
      &   ISTEP_TO_INIV2, TAB_POS_IN_PERE 
      &               , LRGROUPS
      &   )
-      USE SMUMPS_LOAD
+      USE MUMPS_LOAD
       USE SMUMPS_BUF
       USE SMUMPS_LR_TYPE
-      USE SMUMPS_LR_STATS
-      USE SMUMPS_STRUC_DEF, ONLY : SMUMPS_ROOT_STRUC
+      USE MUMPS_LR_STATS
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       USE SMUMPS_DYNAMIC_MEMORY_M, ONLY : SMUMPS_DM_SET_DYNPTR,
      &                                    SMUMPS_DM_FREE_BLOCK
       IMPLICIT NONE
-      TYPE (SMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (SMUMPS_ROOT_STRUC) :: roota
       INTEGER ICNTL( 60 ), KEEP( 500 )
       INTEGER(8) KEEP8(150)
       REAL    DKEEP(230)
@@ -95,7 +97,7 @@ C
       INTEGER DECR
       INTEGER :: INBPROCFILS_SON 
       LOGICAL :: CB_IS_LR
-      INTEGER :: CB_IS_LR_INT, NB_BLR_COLS, allocok
+      INTEGER :: CB_IS_LR_INT, NBLRB_PACKET, allocok
       INTEGER :: MAXI_CLUSTER
       INTEGER :: ICOL_BEG, ICOL_END, ICOL_SHARED
       INTEGER :: IROW_BEG, IROW_END
@@ -116,6 +118,8 @@ C
       REAL :: ONE, MONE, ZERO
       PARAMETER (ONE = 1.0E0, MONE=-1.0E0)
       PARAMETER (ZERO=0.0E0)
+      INTEGER :: NBCOLS_ALREADY_SENT
+      LOGICAL :: IS_PANEL_FINISHED, IS_LROW_NEGATIVE
       POSITION = 0
       CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, INODE, 1,
      &                 MPI_INTEGER, COMM, IERR )
@@ -125,6 +129,7 @@ C
      &                 MPI_INTEGER, COMM, IERR )
       CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, LROW, 1,
      &                 MPI_INTEGER, COMM, IERR )
+      IS_LROW_NEGATIVE = (LROW.LT.0)
       CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
      &                 NBROWS_ALREADY_SENT, 1,
      &                 MPI_INTEGER, COMM, IERR )
@@ -135,6 +140,11 @@ C
      &                 CB_IS_LR_INT, 1,
      &                 MPI_INTEGER, COMM, IERR )
       CB_IS_LR = (CB_IS_LR_INT.EQ.1)
+      IF (CB_IS_LR.AND.LROW.LT.0) THEN
+        LROW = -LROW
+      ENDIF
+      NBCOLS_ALREADY_SENT=0 
+      ICOL_SHARED = -9999   
       MASTER     = MUMPS_PROCNODE( PROCNODE_STEPS(STEP(INODE)),
      &                             KEEP(199) )
       SLAVE_NODE = MASTER .NE. MYID
@@ -156,7 +166,7 @@ C
      &     PERM, IPOOL, LPOOL, LEAF,
      &     NBFIN, MYID, SLAVEF,
      &
-     &     root, OPASSW, OPELIW, ITLOC, RHS_MUMPS, FILS, DAD,
+     &     root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS, FILS, DAD,
      &     PTRARW, PTRAIW,
      &     PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &     INTARR, DBLARR, ICNTL,KEEP,KEEP8,DKEEP,ND, FRERE_STEPS,
@@ -193,7 +203,7 @@ C
       KEEP8(67) = min(LRLUS, KEEP8(67))
       KEEP8(69) = KEEP8(69) + LREQA
       KEEP8(68) = max(KEEP8(69), KEEP8(68))
-      CALL SMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+      CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &     LA-LRLUS,0_8,LREQA,KEEP,KEEP8,LRLUS)
       IF  ( SLAVE_NODE ) THEN
          IROW   = IWPOS
@@ -213,11 +223,16 @@ C
      &       IW( IROW + I - 1 ), 1, MPI_INTEGER,
      &       COMM, IERR )
       END DO
+      IF (CB_IS_LR.AND.(NBROWS_PACKET.GT.0)) THEN
+        CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
+     &       NBLRB_PACKET, 1,
+     &       MPI_INTEGER, COMM, IERR )
+        CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
+     &                   NBCOLS_ALREADY_SENT, 1,
+     &                   MPI_INTEGER, COMM, IERR )
+        ICOL_SHARED = 1+NBCOLS_ALREADY_SENT
+      ENDIF
       IF ( SLAVE_NODE ) THEN
-        IF ( NBROWS_ALREADY_SENT + NBROWS_PACKET == NBROW ) THEN
-          IW(PTRIST(STEP(INODE))+XXNBPR) =
-     &    IW(PTRIST(STEP(INODE))+XXNBPR) - NBROW
-        ENDIF
         IF ( KEEP(55) .eq. 0 ) THEN               
           CALL SMUMPS_ASM_SLAVE_TO_SLAVE_INIT
      &         (N, INODE, IW, LIW, A, LA,
@@ -241,14 +256,10 @@ C
       ENDIF
       IF (CB_IS_LR.AND.(NBROWS_PACKET.GT.0)) THEN
         CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
-     &       NB_BLR_COLS, 1,
-     &       MPI_INTEGER, COMM, IERR )
-        CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
      &       MAXI_CLUSTER, 1,
      &       MPI_INTEGER, COMM, IERR )
         IROW_BEG = 1
         IROW_END = NBROWS_PACKET
-        ICOL_SHARED = 1
         LA_TEMP            = NBROWS_PACKET*MAXI_CLUSTER 
         NB_BLOCKS_UNPACKED = 0
 #if ! defined(BLR_NOOPENMP)
@@ -273,22 +284,22 @@ C
 #if ! defined(BLR_NOOPENMP)
 !$OMP CRITICAL(contrib_type2_lrcb)
 #endif
-        IF (NB_BLOCKS_UNPACKED.LT.NB_BLR_COLS) THEN
-          CALL SMUMPS_MPI_UNPACK_LRB(BUFR, LBUFR, 
-     &         LBUFR_BYTES, POSITION, LRB, KEEP8, 
-     &         COMM, IFLAG, IERROR
+          IF (NB_BLOCKS_UNPACKED.LT.NBLRB_PACKET) THEN
+            CALL SMUMPS_MPI_UNPACK_LRB(BUFR, LBUFR, 
+     &           LBUFR_BYTES, POSITION, LRB, KEEP8, 
+     &           COMM, IFLAG, IERROR
      &         )
-          NB_BLOCKS_UNPACKED = NB_BLOCKS_UNPACKED + 1 
-          ICOL_BEG = ICOL_SHARED
-          ICOL_SHARED = ICOL_SHARED + LRB%N
-        ELSE
-          BLOCKS_LEFT_2_UNPACK = .FALSE.
-        ENDIF
+            NB_BLOCKS_UNPACKED = NB_BLOCKS_UNPACKED + 1 
+            ICOL_BEG = ICOL_SHARED
+            ICOL_SHARED = ICOL_SHARED + LRB%N 
+          ELSE
+            BLOCKS_LEFT_2_UNPACK = .FALSE.
+          ENDIF
 #if ! defined(BLR_NOOPENMP)
 !$OMP END CRITICAL(contrib_type2_lrcb)
 #endif
-        IF (.NOT.BLOCKS_LEFT_2_UNPACK) CYCLE
-        IF (LRB%ISLR .AND. LRB%K.EQ.0) CYCLE
+          IF (.NOT.BLOCKS_LEFT_2_UNPACK) CYCLE
+          IF (LRB%ISLR .AND. LRB%K.EQ.0) CYCLE
           IF (LRB%ISLR) THEN
             CALL sgemm('T','T', LRB%N, NBROWS_PACKET, LRB%K, ONE,
      &                LRB%R(1,1), LRB%K, LRB%Q(IROW_BEG,1), LRB%M,
@@ -343,7 +354,7 @@ C
           IF (KEEP(50).NE.0) THEN
             ROW_LENGTH = LROW - NBROWS_PACKET + I
           ELSE
-                 ROW_LENGTH=LROW
+            ROW_LENGTH = LROW
           ENDIF
           CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
      &         A(POSCONTRIB),
@@ -369,13 +380,29 @@ C
         ENDDO
       ENDIF 
       IF (SLAVE_NODE) THEN
+        IF (CB_IS_LR) THEN
+          IF (NBROWS_PACKET.EQ.0) THEN
+            IS_PANEL_FINISHED = .TRUE.
+          ELSE
+           IS_PANEL_FINISHED = ICOL_SHARED .GT. LROW
+          ENDIF
+        ELSE
+          IS_PANEL_FINISHED = .TRUE.
+        ENDIF
+        IF ( NBROWS_ALREADY_SENT + NBROWS_PACKET == NBROW
+     &       .AND. IS_PANEL_FINISHED ) THEN
+          IW(PTRIST(STEP(INODE))+XXNBPR) =
+     &    IW(PTRIST(STEP(INODE))+XXNBPR) - NBROW
+        ENDIF
         CALL SMUMPS_ASM_SLAVE_TO_SLAVE_END
      &         (N, INODE, IW, LIW,
      &         NBROWS_PACKET, STEP, PTRIST,
      &         ITLOC, RHS_MUMPS,KEEP,KEEP8)
       ENDIF
       IF ( .NOT. SLAVE_NODE ) THEN
-        IF (NBROWS_ALREADY_SENT .EQ. 0) THEN
+        IF ( (NBROWS_ALREADY_SENT .EQ. 0) 
+     &       .AND. (NBCOLS_ALREADY_SENT .EQ. 0) 
+     &     ) THEN
           IF (KEEP(219).NE.0) THEN
             IF(KEEP(50) .EQ. 2) THEN
                CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
@@ -405,7 +432,17 @@ C
             ENDIF
           ENDIF
         ENDIF
-        IF (NBROWS_ALREADY_SENT + NBROWS_PACKET == NBROW ) THEN
+        IF (CB_IS_LR) THEN
+          IF (NBROWS_PACKET.EQ.0) THEN
+            IS_PANEL_FINISHED = .TRUE.
+          ELSE
+            IS_PANEL_FINISHED = ICOL_SHARED .GT. LROW
+          ENDIF
+        ELSE
+          IS_PANEL_FINISHED = .TRUE.
+        ENDIF
+        IF ( NBROWS_ALREADY_SENT + NBROWS_PACKET == NBROW
+     &       .AND. IS_PANEL_FINISHED ) THEN
             DECR = 1
             ISTCHK = PIMASTER(STEP(ISON))
             SAME_PROC = ISTCHK .LT. IWPOSCB
@@ -465,7 +502,7 @@ C
      &              SLAVEF, KEEP(199), KEEP(28), KEEP(76), KEEP(80),
      &              KEEP(47), STEP, INODE+N )
                IF (KEEP(47) .GE. 3) THEN
-                  CALL SMUMPS_LOAD_POOL_UPD_NEW_POOL(
+                  CALL MUMPS_LOAD_POOL_UPD_NEW_POOL(
      &          IPOOL, LPOOL, 
      &                 PROCNODE_STEPS, KEEP,KEEP8, SLAVEF, COMM_LOAD,
      &                 MYID, STEP, N, ND, FILS )
@@ -478,7 +515,7 @@ C
          LRLUS = LRLUS + LREQA
          KEEP8(69) = KEEP8(69) - LREQA
          POSFAC = POSFAC - LREQA
-         CALL SMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+         CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &        LA-LRLUS,0_8,-LREQA,KEEP,KEEP8,LRLUS)
       RETURN
       END SUBROUTINE SMUMPS_PROCESS_CONTRIB_TYPE2

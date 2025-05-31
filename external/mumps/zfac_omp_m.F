@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -26,7 +26,7 @@ C
      & RHS_MUMPS, RINFO, NBROOT, NBRTOT, NBROOT_UNDER_L0, UU, ICNTL,
      & PTLUST_S, PTRFAC, INFO, KEEP, KEEP8, PROCNODE_STEPS,SLAVEF,
      & COMM_NODES, MYID, MYID_NODES, BUFR, LBUFR, LBUFR_BYTES,
-     & INTARR, DBLARR, root, PERM, NELT, FRTPTR, FRTELT, LPTRAR,
+     & INTARR, DBLARR, root, roota, PERM, NELT, FRTPTR, FRTELT, LPTRAR,
      & COMM_LOAD, ASS_IRECV, SEUIL, SEUIL_LDLT_NIV2,
      & MEM_DISTRIB, NE, DKEEP, PIVNUL_LIST_STRUCT,
      &  LPOOL_B_L0_OMP, IPOOL_B_L0_OMP,
@@ -40,21 +40,25 @@ C
      &  LRGROUPS, L0_OMP_FACTORS, LL0_OMP_FACTORS,
      &  I4_L0_OMP, NBSTATS_I4, NBCOLS_I4,
      &  I8_L0_OMP, NBSTATS_I8, NBCOLS_I8 )
-      USE ZMUMPS_LOAD
+      USE MUMPS_LOAD
 !$    USE OMP_LIB
       USE MUMPS_TPS_M, ONLY : MUMPS_TPS_T
       USE ZMUMPS_TPS_M, ONLY : ZMUMPS_TPS_T
-      USE ZMUMPS_LR_STATS
-      USE ZMUMPS_STRUC_DEF, ONLY : ZMUMPS_ROOT_STRUC,
-     &                             ZMUMPS_L0OMPFAC_T
+      USE MUMPS_LR_STATS
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE ZMUMPS_INTR_TYPES, ONLY : ZMUMPS_ROOT_STRUC,
+     &                              ZMUMPS_L0OMPFAC_T
       USE ZMUMPS_DYNAMIC_MEMORY_M, ONLY :
-     &                             ZMUMPS_DM_FAC_ALLOC_ALLOWED
+     &                             ZMUMPS_DM_FAC_ALLOC_ALLOWED,
+     &                             ZMUMPS_DM_ALLOC_S_WK,
+     &                             ZMUMPS_DM_FREE_S_WK
       USE MUMPS_PIVNUL_MOD, ONLY : PIVNUL_LIST_STRUCT_T
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       INCLUDE 'mumps_tags.h'
       INCLUDE 'mumps_headers.h'
-      TYPE (ZMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (ZMUMPS_ROOT_STRUC) :: roota
       INTEGER N,LIW, LPTRAR, 
      &        NSTEPSW, INFO(80)
       INTEGER SLAVEF, COMM_NODES, MYID, MYID_NODES
@@ -149,7 +153,9 @@ C
       INTEGER(8) :: I8
 !$    INTEGER(8) :: CHUNK8 
 !$    LOGICAL    :: OMP_FLAG
-!$    INTEGER    :: NOMP_SAVE
+!$    INTEGER    :: NOMP_SAVE, NOMP_TOTAL
+!$    INTEGER    :: NOMP_INNER
+!$    LOGICAL    :: SAVE_NESTED
       CALL MUMPS_LOAD_DISABLE()
       GTIME = MPI_WTIME()
       L0_OMP_MAPPING = 0
@@ -222,6 +228,27 @@ C
      &  NbWaitMem, NbFinished, NbOnGoingCopies, NbUnderL0, 
      &  KEEP, KEEP8 )
       ENDIF
+!$    NOMP_INNER = 1
+!$    IF (KEEP(369).GT.0) THEN
+!$      NOMP_TOTAL = omp_get_max_threads()
+!$      IF ( NOMP_TOTAL .NE. KEEP(400) ) THEN
+!$        IF ( KEEP(439) .GT. 1 ) THEN
+!$          NOMP_INNER = KEEP(439)
+!$        ELSE IF ( KEEP(439) .EQ. -1
+!$   &            ) THEN
+!$          NOMP_INNER = NOMP_TOTAL / KEEP(400)
+!$        ENDIF
+!$        IF (NOMP_INNER .GT. 1) THEN
+!$          SAVE_NESTED = omp_get_nested()
+!$          CALL OMP_SET_NESTED(.TRUE.)
+!$        ENDIF
+!$      ENDIF
+#if defined(WORKAROUNDINTELILP64OPENMPLIMITATION)
+!$      CALL omp_set_num_threads(int(KEEP(400),4))
+#else
+!$      CALL omp_set_num_threads(KEEP(400))
+#endif
+!$    ENDIF
 !$OMP PARALLEL
 !$OMP& SHARED ( IPOOL_B_L0_OMP, LPOOL_B_L0_OMP )
 !$OMP& PRIVATE ( VIRTUAL_TASK, PHYSICAL_TASK,
@@ -237,7 +264,11 @@ C
 !$    THREAD_ID_P = OMP_GET_THREAD_NUM () + 1
 !$OMP BARRIER
 !$    NOMP_SAVE = omp_get_max_threads()
-!$    CALL omp_set_num_threads(1)
+#if defined(WORKAROUNDINTELILP64OPENMPLIMITATION)
+!$    CALL omp_set_num_threads(int(NOMP_INNER,4))
+#else
+!$    CALL omp_set_num_threads(NOMP_INNER)
+#endif
       LPOOL_P           = LPOOL_B_L0_OMP
       LEAF              = 1
       INFO_P            = 0
@@ -251,9 +282,9 @@ C
      &                                  KEEP8,
      &                                  INFO_P(1), INFO_P(2) )
       IF (INFO_P(1) .LT. 0) GOTO 700
-      ALLOCATE ( ZMUMPS_TPS_ARR(THREAD_ID_P)%A(
-     &           max(1_8,MUMPS_TPS_ARR(THREAD_ID_P)%LA) ),
-     &           stat=allocok)
+      CALL ZMUMPS_DM_ALLOC_S_WK( ZMUMPS_TPS_ARR(THREAD_ID_P)%A,
+     &  max(1_8,MUMPS_TPS_ARR(THREAD_ID_P)%LA), allocok, KEEP(430),
+     &  KEEP(35) )
       IF (allocok.GT.0) THEN
           INFO_P(1) = -13
           CALL MUMPS_SETI8TOI4( MUMPS_TPS_ARR(THREAD_ID_P)%LA,
@@ -369,7 +400,7 @@ C
      &  IWPOS, MUMPS_TPS_ARR(THREAD_ID_P)%IWPOSCB, PROCNODE_STEPS,
      &  SLAVEF, IFATH, COMM_NODES, MYID_NODES, IPOOL_P, LPOOL_P, LEAF,
      &  PERM, NSTK_STEPS, BUFR, LBUFR, LBUFR_BYTES,
-     &  NBFIN, root, OPASSW, MUMPS_TPS_ARR(THREAD_ID_P)%ITLOC(1),
+     &  NBFIN, root, roota, OPASSW, MUMPS_TPS_ARR(THREAD_ID_P)%ITLOC(1),
      &  RHS_MUMPS, FILS, PTRARW, PTRAIW, PTR8ARR, NINCOLARR, NINROWARR,
      &  PTRDEBARR, INTARR, DBLARR, ND, FRERE, DAD,
      &  LPTRAR, NELT, FRTPTR, FRTELT, ISTEP_TO_INIV2, TAB_POS_IN_PERE, 
@@ -475,7 +506,8 @@ C
           ENDDO
         ENDIF
         IF ( associated(ZMUMPS_TPS_ARR(THREAD_ID_P)%A)) THEN
-          DEALLOCATE(ZMUMPS_TPS_ARR(THREAD_ID_P)%A)
+          CALL ZMUMPS_DM_FREE_S_WK( ZMUMPS_TPS_ARR(THREAD_ID_P)%A,
+     &                              KEEP(430) )
           NULLIFY(ZMUMPS_TPS_ARR(THREAD_ID_P)%A)
           CALL MUMPS_DM_FAC_UPD_DYN_MEMCNTS(
      &                  -MUMPS_TPS_ARR(THREAD_ID_P)%LA,
@@ -510,6 +542,16 @@ C
 !$    CALL omp_set_num_threads(NOMP_SAVE)
 #endif
 !$OMP END PARALLEL
+!$    IF (KEEP(369).GT.0) THEN
+#if defined(WORKAROUNDINTELILP64OPENMPLIMITATION)
+!$      CALL omp_set_num_threads(int(NOMP_TOTAL),4))
+#else
+!$      CALL omp_set_num_threads(NOMP_TOTAL)
+#endif
+!$      IF (NOMP_INNER .GT. 1) THEN
+!$        CALL OMP_SET_NESTED(SAVE_NESTED)
+!$      ENDIF
+!$    ENDIF
       IF (INFO(1) .LT. 0) THEN
         IF (ICNTL(1) .GT. 0 .AND. ICNTL(4) .GE.1 ) THEN
           WRITE(ICNTL(1),'(A,I6,I16,A,I5,A)')
@@ -591,7 +633,8 @@ C
 !$OMP      END PARALLEL DO 
          ENDIF
          IF ( associated(ZMUMPS_TPS_ARR(MYTHREAD_ID)%A)) THEN
-           DEALLOCATE(ZMUMPS_TPS_ARR(MYTHREAD_ID)%A)
+           CALL ZMUMPS_DM_FREE_S_WK( ZMUMPS_TPS_ARR(THREAD_ID_P)%A,
+     &                               KEEP(430) )
            NULLIFY(ZMUMPS_TPS_ARR(MYTHREAD_ID)%A)
            CALL MUMPS_DM_FAC_UPD_DYN_MEMCNTS( 
      &                     -MUMPS_TPS_ARR(MYTHREAD_ID)%LA,
@@ -610,7 +653,8 @@ C
   800 CONTINUE
       DO ITH = 1, KEEP(400)
         IF ( associated(ZMUMPS_TPS_ARR(ITH)%A)) THEN
-           DEALLOCATE(ZMUMPS_TPS_ARR(ITH)%A)
+           CALL ZMUMPS_DM_FREE_S_WK( ZMUMPS_TPS_ARR(ITH)%A,
+     &                                KEEP(430) )
            NULLIFY(ZMUMPS_TPS_ARR(ITH)%A)
            CALL MUMPS_DM_FAC_UPD_DYN_MEMCNTS( 
      &                     -MUMPS_TPS_ARR(ITH)%LA,
@@ -658,7 +702,7 @@ C
       ENDIF
       DKEEP(97)            = DKEEP(97) / dble(KEEP(400))
       CALL MUMPS_LOAD_ENABLE()
-      CALL ZMUMPS_LOAD_UPDATE(0,.FALSE., FLOP_ESTIM_ACC,KEEP,KEEP8)
+      CALL MUMPS_LOAD_UPDATE(0,.FALSE., FLOP_ESTIM_ACC,KEEP,KEEP8)
       RETURN
       END SUBROUTINE ZMUMPS_FAC_L0_OMP
       SUBROUTINE ZMUMPS_SET_MAXS_MAXIS_THREAD(MAXS_BASE_RELAXED8TH,
@@ -872,7 +916,8 @@ C
      &           )
       USE MUMPS_TPS_M, ONLY : MUMPS_TPS_T
       USE ZMUMPS_TPS_M, ONLY : ZMUMPS_TPS_T
-      USE ZMUMPS_STRUC_DEF, ONLY : ZMUMPS_L0OMPFAC_T
+      USE ZMUMPS_INTR_TYPES, ONLY : ZMUMPS_L0OMPFAC_T
+      USE ZMUMPS_DYNAMIC_MEMORY_M, ONLY : ZMUMPS_DM_FREE_S_WK
       INTEGER :: KEEP(500)
       INTEGER(8) :: KEEP8(150)
       INTEGER, INTENT(IN) :: THREAD_ID_P
@@ -1054,7 +1099,9 @@ C
         SELECT CASE ( LOCAL_ACTION )
           CASE ( FREE_WORK_MYID )
             IF ( associated(ZMUMPS_TPS_ARR(THREAD_ID_P)%A) ) THEN
-              DEALLOCATE(ZMUMPS_TPS_ARR(THREAD_ID_P)%A)
+              CALL ZMUMPS_DM_FREE_S_WK(
+     &             ZMUMPS_TPS_ARR(THREAD_ID_P)%A,
+     &             KEEP(430) )
               NULLIFY(ZMUMPS_TPS_ARR(THREAD_ID_P)%A)
               CALL MUMPS_DM_FAC_UPD_DYN_MEMCNTS(
      &                  -MUMPS_TPS_ARR(THREAD_ID_P)%LA,
@@ -1171,7 +1218,7 @@ C
      & PIVNUL_LIST_STRUCT, COMP, IWPOS, IWPOSCB, PROCNODE_STEPS,
      & SLAVEF, IFATH, COMM_NODES, MYID_NODES, IPOOL_P,
      & LPOOL_P, LEAF, PERM, NSTK_STEPS, BUFR, LBUFR,
-     & LBUFR_BYTES, NBFIN, root, OPASSW, ITLOC, RHS_MUMPS, FILS,
+     & LBUFR_BYTES, NBFIN, root, roota, OPASSW, ITLOC, RHS_MUMPS, FILS,
      & PTRARW, PTRAIW, PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      & INTARR, DBLARR, ND, FRERE, DAD, LPTRAR, NELT,
      & FRTPTR, FRTELT, ISTEP_TO_INIV2, TAB_POS_IN_PERE, LRGROUPS,
@@ -1180,11 +1227,13 @@ C
       USE ZMUMPS_FAC_ASM_MASTER_ELT_M
       USE ZMUMPS_FAC1_LU_M
       USE ZMUMPS_FAC1_LDLT_M
-      USE ZMUMPS_STRUC_DEF, ONLY : ZMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE ZMUMPS_INTR_TYPES, ONLY : ZMUMPS_ROOT_STRUC
       USE MUMPS_PIVNUL_MOD, ONLY : PIVNUL_LIST_STRUCT_T
       IMPLICIT NONE
       INCLUDE 'mumps_headers.h'
-      TYPE (ZMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (ZMUMPS_ROOT_STRUC) :: roota
       INTEGER COMM_LOAD, ASS_IRECV
       INTEGER COMM_NODES, MYID_NODES, TYPE, TYPEF
       INTEGER N, LIW, INODE,INFO_P(2)
@@ -1239,9 +1288,10 @@ C
       ETATASS = 0
       IF ( KEEP(55) .EQ. 0 ) THEN
           JOBASS = 0
-          CALL ZMUMPS_FAC_ASM_NIV1( COMM_LOAD, ASS_IRECV, N, INODE,
-     &    IW, LIW, A, LA,
-     &    INFO_P, ND, FILS, FRERE, DAD, MAXFRW, root, OPASSW, OPELIW,
+          CALL ZMUMPS_FAC_ASM_NIV1( COMM_LOAD, ASS_IRECV, UU, 
+     &    N, INODE,
+     &    IW, LIW, A, LA, INFO_P, ND, FILS, FRERE, DAD, MAXFRW,
+     &    root, roota, OPASSW, OPELIW,
      &    PTRIST, PTLUST_S, PTRFAC, PTRAST, STEP, PIMASTER, PAMASTER,
      &    PTRARW, PTRAIW, PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    ITLOC, RHS_MUMPS, NSTEPSW,
@@ -1256,10 +1306,12 @@ C
      &    , LRGROUPS
      &    )
       ELSE
-          CALL ZMUMPS_FAC_ASM_NIV1_ELT(COMM_LOAD,ASS_IRECV,NELT,FRTPTR,
+          CALL ZMUMPS_FAC_ASM_NIV1_ELT(COMM_LOAD,ASS_IRECV,UU,
+     &    NELT,FRTPTR,
      &    FRTELT, N, INODE, IW, LIW, A,
      &    LA, INFO_P, ND, FILS, FRERE, DAD, MAXFRW,
-     &    root, OPASSW, OPELIW, PTRIST, PTLUST_S, PTRFAC, PTRAST, STEP,
+     &    root, roota,
+     &    OPASSW, OPELIW, PTRIST, PTLUST_S, PTRFAC, PTRAST, STEP,
      &    PIMASTER, PAMASTER, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    ITLOC, RHS_MUMPS, NSTEPSW, SON_LEVEL2, COMP, LRLU,
@@ -1326,7 +1378,7 @@ C
      &COMP,IWPOS, IWPOSCB, PROCNODE_STEPS,
      &SLAVEF, IFATH, COMM_NODES, MYID_NODES, IPOOL_P,
      &LPOOL_P, LEAF, NSTK_STEPS, PERM, BUFR, LBUFR,
-     &LBUFR_BYTES, NBFIN, root, OPASSW, ITLOC, RHS_MUMPS,
+     &LBUFR_BYTES, NBFIN, root, roota, OPASSW, ITLOC, RHS_MUMPS,
      &FILS, DAD, PTRARW, PTRAIW,
      &PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &INTARR, DBLARR, ND, FRERE,

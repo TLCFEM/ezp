@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -13,15 +13,14 @@ C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       MODULE MUMPS_LR_COMMON
       IMPLICIT NONE
+      INTEGER, PARAMETER :: NPREC_STOC_MAX = 10
+      INTEGER, PARAMETER :: NPREC_CALC_MAX = 3
       CONTAINS
       SUBROUTINE COMPUTE_BLR_VCS(K472, IBCKSZ, MAXSIZE, NASS,
      &           NFRONT, K35)
         INTEGER, INTENT(IN) ::  MAXSIZE, NASS, K472
         INTEGER, INTENT(IN) ::  NFRONT, K35
         INTEGER, INTENT(OUT) :: IBCKSZ
-        INTEGER k
-        INTEGER    :: LARGEST_IBCKSZ, ADJUSTED_LARGEST
-        INTEGER(4) :: I4
         IF (K472.EQ.1) THEN
 #if defined(__ve__)
           IF (NASS.LE.1000) THEN
@@ -30,8 +29,10 @@ C
             IBCKSZ = 384
           ELSEIF (NASS.GT.5000.AND.NASS.LE.10000) THEN
             IBCKSZ = 512
-          ELSE
+          ELSEIF (NASS.GT.10000.AND.NASS.LE.100000) THEN
             IBCKSZ = 512
+          ELSE
+            IBCKSZ = 768
           ENDIF
 #else
           IF (NASS.LE.1000) THEN
@@ -40,23 +41,19 @@ C
             IBCKSZ = 256
           ELSEIF (NASS.GT.5000.AND.NASS.LE.10000) THEN
             IBCKSZ = 384
-          ELSE
+          ELSEIF (NASS.GT.10000.AND.NASS.LE.100000) THEN
             IBCKSZ = 512
+          ELSE
+            IBCKSZ = 768
           ENDIF
           IF (NFRONT.GT.20*NASS.AND.NFRONT.GT.100000) THEN
-            IBCKSZ = max(IBCKSZ,min(NASS,512))
+            IBCKSZ = max(IBCKSZ,min(NASS,768))
           ENDIF
 #endif
           IBCKSZ = min(IBCKSZ,MAXSIZE)
         ELSE
           IBCKSZ = MAXSIZE
         ENDIF
-        LARGEST_IBCKSZ  = int(dble(huge(I4)-10000000)/
-     &                    (dble(NFRONT)*dble(K35)))
-        k = 3
-        ADJUSTED_LARGEST = int((dble(LARGEST_IBCKSZ)*dble(k*7))/
-     &               dble(8*(k+1)))
-        IBCKSZ = min(IBCKSZ, ADJUSTED_LARGEST)
       RETURN
       END SUBROUTINE COMPUTE_BLR_VCS
       SUBROUTINE MUMPS_UPD_TREE(NV, NSTEPS, N, FIRST, LPTR, RPTR, F,

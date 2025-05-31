@@ -18,7 +18,7 @@
 #include <sys/times.h>
 #endif
 #if defined(__MINGW32__)
-#include<sys/time.h>
+#include <sys/time.h>
 #endif
 #include <math.h>
 
@@ -54,12 +54,9 @@
 #include "protos.h"
 #include "eval.h"
 
-#define FORTRAN(nu,nl,pl,pc)                     \
-void nu ();                                      \
-void nl pl                                       \
-{ nu pc; }                                       \
-void nl##_ pl                                    \
-{ nu pc; }                                       \
-void nl##__ pl                                   \
-{ nu pc; }                                       \
-void nu pl
+#define FORTRAN(nu, nl, pl, pc) \
+    void nu();                  \
+    void nl pl { nu pc; }       \
+    void nl##_ pl { nu pc; }    \
+    void nl##__ pl { nu pc; }   \
+    void nu pl

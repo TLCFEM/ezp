@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -23,7 +23,7 @@ C
      &             LRLUS, COMP,
      &             PTRIST, PTRAST, PTLUST_S, PTRFAC, STEP,
      &             PIMASTER, PAMASTER,
-     &             NSTK_S,PERM,PROCNODE_STEPS, root,
+     &             NSTK_S,PERM,PROCNODE_STEPS, root, roota,
      &             OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &             FILS, DAD, PTRARW, PTRAIW,
      &             PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -38,12 +38,13 @@ C
       USE DMUMPS_OOC
       USE DMUMPS_FAC_LR
       USE DMUMPS_LR_TYPE
-      USE DMUMPS_LR_STATS
+      USE MUMPS_LR_STATS
       USE DMUMPS_ANA_LR, ONLY : GET_CUT
       USE DMUMPS_LR_DATA_M
 !$    USE OMP_LIB
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
-      USE DMUMPS_BUF, ONLY : DMUMPS_BUF_TEST
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_BUF_COMMON, ONLY : MUMPS_BUF_TEST
       USE MUMPS_PIVNUL_MOD, ONLY : PIVNUL_LIST_STRUCT_T
       IMPLICIT NONE
       INTEGER COMM_LOAD, ASS_IRECV
@@ -55,7 +56,8 @@ C
       INTEGER, TARGET :: IW( LIW )
       DOUBLE PRECISION A( LA )
       DOUBLE PRECISION UU, SEUIL
-      TYPE (DMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (DMUMPS_ROOT_STRUC) :: roota
       INTEGER COMM, MYID, LBUFR, LBUFR_BYTES
       INTEGER LPTRAR, NELT
       INTEGER ICNTL(60), KEEP(500)
@@ -97,7 +99,7 @@ C
       INTEGER NASS, LDAFS, IBEG_BLOCK 
       INTEGER :: NB_POSTPONED
       INTEGER :: IBEG_BLOCK_FOR_IPIV
-      LOGICAL LASTBL, LR_ACTIVATED, COMPRESS_PANEL
+      LOGICAL LASTPANEL, LR_ACTIVATED, COMPRESS_PANEL
       LOGICAL OOCWRITE_COMPATIBLE_WITH_BLR, 
      &        OOC_EFFECTIVE_ON_FRONT, 
      &        OOC_EFF_AND_WRITE_BYPANEL
@@ -206,13 +208,7 @@ C
      &          )
       OOC_EFFECTIVE_ON_FRONT= ((KEEP(201).EQ.1).AND. 
      &                         OOCWRITE_COMPATIBLE_WITH_BLR)
-      IF (NASS.LT.KEEP(4)) THEN
-        NBKJIB_ORIG = NASS
-      ELSE IF (NASS .GT. KEEP(3)) THEN
-        NBKJIB_ORIG = min( KEEP(6), NASS )
-      ELSE
-        NBKJIB_ORIG = min( KEEP(5), NASS )
-      ENDIF
+      CALL DMUMPS_SET_INNERBLOCKSIZE( NBKJIB_ORIG, NASS, KEEP)
       IF (.not.LR_ACTIVATED) THEN
           NBLR_ORIG     = KEEP(420)
       ELSE
@@ -304,7 +300,7 @@ C
          NB_BLR = NPARTSASS + NPARTSCB
          call MAX_CLUSTER(BEGS_BLR,NB_BLR,MAXI_CLUSTER)
          MAXI_RANK = KEEP(479)*MAXI_CLUSTER
-         LWORK = MAXI_CLUSTER*MAXI_CLUSTER
+         LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
          OMP_NUM = 1
 #if ! defined(BLR_NOOPENMP)
 !$       OMP_NUM = OMP_GET_MAX_THREADS()
@@ -328,7 +324,7 @@ C
          IF (KEEP(480).GE.3) THEN
            DO MY_NUM=1,OMP_NUM
              CALL ALLOC_LRB(ACC_LUA(MY_NUM), MAXI_RANK,
-     &                      MAXI_CLUSTER, MAXI_CLUSTER, .TRUE., 
+     &                      MAXI_CLUSTER, MAXI_CLUSTER, .TRUE.,
      &                      IFLAG, IERROR, KEEP8)
              IF (IFLAG.LT.0) GOTO 480
              ACC_LUA(MY_NUM)%K = 0
@@ -359,18 +355,18 @@ C
         IERROR = INFO_TMP(2) 
         IF (IFLAG.LT.0) GOTO 500
       ENDIF
-      LASTBL = .FALSE.
+      LASTPANEL = .FALSE.
       DO WHILE (IEND_BLR < NASS ) 
         CURRENT_BLR = CURRENT_BLR + 1
         IBEG_BLR = IW(IOLDPS+1+KEEP(IXSZ)) + 1 
-        IF (.NOT. LR_ACTIVATED)THEN
+        IF (.NOT. LR_ACTIVATED) THEN
           IEND_BLR = min(IEND_BLR + NBLR_ORIG, NASS)
         ELSE
           IEND_BLR = BEGS_BLR(CURRENT_BLR+1)-1
           BEGS_BLR( CURRENT_BLR ) = IBEG_BLR
           IF ( IEND_BLR - IBEG_BLR + 1 .GT. MAXI_CLUSTER ) THEN
             MAXI_CLUSTER = IEND_BLR - IBEG_BLR + 1
-            LWORK = MAXI_CLUSTER*MAXI_CLUSTER
+            LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
             DEALLOCATE(BLOCK, WORK, RWORK, TAU, JPVT)
             ALLOCATE(BLOCK(MAXI_CLUSTER, OMP_NUM*MAXI_CLUSTER),
      &             RWORK(2*MAXI_CLUSTER*OMP_NUM), 
@@ -386,9 +382,9 @@ C
               DO MY_NUM=1,OMP_NUM
                 CALL DEALLOC_LRB(ACC_LUA(MY_NUM), KEEP8, KEEP(34))
                 CALL ALLOC_LRB(ACC_LUA(MY_NUM), MAXI_RANK,
-     &                       MAXI_CLUSTER, MAXI_CLUSTER, .TRUE., 
-     &                       IFLAG, IERROR, KEEP8)
-             IF (IFLAG.LT.0) GOTO 480
+     &                         MAXI_CLUSTER, MAXI_CLUSTER, .TRUE.,
+     &                         IFLAG, IERROR, KEEP8)
+                IF (IFLAG.LT.0) GOTO 480
                 ACC_LUA(MY_NUM)%K = 0
               ENDDO
             ENDIF
@@ -433,7 +429,7 @@ C
                 INOPV = -1
                 GOTO 50
               ENDIF
-             LASTBL = .TRUE.
+             LASTPANEL = .TRUE.
             ELSE IF (INOPV .LE. 0) THEN 
               INOPV = 0
               NPVW = NPVW + PIVSIZ
@@ -452,7 +448,7 @@ C
             IF (IFINB.EQ.0) THEN
               GOTO 50 
             ELSE IF (IFINB .EQ. -1) THEN
-              LASTBL = .TRUE.
+              LASTPANEL = .TRUE.
             ENDIF
           ENDIF
           NPIV = IW(IOLDPS+1+XSIZE)
@@ -474,16 +470,16 @@ C
           ENDIF
           IF (K263.eq.0) THEN
             NELIM = IEND_BLR - NPIV
-            CALL DMUMPS_SEND_FACTORED_BLK( COMM_LOAD, ASS_IRECV, 
+            CALL DMUMPS_SEND_FACTORED_PANEL( COMM_LOAD, ASS_IRECV, 
      &             N, INODE, FPERE, IW, LIW, 
      &             IOLDPS, POSELT, A, LA, LDAFS,
-     &             IBEG_BLOCK, NPIV, IPIV, NASS,LASTBL, NB_BLOC_FAC,
+     &             IBEG_BLOCK, NPIV, IPIV, NASS,LASTPANEL, NB_BLOC_FAC,
      &             COMM, MYID, BUFR, LBUFR, LBUFR_BYTES,NBFIN,LEAF,
      &             IFLAG, IERROR, IPOOL,LPOOL,
      &             SLAVEF, POSFAC, IWPOS, IWPOSCB, IPTRLU, LRLU,
      &             LRLUS, COMP, PTRIST, PTRAST, PTLUST_S, PTRFAC, STEP,
      &             PIMASTER, PAMASTER,
-     &             NSTK_S,PERM,PROCNODE_STEPS, root,
+     &             NSTK_S,PERM,PROCNODE_STEPS, root, roota,
      &             OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &             FILS, DAD, PTRARW, PTRAIW,
      &             PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -532,7 +528,7 @@ C
      &             IW, LIW, -6666 
      &             )
           ENDIF
-          CALL DMUMPS_BUF_TEST()
+          CALL MUMPS_BUF_TEST()
         END DO 
         NPIV   = IW(IOLDPS+1+XSIZE)
         IF (LR_ACTIVATED) THEN
@@ -566,7 +562,7 @@ C
               CALL DMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              0, 
-     &              CURRENT_BLR, BLR_L)
+     &        CURRENT_BLR, BLR_L, 0) 
               NULLIFY(BLR_L)
             ENDIF
             GOTO 101
@@ -612,7 +608,7 @@ C
               CALL DMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              0, 
-     &              CURRENT_BLR, BLR_L)
+     &        CURRENT_BLR, BLR_L, 0) 
             ENDIF
           ENDIF
         ENDIF
@@ -633,17 +629,16 @@ C
           IF (associated(BLR_L)) THEN
             BLR_SEND=>BLR_L
           ENDIF
-          CALL DMUMPS_SEND_FACTORED_BLK( COMM_LOAD, ASS_IRECV,
+          CALL DMUMPS_SEND_FACTORED_PANEL( COMM_LOAD, ASS_IRECV,
      &             N, INODE, FPERE, IW, LIW, 
      &             IOLDPS, POSELT, A, LA, LDAFS,
-     &             IBEG_BLR, NPIV, IPIV, NASS,LASTBL, NB_BLOC_FAC,
-     &
+     &             IBEG_BLR, NPIV, IPIV, NASS,LASTPANEL, NB_BLOC_FAC,
      &             COMM, MYID, BUFR, LBUFR, LBUFR_BYTES,NBFIN,LEAF,
      &             IFLAG, IERROR, IPOOL,LPOOL,
      &             SLAVEF, POSFAC, IWPOS, IWPOSCB, IPTRLU, LRLU,
-     &             LRLUS, COMP, PTRIST, PTRAST, PTLUST_S, PTRFAC, STEP,
+     &             LRLUS, COMP, PTRIST, PTRAST, PTLUST_S,PTRFAC,STEP,
      &             PIMASTER, PAMASTER,
-     &             NSTK_S,PERM,PROCNODE_STEPS, root,
+     &             NSTK_S,PERM,PROCNODE_STEPS, root, roota,
      &             OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &             FILS, DAD, PTRARW, PTRAIW,
      &             PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -831,7 +826,7 @@ C
             ENDDO
             CALL DMUMPS_BLR_SAVE_DIAG_BLOCK(
      &            IW(IOLDPS+XXF),
-     &            IP, DIAG)
+     &            IP, DIAG, KEEP(34))
           ENDDO
 #if ! defined(BLR_NOOPENMP)
 !$OMP ENDDO

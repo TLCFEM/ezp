@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -13,7 +13,7 @@ C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       MODULE CMUMPS_ANA_LR
       USE CMUMPS_LR_CORE
-      USE CMUMPS_LR_STATS
+      USE MUMPS_LR_STATS
       USE MUMPS_LR_COMMON
       USE MUMPS_ANA_ORD_WRAPPERS
       USE MUMPS_ANA_BLK_M, ONLY: LMATRIX_T
@@ -112,7 +112,7 @@ C
      &                 NHALO, TRACE, WORKH, NODE, LEN, HALOEDGENBR,
      &                 GEN2HALO)
             ALLOCATE(PARTS(NHALO), IPTRHALO(NHALO+1),
-     &      JCNHALO(HALOEDGENBR), STAT=IERR)
+     &      JCNHALO(max(HALOEDGENBR,1)), STAT=IERR)
             IF (IERR.GT.0) THEN
               IF (LPOK) WRITE(LP,*) 
      &        " Error allocate integer array of size: ", 
@@ -131,7 +131,7 @@ C
      &                 NHALO, TRACE, WORKH, NODE, LEN, HALOEDGENBR,
      &                 GEN2HALO)
             ALLOCATE(PARTS(NHALO), IPTRHALO(NHALO+1),
-     &      JCNHALO(HALOEDGENBR), STAT=IERR)
+     &      JCNHALO(max(HALOEDGENBR,1)), STAT=IERR)
             IF (IERR.GT.0) THEN
               IF (LPOK) WRITE(LP,*) 
      &        " Error allocate integer array of size: ", 
@@ -278,7 +278,7 @@ C
      &                 NHALO, TRACE, WORKH, NODE, HALOEDGENBR,
      &                 GEN2HALO)
             ALLOCATE(PARTS(NHALO), IPTRHALO(NHALO+1),
-     &      JCNHALO(HALOEDGENBR), VWGT(NHALO), STAT=IERR)
+     &      JCNHALO(max(HALOEDGENBR,1)), VWGT(NHALO), STAT=IERR)
             IF (IERR.GT.0) THEN
               IF (LPOK) WRITE(LP,*) 
      &        " Error allocate integer array of size: ", 
@@ -301,7 +301,7 @@ C
      &                 NHALO, TRACE, WORKH, NODE, HALOEDGENBR,
      &                 GEN2HALO)
             ALLOCATE(PARTS(NHALO), IPTRHALO(NHALO+1),
-     &      JCNHALO(HALOEDGENBR), VWGT(NHALO), STAT=IERR)
+     &      JCNHALO(max(HALOEDGENBR,1)), VWGT(NHALO), STAT=IERR)
             IF (IERR.GT.0) THEN
               IF (LPOK) WRITE(LP,*) 
      &        " Error allocate integer array of size: ", 
@@ -462,7 +462,7 @@ C
       INTEGER, INTENT(IN)     :: TRACE(N)
       INTEGER(8),INTENT(IN)   :: HALOEDGENBR
       INTEGER(8), INTENT(OUT) :: IPTRHALO(NHALO+1)
-      INTEGER, INTENT(OUT)    :: JCNHALO(HALOEDGENBR)
+      INTEGER, INTENT(OUT)    :: JCNHALO(max(HALOEDGENBR,1))
       INTEGER                 :: IQ(NHALO)
       INTEGER::I,J,NB,II,JJ,HALOI,HALOJ
       DO I=NSEP+1, NHALO
@@ -714,7 +714,7 @@ C
       INTEGER, INTENT(IN)     :: IW(LW), TRACE(N)
       INTEGER(8),INTENT(IN)   :: HALOEDGENBR
       INTEGER(8), INTENT(OUT) :: IPTRHALO(NHALO+1)
-      INTEGER, INTENT(OUT)    :: JCNHALO(HALOEDGENBR)
+      INTEGER, INTENT(OUT)    :: JCNHALO(max(HALOEDGENBR,1))
       INTEGER::I,IPTR_CNT,JCN_CNT,HALOI
       INTEGER(8) :: J, CNT
       CNT = 0
@@ -953,6 +953,7 @@ C
                   LRGROUPS(WORK(I))=NBGROUPS+1+(I-1)/GROUP_SIZE2
                END DO
                NBGROUPS = NBGROUPS + (NV-1)/GROUP_SIZE2 + 1
+               K142 = max(K142, min(NV,GROUP_SIZE2))
             ELSE
               CALL SEP_GROUPING( ND_STEPS(NODE), KEEP, 
      &              NV, WORK(1), N, NZ8,
@@ -972,7 +973,8 @@ C
              LRGROUPS( WORK(I) ) = -(NBGROUPS + 1)
              ENDDO
            ENDIF
-            NBGROUPS = NBGROUPS + 1
+           NBGROUPS = NBGROUPS + 1
+           K142 = max (K142,NV)
          ENDIF
          CALL MUMPS_UPD_TREE(NV, NSTEPS, N, FIRST, LPTR, RPTR, F,
      &        WORK(1),
@@ -1231,6 +1233,7 @@ C
             DO I=1,NV
               LRGROUPS(WORK(I))=NBG_CAPT+1+(I-1)/GROUP_SIZE2
             END DO
+            K142 = max(K142, min(NV,GROUP_SIZE2))
           ELSE
             IF (K469_LOC .EQ. 2) THEN
               CALL SEP_GROUPING( ND_STEPS(NODE), KEEP,
@@ -1282,6 +1285,7 @@ C
               LRGROUPS( WORK(I) ) = -NBGROUPS_local
             ENDDO
           ENDIF
+          K142 = max (K142,NV)
         ENDIF
       ENDDO       
 !$OMP END DO
@@ -1581,6 +1585,7 @@ C
             DO I=1,NV
               LRGROUPS(WORK(I))=NBG_CAPT+1+(I-1)/GROUP_SIZE2_TMP
             END DO
+            K142 = max(K142, min(NV,GROUP_SIZE2_TMP))
           ELSE
             IF (K469_LOC .EQ. 2) THEN
               CALL SEP_GROUPING_AB(  ND_STEPS(NODE), KEEP,
@@ -1632,6 +1637,7 @@ C
               LRGROUPS( WORK(I) ) = -NBGROUPS_local
             ENDDO
           ENDIF
+          K142 = max (K142,NV)
         ENDIF
       ENDDO       
 !$OMP END DO

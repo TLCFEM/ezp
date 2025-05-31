@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -11,6 +11,106 @@ C  released under the CeCILL-C license
 C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
+      SUBROUTINE SMUMPS_ANA_ARROWHEADS_WRAPPER ( id, 
+     &               GATHER_MATRIX_ALLOCATED   ) 
+      USE SMUMPS_STRUC_DEF
+      USE SMUMPS_ANA_AUX_M, ONLY:SMUMPS_ANA_N_DIST
+      IMPLICIT NONE
+      INCLUDE 'mpif.h'
+      INCLUDE 'mumps_tags.h'
+      INTEGER   :: MASTER
+      PARAMETER( MASTER = 0 )
+      TYPE(SMUMPS_STRUC), TARGET  :: id
+      LOGICAL, INTENT(INOUT)      :: GATHER_MATRIX_ALLOCATED
+      INTEGER, ALLOCATABLE, DIMENSION(:) :: NBINROW_TMP, NBINCOL_TMP
+      INTEGER, DIMENSION(:), POINTER :: KEEP, ICNTL, INFO
+      INTEGER(8), DIMENSION(:), POINTER :: KEEP8
+      LOGICAL  :: I_AM_SLAVE
+      INTEGER  :: allocok
+      KEEP    => id%KEEP
+      ICNTL   => id%ICNTL
+      INFO    => id%INFO 
+      KEEP8  => id%KEEP8
+      I_AM_SLAVE = ( id%MYID .ne. MASTER  .OR.
+     &     ( id%MYID .eq. MASTER .AND.
+     &     id%KEEP(46) .eq. 1 ) )
+      IF (KEEP(55) .EQ. 0) THEN
+         ALLOCATE( NBINCOL_TMP( id%N ), NBINROW_TMP( id%N ),
+     &             stat=allocok )
+         IF (allocok.GT.0) THEN
+           INFO(1)=-7
+           CALL MUMPS_SET_IERROR(int(id%N,8)+int(id%N,8), INFO(2))
+         ENDIF
+         CALL MUMPS_PROPINFO( ICNTL(1), INFO(1), id%COMM, id%MYID )
+         IF ( INFO(1).LT.0 ) GOTO 500
+         CALL SMUMPS_ANA_N_DIST(id, NBINCOL_TMP, NBINROW_TMP)
+         IF ( .NOT. I_AM_SLAVE ) THEN
+           DEALLOCATE(NBINCOL_TMP)
+           DEALLOCATE(NBINROW_TMP)
+         ENDIF
+         IF(id%MYID .EQ. MASTER) THEN
+            IF ( (KEEP(244) .EQ. 1) .AND. (KEEP(54) .EQ. 3) ) THEN
+                IF (GATHER_MATRIX_ALLOCATED) THEN
+                    IF (associated(id%IRN)) THEN
+                      DEALLOCATE(id%IRN)
+                      NULLIFY(id%IRN)
+                    ENDIF
+                    IF (associated(id%JCN)) THEN
+                      DEALLOCATE(id%JCN)
+                      NULLIFY(id%JCN)
+                    ENDIF
+                    GATHER_MATRIX_ALLOCATED= .FALSE.
+                ENDIF
+            END IF
+         END IF
+      ENDIF
+      IF ( I_AM_SLAVE ) THEN
+         IF (KEEP(55) .EQ. 0) THEN
+            CALL SMUMPS_ANA_DIST_ARROWHEADS( id%MYID,
+     &           id%NSLAVES, id%N, id%PROCNODE_STEPS(1),
+     &           id%STEP(1), id%FILS(1),
+     &           id%ISTEP_TO_INIV2(1), id%I_AM_CAND(1),
+     &           KEEP(1),KEEP8(1), ICNTL(1), id,
+     &           NBINCOL_TMP, NBINROW_TMP )
+            DEALLOCATE(NBINCOL_TMP)
+            DEALLOCATE(NBINROW_TMP)
+         ELSE
+            CALL SMUMPS_ANA_DIST_ELEMENTS( id%MYID,
+     &           id%NSLAVES, id%N, id%PROCNODE_STEPS(1),
+     &           id%STEP(1),
+     &           id%PTRAR(1),
+     &           id%PTRAR(id%NELT+2 ),
+     &           id%NELT, 
+     &           id%FRTPTR(1), id%FRTELT(1),
+     &           KEEP(1), KEEP8(1), ICNTL(1), id%KEEP(50) )
+                 id%KEEP(193)=1;id%KEEP(194)=1
+                 id%KEEP(195)=1; id%KEEP(196)=1
+            ALLOCATE( id%PTR8ARR(1),
+     &                id%NINCOLARR(1),
+     &                id%NINROWARR(1),
+     &                id%PTRDEBARR(1), stat=allocok)
+            IF (allocok .GT. 0) THEN
+              id%INFO(1)=-7
+              id%INFO(2)=4
+            ENDIF
+         ENDIF
+      ELSE
+        KEEP8(26) = 0_8
+        KEEP8(27) = 0_8
+        ALLOCATE( id%PTR8ARR(1),
+     &            id%NINCOLARR(1),
+     &            id%NINROWARR(1),
+     &            id%PTRDEBARR(1), stat=allocok)
+        IF (allocok .GT. 0) THEN
+          id%INFO(1)=-7
+          id%INFO(2)=4
+        ENDIF
+      ENDIF
+ 500  CONTINUE
+      IF (allocated(NBINROW_TMP)) DEALLOCATE(NBINROW_TMP)
+      IF (allocated(NBINCOL_TMP)) DEALLOCATE(NBINCOL_TMP)
+      RETURN
+      END SUBROUTINE SMUMPS_ANA_ARROWHEADS_WRAPPER
       SUBROUTINE SMUMPS_ANA_DIST_ARROWHEADS( MYID, SLAVEF, N,
      &           PROCNODE, STEP, FILS, ISTEP_TO_INIV2,
      &           I_AM_CAND,
@@ -150,13 +250,14 @@ C
      &   IRN, ICN, PERM,
      &   LSCAL,COLSCA,ROWSCA,
      &   MYID, SLAVEF, PROCNODE_STEPS, NBRECORDS,
-     &   COMM, root, KEEP, KEEP8, FILS,
+     &   COMM, root, roota, KEEP, KEEP8, FILS,
      &   INTARR, LINTARR, DBLARR, LDBLARR,
      &   PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR, FRERE_STEPS,
      &   STEP, A, LA, ISTEP_TO_INIV2, I_AM_CAND, CANDIDATES,
      &   ICNTL, INFO )
 !$    USE OMP_LIB
-      USE SMUMPS_STRUC_DEF, ONLY : SMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INTEGER    :: N, COMM, NBRECORDS
       INTEGER(8), INTENT(IN) :: NZ
@@ -172,7 +273,8 @@ C
       INTEGER SLAVEF, MYID
       INTEGER CANDIDATES(SLAVEF+1, max(1,KEEP(56)))
       LOGICAL LSCAL
-      TYPE (SMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (SMUMPS_ROOT_STRUC) :: roota
       INTEGER INFO( 80 ), ICNTL(60)
       INTEGER(8), INTENT(IN)    :: LA
       INTEGER(8), INTENT(IN) :: PTR8ARR(KEEP(193))
@@ -296,7 +398,7 @@ C
         IF ( KEEP(38) .NE. 0 .AND. EARLYT3ROOTINS ) THEN
           CALL SMUMPS_GET_ROOT_INFO(root, LOCAL_M, LOCAL_N,
      &                              PTR_ROOT, LA)
-          CALL SMUMPS_SET_ROOT_TO_ZERO(root, KEEP, A, LA)
+          CALL SMUMPS_SET_ROOT_TO_ZERO(root, roota, KEEP, A, LA)
         ELSE
           LOCAL_M = -19999; LOCAL_N = -29999; PTR_ROOT = -99999_8
         END IF
@@ -466,10 +568,10 @@ C
      &             + int(ILOCROOT - 1,8) )
      &           + VAL
                ELSE
-                 root%SCHUR_POINTER( int(JLOCROOT - 1,8)
+                 roota%SCHUR_POINTER( int(JLOCROOT - 1,8)
      &                             * int(root%SCHUR_LLD,8)
      &                             + int(ILOCROOT,8) )
-     &            = root%SCHUR_POINTER( int(JLOCROOT - 1,8)
+     &            = roota%SCHUR_POINTER( int(JLOCROOT - 1,8)
      &                             *    int(root%SCHUR_LLD,8)
      &                             +    int(ILOCROOT,8))
      &            + VAL
@@ -715,10 +817,11 @@ C
      &    DBLARR, LDBLARR, INTARR, LINTARR,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    KEEP, KEEP8, FILS, MYID,  COMM, NBRECORDS,
-     &    A, LA, root,
+     &    A, LA, root, roota,
      &    PROCNODE_STEPS,
      &    SLAVEF, PERM, FRERE_STEPS, STEP, ICNTL, INFO )
-      USE SMUMPS_STRUC_DEF, ONLY : SMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INTEGER N, MYID, COMM
       INTEGER   KEEP(500)
@@ -737,7 +840,8 @@ C
       INTEGER INFO( 80 ), ICNTL(60)
       REAL DBLARR(LDBLARR)
       INTEGER FRERE_STEPS( KEEP(28) ), STEP(N)
-      TYPE (SMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (SMUMPS_ROOT_STRUC) :: roota
       INTEGER LP
       LOGICAL LPOK
       INTEGER, ALLOCATABLE, DIMENSION(:) :: BUFI
@@ -808,7 +912,7 @@ C
       IF ( INFO( 1 ) .LT. 0 ) GOTO 500
       IF ( KEEP(38).NE.0 .AND. EARLYT3ROOTINS ) THEN
         CALL SMUMPS_GET_ROOT_INFO(root, LOCAL_M, LOCAL_N, PTR_ROOT, LA)
-        CALL SMUMPS_SET_ROOT_TO_ZERO(root, KEEP, A, LA)
+        CALL SMUMPS_SET_ROOT_TO_ZERO(root, roota, KEEP, A, LA)
       ELSE
         LOCAL_M = -19999; LOCAL_N = -29999; PTR_ROOT = -99999_8
       END IF
@@ -879,10 +983,10 @@ C
      &                      + int(ILOCROOT - 1,8))
      &           + VAL
             ELSE
-              root%SCHUR_POINTER( int(JLOCROOT-1,8)
+              roota%SCHUR_POINTER( int(JLOCROOT-1,8)
      &                          * int(root%SCHUR_LLD,8)
      &                          + int(ILOCROOT,8) )
-     &        = root%SCHUR_POINTER( int(JLOCROOT - 1,8)
+     &        = roota%SCHUR_POINTER( int(JLOCROOT - 1,8)
      &                          * int(root%SCHUR_LLD,8)
      &                          + int(ILOCROOT,8))
      &          + VAL
@@ -961,13 +1065,15 @@ C
       ENDIF
       RETURN
       END SUBROUTINE SMUMPS_SET_TO_ZERO
-      SUBROUTINE SMUMPS_SET_ROOT_TO_ZERO(root, KEEP, A, LA)
-      USE SMUMPS_STRUC_DEF, ONLY : SMUMPS_ROOT_STRUC
+      SUBROUTINE SMUMPS_SET_ROOT_TO_ZERO(root, roota, KEEP, A, LA)
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INTEGER(8), INTENT(IN)   :: LA
       REAL, INTENT(INOUT)   :: A(LA)
       INTEGER                  :: KEEP(500)
-      TYPE (SMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC)  :: root
+      TYPE (SMUMPS_ROOT_STRUC) :: roota
       INTEGER :: LOCAL_M, LOCAL_N
       INTEGER(8) :: PTR_ROOT
       IF (KEEP(60)==0) THEN
@@ -977,7 +1083,7 @@ C
      &                            LOCAL_M, LOCAL_M, LOCAL_N, KEEP)
         ENDIF
       ELSE IF (root%yes) THEN
-        CALL SMUMPS_SET_TO_ZERO(root%SCHUR_POINTER(1),
+        CALL SMUMPS_SET_TO_ZERO(roota%SCHUR_POINTER(1),
      &       root%SCHUR_LLD, root%SCHUR_MLOC, root%SCHUR_NLOC,
      &       KEEP)
       ENDIF
@@ -985,9 +1091,9 @@ C
       END SUBROUTINE SMUMPS_SET_ROOT_TO_ZERO
       SUBROUTINE SMUMPS_GET_ROOT_INFO(root,
      &                                LOCAL_M, LOCAL_N, PTR_ROOT, LA)
-      USE SMUMPS_STRUC_DEF, ONLY : SMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
       IMPLICIT NONE
-      TYPE (SMUMPS_ROOT_STRUC), INTENT(IN) :: root
+      TYPE (MUMPS_ROOT_STRUC), INTENT(IN) :: root
       INTEGER,    INTENT(OUT) :: LOCAL_M, LOCAL_N
       INTEGER(8), INTENT(OUT) :: PTR_ROOT
       INTEGER(8), INTENT(IN)  :: LA

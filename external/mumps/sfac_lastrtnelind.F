@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -12,7 +12,7 @@ C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       SUBROUTINE SMUMPS_LAST_RTNELIND( COMM_LOAD, ASS_IRECV, 
-     &    root, FRERE, IROOT, 
+     &    root, roota, FRERE, IROOT, 
      &    BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
      &    IWPOS, IWPOSCB, IPTRLU,
      &    LRLU, LRLUS, N, IW, LIW, A, LA, PTRIST,
@@ -31,11 +31,14 @@ C
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE  
      &               , LRGROUPS
      &     )
-      USE SMUMPS_BUF
-      USE SMUMPS_STRUC_DEF, ONLY : SMUMPS_ROOT_STRUC
+      USE MUMPS_BUF_COMMON, ONLY : MUMPS_BUF_SEND_ROOT2SLAVE,
+     &                             MUMPS_BUF_SEND_ROOT2SON
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INCLUDE 'mpif.h'
-      TYPE (SMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (SMUMPS_ROOT_STRUC) :: roota
       INTEGER IROOT
       INTEGER ICNTL( 60 ), KEEP( 500 )
       INTEGER(8) KEEP8(150)
@@ -95,18 +98,18 @@ C
         DO JCOL = 0, root%NPCOL - 1
             PDEST = IROW * root%NPCOL + JCOL
           IF ( PDEST .NE. MYID ) THEN
-           CALL SMUMPS_BUF_SEND_ROOT2SLAVE(NFRONT, 
+           CALL MUMPS_BUF_SEND_ROOT2SLAVE(NFRONT, 
      &     NB_CONTRI_GLOBAL, PDEST, COMM, KEEP, IERR)
            if (IERR.lt.0) then
                 write(6,*) ' error detected by ',
-     &          'SMUMPS_BUF_SEND_ROOT2SLAVE'
+     &          'MUMPS_BUF_SEND_ROOT2SLAVE'
                 CALL MUMPS_ABORT()
                endif
            ENDIF
         END DO
       END DO
       CALL  SMUMPS_PROCESS_ROOT2SLAVE( NFRONT,
-     &    NB_CONTRI_GLOBAL, root,
+     &    NB_CONTRI_GLOBAL, root, roota,
      &    BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
      &    IWPOS, IWPOSCB, IPTRLU,
      &    LRLU, LRLUS, N, IW, LIW, A, LA, PTRIST,
@@ -164,16 +167,16 @@ C
              PDEST = IW(IPOS_SON + 5 + ISLAVE+KEEP(IXSZ))
             ENDIF
             IF (PDEST.NE.MYID) THEN
-             CALL SMUMPS_BUF_SEND_ROOT2SON(IN, NELIM_SENT,
+             CALL MUMPS_BUF_SEND_ROOT2SON(IN, NELIM_SENT,
      &        PDEST, COMM, KEEP, IERR )
              if (IERR.lt.0) then
                 write(6,*) ' error detected by ',
-     &          'SMUMPS_BUF_SEND_ROOT2SLAVE'
+     &          'MUMPS_BUF_SEND_ROOT2SON'
                 CALL MUMPS_ABORT()
                endif
             ELSE
              CALL SMUMPS_PROCESS_ROOT2SON( COMM_LOAD, ASS_IRECV,
-     &       IN, NELIM_SENT, root,
+     &       IN, NELIM_SENT, root, roota,
      &
      &       BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
      &       IWPOS, IWPOSCB, IPTRLU,

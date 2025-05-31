@@ -1,14 +1,14 @@
 /*
  *
- *  This file is part of MUMPS 5.7.3, released
- *  on Mon Jul 15 11:44:21 UTC 2024
+ *  This file is part of MUMPS 5.8.0, released
+ *  on Tue May  6 08:27:40 UTC 2025
  *
  *
- *  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+ *  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
  *  Mumps Technologies, University of Bordeaux.
  *
  *  This version of MUMPS is provided to you free of charge. It is
- *  released under the CeCILL-C license 
+ *  released under the CeCILL-C license
  *  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
  *  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
  *
@@ -18,29 +18,27 @@
 #ifndef MUMPS_COMPAT_H
 #define MUMPS_COMPAT_H
 
-
-#if defined(_WIN32) && ! defined(__MINGW32__)
-# define MUMPS_WIN32 1
+#if defined(_WIN32) && !defined(__MINGW32__)
+#define MUMPS_WIN32 1
 #endif
 
 #ifndef MUMPS_CALL
-# ifdef MUMPS_WIN32
+#ifdef MUMPS_WIN32
 /* Choose between next lines or modify according
  * to your Windows calling conventions:       */
 /*   #define MUMPS_CALL                       */
 /*   #define MUMPS_CALL __stdcall             */
 /*   #define MUMPS_CALL __declspec(dllexport) */
-#  define MUMPS_CALL
-# else
-#  define MUMPS_CALL
-# endif
+#define MUMPS_CALL
+#else
+#define MUMPS_CALL
+#endif
 #endif
 
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
-# define MUMPS_INLINE static inline
+#define MUMPS_INLINE static inline
 #else
-# define MUMPS_INLINE
+#define MUMPS_INLINE
 #endif
-
 
 #endif /* MUMPS_COMPAT_H */

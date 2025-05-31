@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -16,8 +16,8 @@ C      ----------------------------------
 C      This module defines a type used in 
 C      DMUMPS_FAC_DRIVER and DMUMPS_FAC_B
 C      ----------------------------------
-       TYPE S_IS_POINTERS_T
+       TYPE DMUMPS_S_IS_POINTERS_T
           DOUBLE PRECISION, POINTER, DIMENSION(:) :: A
           INTEGER, POINTER, DIMENSION(:) :: IW
-       END TYPE S_IS_POINTERS_T
+       END TYPE DMUMPS_S_IS_POINTERS_T
        END MODULE DMUMPS_FAC_S_IS_POINTERS_M

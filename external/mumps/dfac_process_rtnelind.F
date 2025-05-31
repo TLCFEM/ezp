@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -11,7 +11,7 @@ C  released under the CeCILL-C license
 C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
-      SUBROUTINE DMUMPS_PROCESS_RTNELIND( ROOT, 
+      SUBROUTINE DMUMPS_PROCESS_RTNELIND( root, roota,
      &    INODE, NELIM, NSLAVES, ROW_LIST,
      &    COL_LIST, SLAVE_LIST, 
      &
@@ -24,10 +24,12 @@ C
      &    IPOOL, LPOOL, LEAF, MYID, SLAVEF,
      &    KEEP, KEEP8, DKEEP,
      &    COMM, COMM_LOAD, FILS, DAD, ND )
-      USE DMUMPS_LOAD
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_LOAD
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
       IMPLICIT NONE
-      TYPE (DMUMPS_ROOT_STRUC) :: ROOT
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (DMUMPS_ROOT_STRUC) :: roota
       INTEGER INODE, NELIM, NSLAVES 
       INTEGER KEEP( 500 )
       INTEGER(8) KEEP8(150)
@@ -120,7 +122,7 @@ C
      &         KEEP(28), KEEP(76), KEEP(80), KEEP(47),
      &         STEP, IROOT )
           IF (KEEP(47) .GE. 3) THEN
-             CALL DMUMPS_LOAD_POOL_UPD_NEW_POOL(
+             CALL MUMPS_LOAD_POOL_UPD_NEW_POOL(
      &            IPOOL, LPOOL, 
      &            PROCNODE_STEPS, KEEP,KEEP8, SLAVEF, COMM_LOAD,
      &            MYID, STEP, N, ND, FILS )

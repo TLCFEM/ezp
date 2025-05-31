@@ -1,10 +1,10 @@
 /*
  *
- *  This file is part of MUMPS 5.7.3, released
- *  on Mon Jul 15 11:44:21 UTC 2024
+ *  This file is part of MUMPS 5.8.0, released
+ *  on Tue May  6 08:27:40 UTC 2025
  *
  *
- *  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+ *  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
  *  Mumps Technologies, University of Bordeaux.
  *
  *  This version of MUMPS is provided to you free of charge. It is
@@ -40,13 +40,11 @@
 #define DMUMPS_REAL double
 
 /* Complex datatypes */
-typedef struct
-{
-   float r, i;
+typedef struct {
+    float r, i;
 } mumps_complex;
-typedef struct
-{
-   double r, i;
+typedef struct {
+    double r, i;
 } mumps_double_complex;
 
 #define CMUMPS_COMPLEX mumps_complex

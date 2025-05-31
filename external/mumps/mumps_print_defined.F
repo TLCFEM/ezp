@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -47,7 +47,7 @@ C
 #endif
 #if defined(MUMPS_SCOTCHIMPORTOMPTHREADS)
       write(MPG,*)
-     &"MUMPS compiled with option -DMUMPS_SCOTCH_IMPORTTHREADS"
+     &"MUMPS compiled with option -DMUMPS_SCOTCHIMPORTTHREADS"
 #endif
 #if defined(MUMPS_WINLARGEFILES)
       write(MPG,*) "MUMPS compiled with option -DMUMPS_WINLARGEFILES"

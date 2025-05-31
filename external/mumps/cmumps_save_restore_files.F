@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -247,7 +247,6 @@ C
       tmp_save_prefix=''
       IF(id%SAVE_DIR.EQ."NAME_NOT_INITIALIZED") THEN
          call MUMPS_GET_SAVE_DIR_C(len_save_dir,tmp_save_dir)
-         len_save_dir=min(SAVE_DIR_MAX_LENGTH,len_save_dir)
          if (len_save_dir > SAVE_DIR_MAX_LENGTH) then
            id%INFO(1) = -77
            id%INFO(2) = SAVE_DIR_MAX_LENGTH
@@ -268,7 +267,6 @@ C
       IF ( id%INFO(1) .LT. 0 ) GOTO 100
       IF(id%SAVE_PREFIX.EQ."NAME_NOT_INITIALIZED") THEN
         call MUMPS_GET_SAVE_PREFIX_C(len_save_prefix,tmp_save_prefix)
-        len_save_prefix=min(SAVE_PREFIX_MAX_LENGTH,len_save_prefix)
         if(len_save_prefix.GT.SAVE_PREFIX_MAX_LENGTH) then
           id%INFO(1)=-77
           id%INFO(2)=-SAVE_PREFIX_MAX_LENGTH

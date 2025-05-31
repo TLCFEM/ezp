@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -13,7 +13,7 @@ C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       SUBROUTINE CMUMPS_PROCESS_CONTRIB_TYPE3(BUFR,LBUFR,
      &     LBUFR_BYTES,
-     &     root, N, IW, LIW, A, LA,
+     &     root, roota, N, IW, LIW, A, LA,
      &     LRLU, IPTRLU, IWPOS, IWPOSCB,
      &     PTRIST, PTLUST, PTRFAC, PTRAST, STEP, PIMASTER, PAMASTER,
      &     COMP, LRLUS, IPOOL, LPOOL, LEAF,
@@ -25,11 +25,13 @@ C
      &     KEEP, KEEP8, DKEEP, IFLAG, IERROR, COMM, COMM_LOAD,
      &     ITLOC, RHS_MUMPS,
      &     ND,PROCNODE_STEPS, SLAVEF, OPASSW )
-      USE CMUMPS_LOAD
+      USE MUMPS_LOAD
       USE CMUMPS_OOC
-      USE CMUMPS_STRUC_DEF, ONLY : CMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE CMUMPS_INTR_TYPES, ONLY : CMUMPS_ROOT_STRUC
       IMPLICIT NONE
-      TYPE (CMUMPS_ROOT_STRUC ) :: root
+      TYPE (MUMPS_ROOT_STRUC ) :: root
+      TYPE (CMUMPS_ROOT_STRUC ) :: roota
       INTEGER    :: KEEP( 500 )
       INTEGER(8) :: KEEP8(150)
       REAL       :: DKEEP(230)
@@ -118,7 +120,7 @@ C
      &             KEEP(80), KEEP(47),
      &             STEP, IROOT + N)
               IF (KEEP(47) .GE. 3) THEN
-                 CALL CMUMPS_LOAD_POOL_UPD_NEW_POOL(
+                 CALL MUMPS_LOAD_POOL_UPD_NEW_POOL(
      &                IPOOL, LPOOL, 
      &                PROCNODE_STEPS, KEEP,KEEP8, SLAVEF, COMM_LOAD,
      &                MYID, STEP, N, ND, FILS )
@@ -132,7 +134,7 @@ C
      &        NSUBSET_COL_EFF .EQ. 0)THEN
              KEEP(121)=-1
            ENDIF
-           CALL CMUMPS_ROOT_ALLOC_STATIC( root, IROOT, N,
+           CALL CMUMPS_ROOT_ALLOC_STATIC( root, roota, IROOT, N,
      &                IW, LIW, A, LA,
      &                FILS, DAD, MYID, SLAVEF, PROCNODE_STEPS,
      &                LPTRAR, NELT, FRTPTR, FRTELT,
@@ -188,20 +190,20 @@ C
      &                   A( IPTRLU + 1_8 ), int(LREQA),
      &                   MPI_COMPLEX, COMM, IERR )
          OPASSW = OPASSW + LREQA 
-         CALL CMUMPS_ASS_ROOT( root, KEEP(50), NSUPROW, NSUPCOL,
+         CALL CMUMPS_ASS_ROOT( root, roota, KEEP(50), NSUPROW, NSUPCOL,
      &                     IW( IWPOSCB + 1 ), 
      &                     IW( IWPOSCB + NSUPROW + 1 ), NSUPCOL,
      &                     A( IPTRLU + 1_8 ),
      &                     A( 1 ), 
      &                     LOCAL_M, LOCAL_N,
-     &                  root%RHS_ROOT(1,1), root%RHS_NLOC,
+     &                  roota%RHS_ROOT(1,1), root%RHS_NLOC,
      &                  1)
          IWPOSCB = IWPOSCB + LREQI
          IPTRLU  = IPTRLU  + LREQA
          LRLU    = LRLU    + LREQA
          LRLUS   = LRLUS   + LREQA
          KEEP8(69) = KEEP8(69) - LREQA
-         CALL CMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+         CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &                    LA-LRLUS,0_8,-LREQA,KEEP,KEEP8,LRLUS)
         ENDIF  
         LREQI = NBROWS_PACKET + NSUBSET_COL_EFF
@@ -229,25 +231,25 @@ C
      &                   MPI_COMPLEX, COMM, IERR )
           OPASSW = OPASSW + LREQA 
           IF (KEEP(60).EQ.0) THEN
-            CALL CMUMPS_ASS_ROOT( root, KEEP(50),
+            CALL CMUMPS_ASS_ROOT( root, roota, KEEP(50),
      &                     NBROWS_PACKET, NSUBSET_COL_EFF,
      &                     IW( IWPOSCB + 1 ),
      &                     IW( IWPOSCB + NBROWS_PACKET + 1 ),
      &                     NSUPCOL_EFF,
      &                     A( IPTRLU + 1_8 ),
      &                     A( POS_ROOT ), LOCAL_M, LOCAL_N,
-     &                  root%RHS_ROOT(1,1), root%RHS_NLOC,
+     &                  roota%RHS_ROOT(1,1), root%RHS_NLOC,
      &                  0)   
           ELSE
-            CALL CMUMPS_ASS_ROOT( root, KEEP(50),
+            CALL CMUMPS_ASS_ROOT( root, roota, KEEP(50),
      &                     NBROWS_PACKET, NSUBSET_COL_EFF,
      &                     IW( IWPOSCB + 1 ),
      &                     IW( IWPOSCB + NBROWS_PACKET + 1 ),
      &                     NSUPCOL_EFF,
      &                     A( IPTRLU + 1_8 ),
-     &                     root%SCHUR_POINTER(1),
+     &                     roota%SCHUR_POINTER(1),
      &                     root%SCHUR_LLD , root%SCHUR_NLOC,
-     &                  root%RHS_ROOT(1,1), root%RHS_NLOC,
+     &                  roota%RHS_ROOT(1,1), root%RHS_NLOC,
      &                  0)  
           ENDIF
           IWPOSCB = IWPOSCB + LREQI
@@ -255,7 +257,7 @@ C
           LRLU    = LRLU    + LREQA
           LRLUS   = LRLUS   + LREQA
           KEEP8(69) = KEEP8(69) - LREQA
-          CALL CMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+          CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &                    LA-LRLUS,0_8,-LREQA,KEEP,KEEP8,LRLUS)
         ENDIF
       RETURN

@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -13,7 +13,7 @@ C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       RECURSIVE SUBROUTINE 
      &    DMUMPS_PROCESS_ROOT2SON( COMM_LOAD, ASS_IRECV, 
-     &    INODE, NELIM_ROOT, root, 
+     &    INODE, NELIM_ROOT, root, roota,
      &
      &    BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
      &    IWPOS, IWPOSCB, IPTRLU,
@@ -31,10 +31,12 @@ C
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE
      &               , LRGROUPS
      &     )
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INCLUDE 'mpif.h'
-      TYPE (DMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (DMUMPS_ROOT_STRUC) :: roota
       INTEGER KEEP(500), ICNTL( 60 )
       INTEGER(8) KEEP8(150)
       DOUBLE PRECISION       DKEEP(230)
@@ -128,7 +130,7 @@ C
      &   ASS_IRECV, 
      &   N, INODE, FPERE,
      &   PTLUST_S(1), PTRAST(1),
-     &   root, NROW, NCOL, SHIFT_LIST_ROW_SON,
+     &   root, roota, NROW, NCOL, SHIFT_LIST_ROW_SON,
      &   SHIFT_LIST_COL_SON , SHIFT_VAL_SON, LDAFS,
      &   ROOT_NON_ELIM_CB, MYID, COMM,
      &   BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
@@ -160,7 +162,7 @@ C
         CALL DMUMPS_BUILD_AND_SEND_CB_ROOT( COMM_LOAD, ASS_IRECV,
      &    N, INODE, FPERE,
      &    PTLUST_S, PTRAST,
-     &    root, NROW, NCOL, SHIFT_LIST_ROW_SON,
+     &    root, roota, NROW, NCOL, SHIFT_LIST_ROW_SON,
      &    SHIFT_LIST_COL_SON , SHIFT_VAL_SON, NFRONT,
      &    ROOT_NON_ELIM_CB, MYID, COMM,
      &
@@ -194,9 +196,16 @@ C
        ELSE
          LDA = NPIV+NBROW
        ENDIF
-       CALL DMUMPS_COMPACT_FACTORS(A(POSELT), LDA,
+       IF (KEEP(50).NE.0) THEN
+         CALL DMUMPS_COMPACT_FACTORS_SYM(A(POSELT), LDA,
      &          NPIV, NBROW, KEEP,
      &          int(LDA,8)*int(NBROW+NPIV,8), IW(IOLDPS+H_INODE+NFRONT))
+       ELSE
+         CALL DMUMPS_COMPACT_FACTORS_UNSYM(
+     &          A(POSELT+int(NPIV,8)*int(LDA,8)), LDA,
+     &          NPIV, NBROW, KEEP,
+     &          int(LDA,8)*int(NBROW+NPIV,8) )
+       ENDIF
        IW(IOLDPS + KEEP(IXSZ))     = NBCOL
        IW(IOLDPS + 1 +KEEP(IXSZ)) = NASS - NPIV
        IF (TYPE_SON.EQ.2) THEN
@@ -230,7 +239,7 @@ C
      &    IFLAG, IERROR, COMM,
      &    PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &    root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR,ICNTL,KEEP,KEEP8,DKEEP,ND,FRERE,LPTRAR,
@@ -273,7 +282,7 @@ C
      &    IFLAG, IERROR, COMM,
      &    PERM, IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &    root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR,DBLARR,ICNTL,KEEP,KEEP8,DKEEP,ND, FRERE, LPTRAR,
@@ -311,7 +320,7 @@ C
        CALL DMUMPS_BUILD_AND_SEND_CB_ROOT( COMM_LOAD, ASS_IRECV, 
      &    N, INODE, FPERE,
      &    PTRIST, PTRAST,
-     &    root, NROW, NCOL_TO_SEND, SHIFT_LIST_ROW_SON,
+     &    root, roota, NROW, NCOL_TO_SEND, SHIFT_LIST_ROW_SON,
      &    SHIFT_LIST_COL_SON , SHIFT_VAL_SON, LDA,
      &    ROOT_NON_ELIM_CB, MYID, COMM,
      &

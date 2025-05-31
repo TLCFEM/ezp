@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -14,7 +14,7 @@ C
       MODULE DMUMPS_SOL_LR
       USE DMUMPS_LR_TYPE
       USE DMUMPS_LR_CORE
-      USE DMUMPS_LR_STATS
+      USE MUMPS_LR_STATS
       USE DMUMPS_LR_DATA_M, only: BLR_ARRAY
       IMPLICIT NONE
       CONTAINS
@@ -96,8 +96,9 @@ C
          ELSE
           BLR_PANEL => BLR_ARRAY(IWHDLR)%PANELS_U(I)%LRB_PANEL
          END IF
-         DIAG =>  BLR_ARRAY(IWHDLR)%DIAG_BLOCKS(I)%DIAG_BLOCK
-         CALL DMUMPS_SOLVE_FWD_TRSOLVE (DIAG(1), int(size(DIAG),8), 1_8,
+         DIAG => BLR_ARRAY(IWHDLR)%DIAG_BLOCKS(I)%DIAG_BLOCK 
+         CALL DMUMPS_SOLVE_FWD_TRSOLVE (DIAG(1), 
+     &         int(size(DIAG),8), 1_8,
      &         DIAGSIZ_DYN , LDADIAG, NRHS_B, WCB, LWCB, NPIV_GLOBAL,
      &         PPIV, MTYPE, KEEP)
          IF (NELIM.GT.0) THEN
@@ -157,7 +158,8 @@ C
      &        NRHS_B, NPIV_GLOBAL,
      &        BLR_PANEL, LAST_BLR, I,
      &        BLR_ARRAY(IWHDLR)%BEGS_BLR_STATIC,
-     &        KEEP8, KEEP(34), KEEP(450), KEEP(451),
+     &        KEEP8, KEEP(34), 
+     &        KEEP(448), KEEP(450), KEEP(451), 
      &        .FALSE.,   
      &        IFLAG, IERROR)
         IF (IFLAG.LT.0) RETURN
@@ -220,8 +222,9 @@ C
      &          NRHS_B, NPIV_GLOBAL,
      &          BLR_PANEL, NB_BLR, 0, 
      &          BLR_ARRAY(IWHDLR)%BEGS_BLR_STATIC(2:NB_BLR+2),
-     &          KEEP8, KEEP(34), KEEP(450), KEEP(451), .TRUE., 
-     &          IFLAG, IERROR )
+     &          KEEP8, KEEP(34), 
+     &          KEEP(448), KEEP(450), KEEP(451), 
+     &          .TRUE., IFLAG, IERROR )
           ELSE 
             CALL DMUMPS_SOL_BWD_BLR_UPDATE (
      &          WCB, LWCB, 1, LDY, -99999_8, 1,
@@ -230,7 +233,8 @@ C
      &          NRHS_B, NPIV_GLOBAL,
      &          BLR_PANEL, NB_BLR, 0, 
      &          BLR_ARRAY(IWHDLR)%BEGS_BLR_STATIC(2:NB_BLR+2),
-     &          KEEP8, KEEP(34), KEEP(450), KEEP(451),
+     &          KEEP8, KEEP(34), 
+     &          KEEP(448), KEEP(450), KEEP(451),
      &          .TRUE.,
      &          IFLAG, IERROR )
           ENDIF
@@ -244,6 +248,114 @@ C
       ENDDO  
       RETURN
       END SUBROUTINE DMUMPS_SOL_SLAVE_LR_U
+      SUBROUTINE GEMM_Q_FWD(m, nrhs_b, k, npiv, 
+     &          Q, TMP, ldT,
+     &          arraypiv, ldpiv, arraycb, lcb, ldcb, 
+     &          ibeg_block, iend_block, is_t2_slave, 
+     &          poscb, pospiv, pospivcol, ibeg_tmp)
+          implicit none
+          integer, intent(in) :: m, nrhs_b, k, npiv
+          DOUBLE PRECISION, dimension(:,:), intent(inout)     :: Q
+          DOUBLE PRECISION, dimension(ldt, *), intent(inout)     :: TMP
+          integer(8), intent(in) :: lcb
+          integer, intent(in)    :: ldpiv
+          DOUBLE PRECISION, intent(inout) :: arraypiv(ldpiv,*)
+          DOUBLE PRECISION, intent(inout) :: arraycb(lcb)
+          integer, intent(in) :: ldt, ldcb
+          integer, intent(in) :: ibeg_block, iend_block
+          logical, intent(in) :: is_t2_slave
+          integer(8), intent(in) :: poscb, pospiv
+          integer, intent(in)    :: pospivcol
+          integer, intent(in) :: ibeg_tmp
+          integer :: posblock
+          DOUBLE PRECISION :: ONE, MONE, ZERO
+          PARAMETER (ONE = 1.0D0, MONE=-1.0D0)
+          PARAMETER (ZERO=0.0D0)
+          IF (IS_T2_SLAVE) THEN
+            POSBLOCK = POSCB+int(IBEG_BLOCK-1,8)
+            CALL dgemm('N', 'N', M, NRHS_B, K, MONE,
+     &        Q(1,1), M, TMP(ibeg_tmp,1), LDT,
+     &        ONE, ARRAYCB(POSBLOCK), LDCB) 
+          ELSEIF (IBEG_BLOCK.LE.NPIV.AND.
+     &            IEND_BLOCK.GT.NPIV) THEN
+            POSBLOCK = POSPIV+int(IBEG_BLOCK-1,8)
+            CALL dgemm('N', 'N', NPIV-IBEG_BLOCK+1,NRHS_B, K,
+     &        MONE, Q(1,1), M, TMP(ibeg_tmp,1), LDT,
+     &        ONE, ARRAYPIV(POSBLOCK,POSPIVCOL), LDPIV) 
+            CALL dgemm('N', 'N', IBEG_BLOCK+M-NPIV-1, 
+     &        NRHS_B, K, 
+     &        MONE, Q(NPIV-IBEG_BLOCK+2,1), M, 
+     &        TMP(ibeg_tmp,1), LDT, ONE, ARRAYCB(POSCB), LDCB) 
+          ELSEIF (IBEG_BLOCK.LE.NPIV) THEN
+            POSBLOCK = POSPIV+int(IBEG_BLOCK-1,8)
+            CALL dgemm('N', 'N', M, NRHS_B, K, MONE,
+     &        Q(1,1), M, TMP(ibeg_tmp,1), LDT,
+     &        ONE, ARRAYPIV(POSBLOCK,POSPIVCOL), LDPIV) 
+          ELSE
+            POSBLOCK = POSCB+int(IBEG_BLOCK-1-NPIV,8)
+            CALL dgemm('N', 'N', M, NRHS_B, K, MONE,
+     &        Q(1,1), M, TMP(ibeg_tmp,1), LDT,
+     &        ONE, ARRAYCB(POSBLOCK), LDCB) 
+          ENDIF
+      RETURN
+      END SUBROUTINE GEMM_Q_FWD
+      SUBROUTINE GEMM_Q_BWD(m, nrhs_b, k, npiv, 
+     &          Q, TMP, ldT,
+     &          arraypiv, lpiv, ldpiv, arraycb, lcb, ldcb, 
+     &          ibeg_block, iend_block, is_t2_slave, 
+     &          poscb, pospiv, pospivcol, ibeg_tmp)
+          implicit none
+          integer, intent(in) :: m, nrhs_b, k, npiv
+          DOUBLE PRECISION, dimension(:, :), intent(inout)     :: Q
+          DOUBLE PRECISION, dimension(ldt, *), intent(inout)     :: TMP
+          integer(8), intent(in) :: lcb, lpiv
+          DOUBLE PRECISION, intent(inout) :: arraypiv(lpiv,*)
+          DOUBLE PRECISION, intent(inout) :: arraycb(lcb)
+          integer, intent(in) :: ldt, ldcb, ldpiv
+          integer, intent(in) :: ibeg_block, iend_block
+          logical, intent(in) :: is_t2_slave
+          integer(8), intent(in) :: poscb, pospiv
+          integer, intent(in)    :: pospivcol
+          integer, intent(in) :: ibeg_tmp
+          integer(8) :: posblock
+          DOUBLE PRECISION :: ONE, MONE, ZERO
+          PARAMETER (ONE = 1.0D0, MONE=-1.0D0)
+          PARAMETER (ZERO=0.0D0)
+          IF (IS_T2_SLAVE) THEN
+            POSBLOCK = POSCB +int(IBEG_BLOCK-1,8)
+            CALL dgemm('T', 'N', K, NRHS_B, M, ONE,
+     &        Q(1,1), M,  
+     &        ARRAYCB(POSBLOCK), LDCB, ZERO, 
+     &        TMP(ibeg_tmp,1), ldt)
+          ELSEIF (IBEG_BLOCK.LE.NPIV.AND.
+     &            IEND_BLOCK.GT.NPIV) THEN
+            POSBLOCK = POSPIV+int(IBEG_BLOCK-1,8)
+            CALL dgemm('T', 'N', K, NRHS_B, 
+     &        NPIV-IBEG_BLOCK+1,
+     &        ONE, Q(1,1), M,  
+     &        ARRAYPIV(POSBLOCK,POSPIVCOL), LDPIV,
+     &        ZERO, TMP(ibeg_tmp, 1), ldt)
+            CALL dgemm('T', 'N', 
+     &        K, NRHS_B, IBEG_BLOCK+M-NPIV-1,
+     &        ONE, Q(NPIV-IBEG_BLOCK+2,1), M,  
+     &        ARRAYCB(POSCB), LDCB, 
+     &        ONE,
+     &        TMP(ibeg_tmp,1), ldt)
+          ELSEIF (IBEG_BLOCK.LE.NPIV) THEN
+            POSBLOCK = POSPIV+int(IBEG_BLOCK-1,8)
+            CALL dgemm('T', 'N', K, NRHS_B, M, ONE,
+     &        Q(1,1), M,  
+     &        ARRAYPIV(POSBLOCK,POSPIVCOL), LDPIV,
+     &        ZERO, TMP(ibeg_tmp, 1), ldt)
+          ELSE
+            POSBLOCK = POSCB+int(IBEG_BLOCK-1-NPIV,8)
+            CALL dgemm('T', 'N', K, NRHS_B, M, ONE,
+     &        Q(1,1), M,  
+     &        ARRAYCB(POSBLOCK), LDCB, ZERO, 
+     &        TMP(ibeg_tmp, 1), ldt)
+          ENDIF
+      RETURN
+      END SUBROUTINE GEMM_Q_BWD
       SUBROUTINE DMUMPS_SOL_FWD_BLR_UPDATE (
      &        ARRAYPIV, LPIV, LPIVCOL, LDPIV, POSPIV, POSPIVCOL,
      &        ARRAYCB, LCB, LDCB, POSCB, 
@@ -251,14 +363,14 @@ C
      &        NRHS_B, NPIV,
      &        BLR_PANEL, LAST_BLR,
      &        CURRENT_BLR, BEGS_BLR_STATIC,
-     &        KEEP8, K34, K450, K451, IS_T2_SLAVE, IFLAG, IERROR )
+     &        KEEP8, K34, K448, K450, K451, IS_T2_SLAVE, IFLAG, IERROR )
 !$    USE OMP_LIB
       INTEGER(8), INTENT(IN) :: LPIV, LCB, POSPIV, POSCB, POSDIAG
       INTEGER, INTENT(IN)    :: LPIVCOL, POSPIVCOL
       DOUBLE PRECISION, INTENT(INOUT) :: ARRAYPIV(LPIV,LPIVCOL)
       DOUBLE PRECISION, INTENT(INOUT) :: ARRAYCB(LCB)
       INTEGER, INTENT(IN)    :: LAST_BLR, NRHS_B,  LDPIV, LDCB,
-     &                          CURRENT_BLR, NPIV, K34, K450, K451
+     &                          CURRENT_BLR, NPIV, K34, K448, K450, K451
       TYPE(LRB_TYPE), TARGET,INTENT(IN) ::
      &                           BLR_PANEL(:)
       INTEGER :: BEGS_BLR_STATIC(:)
@@ -267,6 +379,7 @@ C
       INTEGER, INTENT(INOUT) :: IFLAG, IERROR
       INTEGER :: I, K, M, N, IBEG_BLOCK, IEND_BLOCK
       INTEGER :: KMAX
+      INTEGER :: MMAX
       INTEGER(8) :: POSBLOCK
       INTEGER :: allocok
       TYPE(LRB_TYPE), POINTER :: LRB
@@ -275,8 +388,10 @@ C
       PARAMETER (ONE = 1.0D0, MONE=-1.0D0)
       PARAMETER (ZERO=0.0D0)
       KMAX = -1
+      MMAX = -1
       DO I = CURRENT_BLR+1, LAST_BLR
         KMAX = max(KMAX, BLR_PANEL(I-CURRENT_BLR)%K)
+        MMAX = max(MMAX, BLR_PANEL(I-CURRENT_BLR)%M)
       ENDDO
 #if ! defined(BLR_NOOPENMP)
 !$OMP PARALLEL PRIVATE(TEMP_BLOCK, allocok
@@ -288,7 +403,7 @@ C
           IFLAG  = -13
           IERROR = NRHS_B * KMAX
           write(*,*) 'Allocation problem in BLR routine 
-     &    DMUMPS_SOL_FWD_BLR_UPDATE: ',
+     &    DMUMPS_SOL_FWD_BLR_UPDATE for TEMP_BLOCK: ',
      &    'not enough memory? memory requested = ', IERROR
         ENDIF
       ENDIF
@@ -338,7 +453,7 @@ C
      &              LRB%Q(1,1), M, TEMP_BLOCK(1), K,
      &              ONE, ARRAYCB(POSBLOCK), LDCB) 
                 ENDIF
-            ENDIF 
+            ENDIF
           ELSE 
             IF (IS_T2_SLAVE) THEN
               POSBLOCK = POSCB + int(IBEG_BLOCK-1,8)
@@ -394,24 +509,24 @@ C
        INTEGER, INTENT(INOUT) :: IFLAG, IERROR
        DOUBLE PRECISION, INTENT(INOUT) :: WCB(LWCB)
        DOUBLE PRECISION RHSINTR(LRHSINTR,NRHS)
-        INTEGER :: I, NPARTSASS, NB_BLR, LAST_BLR, 
-     &             NELIM_PANEL, LD_WCB,
-     &             DIAGSIZ_DYN, DIAGSIZ_STA, LDADIAG,
-     &             IEND_BLR, IBEG_BLR
-        INTEGER(8) :: PWCB
-        INTEGER    :: IPIV_PANEL
-        DOUBLE PRECISION, POINTER, DIMENSION(:) :: DIAG
-        TYPE(LRB_TYPE), POINTER, DIMENSION(:) :: BLR_PANEL
-      DOUBLE PRECISION :: ONE, MONE, ZERO
-      PARAMETER (ONE = 1.0D0, MONE=-1.0D0)
-      PARAMETER (ZERO=0.0D0)
-        IF ((MTYPE.EQ.1).AND.(KEEP(50).EQ.0)) THEN
+       INTEGER :: I, NPARTSASS, NB_BLR, LAST_BLR, 
+     &            NELIM_PANEL, LD_WCB,
+     &            DIAGSIZ_DYN, DIAGSIZ_STA, LDADIAG,
+     &            IEND_BLR, IBEG_BLR
+       INTEGER(8) :: PWCB
+       INTEGER    :: IPIV_PANEL
+       DOUBLE PRECISION, POINTER, DIMENSION(:) :: DIAG
+       TYPE(LRB_TYPE), POINTER, DIMENSION(:) :: BLR_PANEL
+       DOUBLE PRECISION :: ONE, MONE, ZERO
+       PARAMETER (ONE = 1.0D0, MONE=-1.0D0)
+       PARAMETER (ZERO=0.0D0)
+       IF ((MTYPE.EQ.1).AND.(KEEP(50).EQ.0)) THEN
          IF (associated(BLR_ARRAY(IWHDLR)%PANELS_U))
      &      THEN
             NPARTSASS=size(BLR_ARRAY(IWHDLR)%PANELS_U)
             NB_BLR = size(BLR_ARRAY(IWHDLR)%BEGS_BLR_STATIC) -1
          ENDIF
-        ELSE
+       ELSE
          IF (associated(BLR_ARRAY(IWHDLR)%PANELS_L))
      &      THEN
             NPARTSASS=size(BLR_ARRAY(IWHDLR)%PANELS_L)
@@ -419,7 +534,7 @@ C
          ELSE
            WRITE(6,*) " Internal error in DMUMPS_SOL_FWD_SU_MASTER"
          ENDIF
-        ENDIF
+       ENDIF
       PWCB        = PTWCB + int(NPIV_GLOBAL,8)
       LD_WCB      = LIELL
       IF (KEEP(50).EQ.0 .AND. NSLAVES.GT.0 .AND. MTYPE.NE.1) THEN
@@ -455,11 +570,12 @@ C
      &        NRHS_B, NPIV_GLOBAL,
      &        BLR_PANEL, LAST_BLR,
      &        I, BLR_ARRAY(IWHDLR)%BEGS_BLR_STATIC,
-     &        KEEP8, KEEP(34), KEEP(450), KEEP(451),
+     &        KEEP8, KEEP(34), 
+     &        KEEP(448), KEEP(450), KEEP(451),
      &        .FALSE., 
      &        IFLAG, IERROR)
         IF (IFLAG.LT.0) RETURN
-         DIAG =>  BLR_ARRAY(IWHDLR)%DIAG_BLOCKS(I)%DIAG_BLOCK
+         DIAG => BLR_ARRAY(IWHDLR)%DIAG_BLOCKS(I)%DIAG_BLOCK
          IF (NELIM_PANEL.GT.0) THEN
            IF (MTYPE.EQ.1.AND.KEEP(50).EQ.0) THEN
              IF (IEND_BLR.EQ.NPIV_GLOBAL) THEN
@@ -535,7 +651,7 @@ C
      &        NRHS_B, NPIV,
      &        BLR_PANEL, LAST_BLR, CURRENT_BLR,
      &        BEGS_BLR_STATIC,
-     &        KEEP8, K34, K450, K451, IS_T2_SLAVE,
+     &        KEEP8, K34, K448, K450, K451, IS_T2_SLAVE,
      &        IFLAG, IERROR)
 !$    USE OMP_LIB
       INTEGER(8), INTENT(IN) :: LPIV, LCB, POSPIV, POSCB, POSDIAG
@@ -543,7 +659,7 @@ C
       DOUBLE PRECISION, INTENT(INOUT) :: ARRAYPIV(LPIV,LPIVCOL)
       DOUBLE PRECISION, INTENT(INOUT) :: ARRAYCB(LCB)
       INTEGER, INTENT(IN)    :: LAST_BLR, NRHS_B,  LDPIV, LDCB,
-     &                          CURRENT_BLR, NPIV, K34, K450, K451
+     &                          CURRENT_BLR, NPIV, K34, K448, K450, K451
       TYPE(LRB_TYPE), TARGET,INTENT(IN) ::
      &                          BLR_PANEL(:)
       INTEGER(8), INTENT(IN) :: KEEP8(150)
@@ -590,9 +706,6 @@ C
      &    'not enough memory? memory requested = ', IERROR
         ENDIF
       ENDIF
-#if ! defined(BLR_NOOPENMP)
-!$OMP BARRIER
-#endif 
 #if ! defined(BLR_NOOPENMP)
 !$OMP DO SCHEDULE(DYNAMIC,1)
 !$OMP& PRIVATE(IBEG_BLOCK, IEND_BLOCK, LRB, K, M, POSBLOCK)

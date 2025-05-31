@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -343,10 +343,8 @@ C
       INTEGER, INTENT(IN) :: K427, K405, K222, NEL1, NASS
       INTEGER, INTENT(OUT) :: K427_OUT
       K427_OUT = K427
-        IF ( K427_OUT .GT. 0 ) K427_OUT = 0
-        IF ( K427_OUT .LT. 0 ) K427_OUT = -1
-      IF ( K427_OUT .GT. 99 ) K427_OUT = 0
-      IF ( K427_OUT .LT. -100 ) K427_OUT = -1
+      IF ( K427_OUT .GT. 0 ) K427_OUT = 0
+      IF ( K427_OUT .LT. 0 ) K427_OUT = -1
       RETURN
       END SUBROUTINE ZMUMPS_FAC_PT_SETLOCK427
       SUBROUTINE ZMUMPS_FAC_P(A,LA,NFRONT,
@@ -446,7 +444,7 @@ C
      &    )
 !$    USE OMP_LIB
 #if defined(_OPENMP)
-      USE ZMUMPS_BUF
+      USE MUMPS_BUF_COMMON, ONLY : MUMPS_BUF_TEST
 #endif
       IMPLICIT NONE
       INTEGER, intent(in)     :: IBEG_BLOCK, IEND_BLOCK
@@ -543,7 +541,7 @@ C
 !$           TRSM_GEMM_FINISHED = .TRUE.
 !$        ELSE
 !$           DO WHILE (.NOT. TRSM_GEMM_FINISHED)
-!$             CALL ZMUMPS_BUF_TEST()
+!$             CALL MUMPS_BUF_TEST()
 !$             CALL MUMPS_USLEEP(10000)
 !$           END DO
 !$        END IF
@@ -811,6 +809,7 @@ C
           TIPIV(ILOC) = ILOC
         ENDIF
         IF (INOPV .EQ. -1) THEN
+           JMAX=1
            APOS  = POSELT + NFRONT8*int(NPIVP1-1,8) + int(NPIV,8)
            PIVOT     = A(APOS)
            ABS_PIVOT = abs(PIVOT)
@@ -841,7 +840,7 @@ C
      &               PP_LastPanelonDisk_U,
      &               PP_LastPIVRPTRFilled_U)
            ENDIF
-           GO TO 420
+           GO TO 430
         ENDIF
         INOPV   = 0
       ISHIFT   = 0            

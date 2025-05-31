@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -11,7 +11,7 @@ C  released under the CeCILL-C license
 C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
-      SUBROUTINE ZMUMPS_COMPACT_FACTORS(A, LDA, NPIV, NBROW, KEEP,
+      SUBROUTINE ZMUMPS_COMPACT_FACTORS_SYM(A, LDA, NPIV, NBROW, KEEP,
      &           SIZEA, IW )
       IMPLICIT NONE
       INTEGER,    INTENT(IN) :: LDA, NPIV, NBROW
@@ -24,44 +24,39 @@ C
       INTEGER NBROW_L_RECTANGLE_TO_MOVE
       INTEGER :: ICOL_BEG, ICOL_END, NBPANELS, NB_TARGET
       INTEGER :: NBCOLS_PANEL, NBROWS_PANEL
+      INTEGER(8) :: SIZE_COPY
+      LOGICAL    :: OMP_FLAG
       IF ( NPIV .EQ. 0 ) GOTO 500
       NB_TARGET = NPIV
-      IF ( KEEP(459) .GT. 1 .AND. KEEP(50) .NE. 0 ) THEN
+      IF ( KEEP(459) .GT. 1 ) THEN
         CALL MUMPS_LDLTPANEL_NBTARGET( NPIV, NB_TARGET, KEEP )
       ENDIF
-      IF ( KEEP(50) .EQ.0 .OR. NB_TARGET .EQ. NPIV ) THEN
+      IF ( NB_TARGET .EQ. NPIV ) THEN
         IF (LDA.EQ.NPIV) GOTO 500
-        IF ( KEEP(50) .NE. 0 ) THEN
-          IOLD = int(LDA  + 1,8)
-          INEW = int(NPIV + 1,8)
-          IF (IOLD .EQ. INEW ) THEN
-            WRITE(*,*) " Internal error in ZMUMPS_COMPACT_FACTORS",
-     &      IOLD, INEW, NPIV
-            CALL MUMPS_ABORT()
-          ENDIF
-          DO I = 1, NPIV - 1
-            IF ( I .LE. NPIV-2 ) THEN
-              ILAST = I+1
-            ELSE
-              ILAST = I
-            ENDIF
-            DO J8 = 0_8, int(ILAST,8)
-              A( INEW + J8 ) = A( IOLD + J8 )
-            END DO
-            INEW = INEW + int(NPIV,8)
-            IOLD = IOLD + int(LDA,8)
-          END DO
-          NBROW_L_RECTANGLE_TO_MOVE = NBROW
-        ELSE 
-          INEW = 1_8 + int(NPIV,8) * int(LDA + 1,8)
-          IOLD = 1_8 + int(LDA,8) * int(NPIV +1,8)
-          NBROW_L_RECTANGLE_TO_MOVE = NBROW - 1
+        IOLD = int(LDA  + 1,8)
+        INEW = int(NPIV + 1,8)
+        IF (IOLD .EQ. INEW ) THEN
+          WRITE(*,*) " Internal error in ZMUMPS_COMPACT_FACTORS",
+     &    IOLD, INEW, NPIV
+          CALL MUMPS_ABORT()
         ENDIF
+        DO I = 1, NPIV - 1
+          IF ( I .LE. NPIV-2 ) THEN
+            ILAST = I+1
+          ELSE
+            ILAST = I
+          ENDIF
+          DO J8 = 0_8, int(ILAST,8)
+            A( INEW + J8 ) = A( IOLD + J8 )
+          END DO
+          INEW = INEW + int(NPIV,8)
+          IOLD = IOLD + int(LDA,8)
+        END DO
       ELSE
-        ICOL_BEG = 1               
-        NBPANELS  = 0
-        INEW = 1_8
-        NBROWS_PANEL = NPIV
+         ICOL_BEG = 1               
+         NBPANELS  = 0
+         INEW = 1_8
+         NBROWS_PANEL = NPIV
         DO WHILE ( ICOL_BEG .LE. NPIV )
           NBPANELS=NBPANELS + 1
           ICOL_END = min(NB_TARGET * NBPANELS, NPIV)
@@ -83,35 +78,82 @@ C
           ICOL_BEG = ICOL_END + 1
         ENDDO
         IOLD = 1_8 + int(LDA,8)*int(NPIV,8)
-        NBROW_L_RECTANGLE_TO_MOVE = NBROW
       ENDIF
-      DO I = 1, NBROW_L_RECTANGLE_TO_MOVE
-         DO J8 = 0_8, int(NPIV - 1,8)
-           A( INEW + J8 ) = A( IOLD + J8 )
-         END DO
-         INEW = INEW + int(NPIV,8)
-         IOLD = IOLD + int(LDA,8)
-      ENDDO
+      NBROW_L_RECTANGLE_TO_MOVE = NBROW
+      SIZE_COPY = int(NBROW_L_RECTANGLE_TO_MOVE,8) * int(NPIV,8)
+      OMP_FLAG = SIZE_COPY .GT. int(KEEP(361),8) .AND. KEEP(405).EQ.0
+      IF (OMP_FLAG
+     &) THEN
+!$OMP PARALLEL DO COLLAPSE(2)
+        DO I = 0, NBROW_L_RECTANGLE_TO_MOVE-1
+          DO J8 = 0_8, int(NPIV - 1,8)
+            A( INEW + J8 + int(I,8)*int(NPIV,8) ) =
+     &      A( IOLD + J8 + int(I,8)*int(LDA,8))
+          END DO
+        ENDDO
+!$OMP END PARALLEL DO
+      ELSE
+        DO I = 0, NBROW_L_RECTANGLE_TO_MOVE-1
+          DO J8 = 0_8, int(NPIV - 1,8)
+            A( INEW + J8 ) = A( IOLD + J8 )
+          END DO
+          INEW = INEW + int(NPIV,8)
+          IOLD = IOLD + int(LDA,8)
+        ENDDO
+      ENDIF
  500  RETURN
-      END SUBROUTINE ZMUMPS_COMPACT_FACTORS
+      END SUBROUTINE ZMUMPS_COMPACT_FACTORS_SYM
       SUBROUTINE ZMUMPS_COMPACT_FACTORS_UNSYM(A, LDA, NPIV, NCONTIG,
-     &                                        SIZEA )
+     &                                        KEEP, SIZEA )
       IMPLICIT NONE
       INTEGER,    INTENT(IN)     :: NCONTIG, NPIV, LDA
       INTEGER(8), INTENT(IN)     :: SIZEA
       COMPLEX(kind=8),    INTENT(INOUT)  :: A(SIZEA)
-      INTEGER I, J
-      INTEGER(8) :: INEW, IOLD
-      INEW = int(NPIV+1,8)
-      IOLD = int(LDA+1,8)
-      DO I = 2, NCONTIG
-        DO J = 1, NPIV
-          A(INEW)=A(IOLD)
-          INEW = INEW + 1_8
-          IOLD = IOLD + 1_8
+      INTEGER,    INTENT(IN)     :: KEEP(500)
+      INTEGER I
+      INTEGER(8) :: IDEST, ISRC
+      INTEGER(8) :: J8
+      INTEGER    :: NBLK2COPY
+      INTEGER(8) :: IBLK, NBLK 
+      IF (int(NCONTIG,8) * int(NPIV,8) .LE. int(KEEP(361),8)
+     &  ) THEN
+        IDEST = int(NPIV+1,8)
+        ISRC = int(LDA+1,8)
+        DO I = 2, NCONTIG 
+          DO J8 = 0_8, int(NPIV-1,8)
+            A(IDEST+J8)=A(ISRC+J8)
+          ENDDO
+          ISRC      = ISRC  + int(LDA,8)
+          IDEST     = IDEST + int(NPIV,8)
         ENDDO
-        IOLD = IOLD + int(LDA - NPIV,8)
-      ENDDO
+      ELSE
+        NBLK2COPY = NCONTIG-1
+        IDEST = int(NPIV+1,8)
+        ISRC  = int(LDA+1,8)
+        DO WHILE ( NBLK2COPY .GT. 0 .AND.
+     &             ISRC - IDEST .LT. int(max(KEEP(361),NPIV),8) )
+          DO J8 = 0, int(NPIV-1,8)
+            A(IDEST+J8) = A(ISRC+J8)
+          ENDDO
+          ISRC      = ISRC  + int(LDA,8)
+          IDEST     = IDEST + int(NPIV,8)
+          NBLK2COPY = NBLK2COPY - 1
+        END DO
+        DO WHILE ( NBLK2COPY .GT. 0 )
+          NBLK = min( (ISRC - IDEST) / int(NPIV,8), int(NBLK2COPY,8) )
+!$OMP PARALLEL DO COLLAPSE(2)
+          DO IBLK = 0_8, NBLK - 1_8
+            DO J8 = 0_8, int(NPIV-1,8)
+              A( IDEST + J8 + IBLK * int(NPIV,8) ) =
+     &        A( ISRC  + J8 + IBLK * int(LDA,8) )
+            ENDDO
+          ENDDO
+!$OMP END PARALLEL DO
+          NBLK2COPY = NBLK2COPY - int(NBLK)
+          ISRC      = ISRC  + NBLK * int(LDA,8)
+          IDEST     = IDEST + NBLK * int(NPIV,8)
+        ENDDO
+      ENDIF
       RETURN
       END SUBROUTINE ZMUMPS_COMPACT_FACTORS_UNSYM
       SUBROUTINE ZMUMPS_COPY_CB_RIGHT_TO_LEFT( A, LA, LDA, POSELT,

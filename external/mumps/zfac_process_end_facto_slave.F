@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -14,7 +14,7 @@ C
       RECURSIVE SUBROUTINE ZMUMPS_END_FACTO_SLAVE(
      &    COMM_LOAD, ASS_IRECV, 
      &    N, INODE, FPERE, 
-     &    root,
+     &    root, roota,
      &    MYID, COMM,
      &    
      &    BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
@@ -30,18 +30,20 @@ C
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE 
      &               , LRGROUPS
      &    )
-      USE ZMUMPS_LOAD
+      USE MUMPS_LOAD
 #if ! defined(NO_FDM_MAPROW)
       USE MUMPS_FAC_MAPROW_DATA_M
 #endif
       USE ZMUMPS_LR_DATA_M  
-      USE ZMUMPS_STRUC_DEF, ONLY : ZMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE ZMUMPS_INTR_TYPES, ONLY : ZMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INCLUDE 'mumps_headers.h'
       INCLUDE 'mpif.h'
       INCLUDE 'mumps_tags.h'
       INTEGER INODE, FPERE
-      TYPE (ZMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (ZMUMPS_ROOT_STRUC) :: roota
       INTEGER COMM, MYID
       INTEGER ICNTL( 60 ), KEEP( 500 )
       INTEGER(8) KEEP8(150)
@@ -146,7 +148,7 @@ C
               CALL MUMPS_GETI8(MEM_GAIN, IW(IOLDPS+XXR))
               LRLUS  = LRLUS + MEM_GAIN
               KEEP8(69) = KEEP8(69) - MEM_GAIN
-              CALL ZMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+              CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &              LA-LRLUS,0_8,-MEM_GAIN,KEEP,KEEP8,LRLUS)
             ELSE
               IW(IOLDPS+XXS)=S_NOLCBNOCONTIG
@@ -157,7 +159,7 @@ C
      &                int(IW( IOLDPS + 3 + KEEP(IXSZ) ),8)
                LRLUS = LRLUS+MEM_GAIN
                KEEP8(69) = KEEP8(69) - MEM_GAIN
-               CALL ZMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+               CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &              LA-LRLUS,0_8,-MEM_GAIN,KEEP,KEEP8,LRLUS)
               ENDIF
             ENDIF
@@ -196,7 +198,7 @@ C
        CALL ZMUMPS_BUILD_AND_SEND_CB_ROOT( COMM_LOAD, ASS_IRECV, 
      &    N, INODE, FPERE, 
      &    PTRIST, PTRAST, 
-     &    root, NROW, NCOL_TO_SEND, SHIFT_LIST_ROW_SON,
+     &    root, roota, NROW, NCOL_TO_SEND, SHIFT_LIST_ROW_SON,
      &    SHIFT_LIST_COL_SON , SHIFT_VAL_SON, LDA, 
      &    ROOT_CONT_STATIC, MYID, COMM,
      &    
@@ -244,7 +246,7 @@ C
      &                     MEM_GAIN, KEEP(IXSZ) )
            LRLUS = LRLUS + MEM_GAIN
            KEEP8(69) = KEEP8(69) - MEM_GAIN
-              CALL ZMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+              CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &                LA-LRLUS,0_8,-MEM_GAIN,KEEP,KEEP8,LRLUS)
             IF (KEEP(216).EQ.2) THEN
               CALL ZMUMPS_MAKECBCONTIG(A,LA,PTRAST(STEP(INODE)),
@@ -292,7 +294,7 @@ C
      &  PTRAST, STEP, PIMASTER, PAMASTER, NSTK, COMP,
      &  IFLAG, IERROR, MYID, COMM, PERM, IPOOL, LPOOL, LEAF,
      &  NBFIN, ICNTL, KEEP,KEEP8,DKEEP,
-     &  root, OPASSW, OPELIW,
+     &  root, roota, OPASSW, OPELIW,
      &  ITLOC, RHS_MUMPS,
      &  FILS, DAD, PTRARW, PTRAIW,
      &  PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,

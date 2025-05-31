@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -30,7 +30,7 @@ C
      &    )
       USE DMUMPS_STATIC_PTR_M, ONLY : DMUMPS_SET_STATIC_PTR,
      &                                DMUMPS_GET_TMP_PTR
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_L0OMPFAC_T
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_L0OMPFAC_T
       IMPLICIT NONE
       INTEGER MTYPE
       INTEGER(8), intent(in) :: LA

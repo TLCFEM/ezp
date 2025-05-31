@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -31,7 +31,7 @@ C
       USE SMUMPS_OOC
       USE SMUMPS_FAC_LR
       USE SMUMPS_LR_TYPE
-      USE SMUMPS_LR_STATS
+      USE MUMPS_LR_STATS
       USE SMUMPS_ANA_LR, ONLY : GET_CUT
       USE SMUMPS_LR_DATA_M
       USE MUMPS_PIVNUL_MOD, ONLY: PIVNUL_LIST_STRUCT_T
@@ -190,13 +190,7 @@ C
       IF (PIVOT_OPTION.LE.1) THEN
          PARPIV_T1 = 0
       ENDIF
-      IF (NASS.LT.KEEP(4)) THEN
-        NBKJIB_ORIG = NASS
-      ELSE IF (NASS .GT. KEEP(3)) THEN
-        NBKJIB_ORIG = min( KEEP(6), NASS )
-      ELSE
-        NBKJIB_ORIG = min( KEEP(5), NASS )
-      ENDIF
+      CALL SMUMPS_SET_INNERBLOCKSIZE( NBKJIB_ORIG, NASS, KEEP)
       IF (.not.LR_ACTIVATED) THEN
           NBLR_ORIG     = KEEP(420)
       ELSE
@@ -220,7 +214,7 @@ C
       CURRENT_BLR = 0
       CALL MUMPS_GETI8(LAFAC,IW(IOLDPS+XXR))
       LIWFAC    = IW(IOLDPS+XXI)
-      IF ( OOC_EFFECTIVE_ON_FRONT ) THEN 
+      IF ( OOC_EFFECTIVE_ON_FRONT ) THEN
           LNextPiv2beWritten = 1 
           UNextPiv2beWritten = 1 
           PP_FIRST2SWAP_L = LNextPiv2beWritten 
@@ -262,7 +256,7 @@ C
          NB_BLR = NPARTSASS + NPARTSCB
          call MAX_CLUSTER(BEGS_BLR,NB_BLR,MAXI_CLUSTER)
          MAXI_RANK = KEEP(479)*MAXI_CLUSTER
-         LWORK = MAXI_CLUSTER*MAXI_CLUSTER
+         LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
          OMP_NUM = 1
 #if ! defined(BLR_NOOPENMP)
 !$       OMP_NUM = OMP_GET_MAX_THREADS()
@@ -316,7 +310,8 @@ C
         IERROR = INFO_TMP(2) 
         IF (IFLAG.LT.0) GOTO 500
       ENDIF
-      IF (COMPRESS_CB.AND.NPARTSCB.GT.0) THEN
+      IF (COMPRESS_CB) THEN
+       IF (NPARTSCB.GT.0) THEN
         allocate(CB_LRB(NPARTSCB,NPARTSCB),stat=allocok)
         IF (allocok > 0) THEN
           IFLAG  = -13
@@ -324,6 +319,7 @@ C
           GOTO 490
         ENDIF
         CALL SMUMPS_BLR_SAVE_CB_LRB(IW(IOLDPS+XXF),CB_LRB)
+       ENDIF
       ENDIF
       DO WHILE (IEND_BLR < NASS ) 
         CURRENT_BLR = CURRENT_BLR + 1
@@ -335,7 +331,7 @@ C
           BEGS_BLR( CURRENT_BLR ) = IBEG_BLR
           IF ( IEND_BLR - IBEG_BLR + 1 .GT. MAXI_CLUSTER ) THEN
             MAXI_CLUSTER = IEND_BLR - IBEG_BLR + 1
-            LWORK = MAXI_CLUSTER*MAXI_CLUSTER
+            LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
             DEALLOCATE(BLOCK, WORK, RWORK, TAU, JPVT)
             ALLOCATE(BLOCK(MAXI_CLUSTER, OMP_NUM*MAXI_CLUSTER),
      &             RWORK(2*MAXI_CLUSTER*OMP_NUM), 
@@ -379,12 +375,12 @@ C
                 CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              1, 
-     &              CURRENT_BLR, BLR_U)
+     &           CURRENT_BLR, BLR_U, 0) 
                 BLR_L(1:NB_BLR-CURRENT_BLR)%ISLR=.FALSE.
                 CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              0, 
-     &              CURRENT_BLR, BLR_L)
+     &           CURRENT_BLR, BLR_L, 0) 
               ENDIF
             ELSE
               IF (NB_BLR.GT.CURRENT_BLR) THEN
@@ -415,11 +411,11 @@ C
                 CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              1, 
-     &              CURRENT_BLR+1, NEXT_BLR_U)
+     &      CURRENT_BLR+1, NEXT_BLR_U, 0) 
                 CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              0, 
-     &              CURRENT_BLR+1, NEXT_BLR_L)
+     &      CURRENT_BLR+1, NEXT_BLR_L, 0) 
               ENDIF
             ENDIF
           ELSE
@@ -536,11 +532,11 @@ C
             LAST_COL = NASS
           ENDIF
           IF (IEND_BLR.LT.LAST_ROW) THEN
-            CALL SMUMPS_FAC_SQ(IBEG_BLR, IEND_BLR,
+              CALL SMUMPS_FAC_SQ(IBEG_BLR, IEND_BLR,
      &            NPIV, NFRONT, LAST_ROW, LAST_COL, 
      &            A, LA, POSELT, IEND_BLR, .TRUE., (PIVOT_OPTION.LT.2),
      &            .TRUE., .FALSE.,  
-     &            LR_ACTIVATED)       
+     &            LR_ACTIVATED)
           ENDIF
         ELSE
           NELIM = IEND_BLR - NPIV
@@ -562,7 +558,7 @@ C
               CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              1, 
-     &             CURRENT_BLR, BLR_U)
+     &        CURRENT_BLR, BLR_U, 0) 
               DO J=1,NB_BLR-CURRENT_BLR
                  BLR_L(J)%M=0
                  BLR_L(J)%N=0
@@ -574,7 +570,7 @@ C
               CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              0, 
-     &              CURRENT_BLR, BLR_L)
+     &        CURRENT_BLR, BLR_L, 0) 
               NULLIFY(BLR_L)
               NULLIFY(BLR_U)
             IF (KEEP(480).GE.2 .AND. IEND_BLR.LT.NASS) THEN
@@ -700,11 +696,11 @@ C
               CALL SMUMPS_BLR_SAVE_PANEL_LORU(
      &            IW(IOLDPS+XXF),
      &            1, 
-     &            CURRENT_BLR, BLR_U)
+     &        CURRENT_BLR, BLR_U, 0) 
               CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &             IW(IOLDPS+XXF),
      &             0, 
-     &             CURRENT_BLR, BLR_L)
+     &        CURRENT_BLR, BLR_L, 0) 
             ENDIF
           ENDIF
 #if ! defined(BLR_NOOPENMP)
@@ -929,7 +925,7 @@ C
             ENDDO
             CALL SMUMPS_BLR_SAVE_DIAG_BLOCK(
      &            IW(IOLDPS+XXF),
-     &            IP, DIAG)
+     &            IP, DIAG, KEEP(34))
           ENDDO
 #if ! defined(BLR_NOOPENMP)
 !$OMP ENDDO
@@ -1033,7 +1029,7 @@ C
             IEND_BLR = BEGS_BLR(CURRENT_BLR+2)
             IF ( IEND_BLR - IBEG_BLR + 1 .GT. MAXI_CLUSTER ) THEN
               MAXI_CLUSTER = IEND_BLR - IBEG_BLR + 1
-              LWORK = MAXI_CLUSTER*MAXI_CLUSTER
+              LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
               DEALLOCATE(BLOCK, WORK, RWORK, TAU, JPVT)
               ALLOCATE(BLOCK(MAXI_CLUSTER, OMP_NUM*MAXI_CLUSTER),
      &             RWORK(2*MAXI_CLUSTER*OMP_NUM), 

@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -11,8 +11,7 @@ C  released under the CeCILL-C license
 C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
-      MODULE CMUMPS_LR_STATS
-      USE CMUMPS_LR_TYPE
+      MODULE MUMPS_LR_STATS
       IMPLICIT NONE
       DOUBLE PRECISION :: MRY_CB_FR, 
      &                    MRY_CB_LRGAIN,
@@ -151,18 +150,19 @@ C
           ENDIF
           RETURN
       END SUBROUTINE UPD_FLOP_DECOMPRESS
-      SUBROUTINE UPD_FLOP_COMPRESS(LR_B, REC_ACC, 
+      SUBROUTINE UPD_FLOP_COMPRESS(LRBM,LRBN,LRBK,ISLR, REC_ACC, 
      &         CB_COMPRESS, FRSWAP)
-        TYPE(LRB_TYPE),INTENT(IN) :: LR_B
+        INTEGER :: LRBM, LRBN, LRBK
+        LOGICAL :: ISLR
         INTEGER(8) :: M,N,K
         DOUBLE PRECISION :: HR_COST,BUILDQ_COST,
      &  HR_AND_BUILDQ_COST
         LOGICAL, OPTIONAL :: REC_ACC, CB_COMPRESS, FRSWAP
-        M = int(LR_B%M,8)
-        N = int(LR_B%N,8)
-        K = int(LR_B%K,8)
+        M = int(LRBM,8)
+        N = int(LRBN,8)
+        K = int(LRBK,8)
         HR_COST =  dble(K*K*K/3_8 + 4_8*K*M*N - (2_8*M+N)*K*K)
-        IF (LR_B%ISLR) THEN 
+        IF (ISLR) THEN 
           BUILDQ_COST = dble(2_8*K*K*M - K*K*K)
         ELSE 
           BUILDQ_COST = 0.0d0
@@ -197,21 +197,21 @@ C
         ENDIF
       RETURN
       END SUBROUTINE UPD_FLOP_COMPRESS
-      SUBROUTINE UPD_FLOP_TRSM(LRB, LorU)
-          TYPE(LRB_TYPE),INTENT(IN) :: LRB
-          INTEGER,INTENT(IN) :: LorU
+      SUBROUTINE UPD_FLOP_TRSM(M, N, K, ISLR, LorU)
+          INTEGER,INTENT(IN) :: M, N, K, LorU
+          LOGICAL,INTENT(IN) :: ISLR
           DOUBLE PRECISION :: LR_COST, FR_COST, LR_GAIN
           IF (LorU.EQ.0) THEN 
-            FR_COST = dble(LRB%M*LRB%N*LRB%N)
-            IF (LRB%ISLR) THEN
-              LR_COST = dble(LRB%K*LRB%N*LRB%N)
+            FR_COST = dble(M*N*N)
+            IF (ISLR) THEN
+              LR_COST = dble(K*N*N)
             ELSE
               LR_COST = FR_COST
             ENDIF
           ELSE 
-            FR_COST = dble(LRB%M-1)*dble(LRB%N*LRB%N)
-            IF (LRB%ISLR) THEN
-              LR_COST = dble(LRB%N-1)*dble(LRB%N*LRB%K)
+            FR_COST = dble(M-1)*dble(N*N)
+            IF (ISLR) THEN
+              LR_COST = dble(N-1)*dble(N*K)
             ELSE
               LR_COST = FR_COST
             ENDIF
@@ -222,10 +222,12 @@ C
 !$OMP     END ATOMIC
       RETURN
       END SUBROUTINE UPD_FLOP_TRSM
-      SUBROUTINE UPD_FLOP_UPDATE(LRB1, LRB2,
+      SUBROUTINE UPD_FLOP_UPDATE(LRB1M, LRB1N, LRB1K, LRB1ISLR, 
+     &      LRB2M, LRB2N, LRB2K, LRB2ISLR, 
      &      MIDBLK_COMPRESS, RANK_IN, BUILDQ,
      &      IS_SYMDIAG, LUA_ACTIVATED, REC_ACC)
-        TYPE(LRB_TYPE),INTENT(IN) :: LRB1,LRB2
+        INTEGER, INTENT(IN) :: LRB1M, LRB1N, LRB1K, LRB2M, LRB2N, LRB2K
+        LOGICAL, INTENT(IN) :: LRB1ISLR, LRB2ISLR
         LOGICAL, INTENT(IN) :: BUILDQ, IS_SYMDIAG, LUA_ACTIVATED
         INTEGER, INTENT(IN) :: RANK_IN, MIDBLK_COMPRESS
         LOGICAL, INTENT(IN), OPTIONAL :: REC_ACC
@@ -234,12 +236,12 @@ C
      &                      COST_COMPRESS, COST_LR_AND_COMPRESS, LR_GAIN
         DOUBLE PRECISION :: M1,N1,K1,M2,N2,K2,RANK
         LOGICAL :: REC_ACC_LOC
-        M1 = dble(LRB1%M)
-        N1 = dble(LRB1%N)
-        K1 = dble(LRB1%K)
-        M2 = dble(LRB2%M)
-        N2 = dble(LRB2%N)
-        K2 = dble(LRB2%K)
+        M1 = dble(LRB1M)
+        N1 = dble(LRB1N)
+        K1 = dble(LRB1K)
+        M2 = dble(LRB2M)
+        N2 = dble(LRB2N)
+        K2 = dble(LRB2K)
         RANK = dble(RANK_IN)
         COST_LRLR1 = 0.0D0
         COST_LRLR2 = 0.0D0
@@ -252,16 +254,16 @@ C
         ELSE
           REC_ACC_LOC = .FALSE.
         ENDIF
-        IF ((.NOT.LRB1%ISLR).AND.(.NOT.LRB2%ISLR)) THEN
+        IF ((.NOT.LRB1ISLR).AND.(.NOT.LRB2ISLR)) THEN
           COST_FRFR = 2.0D0*M1*M2*N1
           COST_LR = 2.0D0*M1*M2*N1
           COST_FR = 2.0D0*M1*M2*N1
-        ELSEIF (LRB1%ISLR.AND.(.NOT.LRB2%ISLR)) THEN
+        ELSEIF (LRB1ISLR.AND.(.NOT.LRB2ISLR)) THEN
           COST_FRLR = 2.0D0*K1*M2*N1
           COST_LRLR3 = 2.0D0*M1*M2*K1
           COST_LR = COST_FRLR + COST_LRLR3
           COST_FR = 2.0D0*M1*M2*N1
-        ELSEIF ((.NOT.LRB1%ISLR).AND.LRB2%ISLR) THEN
+        ELSEIF ((.NOT.LRB1ISLR).AND.LRB2ISLR) THEN
           COST_FRLR = 2.0D0*M1*K2*N1 
           COST_LRLR3 = 2.0D0*M1*M2*K2
           COST_LR = COST_FRLR + COST_LRLR3
@@ -318,11 +320,10 @@ C
 !$OMP     END ATOMIC
         ENDIF
       END SUBROUTINE UPD_FLOP_UPDATE
-      SUBROUTINE UPD_FLOP_UPDATE_LRLR3(LRB, NIV)
-        TYPE(LRB_TYPE),INTENT(IN) :: LRB
-        INTEGER,INTENT(IN) :: NIV
+      SUBROUTINE UPD_FLOP_UPDATE_LRLR3(M, N, K, NIV)
+        INTEGER,INTENT(IN) :: M, N, K, NIV
         DOUBLE PRECISION :: FLOP_COST
-        FLOP_COST = 2.0D0*dble(LRB%M)*dble(LRB%N)*dble(LRB%K)
+        FLOP_COST = 2.0D0*dble(M)*dble(N)*dble(K)
 !$OMP   ATOMIC UPDATE
         FLOP_LRGAIN = FLOP_LRGAIN - FLOP_COST
 !$OMP   END ATOMIC
@@ -342,9 +343,7 @@ C
 !$OMP   END ATOMIC
         RETURN
       END SUBROUTINE UPD_FLOP_ROOT
-      SUBROUTINE INIT_STATS_GLOBAL(id)
-        USE CMUMPS_STRUC_DEF
-        TYPE (CMUMPS_STRUC), TARGET :: id
+      SUBROUTINE INIT_STATS_GLOBAL()
         MRY_LU_FR = 0.D0
         MRY_LU_LRGAIN = 0.D0
         MRY_CB_FR = 0.D0
@@ -441,34 +440,16 @@ C
 !$OMP   END ATOMIC
         RETURN
       END SUBROUTINE UPD_MRY_CB_FR
-      SUBROUTINE UPD_MRY_CB_LRGAIN(LRB
+      SUBROUTINE UPD_MRY_CB_LRGAIN(M, N, K
      &                            )
-        TYPE(LRB_TYPE),  INTENT(IN) :: LRB
+        INTEGER, INTENT(IN) :: M, N, K 
         DOUBLE PRECISION :: LRGAIND
-        LRGAIND = dble(LRB%M*LRB%N-(LRB%M+LRB%N)*LRB%K)
+        LRGAIND = dble(M*N-(M+N)*K)
 !$OMP   ATOMIC UPDATE
         MRY_CB_LRGAIN = MRY_CB_LRGAIN + LRGAIND
 !$OMP   END ATOMIC
         RETURN
       END SUBROUTINE UPD_MRY_CB_LRGAIN
-      SUBROUTINE UPD_MRY_LU_LRGAIN( BLR_PANEL, NBBLOCKS
-     &           )
-        INTEGER,INTENT(IN) :: NBBLOCKS
-        TYPE(LRB_TYPE),  INTENT(IN) :: BLR_PANEL(:)
-        DOUBLE PRECISION :: MRY
-        INTEGER :: I
-        MRY    = 0.0D0
-        DO I = 1, NBBLOCKS
-          IF (BLR_PANEL(I)%ISLR) THEN
-            MRY = MRY + dble(BLR_PANEL(I)%M*BLR_PANEL(I)%N 
-     &            - BLR_PANEL(I)%K*(BLR_PANEL(I)%M + BLR_PANEL(I)%N)) 
-          ENDIF
-        ENDDO
-!$OMP   ATOMIC UPDATE
-        MRY_LU_LRGAIN  = MRY_LU_LRGAIN  + MRY
-!$OMP   END ATOMIC
-      RETURN
-      END SUBROUTINE UPD_MRY_LU_LRGAIN
       SUBROUTINE UPD_FLOP_FACTO_FR( NFRONT, NASS, NPIV, SYM, NIV)
           INTEGER,INTENT(IN) :: NFRONT, SYM, NASS, NPIV, NIV
           DOUBLE PRECISION   :: FLOP
@@ -539,7 +520,7 @@ C
         INTEGER(8), INTENT(IN) :: NB_ENTRIES_FACTOR   
         INTEGER, INTENT(IN)    :: MPG
         LOGICAL, INTENT(IN)    :: PROKG
-        REAL, INTENT(IN)        :: FLOP_NUMBER   
+        DOUBLE PRECISION, INTENT(IN)  :: FLOP_NUMBER   
         INTEGER(8), INTENT(OUT) :: 
      &                  NB_ENTRIES_FACTOR_withLR 
         IF (NB_ENTRIES_FACTOR < 0) THEN
@@ -573,8 +554,9 @@ C
      &                                              + FLOP_DECOMPRESS
         RETURN
       END SUBROUTINE COMPUTE_GLOBAL_GAINS
-      SUBROUTINE SAVEandWRITE_GAINS(LOCAL, K489, DKEEP, N, 
-     &         ICNTL36,
+      SUBROUTINE SAVEandWRITE_GAINS(LOCAL, K489,
+     &         LR_DKEEPSHIFT, LR_TABSIZE, LR_TAB, LR_EPSILON,
+     &         N, ICNTL36,
      &         DEPTH, BCKSZ, NASSMIN, NFRONTMIN, SYM, K486,
      &         NBTHREADS, K472, K475, K478, K480, K481, K483, K484, 
      &         K8110, K849, 
@@ -584,9 +566,11 @@ C
      &      NFRONTMIN, K486, NBTREENODES, MPG, 
      &      NBTHREADS, K472, K475, K478, K480, K481, K483, K484, 
      &      SYM, NPROCS
+        INTEGER, INTENT(IN) :: LR_TABSIZE, LR_DKEEPSHIFT
+        DOUBLE PRECISION, INTENT(INOUT) :: LR_TAB(LR_TABSIZE)
+        DOUBLE PRECISION, INTENT(IN)    :: LR_EPSILON
         INTEGER(8), INTENT(IN) :: K8110, K849
         LOGICAL, INTENT(IN) :: PROKG
-        REAL :: DKEEP(230)
         TIME_UPDATE_LRLR1    = TIME_UPDATE_LRLR1/dble(NBTHREADS)
         TIME_UPDATE_LRLR2    = TIME_UPDATE_LRLR2/dble(NBTHREADS)
         TIME_UPDATE_LRLR3    = TIME_UPDATE_LRLR3/dble(NBTHREADS)
@@ -601,7 +585,7 @@ C
      & ' ICNTL(36) BLR variant                            = ', ICNTL36
         WRITE(MPG,'(A,ES8.1)')  
      & ' CNTL(7)   Dropping parameter controlling accuracy = ',
-     &                          DKEEP(8)
+     &                          LR_EPSILON
         WRITE(MPG,'(A)') 
      &          ' Statistics after BLR factorization :'
         WRITE(MPG,'(A,I8)') 
@@ -614,9 +598,9 @@ C
         IF (PROKG) THEN
           WRITE(MPG,'(A)') 
      &  '     Statistics on the number of entries in factors :'
-          WRITE(MPG,'(A,ES10.3,A,F5.1,A)') 
+          WRITE(MPG,'(A,I15,A)')
      &  '     INFOG(29) Theoretical nb of entries in factors      ='
-     &     ,real(K8110),' (100.0%)'
+     &     ,K8110,' (100.0%)'
           WRITE(MPG,'(A,ES10.3,A,F5.1,A)') 
      &  '     INFOG(35) Effective nb of entries  (% of INFOG(29)) ='
      &     ,real(K849),' ('
@@ -625,19 +609,20 @@ C
         ENDIF
         IF (PROKG) WRITE(MPG,'(A)')
      &  '     Statistics on operation counts (OPC):'
-        TOTAL_FLOP = MAX(TOTAL_FLOP,EPSILON(1.0D0))
-        DKEEP(55)=real(TOTAL_FLOP)
-        DKEEP(60)=real(100)
-        DKEEP(56)=real(FLOP_FACTO_LR+FLOP_FRFRONTS)
-        DKEEP(61)=real(100*(FLOP_FACTO_LR+FLOP_FRFRONTS)/TOTAL_FLOP)
+        TOTAL_FLOP = max(TOTAL_FLOP,epsilon(1.0D0))
+        LR_TAB(55-LR_DKEEPSHIFT)=real(TOTAL_FLOP)
+        LR_TAB(60-LR_DKEEPSHIFT)=100.0D0
+        LR_TAB(56-LR_DKEEPSHIFT)=FLOP_FACTO_LR+FLOP_FRFRONTS
+        LR_TAB(61-LR_DKEEPSHIFT)=100.0D0*(FLOP_FACTO_LR+FLOP_FRFRONTS)/
+     &                                    TOTAL_FLOP
         IF (PROKG) THEN 
         WRITE(MPG,'(A,ES10.3,A,F5.1,A)') 
      &  '     RINFOG(3) Total theoretical operations counts       ='
-     &     ,TOTAL_FLOP,' (',100*TOTAL_FLOP/TOTAL_FLOP,'%)'
+     &     ,TOTAL_FLOP,' (',100.0D0*TOTAL_FLOP/TOTAL_FLOP,'%)'
         WRITE(MPG,'(A,ES10.3,A,F5.1,A)') 
      &  '     RINFOG(14) Total effective OPC     (% of RINFOG(3)) ='
      &     ,FLOP_FACTO_LR+FLOP_FRFRONTS,' ('
-     &,100*(FLOP_FACTO_LR+FLOP_FRFRONTS)/TOTAL_FLOP
+     &,100.0D0*(FLOP_FACTO_LR+FLOP_FRFRONTS)/TOTAL_FLOP
      &,'%)'
         ENDIF
       IF (PROKG) WRITE(MPG,'(A,A)') 
@@ -645,4 +630,4 @@ C
      & '--------------'
       RETURN
       END SUBROUTINE SAVEandWRITE_GAINS
-      END MODULE CMUMPS_LR_STATS
+      END MODULE MUMPS_LR_STATS

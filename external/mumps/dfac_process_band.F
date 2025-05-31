@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -22,7 +22,7 @@ C
      &     IWHANDLER_IN,
 #endif
      &     IFLAG, IERROR )
-      USE DMUMPS_LOAD
+      USE MUMPS_LOAD
       USE DMUMPS_LR_DATA_M, ONLY: DMUMPS_BLR_INIT_FRONT,
      &                            DMUMPS_BLR_SAVE_NFS4FATHER
 #if ! defined(NO_FDM_DESCBAND)
@@ -105,7 +105,7 @@ C
          FLOP1 = dble( NASS ) * dble( NROW )
      &            * dble( 2 * NCOL - NROW - NASS + 1)
       END IF
-      CALL DMUMPS_LOAD_UPDATE(1,.TRUE.,FLOP1, KEEP,KEEP8)
+      CALL MUMPS_LOAD_UPDATE(1,.TRUE.,FLOP1, KEEP,KEEP8)
       IF ( KEEP(50) .eq. 0 ) THEN
         NSLAVES = NSLAVES_HDR + XTRA_SLAVES_UNSYM
       ELSE
@@ -242,7 +242,7 @@ C
      &    IFLAG, IERROR, COMM, PERM,
      &    IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
      &
-     &    root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
@@ -255,10 +255,12 @@ C
 #     if ! defined(NO_FDM_DESCBAND)
       USE MUMPS_FAC_DESCBAND_DATA_M
 #     endif
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: INODE  
-      TYPE (DMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (DMUMPS_ROOT_STRUC) :: roota
       INTEGER KEEP(500), ICNTL(60)
       INTEGER(8) KEEP8(150)
       DOUBLE PRECISION       DKEEP(230)
@@ -354,7 +356,7 @@ C
      &    IFLAG, IERROR, COMM,
      &    PERM, IPOOL, LPOOL, LEAF,
      &    NBFIN, MYID, SLAVEF,
-     &    root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &    root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,

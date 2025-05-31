@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -16,7 +16,6 @@ C
      &    VALSON, PTLUST_S, PTRAST, STEP, PIMASTER,
      &    OPASSW, IWPOSCB, MYID, KEEP,KEEP8, IS_ofType5or6,
      &    LDA_VALSON, ICOL_BEG )
-      USE SMUMPS_LOAD
       IMPLICIT NONE
       INTEGER KEEP(500)
       INTEGER(8) KEEP8(150)
@@ -584,7 +583,6 @@ C
      &     ISON, NBCOLS,
      &     VALSON, PTLUST_S, PTRAST, STEP, PIMASTER,
      &     OPASSW, IWPOSCB,MYID, KEEP,KEEP8 )
-      USE SMUMPS_LOAD
       IMPLICIT NONE
       INTEGER KEEP(500)
       INTEGER(8) KEEP8(150)
@@ -868,6 +866,7 @@ C
       SUBROUTINE SMUMPS_PARPIVT1_SET_MAX ( INODE, 
      &                           A, LAELL8, KEEP, NFRONT, 
      &                           NASS1, NVSCHUR_K253, NB_POSTPONED)
+!$     USE OMP_LIB
        IMPLICIT NONE
       INTEGER(8), intent(in) :: LAELL8
       INTEGER, intent(in)    :: INODE
@@ -879,6 +878,10 @@ C
       INTEGER    :: I, J, NCB
       REAL    :: ZERO
       REAL       :: RMAX
+      LOGICAL    :: OMP_FLAG
+      INTEGER    :: JB, NB_BLOCKS, BLSIZE
+      INTEGER(8) :: APOSSHIFT
+      INTEGER    :: NOMP
       PARAMETER( ZERO = 0.0E0 )
       NASS1_8  = int(NASS1, 8)
       NFRONT_8 = int(NFRONT, 8)
@@ -888,25 +891,62 @@ C
        A(APOSMAX:APOSMAX+NASS1_8-1_8)= ZERO
        IF (NCB.EQ.0) RETURN
       IF (KEEP(50).EQ.2) THEN
-       APOS = 1_8 + (NASS1_8*NFRONT_8)
-       DO I = 1, NCB
-        DO J = 1, NASS1
-         RMAX = real(A(APOSMAX+int(J,8)-1_8))
-         RMAX = max(RMAX, abs(A(APOS+int(J,8)-1_8)))
-         A(APOSMAX+int(J,8)-1_8) = RMAX
-        ENDDO
-        APOS = APOS+NFRONT_8
-       ENDDO
+        IF ( NASS1 .LE. KEEP(366) ) THEN
+          APOS = 1_8 + (NASS1_8*NFRONT_8)
+          DO I = 1, NCB
+            DO J = 1, NASS1
+              RMAX = real(A(APOSMAX+int(J,8)-1_8))
+              RMAX = max(RMAX, abs(A(APOS+int(J,8)-1_8)))
+              A(APOSMAX+int(J,8)-1_8) = RMAX
+            ENDDO
+            APOS = APOS+NFRONT_8
+          ENDDO
+        ELSE
+          NOMP = 1
+!$        NOMP = OMP_GET_MAX_THREADS()
+          OMP_FLAG = int(NCB,8)*int(NASS1,8) .GT. int(KEEP(361),8)
+     &    .AND. (NASS1 .GT. KEEP(366)) .AND. (NOMP.GT.1)
+          BLSIZE = max(KEEP(366),1)
+          NB_BLOCKS = NASS1 / BLSIZE
+          BLSIZE = (NASS1 + NB_BLOCKS - 1)/ NB_BLOCKS
+          APOSSHIFT=NASS1_8 * NFRONT_8
+!$OMP PARALLEL DO PRIVATE(I,J,APOS,JB,RMAX) IF (OMP_FLAG)
+          DO JB = 1, NASS1, BLSIZE
+            DO I = 1, NCB
+              DO J = JB, min(JB+BLSIZE-1,NASS1)
+                APOS = APOSSHIFT + int(I-1,8) * int(NFRONT,8) + int(J,8)
+                RMAX = real( A(APOSMAX+int(J,8) - 1_8) )
+                RMAX = max( RMAX, abs(A(APOS+int(J,8)) ) )
+                A(APOSMAX+int(J,8)-1_8) = RMAX
+              ENDDO
+            ENDDO
+          ENDDO
+!$OMP END PARALLEL DO
+        ENDIF
       ELSE
-       APOS = 1_8 + NASS1_8
-       DO I = 1, NASS1
-        RMAX =  real(A(APOSMAX+int(I,8)-1_8))
-        DO J = 1, NCB
-         RMAX =  max(RMAX, abs(A(APOS+int(J,8)-1)))
-        ENDDO
-        A(APOSMAX+int(I,8)-1_8) = RMAX
-        APOS = APOS+NFRONT_8
-       ENDDO
+        OMP_FLAG = int(NCB,8)*int(NASS1,8) .GT. int(KEEP(361),8)
+        IF (OMP_FLAG) THEN
+!$OMP     PARALLEL DO PRIVATE(I,J,APOS,RMAX)
+          DO I = 1, NASS1
+            RMAX =  0.0E0
+            APOS = 1_8 + NASS1_8+int(I-1,8)*NFRONT_8
+            DO J = 1, NCB
+              RMAX =  max(RMAX, abs(A(APOS+int(J-1,8))))
+            ENDDO
+            A(APOSMAX+int(I,8)-1_8) = RMAX
+          ENDDO
+!$OMP     END PARALLEL DO
+        ELSE
+          APOS = 1_8 + NASS1_8
+          DO I = 1, NASS1
+            RMAX =  0.0E0
+            DO J = 1, NCB
+              RMAX =  max(RMAX, abs(A(APOS+int(J,8)-1)))
+            ENDDO
+            A(APOSMAX+int(I,8)-1_8) = RMAX
+            APOS = APOS+NFRONT_8
+          ENDDO
+        ENDIF
       ENDIF
       CALL SMUMPS_UPDATE_PARPIV_ENTRIES ( INODE,
      &     KEEP, A(APOSMAX), NASS1, NB_POSTPONED)

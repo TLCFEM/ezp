@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -12,7 +12,7 @@ C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       SUBROUTINE CMUMPS_INIT_POOL_LAST3(IPOOL, LPOOL, LEAF)
-      USE CMUMPS_LOAD
+      USE MUMPS_LOAD
       IMPLICIT NONE
       INTEGER LPOOL, LEAF
       INTEGER IPOOL(LPOOL)
@@ -24,7 +24,7 @@ C
       SUBROUTINE CMUMPS_INSERT_POOL_N
      &           (N, POOL, LPOOL, PROCNODE, SLAVEF, KEEP199,
      &           K28, K76, K80, K47, STEP, INODE)
-      USE CMUMPS_LOAD
+      USE MUMPS_LOAD
       IMPLICIT NONE
       INTEGER N, INODE, LPOOL, K28, SLAVEF, K76, K80, K47, KEEP199
       INTEGER STEP(N), POOL(LPOOL), PROCNODE(K28)
@@ -51,7 +51,7 @@ C
          IF ((K80 == 1 .AND. K47 .GE. 1) .OR.
      &     (( K80 == 2 .OR. K80==3 ) .AND.
      &          ( K47 == 4 ))) THEN
-            CALL CMUMPS_REMOVE_NODE(INODE,1)
+            CALL MUMPS_REMOVE_NODE(INODE,1)
          ENDIF
       ENDIF
       IF ( MUMPS_IN_OR_ROOT_SSARBR(PROCNODE(STEP(INODE_EFF)),
@@ -168,7 +168,7 @@ C
       SUBROUTINE CMUMPS_EXTRACT_POOL( N, POOL, LPOOL, PROCNODE, SLAVEF,
      &           STEP, INODE, KEEP,KEEP8, MYID, ND,
      &           FORCE_EXTRACT_TOP_SBTR )
-      USE CMUMPS_LOAD
+      USE MUMPS_LOAD
       IMPLICIT NONE
       INTEGER INODE, LPOOL, SLAVEF, N
       INTEGER KEEP(500)
@@ -262,7 +262,7 @@ C
             IF((INODE.GE.0).AND.(INODE.LE.N))THEN
                NODE_TO_EXTRACT=INODE
                FLAG_MEM=.FALSE.
-               CALL CMUMPS_LOAD_CHK_MEMCST_POOL(FLAG_MEM)
+               CALL MUMPS_LOAD_CHK_MEMCST_POOL(FLAG_MEM)
                IF(FLAG_MEM)THEN
                   CALL CMUMPS_MEM_NODE_SELECT(INODE,POOL,LPOOL,N,
      &                 STEP,KEEP,KEEP8,
@@ -288,14 +288,14 @@ C
      &                        KEEP(199)) ) THEN
             IF((KEEP(47).GE.2.AND.KEEP(81).EQ.1).AND.
      &           (INSUBTREE.EQ.0))THEN
-               CALL CMUMPS_LOAD_SET_SBTR_MEM(.TRUE.)
+               CALL MUMPS_LOAD_SET_SBTR_MEM(.TRUE.)
             ENDIF
             INSUBTREE = 1
          ELSE IF ( MUMPS_ROOTSSARBR( PROCNODE(STEP(INODE_EFF)), 
      &           KEEP(199))) THEN
             IF((KEEP(47).GE.2.AND.KEEP(81).EQ.1).AND.
      &           (INSUBTREE.EQ.1))THEN
-               CALL CMUMPS_LOAD_SET_SBTR_MEM(.FALSE.)
+               CALL MUMPS_LOAD_SET_SBTR_MEM(.FALSE.)
             ENDIF
             INSUBTREE = 0
          END IF
@@ -306,7 +306,7 @@ C
          ENDIF
          INODE = POOL( LPOOL - 2 - NBTOP )
          IF(KEEP(81).EQ.1)THEN
-            CALL CMUMPS_LOAD_POOL_CHECK_MEM
+            CALL MUMPS_LOAD_POOL_CHECK_MEM
      &           (INODE,UPPER,SLAVEF,KEEP,KEEP8,
      &            STEP,POOL,LPOOL,PROCNODE,N)
             IF(UPPER)THEN
@@ -337,7 +337,7 @@ C
                IF((INODE.GE.0).AND.(INODE.LE.N))THEN
                   NODE_TO_EXTRACT=INODE
                   FLAG_MEM=.FALSE.
-                  CALL CMUMPS_LOAD_CHK_MEMCST_POOL(FLAG_MEM)
+                  CALL MUMPS_LOAD_CHK_MEMCST_POOL(FLAG_MEM)
                   IF(FLAG_MEM)THEN
                      CALL CMUMPS_MEM_NODE_SELECT(INODE,POOL,LPOOL,N,
      &                    STEP,KEEP,KEEP8,
@@ -349,7 +349,7 @@ C
                         GOTO 222
                      ENDIF
                   ELSE
-                     CALL CMUMPS_LOAD_CLEAN_MEMINFO_POOL(INODE)
+                     CALL MUMPS_LOAD_CLEAN_MEMINFO_POOL(INODE)
                   ENDIF
                ENDIF
             ENDIF
@@ -359,7 +359,7 @@ C
          IF((INODE.GT.0).AND.(INODE.LE.N))THEN
             IF ((( KEEP(80) == 2 .OR. KEEP(80)==3 ) .AND.
      &           ( KEEP(47) == 4 ))) THEN
-               CALL CMUMPS_REMOVE_NODE(INODE,2)
+               CALL MUMPS_REMOVE_NODE(INODE,2)
             ENDIF
          ENDIF
          IF ( INODE < 0 ) THEN
@@ -379,7 +379,7 @@ C
       SUBROUTINE CMUMPS_MEM_CONS_MNG(INODE,POOL,LPOOL,N,STEP,
      &     KEEP,KEEP8,
      &     PROCNODE,SLAVEF,MYID,SBTR,FLAG_SAME_PROC,MIN_PROC)
-      USE CMUMPS_LOAD
+      USE MUMPS_LOAD
       IMPLICIT NONE
       INTEGER INODE,LPOOL,N,MYID,SLAVEF,PROC,MIN_PROC
       INTEGER POOL(LPOOL),KEEP(500),STEP(N),PROCNODE(KEEP(28))
@@ -403,12 +403,12 @@ C
             IF(NODE_TO_EXTRACT.LT.0)THEN
                POS_TO_EXTRACT=I
                NODE_TO_EXTRACT=POOL(LPOOL-2-I)
-               CALL CMUMPS_LOAD_COMP_MAXMEM_POOL(NODE_TO_EXTRACT,
+               CALL MUMPS_LOAD_COMP_MAXMEM_POOL(NODE_TO_EXTRACT,
      &                                       TMP_COST,PROC)
                MIN_COST=TMP_COST
                MIN_PROC=PROC
             ELSE
-               CALL CMUMPS_LOAD_COMP_MAXMEM_POOL(POOL(LPOOL-2-I),
+               CALL MUMPS_LOAD_COMP_MAXMEM_POOL(POOL(LPOOL-2-I),
      &                                       TMP_COST,PROC)
                IF((PROC.NE.MIN_PROC).OR.(TMP_COST.NE.MIN_COST))THEN
                   FLAG_SAME_PROC=.TRUE.
@@ -422,7 +422,7 @@ C
             ENDIF
          ENDDO
          IF((KEEP(47).EQ.4).AND.(NBINSUBTREE.NE.0))THEN
-            CALL CMUMPS_CHECK_SBTR_COST(NBINSUBTREE,INSUBTREE,NBTOP,
+            CALL MUMPS_CHECK_SBTR_COST(NBINSUBTREE,INSUBTREE,NBTOP,
      &           MIN_COST,SBTR)
             IF(SBTR)THEN
                WRITE(*,*)MYID,': selecting from subtree'
@@ -441,14 +441,14 @@ C
             ENDIF
          ENDDO
          POOL(LPOOL-2-NBTOP)=INODE
-         CALL CMUMPS_LOAD_CLEAN_MEMINFO_POOL(INODE)
+         CALL MUMPS_LOAD_CLEAN_MEMINFO_POOL(INODE)
       ELSE
       ENDIF
       END SUBROUTINE CMUMPS_MEM_CONS_MNG
       SUBROUTINE CMUMPS_MEM_NODE_SELECT(INODE,POOL,LPOOL,N,STEP,
      &     KEEP,KEEP8,
      &     PROCNODE,SLAVEF,MYID,SBTR_FLAG,PROC_FLAG,MIN_PROC)
-      USE CMUMPS_LOAD
+      USE MUMPS_LOAD
       IMPLICIT NONE
       INTEGER INODE,LPOOL,N,SLAVEF,MYID,MIN_PROC
       INTEGER POOL(LPOOL),KEEP(500),PROCNODE(KEEP(28)),STEP(N)
@@ -478,7 +478,7 @@ C
       IF(.NOT.PROC_FLAG)THEN
          NODE_TO_EXTRACT=INODE
          IF((INODE.GE.0).AND.(INODE.LE.N))THEN
-            CALL CMUMPS_FIND_BEST_NODE_FOR_MEM(MIN_PROC,POOL,
+            CALL MUMPS_FIND_BEST_NODE_FOR_MEM(MIN_PROC,POOL,
      &           LPOOL,INODE)
             IF(MUMPS_INSSARBR(PROCNODE(STEP(INODE)),
      &           KEEP(199)))THEN
@@ -491,7 +491,7 @@ C
                   WRITE(*,*)MYID,': Extracting from top
      &                 inode=',INODE,'for helping',MIN_PROC
                ENDIF
-               CALL CMUMPS_LOAD_CLEAN_MEMINFO_POOL(INODE)
+               CALL MUMPS_LOAD_CLEAN_MEMINFO_POOL(INODE)
             ENDIF
          ENDIF
          DO I=1,NBTOP
