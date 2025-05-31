@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -2148,3 +2148,211 @@ C
       MUMPS_NUMROC = MYNBROWS
       RETURN
       END FUNCTION MUMPS_NUMROC
+      SUBROUTINE MUMPS_CLEAN_PENDING(
+     &    INFO1, KEEP, BUFR, LBUFR, LBUFR_BYTES,
+     &    COMM_NODES, COMM_LOAD, SLAVEF,
+     &    CLEAN_COMM_NODES, CLEAN_COMM_LOAD )
+      USE MUMPS_BUF_COMMON, ONLY : MUMPS_BUF_ALL_EMPTY
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)    :: LBUFR, LBUFR_BYTES
+      INTEGER, INTENT(OUT)   :: BUFR( LBUFR )
+      INTEGER, INTENT(IN)    :: COMM_NODES, COMM_LOAD, SLAVEF, INFO1
+      INTEGER, INTENT(INOUT) :: KEEP(500)
+      LOGICAL, INTENT(IN)    :: CLEAN_COMM_LOAD, CLEAN_COMM_NODES
+      INCLUDE 'mpif.h'
+      INCLUDE 'mumps_tags.h'
+      INTEGER :: STATUS(MPI_STATUS_SIZE)
+      LOGICAL :: FLAG, BUFFERS_EMPTY, BUFFERS_EMPTY_ON_ALL_PROCS
+      INTEGER :: MSGSOU_LOC, MSGTAG_LOC, MSGLEN_LOC
+      INTEGER ::  COMM_EFF
+      INTEGER :: IERR
+      INTEGER :: IBUF_EMPTY, IBUF_EMPTY_ON_ALL_PROCS
+      INTEGER :: TOTAL_SEND_MINUS_RECV266
+      INTEGER :: TOTAL_SEND_MINUS_RECV267
+      IF (SLAVEF.EQ.1) RETURN
+      IF (.NOT. CLEAN_COMM_NODES .AND. .NOT. CLEAN_COMM_LOAD) THEN
+        RETURN
+      ENDIF
+      DO WHILE (.TRUE.) 
+        FLAG = .TRUE.
+        DO WHILE ( FLAG )
+          FLAG = .FALSE.
+          IF (CLEAN_COMM_NODES) THEN
+            IF ( .NOT. FLAG ) THEN
+              COMM_EFF = COMM_NODES
+              CALL MPI_IPROBE(MPI_ANY_SOURCE,MPI_ANY_TAG,
+     &             COMM_NODES, FLAG, STATUS, IERR)
+            END IF
+          END IF
+          IF (CLEAN_COMM_LOAD) THEN
+            IF ( .NOT. FLAG ) THEN
+              COMM_EFF = COMM_LOAD
+              CALL MPI_IPROBE( MPI_ANY_SOURCE, MPI_ANY_TAG,
+     &             COMM_LOAD, FLAG, STATUS, IERR)
+            END IF
+          END IF
+          IF (FLAG) THEN
+            MSGSOU_LOC = STATUS( MPI_SOURCE )
+            MSGTAG_LOC = STATUS( MPI_TAG )
+            IF (COMM_EFF .EQ. COMM_NODES) THEN
+              KEEP(266) = KEEP(266) - 1
+            ELSE
+              KEEP(267) = KEEP(267) - 1
+            ENDIF
+            CALL MPI_GET_COUNT( STATUS, MPI_PACKED, MSGLEN_LOC, IERR )
+            IF (MSGLEN_LOC .LE. LBUFR_BYTES) THEN
+              CALL MPI_RECV( BUFR, LBUFR_BYTES,
+     &             MPI_PACKED, MSGSOU_LOC,
+     &             MSGTAG_LOC, COMM_EFF, STATUS, IERR )
+            ENDIF
+          ENDIF
+        END DO
+        CALL MUMPS_BUF_ALL_EMPTY( CLEAN_COMM_NODES,
+     &                            CLEAN_COMM_LOAD,
+     &                            BUFFERS_EMPTY )
+        IF ( BUFFERS_EMPTY ) THEN
+          IBUF_EMPTY = 0
+        ELSE
+          IBUF_EMPTY = 1
+        ENDIF
+        IF (CLEAN_COMM_NODES) THEN
+          COMM_EFF = COMM_NODES
+        ELSE
+          COMM_EFF = COMM_LOAD
+        ENDIF
+        CALL MPI_ALLREDUCE(IBUF_EMPTY,
+     &                     IBUF_EMPTY_ON_ALL_PROCS,
+     &                     1, MPI_INTEGER, MPI_MAX,
+     &                     COMM_EFF, IERR)
+        IF ( IBUF_EMPTY_ON_ALL_PROCS == 0) THEN
+          BUFFERS_EMPTY_ON_ALL_PROCS = .TRUE.
+        ELSE
+          BUFFERS_EMPTY_ON_ALL_PROCS = .FALSE.
+        ENDIF
+        IF (BUFFERS_EMPTY_ON_ALL_PROCS) THEN
+          IF (CLEAN_COMM_NODES) THEN
+            CALL MPI_ALLREDUCE(KEEP(266),
+     &                     TOTAL_SEND_MINUS_RECV266,
+     &                     1, MPI_INTEGER, MPI_SUM,
+     &                     COMM_EFF, IERR)
+          ELSE
+            TOTAL_SEND_MINUS_RECV266 = 0
+          ENDIF
+          IF (CLEAN_COMM_LOAD) THEN
+            CALL MPI_ALLREDUCE(KEEP(267), 
+     &                     TOTAL_SEND_MINUS_RECV267,
+     &                     1, MPI_INTEGER, MPI_SUM,
+     &                     COMM_EFF, IERR)
+          ELSE
+             TOTAL_SEND_MINUS_RECV267 = 0
+          ENDIF
+          IF (TOTAL_SEND_MINUS_RECV266 .EQ. 0 .AND.
+     &        TOTAL_SEND_MINUS_RECV267 .EQ. 0) THEN
+            EXIT
+          ENDIF
+        ENDIF
+      ENDDO
+      RETURN
+      END SUBROUTINE MUMPS_CLEAN_PENDING
+      SUBROUTINE MUMPS_RCOPY_32TO64 (INTAB, SIZETAB, OUTTAB8)
+      IMPLICIT NONE
+      INTEGER, intent(in)           ::  SIZETAB
+      REAL, intent(in)              ::  INTAB(SIZETAB)
+      DOUBLE PRECISION, intent(out) ::  OUTTAB8(SIZETAB)
+      INTEGER :: I
+      DO I=1,SIZETAB
+       OUTTAB8(I) = dble(INTAB(I))
+      ENDDO
+      RETURN
+      END SUBROUTINE MUMPS_RCOPY_32TO64
+      SUBROUTINE MUMPS_RCOPY_32TO64_64C(INTAB, SIZETAB8, OUTTAB8)
+      IMPLICIT NONE
+      INTEGER(8), intent(in)        ::  SIZETAB8
+      REAL, intent(in)              ::  INTAB(SIZETAB8)
+      DOUBLE PRECISION, intent(out) ::  OUTTAB8(SIZETAB8)
+      INTEGER(8) :: I8
+      LOGICAL    :: OMP_FLAG
+      OMP_FLAG = (SIZETAB8 .GE.500000_8 )
+!$OMP PARALLEL DO PRIVATE(I8)
+!$OMP&         IF(OMP_FLAG)
+      DO I8=1_8, SIZETAB8
+        OUTTAB8(I8) = dble(INTAB(I8))
+      ENDDO
+!$OMP END PARALLEL DO
+      RETURN
+      END SUBROUTINE MUMPS_RCOPY_32TO64_64C
+      SUBROUTINE MUMPS_RCOPY_32TO64_64C_IP(IN_OUT_TAB48, SIZETAB)
+      INTEGER(8), intent(in) :: SIZETAB
+      REAL, intent(inout) :: IN_OUT_TAB48(2*SIZETAB)
+      CALL MUMPS_RCOPY_32TO64_64C_IP_REC(IN_OUT_TAB48, SIZETAB)
+      RETURN
+      END SUBROUTINE MUMPS_RCOPY_32TO64_64C_IP
+      RECURSIVE SUBROUTINE MUMPS_RCOPY_32TO64_64C_IP_REC(
+     &                     IN_OUT_TAB48, SIZETAB)
+      IMPLICIT NONE
+      INTEGER(8), intent(in) :: SIZETAB
+      REAL :: IN_OUT_TAB48(2*SIZETAB)
+      INTEGER(8) :: IBEG24, IBEG28, SIZE1, SIZE2
+      IF (SIZETAB.LE. 1000_8) THEN
+        CALL MUMPS_RCOPY_32TO64_64C_IP_C(IN_OUT_TAB48,
+     &       SIZETAB)
+      ELSE
+        SIZE2  = SIZETAB / 2
+        SIZE1  = SIZETAB - SIZE2
+        IBEG24 = SIZE1+1                 
+        IBEG28 = 2*SIZE1+1_8             
+        CALL MUMPS_RCOPY_32TO64_64C(IN_OUT_TAB48(IBEG24),
+     &                           SIZE2, IN_OUT_TAB48(IBEG28))
+        CALL MUMPS_RCOPY_32TO64_64C_IP_REC(IN_OUT_TAB48,
+     &                           SIZE1)
+      ENDIF
+      RETURN
+      END SUBROUTINE MUMPS_RCOPY_32TO64_64C_IP_REC
+      SUBROUTINE MUMPS_RCOPY_64TO32(INTAB8, SIZETAB, OUTTAB)
+      INTEGER, intent(in)          ::  SIZETAB
+      DOUBLE PRECISION, intent(in) ::  INTAB8(SIZETAB)
+      REAL, intent(out)            ::  OUTTAB(SIZETAB)
+      INTEGER :: I
+      DO I=1,SIZETAB
+       OUTTAB(I) = real(INTAB8(I))
+      ENDDO
+      RETURN
+      END SUBROUTINE MUMPS_RCOPY_64TO32
+      SUBROUTINE MUMPS_RCOPY_64TO32_64C (INTAB8, SIZETAB, OUTTAB)
+      INTEGER(8), intent(in)       ::  SIZETAB
+      DOUBLE PRECISION, intent(in) ::  INTAB8(SIZETAB)
+      REAL, intent(out)            ::  OUTTAB(SIZETAB)
+      INTEGER(8) :: I8
+      DO I8=1_8,SIZETAB
+       OUTTAB(I8) = real(INTAB8(I8))
+      ENDDO
+      RETURN
+      END SUBROUTINE MUMPS_RCOPY_64TO32_64C
+      SUBROUTINE MUMPS_RCOPY_64TO32_64C_IP(IN_OUT_TAB48, SIZETAB)
+      IMPLICIT NONE
+      INTEGER(8), intent(in) :: SIZETAB
+      REAL, intent(inout) :: IN_OUT_TAB48(2*SIZETAB)
+      CALL MUMPS_RCOPY_64TO32_64C_IP_REC(IN_OUT_TAB48, SIZETAB)
+      RETURN
+      END SUBROUTINE MUMPS_RCOPY_64TO32_64C_IP
+      RECURSIVE SUBROUTINE MUMPS_RCOPY_64TO32_64C_IP_REC(
+     &                     IN_OUT_TAB48, SIZETAB)
+      IMPLICIT NONE
+      INTEGER(8), intent(in) :: SIZETAB
+      INTEGER :: IN_OUT_TAB48(2*SIZETAB)
+      INTEGER(8) :: IBEG24, IBEG28, SIZE1, SIZE2
+      IF (SIZETAB.LE. 1000_8) THEN
+        CALL MUMPS_RCOPY_64TO32_64C_IP_C(IN_OUT_TAB48,
+     &       SIZETAB)
+      ELSE
+        SIZE2  = SIZETAB / 2
+        SIZE1  = SIZETAB - SIZE2
+        IBEG24 = SIZE1 + 1
+        IBEG28 = SIZE1 + SIZE1 + 1_8
+        CALL MUMPS_RCOPY_64TO32_64C_IP_REC(IN_OUT_TAB48,
+     &                                        SIZE1)
+        CALL MUMPS_RCOPY_64TO32_64C(IN_OUT_TAB48(IBEG28),
+     &                           SIZE2, IN_OUT_TAB48(IBEG24))
+      ENDIF
+      RETURN
+      END SUBROUTINE MUMPS_RCOPY_64TO32_64C_IP_REC

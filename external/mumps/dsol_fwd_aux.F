@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -363,8 +363,8 @@ C
      &     , ERROR_WAS_BROADCASTED
      &    )
       USE DMUMPS_SOL_LR 
-!$    USE DMUMPS_SOL_L0OMP_M, ONLY: LOCK_FOR_SCATTER
-      USE DMUMPS_SOL_L0OMP_M, ONLY: NB_LOCK_MAX
+!$    USE MUMPS_SOL_L0OMP_M, ONLY: LOCK_FOR_SCATTER
+      USE MUMPS_SOL_L0OMP_M, ONLY: NB_LOCK_MAX
       USE DMUMPS_OOC
       USE DMUMPS_BUF
       IMPLICIT NONE

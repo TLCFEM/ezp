@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -11,6 +11,874 @@ C  released under the CeCILL-C license
 C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
+      SUBROUTINE CMUMPS_ANA_COMPUTE_ESTIMATES ( id, idintr )
+      USE CMUMPS_STRUC_DEF, ONLY: CMUMPS_STRUC
+      USE CMUMPS_INTR_TYPES, ONLY: CMUMPS_INTR_STRUC
+      USE MUMPS_ANA_OMP_M, ONLY: MUMPS_ANA_L0_OMP
+      IMPLICIT NONE
+      INCLUDE 'mpif.h'
+      INCLUDE 'mumps_tags.h'
+      INTEGER   :: IERR, MASTER
+      PARAMETER( MASTER = 0 )
+      TYPE(CMUMPS_STRUC), TARGET  :: id
+      TYPE(CMUMPS_INTR_STRUC) :: idintr
+      INTEGER, DIMENSION(:), POINTER :: KEEP, INFO, INFOG
+      INTEGER :: allocok
+      INTEGER(8), DIMENSION(:), POINTER :: KEEP8
+      REAL, DIMENSION(:), POINTER :: RINFO
+      REAL, DIMENSION(:), POINTER :: RINFOG
+      INTEGER, DIMENSION(:), POINTER :: ICNTL
+      INTEGER IRANK
+      INTEGER   :: LP, MP, MPG
+      LOGICAL   :: PROK, PROKG, LPOK
+      LOGICAL   :: I_AM_SLAVE, PERLU_ON, PRINT_MAXAVG 
+      LOGICAL   :: SUM_OF_PEAKS, PRINT_NODEINFO
+      INTEGER    :: TOTAL_MBYTES_UNDER_L0
+      INTEGER(8) :: TOTAL_BYTES_UNDER_L0
+      INTEGER :: NBSTATS_I4, NBSTATS_I8
+      PARAMETER (NBSTATS_I4=4, NBSTATS_I8=24)
+      INTEGER, ALLOCATABLE, TARGET, DIMENSION(:) :: TNSTK_afterL0
+      INTEGER, ALLOCATABLE, DIMENSION(:) :: FLAGGED_LEAVES
+      INTEGER(8) :: PEAK_UNDER_L0, PEAK_ABOVE_L0
+      INTEGER(8) :: SUM_NRLADU, MAX_NRLADU, MIN_NRLADU,
+     &              SUM_NRLADU_if_LR_LU, 
+     &              SUM_NRLADULR_UD, SUM_NRLADULR_WC,
+     &              SUM_NRLNEC, SUM_NRLNEC_ACTIVE, 
+     &              MIN_NRLNEC
+      INTEGER ::    SUM_NIRADU,
+     &              SUM_NIRADU_OOC, 
+     &              SUM_NIRNEC, SUM_NIRNEC_OOC
+      INTEGER :: LIPOOL_local
+      INTEGER, ALLOCATABLE, DIMENSION(:), TARGET :: IPOOL
+      INTEGER                                    :: I, LIPOOL
+      INTEGER(4) :: I4
+      INTEGER, POINTER, DIMENSION(:) :: NE_STEPSPTR
+      INTEGER, POINTER, DIMENSION(:) :: IPOOLPTR 
+      LOGICAL    :: BDUMMY
+      INTEGER(8) :: K8_33relaxed, K8_34relaxed, K8_35relaxed,
+     &              K8_50relaxed
+      INTEGER(8) :: ENTRIES_IN_FACTORS_LOC_MASTERS
+      INTEGER    :: OOC_STRAT, BLR_STRAT, IDUMMY, ISTEP, NBNODES_BLR
+      INTEGER(8) :: TOTAL_BYTES, ITMP8
+      INTEGER(8) ::  MAX_FRONT_SURFACE_LOCAL_L0, 
+     &               MAX_SIZE_FACTOR_L0,
+     &               ENTRIES_IN_FACTORS_UNDER_L0, 
+     &               ENTRIES_IN_FACTORS_MASTERS_LO
+      INTEGER             :: MAXFR_UNDER_L0
+      DOUBLE PRECISION    :: COST_SUBTREES_UNDER_L0, OPSA_UNDER_L0
+      INTEGER(8)::  SIZECB_UNDER_L0, SIZECB_UNDER_L0_IF_LRCB
+      LOGICAL   :: ABOVE_L0
+      INTEGER :: locMYID_NODES
+      LOGICAL, POINTER :: locI_AM_CAND(:)
+      INTEGER LOCAL_M, LOCAL_N
+      INTEGER, EXTERNAL :: MUMPS_NUMROC
+      INTEGER SBUF_SEND_FR, SBUF_REC_FR
+      INTEGER SBUF_SEND_LR, SBUF_REC_LR
+      INTEGER TOTAL_MBYTES
+      INTEGER(8) SUM_KEEP811_THIS_NODE, MAX_SUM_KEEP811_THIS_NODE
+      INTEGER SUM_INFO15_THIS_NODE, MAX_SUM_INFO15_THIS_NODE
+      INTEGER SUM_INFO17_THIS_NODE, MAX_SUM_INFO17_THIS_NODE
+      INTEGER(8) SBUF_RECOLD8, MIN_BUF_SIZE8
+      LOGICAL UPDATE_BUFFER
+      INTEGER MIN_BUF_SIZE, SIZE_DESC_BANDE,
+     &        MaxBlocSize_FR, MaxBlocSize_BLR,
+     &        MIN_BUF_SIZE_FR, MIN_BUF_SIZE_BLR
+      INTEGER(8) MAX_SIZE_FACTOR_TMP, KEEP26_I8_TMP
+      KEEP   => id%KEEP
+      KEEP8  => id%KEEP8
+      INFO   => id%INFO
+      RINFO  => id%RINFO
+      INFOG  => id%INFOG
+      RINFOG => id%RINFOG
+      ICNTL  => id%ICNTL
+      LP  = id%ICNTL( 1 )
+      MP  = id%ICNTL( 2 )
+      MPG = id%ICNTL( 3 )
+      LPOK  = ((LP.GT.0).AND.(id%ICNTL(4).GE.1))
+      PROK  = (( MP  .GT. 0 ).AND.(id%ICNTL(4).GE.2))
+      PROKG = ( MPG .GT. 0 .and. id%MYID .eq. MASTER )
+      PROKG = (PROKG.AND.(id%ICNTL(4).GE.2))
+      I_AM_SLAVE = ( id%MYID .ne. MASTER  .OR.
+     &     ( id%MYID .eq. MASTER .AND.
+     &     id%KEEP(46) .eq. 1 ) )
+      PRINT_MAXAVG = .NOT.(id%NSLAVES.EQ.1 .AND. KEEP(46).EQ.1)
+      PRINT_NODEINFO = PRINT_MAXAVG .AND. id%NPROCS .NE. id%KEEP(412)
+      IDUMMY = 1
+      BDUMMY = .FALSE.
+      IF ( I_AM_SLAVE ) THEN
+         locI_AM_CAND => id%I_AM_CAND
+         locMYID_NODES = id%MYID_NODES
+            IF ( idintr%root%yes ) THEN
+              LOCAL_M = MUMPS_NUMROC(
+     &          id%ND_STEPS(id%STEP(KEEP(38))),
+     &          idintr%root%MBLOCK, idintr%root%MYROW, 0,
+     &          idintr%root%NPROW )
+              LOCAL_M = max(1, LOCAL_M)
+              LOCAL_N = MUMPS_NUMROC(
+     &          id%ND_STEPS(id%STEP(KEEP(38))),
+     &          idintr%root%NBLOCK, idintr%root%MYCOL, 0,
+     &          idintr%root%NPCOL )
+            ELSE
+              LOCAL_M = 0
+              LOCAL_N = 0
+            END IF
+            IF  ( KEEP(60) .EQ. 2 .OR. KEEP(60) .EQ. 3 ) THEN
+               id%SCHUR_MLOC=LOCAL_M
+               id%SCHUR_NLOC=LOCAL_N
+               idintr%root%SCHUR_MLOC=LOCAL_M
+               idintr%root%SCHUR_NLOC=LOCAL_N
+            ENDIF
+            IF ( .NOT. associated(id%CANDIDATES)) THEN
+               ALLOCATE(id%CANDIDATES(id%NSLAVES+1,1), stat=allocok)
+               IF (allocok .gt.0) THEN
+                     IF ( LPOK ) THEN
+                        WRITE(LP, 150) 'CANDIDATES'
+                     END IF
+                     INFO(1)= -7
+                     INFO(2)= id%NSLAVES+1
+               ENDIF
+            ENDIF
+      ENDIF
+      CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
+     &             id%COMM, id%MYID )
+      IF ( INFO(1).LT.0 ) GOTO 500
+      IF (KEEP(400) .GT. 0 ) THEN 
+          IF ( I_AM_SLAVE ) THEN
+             CALL MUMPS_ANA_L0_OMP(
+     &       KEEP(400), id%N, KEEP(28),
+     &       KEEP(50), id%NSLAVES, id%DAD_STEPS, id%FRERE_STEPS, 
+     &       id%FILS, id%NE_STEPS, id%ND_STEPS, id%STEP, 
+     &       id%PROCNODE_STEPS, KEEP, KEEP8, locMYID_NODES, 
+     &       id%NA, id%LNA, "CMUMPS"(1:1),
+     &       id%LPOOL_B_L0_OMP, id%IPOOL_B_L0_OMP,
+     &       id%LPOOL_A_L0_OMP, id%IPOOL_A_L0_OMP,
+     &       id%L_VIRT_L0_OMP,id%VIRT_L0_OMP, id%VIRT_L0_OMP_MAPPING,
+     &       id%L_PHYS_L0_OMP,id%PHYS_L0_OMP, id%PERM_L0_OMP,
+     &       id%PTR_LEAFS_L0_OMP,
+     &       id%INFO, id%ICNTL)
+             IF (id%INFO(1) .GE. 0) THEN
+               ALLOCATE(
+     &          id%I4_L0_OMP(NBSTATS_I4, KEEP(400)), 
+     &          id%I8_L0_OMP(NBSTATS_I8, KEEP(400)), 
+     &          TNSTK_afterL0(KEEP(28)),
+     &          stat=allocok)
+               IF (allocok .gt.0) THEN
+                 IF ( LPOK ) THEN
+                     WRITE(LP, 150) 'L0_OMP stats'
+                 END IF
+                 INFO(1)= -7
+                 INFO(2)= NBSTATS_I4* KEEP(400) +
+     &                    NBSTATS_I8* KEEP(400)*KEEP(10)
+     &                   + KEEP(28)
+               ENDIF
+             ENDIF
+          ELSE
+            ALLOCATE(id%I4_L0_OMP(1,1), id%I8_L0_OMP(1,1), stat=allocok)
+            IF (allocok.gt.0) THEN
+              INFO(1)= -7
+              INFO(2)= 2 
+            ENDIF
+          ENDIF
+          CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
+     &             id%COMM, id%MYID )
+          IF ( INFO(1).LT.0 ) GOTO 500
+          IF ( I_AM_SLAVE ) THEN
+               CALL CMUMPS_ANA_DISTM_UNDERL0OMP(
+     &           id%LPOOL_B_L0_OMP, id%IPOOL_B_L0_OMP(1),
+     &           id%L_VIRT_L0_OMP,
+     &           id%VIRT_L0_OMP(1), id%VIRT_L0_OMP_MAPPING(1),
+     &           id%L_PHYS_L0_OMP, id%PHYS_L0_OMP(1), id%PERM_L0_OMP(1),
+     &           id%PTR_LEAFS_L0_OMP(1),
+     &           id%KEEP(1), id%N, id%NE_STEPS(1), id%STEP(1),
+     &           id%FRERE_STEPS(1), id%FILS(1), id%DAD_STEPS(1), 
+     &           id%ND_STEPS(1), 
+     &           locMYID_NODES, id%PROCNODE_STEPS(1),
+     &           id%I4_L0_OMP(1,1), NBSTATS_I4, 
+     &           id%I8_L0_OMP(1,1), NBSTATS_I8, KEEP(400),
+     &           SIZECB_UNDER_L0, SIZECB_UNDER_L0_IF_LRCB,
+     &           TNSTK_afterL0, MAXFR_UNDER_L0, 
+     &           MAX_FRONT_SURFACE_LOCAL_L0, MAX_SIZE_FACTOR_L0, 
+     &           ENTRIES_IN_FACTORS_UNDER_L0,
+     &           ENTRIES_IN_FACTORS_MASTERS_LO,
+     &           COST_SUBTREES_UNDER_L0, OPSA_UNDER_L0, NBNODES_BLR,
+     &           INFO(1), INFO(2)
+     &           )
+               CALL MPI_ALLREDUCE (NBNODES_BLR, KEEP(470), 1, 
+     &            MPI_INTEGER, MPI_SUM, id%COMM_NODES, IERR)
+          ENDIF
+      ELSE
+          IF ( I_AM_SLAVE ) THEN
+              id%LPOOL_B_L0_OMP = 1
+              id%LPOOL_A_L0_OMP = 1
+              id%L_VIRT_L0_OMP = 1
+              id%L_PHYS_L0_OMP = 1
+              id%THREAD_LA = -1_8
+              ALLOCATE ( id%VIRT_L0_OMP ( id%L_VIRT_L0_OMP ), 
+     &              id%VIRT_L0_OMP_MAPPING ( id%L_VIRT_L0_OMP ), 
+     &              id%PERM_L0_OMP ( id%L_PHYS_L0_OMP ),
+     &              id%PTR_LEAFS_L0_OMP ( id%L_PHYS_L0_OMP + 1 ),
+     &              id%IPOOL_B_L0_OMP ( id%LPOOL_B_L0_OMP ),
+     &              id%IPOOL_A_L0_OMP ( id%LPOOL_A_L0_OMP ),
+     &              id%PHYS_L0_OMP( id%L_PHYS_L0_OMP ),
+     &              id%I4_L0_OMP(1,1), id%I8_L0_OMP(1,1), stat=allocok)
+              IF (allocok .gt.0) THEN
+                 IF ( LPOK ) THEN
+                    WRITE(LP, 150) 'Allocation error in multicore'
+                 END IF
+                 INFO(1)= -7
+                 INFO(2)= id%L_VIRT_L0_OMP
+     &                + id%L_PHYS_L0_OMP
+     &                + id%L_PHYS_L0_OMP + 1
+     &                + id%LPOOL_B_L0_OMP
+     &                + id%LPOOL_A_L0_OMP
+     &                + id%L_PHYS_L0_OMP + 1 + KEEP(10)
+              ENDIF
+          ELSE
+            ALLOCATE(id%I4_L0_OMP(1,1), id%I8_L0_OMP(1,1), stat=allocok)
+            IF (allocok.gt.0) THEN
+              INFO(1)= -7
+              INFO(2)= 2 
+            ENDIF
+          ENDIF
+      ENDIF
+      CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
+     &      id%COMM, id%MYID )
+      IF ( INFO(1).LT.0 ) GOTO 500
+      IF ( I_AM_SLAVE ) THEN
+          IF (KEEP(400).GT.0) THEN
+              IF (id%NSLAVES .GT.1)  THEN
+                 ALLOCATE (FLAGGED_LEAVES(KEEP(28)),
+     &                stat=allocok)
+                 IF (allocok .gt.0) THEN
+                      IF ( LPOK ) THEN
+                          WRITE(LP, 150) 'L0_OMP FLAGGED LEAVES'
+                      END IF
+                      INFO(1)= -7
+                      INFO(2)= KEEP(28)
+                 ENDIF
+               ENDIF
+          ENDIF
+      ENDIF
+      CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
+     &      id%COMM, id%MYID )
+      IF ( INFO(1).LT.0 ) GOTO 500
+      IF ( I_AM_SLAVE ) THEN
+          IF (KEEP(400).GT.0) THEN
+              IF (id%NSLAVES .GT.1)  THEN
+                 LIPOOL_local=
+     &              id%IPOOL_A_L0_OMP(id%LPOOL_A_L0_OMP)
+                 CALL CMUMPS_PREP_ANA_DISTM_ABOVEL0(
+     &               id%N, id%NSLAVES, id%COMM_NODES, id%MYID_NODES, 
+     &               id%STEP(1), id%DAD_STEPS(1),id%ICNTL,LP,LPOK,
+     &               id%INFO, 
+     &               id%PHYS_L0_OMP(1), id%L_PHYS_L0_OMP, 
+     &               id%IPOOL_A_L0_OMP(1), LIPOOL_local,
+     &               id%KEEP, TNSTK_afterL0,
+     &               FLAGGED_LEAVES
+     &              )
+                 IF ( INFO(1).LT.0 ) GOTO 75
+                 LIPOOL= 0
+                 DO ISTEP=1,KEEP(28)
+                  IF (FLAGGED_LEAVES(ISTEP).GT.0) LIPOOL=LIPOOL+1
+                 ENDDO
+                 ALLOCATE( IPOOL(max(LIPOOL,1)), 
+     &                          stat=allocok)
+                 IF (allocok .gt.0) THEN
+                          IF ( LPOK ) THEN
+                             WRITE(LP, 150) 'Allocation IPOOL'
+                          END IF
+                          INFO(1)= -7
+                          INFO(2)=  LIPOOL
+                 ENDIF
+              ELSE
+                 LIPOOL = id%IPOOL_A_L0_OMP(id%LPOOL_A_L0_OMP)
+              ENDIF
+          ELSE
+           LIPOOL = id%NA(1)
+          ENDIF
+      ENDIF
+ 75   CONTINUE
+      CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
+     &      id%COMM, id%MYID )
+      IF ( INFO(1).LT.0 ) GOTO 500
+      IF ( I_AM_SLAVE ) THEN
+          IF (KEEP(400) .GT. 0 ) THEN 
+            IF (id%NSLAVES .GT.1)  THEN
+              IF (LIPOOL .GT.0) THEN
+                I =LIPOOL
+                DO ISTEP=1, KEEP(28)
+                 IF (FLAGGED_LEAVES(ISTEP).GT.0)  THEN
+                   IPOOL(I) = FLAGGED_LEAVES(ISTEP)
+                   I=I-1
+                 ENDIF
+                 IF (I.EQ.0) EXIT 
+                ENDDO
+              ENDIF
+              DEALLOCATE(FLAGGED_LEAVES)
+              IPOOLPTR => IPOOL
+            ELSE
+               IPOOLPTR => id%IPOOL_A_L0_OMP
+            ENDIF
+            ABOVE_L0    =.TRUE.
+            NE_STEPSPTR => TNSTK_afterL0(1:KEEP(28))
+          ELSE
+             IPOOLPTR => id%NA(3:3+max(LIPOOL,1)-1)
+             ABOVE_L0                   =.FALSE.
+             SIZECB_UNDER_L0            = 0_8
+             SIZECB_UNDER_L0_IF_LRCB    = 0_8
+             MAX_FRONT_SURFACE_LOCAL_L0 = 0_8
+             MAX_SIZE_FACTOR_L0         = 0_8
+             ENTRIES_IN_FACTORS_UNDER_L0= 0_8
+             ENTRIES_IN_FACTORS_MASTERS_LO = 0_8
+             MAXFR_UNDER_L0             = 0
+             COST_SUBTREES_UNDER_L0     = 0.0D0
+             OPSA_UNDER_L0              = 0.0D0
+             NE_STEPSPTR => id%NE_STEPS
+          ENDIF
+           KEEP(139) = MAXFR_UNDER_L0
+           CALL CMUMPS_ANA_DISTM( locMYID_NODES, id%N, id%STEP(1),
+     & id%FRERE_STEPS(1), id%FILS(1), IPOOLPTR(1), LIPOOL, NE_STEPSPTR
+     & (1), id%DAD_STEPS(1), id%ND_STEPS(1), id%PROCNODE_STEPS(1),
+     & id%NSLAVES, ABOVE_L0,SIZECB_UNDER_L0,SIZECB_UNDER_L0_IF_LRCB,
+     & MAXFR_UNDER_L0, MAX_FRONT_SURFACE_LOCAL_L0, MAX_SIZE_FACTOR_L0, 
+     & ENTRIES_IN_FACTORS_UNDER_L0, ENTRIES_IN_FACTORS_MASTERS_LO,
+     & COST_SUBTREES_UNDER_L0, OPSA_UNDER_L0, KEEP8(53), KEEP8(54),
+     & KEEP8(11), KEEP(26), KEEP(15), KEEP8(12),  KEEP8(14),  
+     & KEEP8(32), KEEP8(33), KEEP8(34), KEEP8(35), KEEP8(50), 
+     & KEEP8(36), KEEP8(47), KEEP8(37), KEEP8(38), KEEP8(39),
+     & KEEP8(40), KEEP8(41), KEEP8(42), KEEP8(43), KEEP8(44), KEEP8(45),
+     & KEEP8(46), KEEP8(51), KEEP8(52), KEEP(224),KEEP(225),KEEP(27),
+     & RINFO(1),id%CNTL(1), KEEP(1), KEEP8(1), LOCAL_M, LOCAL_N,
+     & SBUF_RECOLD8, SBUF_SEND_FR, SBUF_REC_FR, SBUF_SEND_LR,
+     & SBUF_REC_LR, id%COST_SUBTREES, KEEP(28), locI_AM_CAND(1),
+     & max(KEEP(56),1), id%ISTEP_TO_INIV2(1), id%CANDIDATES(1,1), 
+     & INFO(1), INFO(2), KEEP8(15),MAX_SIZE_FACTOR_TMP, 
+     & KEEP8(9), ENTRIES_IN_FACTORS_LOC_MASTERS,
+     & idintr%root%yes, idintr%root%NPROW, idintr%root%NPCOL
+     &           )
+           IF (ALLOCATED(IPOOL)) DEALLOCATE(IPOOL)
+           NULLIFY(NE_STEPSPTR,IPOOLPTR)
+           IF (KEEP(400) .GT. 0) THEN 
+             DEALLOCATE (TNSTK_afterL0)
+             SUM_NIRNEC     = 0
+             SUM_NIRADU     = 0
+             SUM_NIRADU_OOC = 0
+             SUM_NIRNEC_OOC = 0
+             DO I=1, KEEP(400)
+                SUM_NIRADU = SUM_NIRADU        + id%I4_L0_OMP(1,I)
+                SUM_NIRNEC = SUM_NIRNEC        + id%I4_L0_OMP(2,I)
+                SUM_NIRADU_OOC = SUM_NIRADU_OOC+ id%I4_L0_OMP(3,I)
+                SUM_NIRNEC_OOC = SUM_NIRNEC_OOC+ id%I4_L0_OMP(4,I)
+             ENDDO
+             KEEP(26)  = KEEP(26)  + SUM_NIRADU
+             KEEP(224) = KEEP(224) + SUM_NIRADU_OOC
+             KEEP(15) = max(KEEP(15),KEEP(26))
+             KEEP(225) = max(KEEP(225),KEEP(224))
+             KEEP(137) = SUM_NIRNEC
+             KEEP(138) = SUM_NIRNEC_OOC
+             SUM_NIRNEC =  int( 
+     &              (REAL(SUM_NIRNEC)*REAL(KEEP(34)))/REAL(KEEP(35))
+     &                     )
+             SUM_NIRNEC_OOC =  int( 
+     &              (REAL(SUM_NIRNEC_OOC)*REAL(KEEP(34)))/REAL(KEEP(35))
+     &                     )
+             MAX_NRLADU          = 0_8
+             MIN_NRLADU          = id%I8_L0_OMP(1,1)
+             SUM_NRLADU          = 0_8
+             SUM_NRLNEC          = 0_8
+             MIN_NRLNEC          = huge(MIN_NRLNEC)
+             SUM_NRLNEC_ACTIVE   = 0_8
+             SUM_NRLADU_if_LR_LU = 0_8
+             SUM_NRLADULR_UD     = 0_8
+             SUM_NRLADULR_WC     = 0_8
+             DO I=1, KEEP(400)
+               MIN_NRLADU = min(MIN_NRLADU, id%I8_L0_OMP(1,I))
+               MAX_NRLADU = max(MAX_NRLADU, id%I8_L0_OMP(1,I))
+               SUM_NRLADU = SUM_NRLADU + id%I8_L0_OMP(1,I)
+               SUM_NRLNEC = SUM_NRLNEC + id%I8_L0_OMP(2,I)
+               MIN_NRLNEC = min(MIN_NRLNEC, id%I8_L0_OMP(2,I))
+               SUM_NRLNEC_ACTIVE = SUM_NRLNEC_ACTIVE +
+     &                      id%I8_L0_OMP(3,I)
+               SUM_NRLADU_if_LR_LU = SUM_NRLADU_if_LR_LU +
+     &                      id%I8_L0_OMP(4,I)
+               SUM_NRLADULR_UD = SUM_NRLADULR_UD  +
+     &                      id%I8_L0_OMP(9,I)
+               SUM_NRLADULR_WC = SUM_NRLADULR_WC  +
+     &                      id%I8_L0_OMP(10,I)
+             ENDDO
+             KEEP8(81) = KEEP8(11) 
+             KEEP8(11) = KEEP8(11) + SUM_NRLADU
+             KEEP8(82) = KEEP8(32)
+             KEEP8(32) = KEEP8(32) + SUM_NRLADU_if_LR_LU
+             PEAK_UNDER_L0 = SUM_NRLNEC + MIN_NRLNEC + 
+     &        int(
+     &        (real(id%N*KEEP(400))*real(KEEP(34)))/real(KEEP(35)),
+     &               8)
+             PEAK_ABOVE_L0 =  KEEP8(53)+ SUM_NRLADU + 
+     &            
+     &            max( int(SBUF_SEND_FR,8),  100000_8) +
+     &            
+     &             int( 
+     &              (real(KEEP(15))*real(KEEP(34)))/real(KEEP(35)),
+     &               8)
+             KEEP8(53) = KEEP8(53)+ SUM_NRLADU
+             KEEP8(40) = KEEP8(40)+
+     &              SUM_NRLADU_if_LR_LU + SUM_NRLADULR_UD
+             KEEP8(41) = KEEP8(41)+ SUM_NRLADULR_UD
+             KEEP8(42) = KEEP8(42)+ SUM_NRLADULR_WC 
+             KEEP8(43) = KEEP8(43)+
+     &              SUM_NRLADU_if_LR_LU + SUM_NRLADULR_UD
+             KEEP8(44) = KEEP8(44)+
+     &              SUM_NRLADU_if_LR_LU + SUM_NRLADULR_WC
+             KEEP8(45) = KEEP8(45)+ SUM_NRLADULR_UD
+             KEEP8(46) = KEEP8(46)+ SUM_NRLADULR_WC
+             KEEP8(51) = KEEP8(51)+ SUM_NRLADU
+             KEEP8(52) = KEEP8(52)+  SUM_NRLADULR_UD
+           ELSE
+             KEEP(137)=0
+             KEEP(138)=0
+           ENDIF
+            id%DKEEP(15)    = RINFO(1)/1000000.0E0
+            IF(ASSOCIATED(locI_AM_CAND)) NULLIFY(locI_AM_CAND)
+            id%MAX_SURF_MASTER = KEEP8(15)
+            KEEP8(19)=MAX_SIZE_FACTOR_TMP
+            KEEP( 29 ) = KEEP(15) + 3* max(KEEP(12),10)
+     &           * ( KEEP(15) / 100 + 1)
+            INFO( 19 ) = KEEP(225) + 3* max(KEEP(12),10)
+     &           * ( KEEP(225) / 100 + 1)
+            KEEP8(13)  = KEEP8(12) + int(KEEP(12),8) *
+     &           ( KEEP8(12) / 100_8 + 1_8 )
+            KEEP8(17)  = KEEP8(14) + int(KEEP(12),8) *
+     &           ( KEEP8(14) /100_8 +1_8)
+            K8_33relaxed  = KEEP8(33) + int(KEEP(12),8) *
+     &           ( KEEP8(33) /100_8 +1_8)
+            K8_34relaxed  = KEEP8(34) + int(KEEP(12),8) *
+     &           ( KEEP8(34) /100_8 +1_8)
+            K8_35relaxed  = KEEP8(35) + int(KEEP(12),8) *
+     &           ( KEEP8(35) /100_8 +1_8)
+            K8_50relaxed  = KEEP8(50) + int(KEEP(12),8) *
+     &           ( KEEP8(50) /100_8 +1_8)
+         CALL MUMPS_ALLREDUCEI8 ( SBUF_RECOLD8, KEEP8(22), MPI_MAX,
+     &                            id%COMM_NODES )
+         IF ( (id%NSLAVES.GT.1)
+     &      ) THEN
+             SBUF_SEND_FR = max(SBUF_SEND_FR,KEEP(27))
+             SBUF_SEND_LR = max(SBUF_SEND_LR,KEEP(27))
+             SBUF_REC_FR  = max(SBUF_REC_FR ,KEEP(27))
+             SBUF_REC_LR  = max(SBUF_REC_LR ,KEEP(27))
+         ENDIF
+         CALL MPI_ALLREDUCE (SBUF_REC_FR, KEEP(44), 1, 
+     &        MPI_INTEGER, MPI_MAX,
+     &        id%COMM_NODES, IERR)
+         CALL MPI_ALLREDUCE (SBUF_REC_LR, KEEP(380), 1, 
+     &        MPI_INTEGER, MPI_MAX,
+     &        id%COMM_NODES, IERR)
+         IF (KEEP(48)==5) THEN
+           KEEP(43)  = KEEP(44)
+           KEEP(379) = KEEP(380)
+         ELSE
+           KEEP(43)=SBUF_SEND_FR
+           KEEP(379)=SBUF_SEND_LR
+         ENDIF
+         UPDATE_BUFFER = .TRUE.
+         MIN_BUF_SIZE8 = KEEP8(22) / int(KEEP(238),8)
+         MIN_BUF_SIZE8 = min(MIN_BUF_SIZE8,
+     &                       int(huge(I4),8)/int(KEEP(35),8) )
+         MIN_BUF_SIZE  = max(int( MIN_BUF_SIZE8 ), KEEP(127))
+         SIZE_DESC_BANDE=(11+id%NSLAVES+KEEP(127)*2)
+         MaxBlocSize_FR  = min (KEEP(420), KEEP(127))
+         MaxBlocSize_FR  = MaxBlocSize_FR*MaxBlocSize_FR
+         MaxBlocSize_BLR = min (KEEP(142), KEEP(127))
+         MaxBlocSize_BLR = MaxBlocSize_BLR*MaxBlocSize_BLR
+         MIN_BUF_SIZE_FR  = MIN_BUF_SIZE
+         MIN_BUF_SIZE_BLR = MIN_BUF_SIZE
+         MIN_BUF_SIZE_FR = min ( MIN_BUF_SIZE_FR, 
+     &       int ( min (
+     &              real(KEEP(44)) * 
+     &             (real(abs(KEEP(180))) / real(100)) ,
+     &             real (huge(I4))/real(KEEP(35))
+     &                 )  )
+     &                          )
+         MIN_BUF_SIZE_BLR = min ( MIN_BUF_SIZE_BLR, 
+     &       int ( min (
+     &              real(KEEP(44)) * 
+     &             (real(abs(KEEP(181))) / real(100)) ,
+     &             real (huge(I4))/real(KEEP(35))
+     &                 )  )
+     &                          )
+         IF (KEEP(50).EQ.0) THEN
+           KEEP(43) = max(
+     &        min(KEEP(43),MaxBlocSize_FR*max(KEEP(171),3)), 
+     &        int(KEEP(43)/KEEP(172)) )
+           KEEP(44) = max(
+     &        min(KEEP(44), MaxBlocSize_FR*max(KEEP(171),3)), 
+     &        int(KEEP(44)/KEEP(172)) )
+         ELSE
+           KEEP(43) = max(
+     &        min(KEEP(43),MaxBlocSize_FR*max(KEEP(171),3)), 
+     &        int((KEEP(43)*KEEP(178))/KEEP(172)) )
+           KEEP(44) = max(
+     &        min(KEEP(44), MaxBlocSize_FR*max(KEEP(171),3)), 
+     &        int((KEEP(44)*KEEP(178))/KEEP(172)) )
+         ENDIF
+         KEEP(379) = max(
+     &        min(KEEP(379), MaxBlocSize_BLR*max(KEEP(171),3)), 
+     &        int(KEEP(379)/KEEP(172)) )
+         KEEP(380) = max(
+     &       min(KEEP(380),MaxBlocSize_BLR*max(KEEP(171),3)), 
+     &       int(KEEP(380)/KEEP(172)) )
+         IF (UPDATE_BUFFER) THEN
+           KEEP(43) = max(KEEP(43),MIN_BUF_SIZE_FR)  +
+     &         (SIZE_DESC_BANDE * KEEP(34))/KEEP(35)
+           KEEP(379)= max(KEEP(379),MIN_BUF_SIZE_BLR)+
+     &         (SIZE_DESC_BANDE * KEEP(34))/KEEP(35)
+         ENDIF 
+         IF ( (KEEP(38).NE.0) .OR. UPDATE_BUFFER) THEN
+           KEEP(44) = max(KEEP(44),MIN_BUF_SIZE_FR)  +
+     &         (SIZE_DESC_BANDE * KEEP(34))/KEEP(35)
+           KEEP(380)= max(KEEP(380),MIN_BUF_SIZE_BLR)+
+     &         (SIZE_DESC_BANDE * KEEP(34))/KEEP(35)
+         ENDIF
+          IF ( int(KEEP(43),8)*int(KEEP(35),8)  .GE.
+     &                 int(huge(I4)-100,8)) THEN   
+                KEEP(43) = huge(KEEP(43))-100
+          ENDIF
+          IF ( int(KEEP(44),8)*int(KEEP(35),8)  .GE.
+     &                 int(huge(I4)-100,8)) THEN   
+                KEEP(44) = huge(KEEP(44))-100
+          ENDIF
+          IF ( int(KEEP(379),8)*int(KEEP(35),8)  .GE.
+     &                 int(huge(I4)-100,8)) THEN   
+                KEEP(379) = huge(KEEP(379))-100
+          ENDIF
+          IF ( int(KEEP(380),8)*int(KEEP(35),8)  .GE.
+     &                 int(huge(I4)-100,8)) THEN   
+                KEEP(380) = huge(KEEP(380))-100
+          ENDIF
+            IF ( PROK ) THEN
+               WRITE(MP,'(A,I16) ') 
+     &              ' Estimated INTEGER space for factors         :',
+     &              KEEP(26)
+               WRITE(MP,'(A,I16) ') 
+     &              ' INFO(3), est. complex space to store factors:',
+     &              KEEP8(11)
+               WRITE(MP,'(A,I16) ') 
+     &              ' Estimated number of entries in factors      :',
+     &              KEEP8(9)
+               WRITE(MP,'(A,I16) ') 
+     &              ' Current value of space relaxation parameter :',
+     &              KEEP(12)
+               WRITE(MP,'(A,I16) ') 
+     &              ' Estimated size of IS (In Core factorization):',
+     &              KEEP(29)
+               WRITE(MP,'(A,I16) ') 
+     &              ' Estimated size of S  (In Core factorization):',
+     &              KEEP8(13)
+               WRITE(MP,'(A,I16) ') 
+     &              ' Estimated size of S  (OOC factorization)    :',
+     &              KEEP8(17)
+            END IF
+      ELSE
+         ENTRIES_IN_FACTORS_LOC_MASTERS = 0_8
+         KEEP8(13) = 0_8
+         KEEP(29) = 0
+         KEEP8(17)= 0_8
+         INFO(19) = 0
+         KEEP8(11) = 0_8
+         KEEP8(81) = 0_8
+         KEEP8(82) = 0_8
+         KEEP(26) = 0
+         KEEP(27) = 0
+         RINFO(1) = 0.0E0
+         K8_33relaxed = 0_8
+         K8_34relaxed = 0_8
+         K8_35relaxed = 0_8
+         K8_50relaxed = 0_8
+         IF (KEEP(400) .GT.0) THEN
+             SUM_NIRNEC     = 0
+             SUM_NIRADU     = 0
+             SUM_NIRADU_OOC = 0
+             SUM_NIRNEC_OOC = 0
+             MAX_NRLADU          = 0_8
+             MIN_NRLADU          = 0_8
+             SUM_NRLADU          = 0_8
+             SUM_NRLNEC          = 0_8
+             SUM_NRLNEC_ACTIVE   = 0_8
+             SUM_NRLADU_if_LR_LU = 0_8
+             SUM_NRLADULR_UD     = 0_8
+             SUM_NRLADULR_WC     = 0_8
+         ENDIF
+      END IF
+      CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
+     &     id%COMM, id%MYID )
+      IF ( INFO(1) .LT. 0 ) GOTO 500
+      CALL MUMPS_ALLREDUCEI8( ENTRIES_IN_FACTORS_LOC_MASTERS, 
+     &     KEEP8(109), MPI_SUM, id%COMM)
+      CALL MUMPS_ALLREDUCEI8( KEEP8(19), KEEP8(119),
+     &     MPI_MAX, id%COMM)
+      CALL MPI_ALLREDUCE( KEEP(27), KEEP(127), 1,
+     &     MPI_INTEGER, MPI_MAX,
+     &     id%COMM, IERR)
+      KEEP26_I8_TMP = int(KEEP(26),8)
+      CALL MUMPS_ALLREDUCEI8( KEEP26_I8_TMP, 
+     &     KEEP8(129), MPI_SUM, id%COMM)
+      CALL MUMPS_REDUCEI8( KEEP8(11),
+     &   KEEP8(111), MPI_SUM,
+     &   MASTER, id%COMM )
+      CALL MUMPS_SETI8TOI4( KEEP8(111), INFOG(3) )
+      RINFO(5) = real(KEEP8(32)
+     &               *int(KEEP(35),8))/1E6
+      CALL MUMPS_REDUCEI8( KEEP8(32),
+     &                   ITMP8, MPI_SUM,
+     &                   MASTER, id%COMM )
+      IF (id%MYID.EQ.MASTER) THEN
+       RINFOG(15) = real(ITMP8*int(KEEP(35),8))/1E6
+      ENDIF
+      CALL MPI_ALLREDUCE( RINFO(1), RINFOG(1), 1,
+     &     MPI_REAL, MPI_SUM,
+     &     id%COMM, IERR)
+      CALL MUMPS_SETI8TOI4( KEEP8(11), INFO(3) )
+      INFO ( 4 ) = KEEP(  26 )
+      INFO ( 5 ) = KEEP(  27 )
+      INFO ( 7 ) = KEEP(  29 )
+      CALL MUMPS_SETI8TOI4( KEEP8(13), INFO(8) )
+      CALL MUMPS_SETI8TOI4( KEEP8(17), INFO(20) )
+      CALL MUMPS_SETI8TOI4( KEEP8(9), INFO(24) )
+      CALL MUMPS_SETI8TOI4( K8_33relaxed, INFO(29) )
+      CALL MUMPS_SETI8TOI4( K8_34relaxed, INFO(32) )
+      CALL MUMPS_SETI8TOI4( K8_35relaxed, INFO(33) )
+      CALL MUMPS_SETI8TOI4( K8_50relaxed, INFO(36) )
+      CALL MUMPS_SETI8TOI4( KEEP8(129), INFOG(4) )
+      INFOG( 5 ) = KEEP( 127 )
+      CALL MUMPS_SETI8TOI4( KEEP8(109), INFOG(20) )
+      CALL CMUMPS_DIAG_ANA(id%MYID, id%COMM, KEEP(1), KEEP8(1),
+     &     INFO(1), INFOG(1), RINFO(1), RINFOG(1), ICNTL(1),
+     &     id%SIZE_SCHUR )
+      IF (PROK) WRITE( MP, 112 )
+      IF (PROKG .AND. (MPG.NE.MP)) WRITE( MPG, 112 )
+      SUM_KEEP811_THIS_NODE=0_8
+      CALL MPI_REDUCE( KEEP8(11), SUM_KEEP811_THIS_NODE, 1,
+     &                 MPI_INTEGER8,
+     &                 MPI_SUM, 0, id%KEEP(411), IERR )
+      CALL MPI_REDUCE( SUM_KEEP811_THIS_NODE, MAX_SUM_KEEP811_THIS_NODE,
+     &                 1, MPI_INTEGER8, MPI_MAX, 0, id%COMM, IERR )
+      IF (PROKG .AND. PRINT_NODEINFO) THEN
+        WRITE(MPG,'(A,I16)')
+     &  '    Max. estimated space for factors per compute node       :',
+     &  MAX_SUM_KEEP811_THIS_NODE 
+      ENDIF
+         OOC_STRAT = KEEP(201)
+         BLR_STRAT = 0  
+         IF (KEEP(201) .NE. -1) OOC_STRAT=0 
+         PERLU_ON = .FALSE.     
+         CALL CMUMPS_MAX_MEM( KEEP(1), KEEP8(1),
+     &        id%MYID, id%N, id%NELT, id%NA(1), id%LNA, id%KEEP8(28),
+     &        id%KEEP8(30),
+     &        id%NSLAVES, TOTAL_MBYTES, .FALSE.,
+     &        OOC_STRAT, BLR_STRAT, PERLU_ON, TOTAL_BYTES, 
+     &        IDUMMY, BDUMMY, .FALSE., 
+     &        .FALSE. 
+     &        , id%I8_L0_OMP(1,1), size(id%I8_L0_OMP,1),
+     &        size(id%I8_L0_OMP,2) 
+     &        )
+            IF (KEEP(400) .GT. 0 ) THEN 
+              CALL CMUMPS_MAX_MEM( KEEP(1), KEEP8(1),
+     &        id%MYID, id%N, id%NELT, id%NA(1), id%LNA, id%KEEP8(28),
+     &        id%KEEP8(30),
+     &        id%NSLAVES, TOTAL_MBYTES_UNDER_L0, .FALSE.,
+     &        OOC_STRAT, BLR_STRAT, PERLU_ON, TOTAL_BYTES_UNDER_L0, 
+     &        IDUMMY, BDUMMY, .FALSE., 
+     &        .TRUE. 
+     &        , id%I8_L0_OMP(1,1), size(id%I8_L0_OMP,1),
+     &        size(id%I8_L0_OMP,2) 
+     &        )
+              TOTAL_MBYTES = max (TOTAL_MBYTES,TOTAL_MBYTES_UNDER_L0) 
+              TOTAL_BYTES  = max (TOTAL_BYTES, TOTAL_BYTES_UNDER_L0)
+            ENDIF
+         KEEP8(2) = TOTAL_BYTES    
+         PERLU_ON  = .TRUE.
+         CALL CMUMPS_MAX_MEM( KEEP(1), KEEP8(1),
+     &        id%MYID, id%N, id%NELT, id%NA(1), id%LNA, id%KEEP8(28),
+     &        id%KEEP8(30),
+     &        id%NSLAVES, TOTAL_MBYTES, .FALSE.,
+     &        OOC_STRAT, BLR_STRAT, PERLU_ON, TOTAL_BYTES, 
+     &        IDUMMY, BDUMMY, .FALSE., 
+     &        .FALSE. 
+     &        , id%I8_L0_OMP(1,1), size(id%I8_L0_OMP,1),
+     &        size(id%I8_L0_OMP,2) 
+     &        )
+         IF (KEEP(400) .GT. 0 ) THEN 
+           CALL CMUMPS_MAX_MEM( KEEP(1), KEEP8(1),
+     &          id%MYID, id%N, id%NELT, id%NA(1), id%LNA, 
+     &          id%KEEP8(28),
+     &          id%KEEP8(30),
+     &          id%NSLAVES, TOTAL_MBYTES_UNDER_L0, .FALSE.,
+     &          OOC_STRAT, BLR_STRAT, PERLU_ON, TOTAL_BYTES_UNDER_L0, 
+     &          IDUMMY, BDUMMY, .FALSE., 
+     &          .TRUE. 
+     &          , id%I8_L0_OMP(1,1), size(id%I8_L0_OMP,1),
+     &          size(id%I8_L0_OMP,2) 
+     &        )
+           TOTAL_MBYTES = max (TOTAL_MBYTES,TOTAL_MBYTES_UNDER_L0) 
+           TOTAL_BYTES  = max (TOTAL_BYTES, TOTAL_BYTES_UNDER_L0)
+         ENDIF
+         IF ( PROK ) THEN
+            WRITE(MP,'(A,I16) ')
+     & ' Estimated space in MBytes for IC factorization   (INFO(15)):',
+     &           TOTAL_MBYTES
+         END IF
+         id%INFO(15) = TOTAL_MBYTES
+      CALL MUMPS_MEM_CENTRALIZE( id%MYID, id%COMM,
+     &     id%INFO(15), id%INFOG(16), IRANK )
+      IF ( PROKG ) THEN
+       IF (PRINT_MAXAVG) THEN
+         WRITE( MPG,'(A,I16) ')
+     & '    Maximum estim. space in Mbytes, IC facto.    (INFOG(16)):',
+     &        id%INFOG(16)
+       ENDIF
+       WRITE(MPG,'(A,I16) ')
+     & '    Total space in MBytes, IC factorization      (INFOG(17)):'
+     &        ,id%INFOG(17)
+      END IF
+      SUM_INFO15_THIS_NODE=0
+      CALL MPI_REDUCE( INFO(15), SUM_INFO15_THIS_NODE, 1, MPI_INTEGER,
+     &                 MPI_SUM, 0, id%KEEP(411), IERR )
+      CALL MPI_REDUCE( SUM_INFO15_THIS_NODE, MAX_SUM_INFO15_THIS_NODE,
+     &                 1, MPI_INTEGER, MPI_MAX, 0, id%COMM, IERR )
+      IF ( PROKG .AND. PRINT_NODEINFO ) THEN
+        WRITE(MPG,'(A,I16)')
+     &  '    Max. estim. space per compute node, in MBytes, IC fact  :',
+     &  MAX_SUM_INFO15_THIS_NODE
+      ENDIF
+         OOC_STRAT = KEEP(201)
+         BLR_STRAT = 0  
+#if defined(OLD_OOC_NOPANEL)
+         IF (OOC_STRAT .NE. -1) OOC_STRAT=2
+#else
+         IF (OOC_STRAT .NE. -1) OOC_STRAT=1
+#endif
+         PERLU_ON = .FALSE.     
+         CALL CMUMPS_MAX_MEM( KEEP(1), KEEP8(1),
+     &        id%MYID, id%N, id%NELT, id%NA(1), id%LNA, id%KEEP8(28),
+     &        id%KEEP8(30),
+     &        id%NSLAVES, TOTAL_MBYTES, .FALSE.,
+     &        OOC_STRAT, BLR_STRAT, PERLU_ON, TOTAL_BYTES, 
+     &        IDUMMY, BDUMMY, .FALSE., 
+     &        .FALSE. 
+     &        , id%I8_L0_OMP(1,1), size(id%I8_L0_OMP,1),
+     &        size(id%I8_L0_OMP,2) 
+     &         )
+         IF (KEEP(400) .GT. 0 ) THEN 
+            CALL CMUMPS_MAX_MEM( KEEP(1), KEEP8(1),
+     &        id%MYID, id%N, id%NELT, id%NA(1), id%LNA, id%KEEP8(28),
+     &        id%KEEP8(30),
+     &        id%NSLAVES, TOTAL_MBYTES_UNDER_L0, .FALSE.,
+     &        OOC_STRAT, BLR_STRAT, PERLU_ON, TOTAL_BYTES_UNDER_L0, 
+     &        IDUMMY, BDUMMY, .FALSE., 
+     &        .TRUE. 
+     &        , id%I8_L0_OMP(1,1), size(id%I8_L0_OMP,1),
+     &        size(id%I8_L0_OMP,2) 
+     &        )
+            TOTAL_MBYTES = max (TOTAL_MBYTES,TOTAL_MBYTES_UNDER_L0) 
+            TOTAL_BYTES  = max (TOTAL_BYTES, TOTAL_BYTES_UNDER_L0)
+         ENDIF
+         KEEP8(3) = TOTAL_BYTES
+         PERLU_ON  = .TRUE.     
+         CALL CMUMPS_MAX_MEM( KEEP(1), KEEP8(1),
+     &        id%MYID, id%N, id%NELT, id%NA(1), id%LNA, id%KEEP8(28),
+     &        id%KEEP8(30),
+     &        id%NSLAVES, TOTAL_MBYTES, .FALSE.,
+     &        OOC_STRAT, BLR_STRAT, PERLU_ON, TOTAL_BYTES,
+     &        IDUMMY, BDUMMY, .FALSE., 
+     &        .FALSE. 
+     &        , id%I8_L0_OMP(1,1), size(id%I8_L0_OMP,1),
+     &        size(id%I8_L0_OMP,2) 
+     &         )
+         IF (KEEP(400) .GT. 0 ) THEN 
+           CALL CMUMPS_MAX_MEM( KEEP(1), KEEP8(1),
+     &        id%MYID, id%N, id%NELT, id%NA(1), id%LNA, id%KEEP8(28),
+     &        id%KEEP8(30),
+     &        id%NSLAVES, TOTAL_MBYTES_UNDER_L0, .FALSE.,
+     &        OOC_STRAT, BLR_STRAT, PERLU_ON, TOTAL_BYTES_UNDER_L0,
+     &        IDUMMY, BDUMMY, .FALSE., 
+     &        .TRUE. 
+     &        , id%I8_L0_OMP(1,1), size(id%I8_L0_OMP,1),
+     &        size(id%I8_L0_OMP,2) 
+     &        )
+           TOTAL_MBYTES = max (TOTAL_MBYTES,TOTAL_MBYTES_UNDER_L0) 
+           TOTAL_BYTES  = max (TOTAL_BYTES, TOTAL_BYTES_UNDER_L0)
+         ENDIF
+         id%INFO(17) = TOTAL_MBYTES
+      CALL MUMPS_MEM_CENTRALIZE( id%MYID, id%COMM,
+     &     id%INFO(17), id%INFOG(26), IRANK )
+      IF ( PROKG  ) THEN
+       IF (PRINT_MAXAVG) THEN
+         WRITE( MPG,'(A,I16) ')
+     & '    Maximum estim. space in Mbytes, OOC facto.   (INFOG(26)):',
+     &        id%INFOG(26)
+       ENDIF
+       WRITE(MPG,'(A,I16) ')
+     & '    Total space in MBytes,  OOC factorization    (INFOG(27)):'
+     &        ,id%INFOG(27)
+      END IF
+      SUM_INFO17_THIS_NODE=0
+      CALL MPI_REDUCE( INFO(17), SUM_INFO17_THIS_NODE, 1, MPI_INTEGER,
+     &                 MPI_SUM, 0, id%KEEP(411), IERR )
+      CALL MPI_REDUCE( SUM_INFO17_THIS_NODE, MAX_SUM_INFO17_THIS_NODE,
+     &                 1, MPI_INTEGER, MPI_MAX, 0, id%COMM, IERR )
+      IF (PROKG .AND. PRINT_NODEINFO) THEN
+        WRITE(MPG,'(A,I16)')
+     &  '    Max. estim. space per compute node, in MBytes, OOC fact :',
+     &  MAX_SUM_INFO17_THIS_NODE
+      ENDIF
+      IF (KEEP(494).NE.0) THEN
+         SUM_OF_PEAKS = .TRUE.
+         CALL  CMUMPS_MEM_ESTIM_BLR_ALL( SUM_OF_PEAKS, 
+     &        KEEP(1), KEEP8(1),
+     &        id%MYID, id%COMM, 
+     &        id%N, id%NELT, id%NA(1), id%LNA, id%KEEP8(28),
+     &        id%KEEP8(30), id%NSLAVES,
+     &        id%INFO, id%INFOG, PROK, MP, PROKG, MPG 
+     &        , id%I8_L0_OMP(1,1), size(id%I8_L0_OMP,1),
+     &        size(id%I8_L0_OMP,2) 
+     &        )
+      END IF
+ 500  CONTINUE
+      IF (allocated(TNSTK_afterL0)) DEALLOCATE(TNSTK_afterL0)
+      IF (allocated(FLAGGED_LEAVES)) DEALLOCATE(FLAGGED_LEAVES)
+      IF (INFO(1) .LT. 0) THEN
+        IF (associated(id%IPOOL_B_L0_OMP)) THEN
+          DEALLOCATE(id%IPOOL_B_L0_OMP)
+          NULLIFY(id%IPOOL_B_L0_OMP)
+        ENDIF
+        IF (associated(id%IPOOL_A_L0_OMP)) THEN
+          DEALLOCATE(id%IPOOL_A_L0_OMP)
+          NULLIFY(id%IPOOL_A_L0_OMP)
+        ENDIF
+        IF (associated(id%VIRT_L0_OMP)) THEN
+          DEALLOCATE(id%VIRT_L0_OMP)
+          NULLIFY(id%VIRT_L0_OMP)
+        ENDIF
+        IF (associated(id%VIRT_L0_OMP_MAPPING)) THEN
+          DEALLOCATE(id%VIRT_L0_OMP_MAPPING)
+          NULLIFY(id%VIRT_L0_OMP_MAPPING)
+        ENDIF
+        IF (associated(id%PERM_L0_OMP)) THEN
+          DEALLOCATE(id%PERM_L0_OMP)
+          NULLIFY(id%PERM_L0_OMP)
+        ENDIF
+        IF (associated(id%PTR_LEAFS_L0_OMP)) THEN
+          DEALLOCATE(id%PTR_LEAFS_L0_OMP)
+          NULLIFY(id%PTR_LEAFS_L0_OMP)
+        ENDIF
+      ENDIF
+      RETURN
+ 112  FORMAT(/' MEMORY ESTIMATIONS ... '/
+     &   ' Estimations with standard Full-Rank (FR) factorization:')
+150   FORMAT(
+     & /' ** FAILURE DURING CMUMPS_ANA_DRIVER, DYNAMIC ALLOCATION OF',
+     &     A30)
+      END SUBROUTINE CMUMPS_ANA_COMPUTE_ESTIMATES
       SUBROUTINE CMUMPS_ANA_DISTM(MYID, N, STEP, FRERE, FILS, IPOOL,
      & LIPOOL, NE, DAD, ND, PROCNODE, SLAVEF, ABOVE_L0, SIZECB_UNDER_L0,
      & SIZECB_UNDER_L0_IF_LRCB, MAXFR_UNDER_L0,
@@ -142,7 +1010,6 @@ C
       LOGICAL PACKED_CB
       DOUBLE PRECISION OPS_NODE, OPS_NODE_MASTER, OPS_NODE_SLAVE
       INTEGER(8) ENTRIES_NODE_UPPER_PART, ENTRIES_NODE_LOWER_PART
-      INTEGER NBouter_MIN
       INTEGER :: FLAG_L0OMP
       PARAMETER (FLAG_L0OMP=-2014)
       INCLUDE 'mumps_headers.h'
@@ -151,7 +1018,6 @@ C
       INTEGER LIWK_RR
       INTEGER IROOT, SIZE_ROOT
       INTEGER WHAT
-      INTEGER(4) :: I4
       INTEGER(8) IDUMMY8
       INTRINSIC min, int
       INTRINSIC real
@@ -193,26 +1059,7 @@ C
       ENDIF
       LKJIB_LR = max(LKJIB_FR,KEEP(142))
       IF (KEEP(198).NE.0.AND.SLAVEF.GT.1) THEN
-         IF ( KEEP(50).EQ.0 ) THEN
-           NBouter_MIN = ceiling
-     &     (
-     &       (dble(KEEP(59))*dble(KEEP(108))*dble(KEEP(35)))
-     &       /
-     &       (dble(huge(I4)-10000000)) 
-     &     )
-         ELSE
-           NBouter_MIN = ceiling
-     &    (
-     &       ( max (dble(KEEP(108))*dble(KEEP(108)), 
-     &              dble(KEEP(59))*dble(KEEP(108)/2) 
-     &             )
-     &        *dble(KEEP(35)))
-     &       /
-     &       (dble(huge(I4)-10000000)) 
-     &    )
-         ENDIF
-           NBouter_MIN = max (NBouter_MIN, 4)
-           LKJIB_FR = min(KEEP(108)/NBouter_MIN, 4321)
+         LKJIB_FR = min(LKJIB_FR*KEEP(179), KEEP(435))
       ENDIF
       TNSTK = NE
       LEAF = LIPOOL+1 
@@ -835,6 +1682,7 @@ C
          IF (ABOVE_L0.AND.MASTER.AND.(LEVEL.EQ.1))  THEN
            DO WHILE (IFSON.GT.0) 
              IF (TNSTK(STEP(IFSON)).EQ.FLAG_L0OMP) THEN
+               LEVELS = MUMPS_TYPENODE(PROCNODE(STEP(IFSON)),KEEP(199))
                NFRS   = ND(STEP(IFSON))+KEEP(253)
                NELIMS= 0 
                IN = IFSON
@@ -1168,7 +2016,7 @@ C
          IF (UPDATE .AND. LEVEL.EQ.2 .AND. .NOT. MASTER) THEN
              NRLNEC =
      &         max(NRLNEC,NRLADU+CURRENT_ACTIVE_MEM+NRLADU_CURRENT)
-             NRLNEC_ACTIVE = max(NRLNEC_ACTIVE,2_8*NRLADU_CURRENT+
+             NRLNEC_ACTIVE = max(NRLNEC_ACTIVE,NRLADU_CURRENT+
      &         NRLADU_ROOT_3+CURRENT_ACTIVE_MEM)
              IF (.NOT.COMPRESS_PANEL) THEN
               NRLNEC_if_LR_LU = max(
@@ -1183,7 +2031,7 @@ C
      &             CURRENT_ACTIVE_MEM-ISTKR +
      &             ISTKR_if_LRCB+NRLADU_CURRENT)
               NRLNECOOC_if_LR_LUCB = max(NRLNECOOC_if_LR_LUCB,
-     &             2_8*NRLADU_CURRENT+
+     &             NRLADU_CURRENT+
      &             NRLADU_ROOT_3+CURRENT_ACTIVE_MEM-ISTKR+
      &             ISTKR_if_LRCB)
               PEAK_LRLU_UD = 
@@ -1648,8 +2496,7 @@ C
      &         max(PEAK_OOC_LRLUCB_WC,
      &         NRLNECOOC_if_LR_LUCB + PEAK_DYN_LRLUCB_WC)
       ENDIF
-      SBUF_RECOLD = max(int(SBUFR_FR,8),SBUFR_CB)
-      SBUF_RECOLD = max(SBUF_RECOLD,
+      SBUF_RECOLD = max(SBUFR_CB,
      &        MAXTEMPCB+int(MAXITEMPCB,8)) + 10_8
       SBUF_REC_FR = max(SBUFR_FR, int(min(100000_8,SBUFR_CB))) + 17
       SBUF_REC_LR = max(SBUFR_LR, int(min(100000_8,SBUFR_CB))) + 17
@@ -1711,7 +2558,7 @@ C
      &    MAX_FRONT_SURFACE_LOCAL, MAX_SIZE_FACTOR,
      &    ENTRIES_IN_FACTORS_LOC, 
      &    ENTRIES_IN_FACTORS_LOC_MASTERS, 
-     &    OPS_SBTR_LOC, OPSA_LOC,
+     &    OPS_SBTR_LOC, OPSA_LOC, NBNODES_BLR,
      &    IFLAG, IERROR )
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: LPOOL_B_L0_OMP,
@@ -1738,7 +2585,7 @@ C
       INTEGER(8), INTENT(OUT):: ENTRIES_IN_FACTORS_LOC, 
      &             ENTRIES_IN_FACTORS_LOC_MASTERS,
      &             SIZECB_UNDER_L0, SIZECB_UNDER_L0_IF_LRCB_UD
-      INTEGER, INTENT(OUT)   :: MAXFR
+      INTEGER, INTENT(OUT)   :: MAXFR, NBNODES_BLR
       INTEGER(8), INTENT(OUT):: MAX_FRONT_SURFACE_LOCAL, 
      &                          MAX_SIZE_FACTOR
       DOUBLE PRECISION, INTENT(OUT)      :: OPS_SBTR_LOC, OPSA_LOC
@@ -1748,7 +2595,6 @@ C
      &                                         LSTKRLR_CB_UD,
      &                                         LSTKRLR_CB_WC
       DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: OPSA_LOC_L0_OMP
-      INTEGER    :: NBNODES_BLR
       INTEGER :: ITH
       INTEGER :: NSTEPS
       INTEGER :: allocok
@@ -1817,7 +2663,6 @@ C
        SIZECB_UNDER_L0_IF_LRCB_UD = SIZECB_UNDER_L0_IF_LRCB_UD + 
      &                             ISTKR_if_LRCB + ISTKRLR_CB_UD
       ENDDO
-      KEEP(470) = NBNODES_BLR
       DEALLOCATE( LSTKR, LSTKI , 
      &          LSTKR_if_LRCB, LSTKRLR_CB_UD, 
      &          LSTKRLR_CB_WC,

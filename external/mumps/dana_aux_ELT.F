@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -342,7 +342,8 @@ C
      &     IW2,KEEP(104),IW(L2+int(N,8)),KEEP(50),
      &     ICNTL(13), KEEP(37), KEEP(197), NSLAVES, KEEP(250).EQ.1,
      &     .FALSE., IDUMMY, LIDUMMY, 
-     &     INODE_Scalapack_CAND, NBSONS_Scalapack_CAND, KEEP(11) )
+     &     INODE_Scalapack_CAND, NBSONS_Scalapack_CAND, 
+     &     KEEP(11), KEEP(191), KEEP(192), KEEP(193) )
       DEALLOCATE(IW2)
       IF (KEEP(60).NE.0) THEN
          IF (KEEP(60)==1) THEN

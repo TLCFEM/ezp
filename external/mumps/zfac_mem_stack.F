@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -21,7 +21,7 @@ C
      &    POSFAC, LRLU, LRLUS, LRLUSM, IPTRLU, ICNTL, KEEP,KEEP8,DKEEP,
      &    COMP, IWPOS, IWPOSCB, PROCNODE_STEPS, SLAVEF,
      &    FPERE, COMM, MYID, IPOOL, LPOOL, LEAF, NSTK_S,
-     &    PERM, BUFR, LBUFR, LBUFR_BYTES, NBFIN, root,
+     &    PERM, BUFR, LBUFR, LBUFR_BYTES, NBFIN, root, roota,
      &    OPASSW, ITLOC, RHS_MUMPS,
      &    FILS, DAD, PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -31,11 +31,15 @@ C
      &               , LRGROUPS
      &  , FLOP_ESTIM_ACC
      &    )
-      USE ZMUMPS_BUF
-      USE ZMUMPS_LOAD
-      USE ZMUMPS_STRUC_DEF, ONLY : ZMUMPS_ROOT_STRUC
+      USE ZMUMPS_BUF, ONLY : ZMUMPS_BUF_SEND_CB, ZMUMPS_BUF_SEND_MAITRE2
+      USE MUMPS_BUF_COMMON, ONLY : MUMPS_BUF_SEND_RTNELIND,
+     &                             MUMPS_BUF_SEND_ROOT2SON
+      USE MUMPS_LOAD
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE ZMUMPS_INTR_TYPES, ONLY : ZMUMPS_ROOT_STRUC
       IMPLICIT NONE
-      TYPE (ZMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (ZMUMPS_ROOT_STRUC) :: roota
       INTEGER COMM_LOAD, ASS_IRECV
       INTEGER COMM, MYID, TYPE, TYPEF
       INTEGER N, LIW, INODE,IFLAG,IERROR
@@ -85,7 +89,7 @@ C
       INTEGER LP
       INTEGER NBROWS_ALREADY_SENT 
       INTEGER(8) :: POSELT, OPSFAC
-      INTEGER(8) :: IOLD, INEW, FACTOR_POS
+      INTEGER(8) :: IOLD, INEW, FACTOR_POS, I8
       INTEGER NSLAVES, NCB,
      &        H_INODE, IERR, NBCOL, NBROW, NBROW_SEND,
      &        NELIM
@@ -195,7 +199,7 @@ C
         ELSE
           CHK_LOAD=1
         ENDIF
-        CALL ZMUMPS_LOAD_UPDATE(CHK_LOAD, .FALSE., -FLOP1,
+        CALL MUMPS_LOAD_UPDATE(CHK_LOAD, .FALSE., -FLOP1,
      &                      KEEP,KEEP8)
       ENDIF
       FLOP1_EFFECTIVE = FLOP1
@@ -209,7 +213,7 @@ C
             ELSE
               CHK_LOAD=1
             ENDIF
-            CALL ZMUMPS_LOAD_UPDATE(CHK_LOAD, .FALSE.,
+            CALL MUMPS_LOAD_UPDATE(CHK_LOAD, .FALSE.,
      &                         FLOP1_EFFECTIVE-FLOP1,
      &                         KEEP,KEEP8)
          ENDIF
@@ -225,9 +229,9 @@ C
         FLOP_ESTIM_ACC = FLOP_ESTIM_ACC + FLOP1
       ENDIF
       IF (SSARBR_ROOT) THEN
-        CALL ZMUMPS_LOAD_UPDATE(0,.FALSE.,FLOP1,KEEP,KEEP8)
+        CALL MUMPS_LOAD_UPDATE(0,.FALSE.,FLOP1,KEEP,KEEP8)
       ELSE
-        CALL ZMUMPS_LOAD_UPDATE(2,.FALSE.,FLOP1,KEEP,KEEP8)
+        CALL MUMPS_LOAD_UPDATE(2,.FALSE.,FLOP1,KEEP,KEEP8)
       ENDIF
       IF ( FPERE .EQ. 0 ) THEN
         IF ( KEEP(253) .NE. 0 .AND. KEEP(201).NE.-1
@@ -253,7 +257,7 @@ C
          CALL ZMUMPS_BUILD_AND_SEND_CB_ROOT(
      &    COMM_LOAD, ASS_IRECV, N, INODE, FPERE,
      &    PTLUST_S, PTRAST,
-     &    root, NCB, NCB, SHIFT_LIST_ROW_SON,
+     &    root, roota, NCB, NCB, SHIFT_LIST_ROW_SON,
      &    SHIFT_LIST_COL_SON , SHIFT_VAL_SON, NFRONT,
      &    ROOT_CONT_STATIC, MYID, COMM,
      &    BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
@@ -276,7 +280,7 @@ C
        LIST_COL_SON = IOLDPS + H_INODE + NFRONT + NPIV
        LIST_SLAVES  = IOLDPS + 6 + KEEP(IXSZ)
        IF (MSGDEST.EQ.MYID) THEN
-         CALL ZMUMPS_PROCESS_RTNELIND( root, 
+         CALL ZMUMPS_PROCESS_RTNELIND( root, roota,
      &      INODE, NELIM, NSLAVES, IW(LIST_ROW_SON), 
      &      IW(LIST_COL_SON), IW(LIST_SLAVES),
      &
@@ -293,7 +297,7 @@ C
        ELSE
         IERR = -1
         DO WHILE (IERR.EQ.-1)
-         CALL ZMUMPS_BUF_SEND_RTNELIND( INODE, NELIM, 
+         CALL MUMPS_BUF_SEND_RTNELIND( INODE, NELIM, 
      &     IW(LIST_ROW_SON), IW(LIST_COL_SON), NSLAVES, 
      &     IW(LIST_SLAVES), MSGDEST, COMM, KEEP, IERR)
          IF ( IERR .EQ. -1 ) THEN
@@ -309,7 +313,7 @@ C
      &       PTRAST, STEP, PIMASTER, PAMASTER, NSTK_S, COMP,
      &       IFLAG, IERROR, COMM, PERM,
      &       IPOOL, LPOOL, LEAF, NBFIN, MYID, SLAVEF,
-     &       root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &       root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &       FILS, DAD, PTRARW, PTRAIW,
      &       PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &       INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP,
@@ -391,7 +395,7 @@ C
      &       PERM, IPOOL, LPOOL, LEAF,
      &       NBFIN, MYID, SLAVEF,
      &
-     &       root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &       root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &       FILS, DAD, PTRARW, PTRAIW,
      &       PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &       INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
@@ -525,7 +529,7 @@ C
       IF ( KEEP(50).NE.0 .AND. TYPE .EQ. 1 
      &     .AND. MUST_COMPACT_FACTORS ) THEN
         POSELT = PTRFAC(STEP(INODE))
-        CALL ZMUMPS_COMPACT_FACTORS( A(POSELT), LDA, 
+        CALL ZMUMPS_COMPACT_FACTORS_SYM( A(POSELT), LDA, 
      &             NPIV, NBROW, KEEP,
      &             int(LDA,8)*int(NBROW+NPIV,8),
      &             IW( PTLUST_S(STEP(INODE)) + H_INODE + NFRONT ) )
@@ -568,11 +572,11 @@ C
         FACTOR_POS = POSELT +
      &         int(LDA,8)*int(NPIV+NBROW-NCBROW_ALREADY_MOVED,8)
         CALL ZMUMPS_COMPACT_FACTORS_UNSYM( A(FACTOR_POS), LDA, NPIV,
-     &       NCBROW_NEWLY_MOVED,
+     &       NCBROW_NEWLY_MOVED, KEEP,
      &       int(NCBROW_NEWLY_MOVED,8) * int(LDA,8) )
         INEW = FACTOR_POS + int(NPIV,8) * int(NCBROW_NEWLY_MOVED,8)
         IOLD = INEW + int(NCBROW_NEWLY_MOVED,8) * int(NBCOL_STACK,8)
-        DO I = 1, NCBROW_PREVIOUSLY_MOVED*NPIV
+        DO I8 = 0_8, int(NCBROW_PREVIOUSLY_MOVED,8)*int(NPIV,8)-1
             A(INEW) = A(IOLD)
             IOLD = IOLD + 1_8
             INEW = INEW + 1_8
@@ -593,12 +597,18 @@ C
       ENDIF
  190  CONTINUE
       IF (MUST_COMPACT_FACTORS) THEN
-       POSELT = PTRFAC(STEP(INODE))
-       CALL ZMUMPS_COMPACT_FACTORS( A(POSELT), LDA,
-     &             NPIV, NBROW, KEEP,
-     &             int(LDA,8)*int(NBROW+NPIV,8),
-     &             IW( PTLUST_S(STEP(INODE)) + H_INODE + NFRONT ) )
-       MUST_COMPACT_FACTORS = .FALSE.
+        POSELT = PTRFAC(STEP(INODE))
+        IF (KEEP(50).NE.0) THEN
+          CALL ZMUMPS_COMPACT_FACTORS_SYM( A(POSELT), LDA,
+     &              NPIV, NBROW, KEEP,
+     &              int(LDA,8)*int(NBROW+NPIV,8),
+     &              IW( PTLUST_S(STEP(INODE)) + H_INODE + NFRONT ) )
+        ELSE
+          CALL ZMUMPS_COMPACT_FACTORS_UNSYM(
+     &         A(POSELT+int(NPIV,8)*int(LDA,8)),
+     &         LDA, NPIV, NBROW, KEEP, int(NBROW,8)*int(LDA,8) )
+        ENDIF
+        MUST_COMPACT_FACTORS = .FALSE.
       ENDIF
       IOLDPS = PTLUST_S(STEP(INODE))
       IW(IOLDPS+KEEP(IXSZ))     = NBCOL       

@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -20,12 +20,13 @@ C
      & PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      & FILS, KEEP,KEEP8, MYID, COMM, NBRECORDS,
      &
-     & S, LA, root, PROCNODE_STEPS, NPROCS, SLAVEF, PERM, STEP,
+     & S, LA, root, roota, PROCNODE_STEPS, NPROCS, SLAVEF, PERM, STEP,
      & ICNTL, INFO, NSEND8, NLOCAL8,
      & ISTEP_TO_INIV2, CANDIDATES
      & )
 !$    USE OMP_LIB
-      USE ZMUMPS_STRUC_DEF
+      USE MUMPS_INTR_TYPES, ONLY: MUMPS_ROOT_STRUC
+      USE ZMUMPS_INTR_TYPES, ONLY: ZMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INTEGER, INTENT(IN)    :: N, SIZESCAL
       LOGICAL, INTENT(IN)    :: LSCAL
@@ -52,7 +53,8 @@ C
       INTEGER, INTENT(IN)    :: ISTEP_TO_INIV2(KEEP(71))
       INTEGER, INTENT(IN)    :: CANDIDATES(SLAVEF+1, max(1,KEEP(56)))
       COMPLEX(kind=8), INTENT(INOUT) :: S( LA )
-      TYPE (ZMUMPS_ROOT_STRUC), INTENT(INOUT) :: root
+      TYPE (MUMPS_ROOT_STRUC), INTENT(INOUT) :: root
+      TYPE (ZMUMPS_ROOT_STRUC), INTENT(INOUT) :: roota
       INTEGER, INTENT(IN)    :: PROCNODE_STEPS(KEEP(28)), 
      &                         PERM( N ), STEP( N )
       INTEGER, INTENT(INOUT) :: INFO( 80 ) 
@@ -104,6 +106,7 @@ C
       INTEGER    :: IOMP, NB_RANGE_P, EndNZloc_P
       LOGICAL    :: ThWorking
       INTEGER(8) :: ILOC8_P
+      INTEGER    :: NBRECORDS_LOC
       INTEGER, PARAMETER :: MPI_MASTER = 0  
       NSEND8  = 0_8
       NLOCAL8 = 0_8
@@ -119,6 +122,11 @@ C
       ENDIF
       I_AM_SLAVE = (MYID.NE.0.OR.KEEP(46).EQ.1)
       OneMPI     = NPROCS.EQ.1 
+      IF (OneMPI) THEN
+       NBRECORDS_LOC = 1
+      ELSE
+       NBRECORDS_LOC = NBRECORDS
+      ENDIF
       IF ( OneMPI.OR. 
      &     (KEEP(54).EQ.0.AND.(MYID.NE.MPI_MASTER)) 
      &   ) THEN
@@ -128,33 +136,33 @@ C
         MPI_InvolvedinSend = .TRUE.   
         MPI_End_Send       = .FALSE.
       ENDIF
-      IF (.NOT.OneMPI) THEN
-        ALLOCATE( 
-     &    BUFSENDI(NBRECORDS * 2 + 1, 2, NPROCS),  
-     &    BUFSENDR(NBRECORDS, 2, NPROCS),
-     &    IACT(NPROCS), SEND_ACTIVE(NPROCS), 
-     &    ISENDREQI(NPROCS), ISENDREQR(NPROCS),
-     &    BUFSEND_POSRESERVED(2, NPROCS),
-     &    stat=allocok)
-        IF ( allocok .GT. 0 ) THEN
-          IF ( LPOK ) THEN
-            WRITE(LP,*)
-     &     '** Error allocating SEND buffers for matrix distribution'
-          END IF
-          INFO(1) = -13
-          INFO(2) =  ( NBRECORDS * 2 + 1 ) * NPROCS * 2 +
-     &             NBRECORDS * NPROCS * 2 + 
-     &             NPROCS*6
-          GOTO 20
+      ALLOCATE( 
+     &  BUFSENDI(NBRECORDS_LOC * 2 + 1, 2, NPROCS),  
+     &  BUFSENDR(NBRECORDS_LOC, 2, NPROCS),
+     &  IACT(NPROCS), SEND_ACTIVE(NPROCS), 
+     &  ISENDREQI(NPROCS), ISENDREQR(NPROCS),
+     &  BUFSEND_POSRESERVED(2, NPROCS),
+     &  stat=allocok)
+      IF ( allocok .GT. 0 ) THEN
+        IF ( LPOK ) THEN
+          WRITE(LP,*)
+     &   '** Error allocating SEND buffers for matrix distribution'
         END IF
+        INFO(1) = -13
+        INFO(2) =  ( NBRECORDS_LOC * 2 + 1 ) * NPROCS * 2 +
+     &           NBRECORDS_LOC * NPROCS * 2 + 
+     &           NPROCS*6
+        GOTO 20
+      END IF
+      IF (.NOT.OneMPI) THEN
         DO ISLAVE_MAIN=1, NPROCS
           IACT (ISLAVE_MAIN)         = 1
           ISENDREQI(ISLAVE_MAIN) = MPI_REQUEST_NULL
           ISENDREQR(ISLAVE_MAIN) = MPI_REQUEST_NULL
           BUFSENDI(1, 1, ISLAVE_MAIN)       = 0
           BUFSEND_POSRESERVED(1,ISLAVE_MAIN)= 0
-          BUFSENDI(1, 2, ISLAVE_MAIN)       = NBRECORDS  
-          BUFSEND_POSRESERVED(2,ISLAVE_MAIN)= NBRECORDS
+          BUFSENDI(1, 2, ISLAVE_MAIN)       = NBRECORDS_LOC  
+          BUFSEND_POSRESERVED(2,ISLAVE_MAIN)= NBRECORDS_LOC
           SEND_ACTIVE(ISLAVE_MAIN)   =  .FALSE.
         ENDDO
       ENDIF
@@ -173,24 +181,24 @@ C
         MPI_InvolvedinRecv = .TRUE.  
         End_TreatRecvBuf   = .FALSE.
       ENDIF
-      IF (.NOT.OneMPI) THEN
-        ALLOCATE( 
-     &  BUFRECVI(NBRECORDS * 2 + 1, NPROCS),
-     &  BUFRECVR(NBRECORDS, NPROCS),
+      ALLOCATE( 
+     &  BUFRECVI(NBRECORDS_LOC * 2 + 1, NPROCS),
+     &  BUFRECVR(NBRECORDS_LOC, NPROCS),
      &  IRECVREQI(NPROCS), IRECVREQR(NPROCS), 
      &  RECV_BUF_STATUS(NPROCS),
-     &            stat=allocok)
-        IF ( allocok .GT. 0 ) THEN
-           IF ( LPOK ) THEN
-             WRITE(LP,*)
-     &      '** Error allocating RECV buffers for matrix distribution'
-           END IF
-           INFO(1) = -13
-           INFO(2) =  ( NBRECORDS * 2 + 1 ) * NPROCS +
-     &              NBRECORDS * NPROCS  +      
-     &              NPROCS*3
-           GOTO 20
-        ENDIF
+     &          stat=allocok)
+      IF ( allocok .GT. 0 ) THEN
+         IF ( LPOK ) THEN
+           WRITE(LP,*)
+     &    '** Error allocating RECV buffers for matrix distribution'
+         END IF
+         INFO(1) = -13
+         INFO(2) =  ( NBRECORDS_LOC * 2 + 1 ) * NPROCS +
+     &            NBRECORDS_LOC * NPROCS  +      
+     &            NPROCS*3
+         GOTO 20
+      ENDIF
+      IF (.NOT.OneMPI) THEN
         BUFRECVI(1, 1:NPROCS) = 0
         IRECVREQI(1:NPROCS)   = MPI_REQUEST_NULL
         IRECVREQR(1:NPROCS)   = MPI_REQUEST_NULL
@@ -248,8 +256,9 @@ C
         ENDIF
        ENDDO
        IF ( KEEP(38) .NE. 0 .AND. EARLYT3ROOTINS ) THEN
-         CALL ZMUMPS_GET_ROOT_INFO(root,LOCAL_M, LOCAL_N, PTR_ROOT, LA)
-         CALL ZMUMPS_SET_ROOT_TO_ZERO(root, KEEP, S, LA)
+         CALL ZMUMPS_GET_ROOT_INFO(root, LOCAL_M,
+     &                             LOCAL_N, PTR_ROOT, LA)
+         CALL ZMUMPS_SET_ROOT_TO_ZERO(root, roota, KEEP, S, LA)
        ELSE
          LOCAL_M = -19999; LOCAL_N = -29999; PTR_ROOT = -99999_8
        END IF
@@ -327,7 +336,8 @@ C
        DO WHILE ( .NOT.FINISHED )
           IF (TH_InvolvedinComm) THEN
             CALL ZMUMPS_ARROW_TRY_PROGRESS_COMM ( IOMP, MYID,
-     &       NPROCS, NBRECORDS, MPI_InvolvedinSend, MPI_InvolvedinRecv, 
+     &       NPROCS, NBRECORDS_LOC, 
+     &       MPI_InvolvedinSend, MPI_InvolvedinRecv, 
      &       COMM, ISENDREQI, ISENDREQR, BUFSENDI, BUFSENDR, 
      &       IACT, SEND_ACTIVE, BUFSEND_POSRESERVED, 
      &       IRECVREQI, IRECVREQR, BUFRECVI, BUFRECVR,
@@ -342,8 +352,8 @@ C
           IF (TH_InvolvedinTreatRecv) THEN
             CALL ZMUMPS_ARROW_TRY_TREAT_RECV_BUF ( IOMP,
      &             BUFRECVI, BUFRECVR, RECV_BUF_STATUS, 
-     &             NPROCS, NBRECORDS, N, IW4,
-     &             KEEP, LOCAL_M, LOCAL_N, root, PTR_ROOT, S, LA,
+     &             NPROCS, NBRECORDS_LOC, N, IW4,
+     &             KEEP, LOCAL_M, LOCAL_N, root, roota, PTR_ROOT, S, LA,
      &             NB_END_MSG_2_RECV, MYID, PROCNODE_STEPS,
      &             SLAVEF,
      &             PTRAW, 
@@ -353,7 +363,7 @@ C
      &             NOMP_SHARED, EARLYT3ROOTINS, NO_ATOMIC_Warrow )
             IF (NOMP_SHARED.EQ.1) THEN
               CALL ZMUMPS_ARROW_TRY_PROGRESS_COMM ( IOMP, MYID,
-     &        NPROCS, NBRECORDS, 
+     &        NPROCS, NBRECORDS_LOC, 
      &        MPI_InvolvedinSend, MPI_InvolvedinRecv,
      &        COMM, ISENDREQI, ISENDREQR, BUFSENDI, BUFSENDR, 
      &        IACT, SEND_ACTIVE, BUFSEND_POSRESERVED, 
@@ -375,12 +385,13 @@ C
      &   NZ_loc8, IRN_LOC, JCN_LOC, A_loc, SIZESCAL, ROWSCA, COLSCA,
      &   ISTEP_TO_INIV2, CANDIDATES, KEEP, MPI_MASTER, NO_ATOMIC_Warrow,
      &   NO_ATOMIC_Wsendbuf, TH_InvolvedinTreatRecv,
-     &   NPROCS, NBRECORDS, MPI_InvolvedinSend, MPI_InvolvedinRecv, 
+     &   NPROCS, NBRECORDS_LOC, MPI_InvolvedinSend, MPI_InvolvedinRecv, 
      &   COMM, ISENDREQI, ISENDREQR, BUFSENDI, BUFSENDR, IACT,
      &   SEND_ACTIVE, BUFSEND_POSRESERVED, IRECVREQI, IRECVREQR,
      &   BUFRECVI, BUFRECVR, RECV_BUF_STATUS, EndNZloc, MPI_End_Send,
      &   End_TreatRecvBuf,
-     &   root, PTR_ROOT, ARROW_ROOT, EARLYT3ROOTINS, LOCAL_M, LOCAL_N,
+     &   root, roota, PTR_ROOT, ARROW_ROOT, EARLYT3ROOTINS,
+     &   LOCAL_M, LOCAL_N,
      &   S, LA, NB_END_MSG_2_RECV, PROCNODE_STEPS, IW4, PTRAW, PTR8ARR,
      &   NINCOLARR, NINROWARR, PTRDEBARR, PERM, STEP, INTARR, LINTARR,
      &   DBLARR, LDBLARR, NOMP_SHARED )
@@ -616,7 +627,8 @@ C
       SUBROUTINE ZMUMPS_ARROW_TRY_TREAT_RECV_BUF (IOMP,
      &             BUFRECVI, BUFRECVR, RECV_BUF_STATUS, 
      &             NPROCS, NBRECORDS, N, IW4,
-     &             KEEP, LOCAL_M, LOCAL_N, root, PTR_ROOT, S, LA,
+     &             KEEP, LOCAL_M, LOCAL_N, root, roota,
+     &             PTR_ROOT, S, LA,
      &             NB_END_MSG_2_RECV, MYID, PROCNODE_STEPS,
      &             SLAVEF,
      &             PTRAW, 
@@ -624,9 +636,11 @@ C
      &             PERM, STEP,
      &             INTARR, LINTARR, DBLARR, LDBLARR, 
      &             NOMP_SHARED, EARLYT3ROOTINS, NO_ATOMIC_Warrow )
-      USE ZMUMPS_STRUC_DEF, ONLY : ZMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY: MUMPS_ROOT_STRUC
+      USE ZMUMPS_INTR_TYPES, ONLY: ZMUMPS_ROOT_STRUC
       IMPLICIT NONE
-      TYPE (ZMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (ZMUMPS_ROOT_STRUC) :: roota
       INTEGER, INTENT(IN):: IOMP, NPROCS, NBRECORDS, N, MYID, SLAVEF,
      &                      NOMP_SHARED
       LOGICAL, INTENT(IN):: EARLYT3ROOTINS
@@ -686,7 +700,7 @@ C
              ELSE
                STATE                   = BeingTreatednotbyme
              ENDIF
-!$OMP      END CRITICAL(ARROW_ RECV_BUF_STATUS)
+!$OMP      END CRITICAL(ARROW_RECV_BUF_STATUS)
           ENDIF
          ENDIF
         IF (STATE.NE.Treating) CYCLE
@@ -751,10 +765,10 @@ C
 !$OMP END ATOMIC
           ELSE
 !$OMP ATOMIC UPDATE
-            root%SCHUR_POINTER( int(JLOCROOT-1,8)
+            roota%SCHUR_POINTER( int(JLOCROOT-1,8)
      &                      * int(root%SCHUR_LLD,8)
      &                      + int(ILOCROOT,8) )
-     &      = root%SCHUR_POINTER( int(JLOCROOT - 1,8)
+     &      = roota%SCHUR_POINTER( int(JLOCROOT - 1,8)
      &                      * int(root%SCHUR_LLD,8)
      &                      + int(ILOCROOT,8))
      &      + VAL
@@ -847,10 +861,10 @@ C
      &        + int(ILOCROOT - 1,8) )
      &      + VAL
           ELSE
-            root%SCHUR_POINTER( int(JLOCROOT-1,8)
+            roota%SCHUR_POINTER( int(JLOCROOT-1,8)
      &                      * int(root%SCHUR_LLD,8)
      &                      + int(ILOCROOT,8) )
-     &      = root%SCHUR_POINTER( int(JLOCROOT - 1,8)
+     &      = roota%SCHUR_POINTER( int(JLOCROOT - 1,8)
      &                      * int(root%SCHUR_LLD,8)
      &                      + int(ILOCROOT,8))
      &      + VAL
@@ -896,12 +910,14 @@ C
      &  SEND_ACTIVE, BUFSEND_POSRESERVED, IRECVREQI, IRECVREQR,
      &  BUFRECVI, BUFRECVR, RECV_BUF_STATUS, EndNZloc, MPI_End_Send,
      &  End_TreatRecvBuf,
-     &  root, PTR_ROOT, ARROW_ROOT, EARLYT3ROOTINS, LOCAL_M, LOCAL_N,
+     &  root, roota,
+     &  PTR_ROOT, ARROW_ROOT, EARLYT3ROOTINS, LOCAL_M, LOCAL_N,
      &  S, LA, NB_END_MSG_2_RECV, PROCNODE_STEPS, IW4, PTRAW, 
      &  PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &  PERM, STEP, INTARR, LINTARR, DBLARR, LDBLARR, NOMP_SHARED )
 !$    USE OMP_LIB
-      USE ZMUMPS_STRUC_DEF, ONLY : ZMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY: MUMPS_ROOT_STRUC
+      USE ZMUMPS_INTR_TYPES, ONLY: ZMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INTEGER, INTENT(IN)      :: MYID, IOMP, N, SHIFT_PID, 
      &                            SLAVEF, SIZESCAL, MPI_MASTER
@@ -936,7 +952,8 @@ C
          INTEGER, PARAMETER :: Received_NotProcessed         = 3
          INTEGER, PARAMETER :: Processed_IrecNotneeded       = 4
          INTEGER, PARAMETER :: Treating                      = 5
-      TYPE (ZMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (ZMUMPS_ROOT_STRUC) :: roota
       INTEGER, INTENT(IN)      :: LOCAL_M, LOCAL_N
       LOGICAL, INTENT(IN)      :: EARLYT3ROOTINS
       INTEGER, INTENT(INOUT)   :: ARROW_ROOT
@@ -1163,10 +1180,10 @@ C
 !$OMP END ATOMIC
               ELSE
 !$OMP ATOMIC UPDATE
-                root%SCHUR_POINTER( int(JLOCROOT-1,8)
+                roota%SCHUR_POINTER( int(JLOCROOT-1,8)
      &                          * int(root%SCHUR_LLD,8)
      &                          + int(ILOCROOT,8) )
-     &          = root%SCHUR_POINTER( int(JLOCROOT - 1,8)
+     &          = roota%SCHUR_POINTER( int(JLOCROOT - 1,8)
      &                          * int(root%SCHUR_LLD,8)
      &                          + int(ILOCROOT,8))
      &          + VAL
@@ -1247,7 +1264,7 @@ C
      &    CALL ZMUMPS_ARROW_TRY_TREAT_RECV_BUF (IOMP,
      &             BUFRECVI, BUFRECVR, RECV_BUF_STATUS, 
      &             NPROCS, NBRECORDS, N, IW4,
-     &             KEEP, LOCAL_M, LOCAL_N, root, PTR_ROOT, S, LA,
+     &             KEEP, LOCAL_M, LOCAL_N, root, roota, PTR_ROOT, S, LA,
      &             NB_END_MSG_2_RECV, MYID, PROCNODE_STEPS,
      &             SLAVEF,
      &             PTRAW, 
@@ -1310,7 +1327,7 @@ C
      &    CALL ZMUMPS_ARROW_TRY_TREAT_RECV_BUF (IOMP,
      &             BUFRECVI, BUFRECVR, RECV_BUF_STATUS, 
      &             NPROCS, NBRECORDS, N, IW4,
-     &             KEEP, LOCAL_M, LOCAL_N, root, PTR_ROOT, S, LA,
+     &             KEEP, LOCAL_M, LOCAL_N, root, roota, PTR_ROOT, S, LA,
      &             NB_END_MSG_2_RECV, MYID, PROCNODE_STEPS,
      &             SLAVEF,
      &             PTRAW, 

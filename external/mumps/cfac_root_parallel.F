@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -13,18 +13,20 @@ C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       SUBROUTINE CMUMPS_FACTO_ROOT( 
      &           MPA, MYID, MASTER_OF_ROOT,
-     &           root, N, IROOT,
+     &           root, roota, N, IROOT,
      &           COMM, IW, LIW, IFREE,
      &           A, LA, PTRAST, PTLUST_S, PTRFAC,
      &           STEP, INFO, LDLT, QR,
      &           WK, LWK, KEEP,KEEP8,DKEEP,OPELIW,
      &           DET_EXP, DET_MANT, DET_SIGN
      & )
-        USE CMUMPS_LR_STATS, ONLY: UPD_FLOP_ROOT
-        USE CMUMPS_STRUC_DEF, ONLY : CMUMPS_ROOT_STRUC
+        USE MUMPS_LR_STATS, ONLY: UPD_FLOP_ROOT
+        USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+        USE CMUMPS_INTR_TYPES, ONLY : CMUMPS_ROOT_STRUC
          IMPLICIT NONE
       INCLUDE 'mpif.h'
-      TYPE ( CMUMPS_ROOT_STRUC ) :: root
+      TYPE ( MUMPS_ROOT_STRUC ) :: root
+      TYPE ( CMUMPS_ROOT_STRUC ) :: roota
       INTEGER, INTENT(IN) :: MPA
       INTEGER N, IROOT, COMM, LIW, MYID, IFREE, MASTER_OF_ROOT
       INTEGER(8) :: LA
@@ -57,7 +59,7 @@ C
           IF ((LDLT == 1 .OR. LDLT == 2) .AND. KEEP(60) == 3 ) THEN
             CALL CMUMPS_SYMMETRIZE( WK, root%MBLOCK,
      &      root%MYROW, root%MYCOL, root%NPROW, root%NPCOL,
-     &      root%SCHUR_POINTER(1),
+     &      roota%SCHUR_POINTER(1),
      &      root%SCHUR_LLD, root%SCHUR_NLOC,
      &      root%TOT_ROOT_SIZE, MYID, COMM )
           ENDIF
@@ -192,7 +194,7 @@ C
      &         root%DESCRIPTOR(1),
      &         LOCAL_M, LOCAL_N, FWD_LOCAL_N_RHS,
      &         root%IPIV(1), LPIV,
-     &         root%RHS_ROOT(1,1), LDLT,
+     &         roota%RHS_ROOT(1,1), LDLT,
      &         root%MBLOCK, root%NBLOCK,
      &         root%CNTXT_BLACS, IERR)
         ENDIF

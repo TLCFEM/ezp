@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -11,7 +11,7 @@ C  released under the CeCILL-C license
 C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
-      SUBROUTINE DMUMPS_SOL_C(root, N, A, LA, IW, LIW, W, LWC, 
+      SUBROUTINE DMUMPS_SOL_C(root, roota, N, A, LA, IW, LIW, W, LWC, 
      & IWCB, LIWW, NRHS, NA, LNA, NE_STEPS, W2, MTYPE, ICNTL, FROM_PP,
      & STEP, FRERE, DAD, FILS, PTRIST, PTRFAC, IW1, LIW1, PTRACB,
      & LIWK_PTRACB, PROCNODE_STEPS, SLAVEF, INFO, KEEP,KEEP8, DKEEP,
@@ -21,7 +21,7 @@ C
      & RHSINTR, LRHSINTR, POSINRHSINTR_FWD, POSINRHSINTR_BWD,
      &           Lnodes_FWD, Lnodes_BWD,
      &           nodes_FWD, nodes_BWD,
-     & NZ_RHS, NBCOL_INBLOC, NRHS_ORIG, JBEG_RHS, Step2node, LStep2node,
+     & NZ_RHS, NBCOL_INBLOC, JBEG_RHS, Step2node, LStep2node,
      & IRHS_SPARSE, IRHS_PTR, SIZE_PERM_RHS, PERM_RHS,
      & SIZE_UNS_PERM_INV, UNS_PERM_INV, NB_FS_IN_RHSINTR_F,
      & NB_FS_IN_RHSINTR_TOT, DO_NBSPARSE , RHS_BOUNDS, LRHS_BOUNDS
@@ -37,13 +37,15 @@ C
       USE DMUMPS_SOL_ES
       USE DMUMPS_SOL_L0OMP_M, ONLY : DMUMPS_SOL_L0OMP_R,
      &                               DMUMPS_SOL_L0OMP_S
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
      & , DMUMPS_L0OMPFAC_T
       IMPLICIT NONE
 #if defined(V_T)
       INCLUDE 'VT.inc'
 #endif
-      TYPE ( DMUMPS_ROOT_STRUC ) :: root
+      TYPE ( MUMPS_ROOT_STRUC ) :: root
+      TYPE ( DMUMPS_ROOT_STRUC ) :: roota
       INTEGER(8) :: LA
       INTEGER(8) :: LWC
       INTEGER    :: N,LIW,MTYPE,LIW1,LIWW,LNA
@@ -76,7 +78,7 @@ C
       INTEGER, intent(in) :: Lnodes_FWD, Lnodes_BWD
       INTEGER, intent(in) :: nodes_FWD(max(1,Lnodes_FWD)), 
      &                       nodes_BWD(max(1,Lnodes_BWD))
-      INTEGER, intent(in)      :: NZ_RHS, NBCOL_INBLOC, NRHS_ORIG
+      INTEGER, intent(in)      :: NZ_RHS, NBCOL_INBLOC
       INTEGER, intent(in)      :: SIZE_UNS_PERM_INV 
       INTEGER, intent(in)      :: SIZE_PERM_RHS 
       INTEGER, intent(in) :: JBEG_RHS
@@ -744,7 +746,7 @@ C
               CALL DMUMPS_SEQ_SOLVE_ROOT_SVD_QR(NRHS_LOC,
      &             SIZE_ROOT,A( PTRFAC(
      &             IW( PTRIST(STEP(KEEP(20)))+4+KEEP(IXSZ)))),
-     &             root, IBEG_ROOT_DEF, IEND_ROOT_DEF,
+     &             root, roota, IBEG_ROOT_DEF, IEND_ROOT_DEF,
      &             RHS_ROOT( IPT_RHS_ROOT_LOC ),
      &             KEEP,KEEP8,
      &             MTYPE,INFO,LWC,W(1), LP)
@@ -1068,7 +1070,7 @@ C
      &    L0_OMP_FACTORS, LL0_OMP_FACTORS )
           KEEP(405)=0
         ENDIF
-        CALL DMUMPS_CLEAN_PENDING( INFO(1), KEEP,
+        CALL MUMPS_CLEAN_PENDING( INFO(1), KEEP,
      &     BUFR, LBUFR,LBUFR_BYTES,
      &     COMM_NODES, IDUMMY,       
      &     SLAVEF, .TRUE., .FALSE. ) 
@@ -1989,7 +1991,7 @@ C
       INTEGER :: JJ, J1, ISTEP, K, KLOC, IPOSINRHSINTR, JEMPTY
       INTEGER :: JCOL, JCOL_PERM
       INTEGER :: IPOS, LIELL, NPIV, JEND
-      LOGICAL :: ROOT
+      LOGICAL :: IS_ROOT
 !$    LOGICAL :: OMP_FLAG
       DOUBLE PRECISION, PARAMETER :: ZERO = 0.0D0
       INCLUDE 'mumps_headers.h'
@@ -2001,10 +2003,10 @@ C
       DO ISTEP = 1, KEEP(28)
         IF (MYID_NODES == MUMPS_PROCNODE(PROCNODE_STEPS(ISTEP),
      &      KEEP(199))) THEN
-          ROOT=.false.
-          IF (KEEP(38).ne.0) ROOT = STEP(KEEP(38))==ISTEP
-          IF (KEEP(20).ne.0) ROOT = STEP(KEEP(20))==ISTEP
-          IF ( ROOT ) THEN
+          IS_ROOT=.false.
+          IF (KEEP(38).ne.0) IS_ROOT = STEP(KEEP(38))==ISTEP
+          IF (KEEP(20).ne.0) IS_ROOT = STEP(KEEP(20))==ISTEP
+          IF ( IS_ROOT ) THEN
                 IPOS = PTRIST(ISTEP) + KEEP(IXSZ)
                 LIELL = IW(IPOS+3)
                 NPIV = LIELL
@@ -2681,7 +2683,7 @@ C
       INTEGER, intent(in) :: Lnodes_FWD, Lnodes_BWD
       INTEGER, intent(in) :: nodes_FWD(max(1,Lnodes_FWD)), 
      &                       nodes_BWD(max(1,Lnodes_BWD))
-      INTEGER, intent(inout) :: DAD(KEEP(28))
+      INTEGER, intent(inout) :: DAD(KEEP(28)) 
       INTEGER, intent(in) :: IW(LIW), STEP(N)
       INTEGER, intent(in) :: MTYPE
       LOGICAL, intent(in) :: GLOB2LOC_SOL_ALLOC
@@ -2707,6 +2709,23 @@ C
         ISTEP = STEP(nodes_FWD(I))
         GO_UP = .TRUE.
         DO WHILE(GO_UP) 
+          IF (DAD(ISTEP) .GE. 0) THEN
+            OLDISTEP=ISTEP
+            IF (DAD(ISTEP).EQ.0) THEN
+              GO_UP=.FALSE.
+            ELSE
+              GO_UP=.TRUE.
+              ISTEP = STEP(DAD(ISTEP))
+            ENDIF
+            DAD(OLDISTEP)=-DAD(OLDISTEP)-1 
+          ELSE
+            GO_UP = .FALSE. 
+          ENDIF
+        END DO 
+      END DO 
+      DO ISTEP=1, KEEP(28)
+        IF (DAD(ISTEP) .LT. 0) THEN 
+          DAD(ISTEP) = -DAD(ISTEP) - 1 
           IF(MYID_NODES.EQ.
      &      MUMPS_PROCNODE(PROCNODE_STEPS(ISTEP),KEEP(199))) THEN
             CALL MUMPS_SOL_GET_NPIV_LIELL_IPOS( ISTEP, KEEP,
@@ -2722,7 +2741,6 @@ C
               JCOL = IPOS+1
             ENDIF
             IF(NPIV.GT.0) THEN 
-              IF(GLOB2LOC_RHS(IW(J1)).EQ.0) THEN 
                 DO JJ = J1, J1+NPIV-1
                   GLOB2LOC_RHS(IW(JJ))
      &            = IPOSINRHSINTR_RHS + JJ - J1 + 1
@@ -2731,21 +2749,13 @@ C
                 IF (GLOB2LOC_SOL_ALLOC) THEN
                   DO JJ = JCOL, JCOL+NPIV-1
                     GLOB2LOC_SOL(IW(JJ))
-     &              = - (IPOSINRHSINTR_SOL + JJ - JCOL + 1)
+     &              = - ( IPOSINRHSINTR_SOL + JJ - JCOL + 1 )
                   ENDDO
                   IPOSINRHSINTR_SOL = IPOSINRHSINTR_SOL + NPIV
                 ENDIF
-              ELSE
-                GO_UP = .FALSE. 
-              END IF
             END IF 
           END IF 
-          IF(DAD(ISTEP).NE.0) THEN
-            ISTEP = STEP(DAD(ISTEP))
-          ELSE 
-            GO_UP = .FALSE.
-          END IF
-        END DO 
+        ENDIF 
       END DO 
       NB_FS_IN_RHSINTR_FWD = IPOSINRHSINTR_RHS
       IF(GLOB2LOC_SOL_ALLOC) THEN 

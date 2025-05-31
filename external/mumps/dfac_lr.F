@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -12,6 +12,7 @@ C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       MODULE DMUMPS_FAC_LR
+      USE DMUMPS_LR_TYPE
       USE DMUMPS_LR_CORE
       IMPLICIT NONE
       CONTAINS
@@ -75,8 +76,9 @@ C
      &            DIAG=A(POSELTD), LD_DIAG=NFRONT, IW2=IW2,
      &            BLOCK=BLOCK(1:MAXI_CLUSTER,OMP_NUM*MAXI_CLUSTER+1))
             IF (IFLAG.LT.0) CYCLE
-            CALL UPD_FLOP_UPDATE(BLR_L(J), BLR_L(I),
-     &          MIDBLK_COMPRESS, MID_RANK, BUILDQ,
+            CALL UPD_FLOP_UPDATE(BLR_L(J)%M, BLR_L(J)%N, BLR_L(J)%K, 
+     &          BLR_L(J)%ISLR, BLR_L(I)%M, BLR_L(I)%N, BLR_L(I)%K,
+     &          BLR_L(I)%ISLR, MIDBLK_COMPRESS, MID_RANK, BUILDQ,
      &          (I.EQ.J), .FALSE.)
          ENDDO
 #if ! defined(BLR_NOOPENMP) 
@@ -84,7 +86,7 @@ C
 #endif
       END SUBROUTINE DMUMPS_BLR_UPDATE_TRAILING_LDLT
       SUBROUTINE DMUMPS_BLR_SLV_UPD_TRAIL_LDLT(A, LA, POSELT, 
-     &        IFLAG, IERROR, NCOL, NROW,
+     &        IFLAG, IERROR, NCOL, NROW, JBEG_BLOCK,
      &        A_BLOCFACTO, LA_BLOCFACTO, LD_BLOCFACTO, 
      &        BEGS_BLR_LM, NB_BLR_LM, BLR_LM, ISHIFT_LM,
      &        BEGS_BLR_LS, NB_BLR_LS, BLR_LS, ISHIFT_LS,
@@ -100,7 +102,8 @@ C
       INTEGER(8), intent(in)  :: POSELT 
       INTEGER, intent(inout)    :: IFLAG, IERROR
       INTEGER, intent(in)     :: NCOL, NROW, IW2(*), TOL_OPT,
-     &                           MAXI_CLUSTER, LD_BLOCFACTO
+     &                           MAXI_CLUSTER, LD_BLOCFACTO,
+     &                           JBEG_BLOCK
       INTEGER, intent(in)     :: NB_BLR_LM, NB_BLR_LS, 
      &                           ISHIFT_LM, ISHIFT_LS, 
      &                           CURRENT_BLR_LM, CURRENT_BLR_LS
@@ -151,13 +154,15 @@ C
      &            DIAG=A_BLOCFACTO, LD_DIAG=LD_BLOCFACTO, IW2=IW2,
      &            BLOCK=BLOCK(1:MAXI_CLUSTER,OMP_NUM*MAXI_CLUSTER+1))
             IF (IFLAG.LT.0) CYCLE
-            CALL UPD_FLOP_UPDATE(BLR_LM(J), BLR_LS(I),
-     &           MIDBLK_COMPRESS, MID_RANK, BUILDQ,
+            CALL UPD_FLOP_UPDATE(BLR_LM(J)%M, BLR_LM(J)%N, BLR_LM(J)%K, 
+     &          BLR_LM(J)%ISLR, BLR_LS(I)%M, BLR_LS(I)%N, BLR_LS(I)%K,
+     &          BLR_LS(I)%ISLR, MIDBLK_COMPRESS, MID_RANK, BUILDQ,
      &           .FALSE., .FALSE.)
          ENDDO
 #if ! defined(BLR_NOOPENMP)
 !$OMP END DO
          IF (IFLAG.LT.0) RETURN
+         IF (JBEG_BLOCK.NE.1) RETURN
 !$OMP DO SCHEDULE(DYNAMIC,CHUNK)
 !$OMP& PRIVATE(I, J, POSELTT, MID_RANK, OMP_NUM, BUILDQ) 
 #endif
@@ -183,8 +188,9 @@ C
      &            DIAG=A_BLOCFACTO, LD_DIAG=LD_BLOCFACTO, IW2=IW2,
      &            BLOCK=BLOCK(1:MAXI_CLUSTER,OMP_NUM*MAXI_CLUSTER+1))
             IF (IFLAG.LT.0) CYCLE
-            CALL UPD_FLOP_UPDATE(BLR_LS(J), BLR_LS(I),
-     &            MIDBLK_COMPRESS, MID_RANK, BUILDQ, 
+            CALL UPD_FLOP_UPDATE(BLR_LS(J)%M, BLR_LS(J)%N, BLR_LS(J)%K, 
+     &          BLR_LS(J)%ISLR, BLR_LS(I)%M, BLR_LS(I)%N, BLR_LS(I)%K,
+     &          BLR_LS(I)%ISLR, MIDBLK_COMPRESS, MID_RANK, BUILDQ, 
      &            (I.EQ.J), .FALSE.)
       ENDDO
 #if ! defined(BLR_NOOPENMP)
@@ -318,8 +324,7 @@ C
       SUBROUTINE DMUMPS_BLR_UPDATE_TRAILING(
      &        A, LA, POSELT, IFLAG, IERROR, NFRONT,
      &        BEGS_BLR_L, BEGS_BLR_U, CURRENT_BLR, BLR_L, NB_BLR_L, 
-     &        BLR_U,
-     &        NB_BLR_U, NELIM, LBANDSLAVE, ISHIFT, NIV, SYM,
+     &        BLR_U, NB_BLR_U, NELIM, LBANDSLAVE, ISHIFT, NIV, SYM,
      &        MIDBLK_COMPRESS, TOLEPS, TOL_OPT, KPERCENT)
 !$    USE OMP_LIB
       INTEGER(8), intent(in)       :: LA
@@ -422,8 +427,9 @@ C
      &           MIDBLK_COMPRESS, TOLEPS, TOL_OPT,
      &           KPERCENT, MID_RANK, BUILDQ, .FALSE.)
          IF (IFLAG.LT.0) CYCLE
-         CALL UPD_FLOP_UPDATE(BLR_U(J), BLR_L(I), 
-     &           MIDBLK_COMPRESS, MID_RANK, BUILDQ,
+            CALL UPD_FLOP_UPDATE(BLR_U(J)%M, BLR_U(J)%N, BLR_U(J)%K, 
+     &          BLR_U(J)%ISLR, BLR_L(I)%M, BLR_L(I)%N, BLR_L(I)%K,
+     &          BLR_L(I)%ISLR, MIDBLK_COMPRESS, MID_RANK, BUILDQ,
      &           .FALSE., .FALSE.)
        ENDDO
 #if ! defined(BLR_NOOPENMP)
@@ -581,9 +587,10 @@ C
      &              IW2=IW2(OFFSET_IW),
      &              BLOCK=BLOCK(1:MAXI_CLUSTER,OMP_NUM*MAXI_CLUSTER+1))
           IF (IFLAG.LT.0) GOTO 100
-          CALL UPD_FLOP_UPDATE(BLR_L(IND_U), 
-     &      BLR_L(IND_L), MIDBLK_COMPRESS, 
-     &      MID_RANK, BUILDQ, (I.EQ.1), (K480.GE.3))
+            CALL UPD_FLOP_UPDATE(BLR_L(IND_U)%M, BLR_L(IND_U)%N, 
+     &        BLR_L(IND_U)%K, BLR_L(IND_U)%ISLR, BLR_L(IND_L)%M, 
+     &        BLR_L(IND_L)%N, BLR_L(IND_L)%K, BLR_L(IND_L)%ISLR,
+     &        MIDBLK_COMPRESS, MID_RANK, BUILDQ, (I.EQ.1), (K480.GE.3))
           IF ((MIDBLK_COMPRESS.GE.1).AND.BUILDQ) THEN
             J_RANK(JJ) = MID_RANK
           ENDIF
@@ -954,7 +961,9 @@ C
      &            MAXI_CLUSTER=MAXI_CLUSTER
      &            )
         IF (IFLAG.LT.0) GOTO 100
-        CALL UPD_FLOP_UPDATE(BLR_U(IND_U), BLR_L(IND_L),
+        CALL UPD_FLOP_UPDATE(BLR_U(IND_U)%M, BLR_U(IND_U)%N, 
+     &        BLR_U(IND_U)%K, BLR_U(IND_U)%ISLR, BLR_L(IND_L)%M, 
+     &        BLR_L(IND_L)%N, BLR_L(IND_L)%K, BLR_L(IND_L)%ISLR,
      &            MIDBLK_COMPRESS, MID_RANK, BUILDQ, 
      &            .FALSE., (K480.GE.3))
           IF ((MIDBLK_COMPRESS.GE.1).AND.BUILDQ) THEN
@@ -1251,7 +1260,9 @@ C
      &              IW2=IW2(OFFSET_IW),
      &              BLOCK=BLOCK(1:MAXI_CLUSTER,OMP_NUM*MAXI_CLUSTER+1))
           IF (IFLAG.LT.0) GOTO 100
-          CALL UPD_FLOP_UPDATE(BLR_L(IND_U), BLR_L(IND_L), 
+            CALL UPD_FLOP_UPDATE(BLR_L(IND_U)%M, BLR_L(IND_U)%N, 
+     &        BLR_L(IND_U)%K, BLR_L(IND_U)%ISLR, BLR_L(IND_L)%M, 
+     &        BLR_L(IND_L)%N, BLR_L(IND_L)%K, BLR_L(IND_L)%ISLR,
      &           MIDBLK_COMPRESS, MID_RANK, BUILDQ, 
      &           (I.EQ.J), (K480.GE.3))
           IF ((MIDBLK_COMPRESS.GE.1).AND.BUILDQ) THEN
@@ -1585,7 +1596,9 @@ C
      &              LRB3=ACC_LRB, MAXI_RANK=MAXI_RANK,
      &              MAXI_CLUSTER=MAXI_CLUSTER)
           IF (IFLAG.LT.0) GOTO 100
-          CALL UPD_FLOP_UPDATE(BLR_U(IND_U), BLR_L(IND_L),
+            CALL UPD_FLOP_UPDATE(BLR_U(IND_U)%M, BLR_U(IND_U)%N, 
+     &        BLR_U(IND_U)%K, BLR_U(IND_U)%ISLR, BLR_L(IND_L)%M, 
+     &        BLR_L(IND_L)%N, BLR_L(IND_L)%K, BLR_L(IND_L)%ISLR,
      &           MIDBLK_COMPRESS, MID_RANK, BUILDQ, 
      &           .FALSE., (K480.GE.3))
           IF ((MIDBLK_COMPRESS.GE.1).AND.BUILDQ) THEN
@@ -1677,7 +1690,7 @@ C
               CALL ALLOC_LRB_FROM_ACC(ACC_LRB, LRB,
      &                       ACC_LRB%K, ACC_LRB%M, ACC_LRB%N, 0,
      &                       IFLAG, IERROR, KEEP8)
-              CALL UPD_MRY_CB_LRGAIN(LRB
+              CALL UPD_MRY_CB_LRGAIN(LRB%M, LRB%N, LRB%K
      &                              )
               ACC_LRB%K = 0
               IF (IFLAG.LT.0) GOTO 100
@@ -1746,7 +1759,8 @@ C
      &        LDA21, COPY_DENSE_BLOCKS,
      &        BEGS_BLR_DIAG, BEGS_BLR_FIRST_OFFDIAG,
      &        NB_BLR, BLR_PANEL, CURRENT_BLR, DIR, DECOMP_TIMER,
-     &        BEG_I_IN, END_I_IN, ONLY_NELIM_IN)
+     &        BEG_I_IN, END_I_IN, ONLY_NELIM_IN
+     &        )
 !$    USE OMP_LIB 
       INTEGER(8), intent(in)       :: LA
       DOUBLE PRECISION, intent(inout)       :: A(LA)
@@ -1787,22 +1801,23 @@ C
       ENDIF
       LD_BLK_IN_FRONT = int(LDA11,8)
       BIP_START       = BEGS_BLR_FIRST_OFFDIAG
-#if defined(BLR_NOOPENMP)
       IF (BEG_I .NE. CURRENT_BLR+1) THEN
         DO I = 1, BEG_I - CURRENT_BLR - 1
           BIP_START  = BIP_START +  BLR_PANEL(I)%M
         ENDDO
       ENDIF
+#if defined(BLR_NOOPENMP)
+      BIP             = BIP_START
 #endif
 #if ! defined(BLR_NOOPENMP)
-      CHUNK = 1
+      CHUNK   = 1
 !$OMP DO SCHEDULE(DYNAMIC, CHUNK)
 #endif
       DO IP = BEG_I, END_I
 #if ! defined(BLR_NOOPENMP)
         BIP = BIP_START
-        DO I = 1, IP - BEG_I
-          BIP  = BIP +  BLR_PANEL(BEG_I-CURRENT_BLR+I-1)%M
+        DO I = BEG_I, IP-1 
+          BIP  = BIP +  BLR_PANEL(I-CURRENT_BLR)%M
         ENDDO
 #endif
         IF (DIR .eq. 'V') THEN
@@ -2123,10 +2138,11 @@ C
                  CALL MUMPS_ABORT()
                END IF
                IF (K489.NE.3) THEN
-                 CALL UPD_FLOP_COMPRESS(LRB, CB_COMPRESS=.TRUE.)
+                 CALL UPD_FLOP_COMPRESS(LRB%M, LRB%N, LRB%K, 
+     &                    LRB%ISLR, CB_COMPRESS=.TRUE.)
                ENDIF
           END IF
-          CALL UPD_MRY_CB_LRGAIN(LRB
+          CALL UPD_MRY_CB_LRGAIN(LRB%M, LRB%N, LRB%K
      &                           )
         ELSE 
            DO II=1,M
@@ -2136,7 +2152,8 @@ C
      &                     +int(N-1,8) )
            END DO  
            IF (K489.NE.3) THEN
-               CALL UPD_FLOP_COMPRESS(LRB, CB_COMPRESS=.TRUE.)
+               CALL UPD_FLOP_COMPRESS(LRB%M, LRB%N, LRB%K, 
+     &                    LRB%ISLR, CB_COMPRESS=.TRUE.)
            ENDIF
            LRB%K = -1
         END IF
@@ -2169,7 +2186,7 @@ C
       INTEGER(8), intent(in)       :: POSELT 
       INTEGER, intent(in)          :: NFRONT, NB_BLR, CURRENT_BLR, NIV
       INTEGER, intent(inout)          :: IFLAG, IERROR
-      TYPE(LRB_TYPE), intent(inout) :: BLR_PANEL(:)
+      TYPE(LRB_TYPE), TARGET, intent(inout) :: BLR_PANEL(:)
       DOUBLE PRECISION, TARGET, DIMENSION(:) :: RWORK
       DOUBLE PRECISION, TARGET, DIMENSION(:,:) :: BLOCK
       DOUBLE PRECISION, TARGET, DIMENSION(:) :: WORK, TAU
@@ -2186,12 +2203,13 @@ C
       DOUBLE PRECISION,intent(in)              :: TOLEPS
       CHARACTER(len=1) :: DIR
       INTEGER :: IP, NB_BLOCKS_PANEL, M, N, RANK, MAXRANK
-      INTEGER :: INFO, I, J, IS, BEG_I, END_I
+      INTEGER :: INFO, I, J, K, IS, BEG_I, END_I
       INTEGER(8) :: POSELT_BLOCK
       LOGICAL :: ISLR
       DOUBLE PRECISION :: ONE, ALPHA, ZERO
       PARAMETER (ONE = 1.0D0, ALPHA=-1.0D0)
       PARAMETER (ZERO = 0.0D0)
+      TYPE(LRB_TYPE), POINTER :: LRB
       INTEGER :: OMP_NUM
       DOUBLE PRECISION, POINTER, DIMENSION(:) :: RWORK_THR
       DOUBLE PRECISION, POINTER, DIMENSION(:,:) :: BLOCK_THR
@@ -2231,7 +2249,7 @@ C
       OMP_NUM = 0 
 #if ! defined(BLR_NOOPENMP)
       CHUNK = 1
-!$OMP DO PRIVATE(INFO, POSELT_BLOCK, RANK, MAXRANK, I, J, OMP_NUM)
+!$OMP DO PRIVATE(INFO, POSELT_BLOCK, RANK, MAXRANK, I, J, OMP_NUM, LRB)
 !$OMP&   SCHEDULE(DYNAMIC,CHUNK)
 #endif
       DO IP = BEG_I, END_I
@@ -2250,6 +2268,7 @@ C
      &                 (OMP_NUM+1)*LWORK) 
         RWORK_THR => RWORK(OMP_NUM*2*MAXI_CLUSTER+1:
      &                  (OMP_NUM+1)*2*MAXI_CLUSTER) 
+        LRB => BLR_PANEL(IP-CURRENT_BLR)
         RANK = 0
         M = BEGS_BLR(IP+1)-BEGS_BLR(IP)
         IF (DIR .eq. 'V') THEN
@@ -2263,24 +2282,24 @@ C
         ENDIF
         IF (present(K480)) then 
         IF (K480.GE.5) THEN
-          IF (BLR_PANEL(IP-CURRENT_BLR)%ISLR) THEN
-             IF (M.NE.BLR_PANEL(IP-CURRENT_BLR)%M) THEN
+          IF (LRB%ISLR) THEN
+             IF (M.NE.LRB%M) THEN
               write(*,*) 'Internal error in DMUMPS_COMPRESS_PANEL',
      &                    ' M size inconsistency',M,
-     &                    BLR_PANEL(IP-CURRENT_BLR)%M
+     &                    LRB%M
               CALL MUMPS_ABORT()
             ENDIF
-            IF (N.NE.BLR_PANEL(IP-CURRENT_BLR)%N) THEN
+            IF (N.NE.LRB%N) THEN
               write(*,*) 'Internal error in DMUMPS_COMPRESS_PANEL',
      &                    ' N size inconsistency',N,
-     &                    BLR_PANEL(IP-CURRENT_BLR)%N
+     &                    LRB%N
               CALL MUMPS_ABORT()
             ENDIF
             MAXRANK = floor(dble(M*N)/dble(M+N))
-            IF (BLR_PANEL(IP-CURRENT_BLR)%K.GT.MAXRANK) THEN
+            IF (LRB%K.GT.MAXRANK) THEN
               write(*,*) 'Internal error in DMUMPS_COMPRESS_PANEL',
      &                    ' MAXRANK inconsistency',MAXRANK,
-     &                    BLR_PANEL(IP-CURRENT_BLR)%K
+     &                    LRB%K
               CALL MUMPS_ABORT()
             ENDIF
             GOTO 3000
@@ -2324,7 +2343,7 @@ C
      &                 " OF TRUNCATED_RRQR WHILE COMPRESSING A BLOCK "
            CALL MUMPS_ABORT()
         END IF
-        CALL ALLOC_LRB(BLR_PANEL(IP-CURRENT_BLR), RANK,
+        CALL ALLOC_LRB(LRB, RANK,
      &                 M, N, ISLR, IFLAG, IERROR, KEEP8)
         IF (IFLAG.LT.0) CYCLE
         IF ((M.EQ.0).OR.(N.EQ.0)) THEN
@@ -2334,11 +2353,12 @@ C
            IF (RANK .EQ. 0) THEN 
            ELSE 
                DO J=1,N
-                 BLR_PANEL(IP-CURRENT_BLR)%R(1:MIN(RANK,J),
-     &               JPVT_THR(J)) =
-     &               BLOCK_THR(1:MIN(RANK,J),J)
-                 IF(J.LT.RANK) BLR_PANEL(IP-CURRENT_BLR)%
-     &               R(MIN(RANK,J)+1:RANK,JPVT_THR(J))= ZERO
+                 DO K=1,min(RANK,J)
+                   LRB%R(K, JPVT_THR(J)) = BLOCK_THR(K,J)
+                 ENDDO
+                 IF(J.LT.RANK) THEN
+                   LRB%R(J+1:RANK,JPVT_THR(J)) = ZERO
+                 ENDIF
                ENDDO
                CALL dorgqr 
      &           (M, RANK, RANK,
@@ -2346,7 +2366,9 @@ C
      &           MAXI_CLUSTER, TAU_THR(1), 
      &           WORK_THR(1), LWORK, INFO )
                DO I=1,RANK
-                 BLR_PANEL(IP-CURRENT_BLR)%Q(1:M,I) = BLOCK_THR(1:M,I)
+                 DO K=1,M
+                   LRB%Q(K,I) = BLOCK_THR(K,I)
+                 ENDDO
                END DO
                IF (INFO < 0) THEN
                  WRITE(*,*) " PROBLEM IN ARGUMENT NUMBER ",INFO,
@@ -2354,23 +2376,23 @@ C
                  CALL MUMPS_ABORT()
                END IF
                IF (present(FRSWAP)) THEN
-                 CALL UPD_FLOP_COMPRESS(
-     &               BLR_PANEL(IP-CURRENT_BLR), FRSWAP=FRSWAP)
+                 CALL UPD_FLOP_COMPRESS(LRB%M, LRB%N, LRB%K, LRB%ISLR, 
+     &                                  FRSWAP=FRSWAP)
                ELSE
-                 CALL UPD_FLOP_COMPRESS(BLR_PANEL(IP-CURRENT_BLR))
+                 CALL UPD_FLOP_COMPRESS(LRB%M, LRB%N, LRB%K, LRB%ISLR)
                ENDIF
           END IF
         ELSE 
            IF (DIR .eq. 'V') THEN
                DO I=1,M
-                   BLR_PANEL(IP-CURRENT_BLR)%Q(I,1:N) =
+                   LRB%Q(I,1:N) =
      &             A( POSELT_BLOCK+int((I-1),8)*int(NFRONT,8) :
      &               POSELT_BLOCK+int((I-1),8)*int(NFRONT,8)
      &                           +int(N-1,8) )
                END DO  
            ELSE 
                DO I=1,N
-                   BLR_PANEL(IP-CURRENT_BLR)%Q(1:M,I) =
+                   LRB%Q(1:M,I) =
      &             A( POSELT_BLOCK+int((I-1),8)*int(NFRONT,8) :
      &               POSELT_BLOCK+int((I-1),8)*int(NFRONT,8)
      &                           +int(M-1,8) )
@@ -2378,13 +2400,13 @@ C
            END IF
            IF (K473.EQ.0) THEN
              IF (present(FRSWAP)) THEN
-               CALL UPD_FLOP_COMPRESS(BLR_PANEL(IP-CURRENT_BLR), 
-     &                                   FRSWAP=FRSWAP)
+               CALL UPD_FLOP_COMPRESS(LRB%M, LRB%N, LRB%K, LRB%ISLR, 
+     &                                  FRSWAP=FRSWAP)
              ELSE
-               CALL UPD_FLOP_COMPRESS(BLR_PANEL(IP-CURRENT_BLR))
+               CALL UPD_FLOP_COMPRESS(LRB%M, LRB%N, LRB%K, LRB%ISLR)
              ENDIF
            ENDIF
-           BLR_PANEL(IP-CURRENT_BLR)%K = -1
+           LRB%K = -1
         END IF
  3000   CONTINUE
       END DO 

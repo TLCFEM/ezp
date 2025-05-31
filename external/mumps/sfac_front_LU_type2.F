@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -23,7 +23,7 @@ C
      &             LRLUS, COMP,
      &             PTRIST, PTRAST, PTLUST_S, PTRFAC, STEP,
      &             PIMASTER, PAMASTER,
-     &             NSTK_S,PERM,PROCNODE_STEPS, root,
+     &             NSTK_S,PERM,PROCNODE_STEPS, root, roota,
      &             OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &             FILS, DAD, PTRARW, PTRAIW,
      &             PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -37,15 +37,16 @@ C
       USE SMUMPS_FAC_FRONT_AUX_M
       USE SMUMPS_FAC_FRONT_TYPE2_AUX_M
       USE SMUMPS_OOC
-      USE SMUMPS_BUF, ONLY : SMUMPS_BUF_TEST
+      USE MUMPS_BUF_COMMON, ONLY : MUMPS_BUF_TEST
       USE SMUMPS_FAC_LR
       USE SMUMPS_LR_CORE
       USE SMUMPS_LR_TYPE
-      USE SMUMPS_LR_STATS
+      USE MUMPS_LR_STATS
       USE SMUMPS_ANA_LR, ONLY : GET_CUT
       USE SMUMPS_LR_DATA_M
 !$    USE OMP_LIB
-      USE SMUMPS_STRUC_DEF, ONLY : SMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       USE MUMPS_PIVNUL_MOD, ONLY : PIVNUL_LIST_STRUCT_T
       IMPLICIT NONE
       INTEGER COMM_LOAD, ASS_IRECV
@@ -57,7 +58,8 @@ C
       INTEGER IW( LIW )
       REAL A( LA )
       REAL UU, SEUIL
-      TYPE (SMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (SMUMPS_ROOT_STRUC) :: roota
       INTEGER COMM, MYID, LBUFR, LBUFR_BYTES
       INTEGER LPTRAR, NELT
       INTEGER ICNTL(60), KEEP(500)
@@ -97,7 +99,7 @@ C
       INTEGER NASS, NBKJIB_ORIG, XSIZE
       INTEGER NBLR_ORIG, IBEG_BLR, IEND_BLR
       INTEGER Inextpiv
-      LOGICAL LASTBL 
+      LOGICAL LASTPANEL 
       INTEGER(8) :: POSELT
       INTEGER IOLDPS, allocok, K263,J
       INTEGER idummy 
@@ -171,7 +173,7 @@ C
       LR_ACTIVATED   = (IW(IOLDPS+XXLR).GT.0)
       COMPRESS_PANEL = (IW(IOLDPS+XXLR).GE.2)
       OOCWRITE_COMPATIBLE_WITH_BLR = 
-     &          ( .NOT.LR_ACTIVATED.OR.  (.NOT.COMPRESS_PANEL).OR.
+     &          ( .NOT.LR_ACTIVATED.OR.(.NOT.COMPRESS_PANEL).OR.
      &            (KEEP(486).NE.2) 
      &          )
       OOC_EFFECTIVE_ON_FRONT= ((KEEP(201).EQ.1).AND. 
@@ -251,8 +253,8 @@ C
           UNextPiv2beWritten = 1 
           PP_FIRST2SWAP_L = LNextPiv2beWritten 
           PP_FIRST2SWAP_U = UNextPiv2beWritten 
-          MonBloc%LastPanelWritten_L = 0 
-          MonBloc%LastPanelWritten_U = 0        
+          MonBloc%LastPanelWritten_L = 0
+          MonBloc%LastPanelWritten_U = 0
           MonBloc%INODE    = INODE
           MonBloc%MASTER   = .TRUE.
           MonBloc%Typenode = 2
@@ -261,14 +263,14 @@ C
           MonBloc%NFS      = NASS
           MonBloc%Last     = .FALSE.   
           MonBloc%LastPiv  = -68877    
-          NULLIFY(MonBloc%INDICES)
+          NULLIFY(MonBloc%INDICES)   
       ENDIF
       IF (LR_ACTIVATED) THEN
              PIVOT_OPTION = 4
              IF (KEEP(475).EQ.1) THEN
                  PIVOT_OPTION = 3
              ELSEIF (KEEP(475).EQ.2) THEN
-                 PIVOT_OPTION = 2
+                 PIVOT_OPTION = 3
              ELSEIF (KEEP(475).EQ.3) THEN
                IF (UUTEMP == 0.0E0) THEN
                  PIVOT_OPTION = 0
@@ -291,7 +293,7 @@ C
          NB_BLR = NPARTSASS + NPARTSCB
          call MAX_CLUSTER(BEGS_BLR,NB_BLR,MAXI_CLUSTER)
          MAXI_RANK = KEEP(479)*MAXI_CLUSTER
-         LWORK = MAXI_CLUSTER*MAXI_CLUSTER
+         LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
          OMP_NUM = 1
 #if ! defined(BLR_NOOPENMP)
 !$       OMP_NUM = OMP_GET_MAX_THREADS()
@@ -302,7 +304,7 @@ C
      &             JPVT(MAXI_CLUSTER*OMP_NUM), 
      &             WORK(LWORK*OMP_NUM),stat=allocok)
          IF (allocok > 0) THEN
-           IFLAG  = -13 
+           IFLAG  = -13
            IERROR = OMP_NUM*(LWORK + MAXI_CLUSTER*(MAXI_CLUSTER+4))
            GOTO 480
          ENDIF
@@ -348,18 +350,18 @@ C
         IERROR = INFO_TMP(2) 
         IF (IFLAG.LT.0) GOTO 500
       ENDIF
-      LASTBL = .FALSE.
+      LASTPANEL = .FALSE.
       DO WHILE (IEND_BLR < NASS ) 
         CURRENT_BLR = CURRENT_BLR + 1
         IBEG_BLR = IW(IOLDPS+1+KEEP(IXSZ)) + 1 
-        IF (.NOT. LR_ACTIVATED)THEN
+        IF (.NOT. LR_ACTIVATED) THEN
           IEND_BLR = min(IEND_BLR + NBLR_ORIG, NASS)
         ELSE
           IEND_BLR = BEGS_BLR(CURRENT_BLR+1)-1
           BEGS_BLR( CURRENT_BLR ) = IBEG_BLR
           IF ( IEND_BLR - IBEG_BLR + 1 .GT. MAXI_CLUSTER ) THEN
             MAXI_CLUSTER = IEND_BLR - IBEG_BLR + 1
-            LWORK = MAXI_CLUSTER*MAXI_CLUSTER
+            LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
             DEALLOCATE(BLOCK, WORK, RWORK, TAU, JPVT)
             ALLOCATE(BLOCK(MAXI_CLUSTER, OMP_NUM*MAXI_CLUSTER),
      &             RWORK(2*MAXI_CLUSTER*OMP_NUM), 
@@ -375,8 +377,8 @@ C
               DO MY_NUM=1,OMP_NUM
                 CALL DEALLOC_LRB(ACC_LUA(MY_NUM), KEEP8, KEEP(34))
                 CALL ALLOC_LRB(ACC_LUA(MY_NUM), MAXI_RANK,
-     &                       MAXI_CLUSTER, MAXI_CLUSTER, .TRUE.,
-     &                       IFLAG, IERROR, KEEP8)
+     &                         MAXI_CLUSTER, MAXI_CLUSTER, .TRUE.,
+     &                         IFLAG, IERROR, KEEP8)
                 IF (IFLAG.LT.0) GOTO 500
                 ACC_LUA(MY_NUM)%K = 0
               ENDDO
@@ -409,18 +411,18 @@ C
      &      PP_LastPIVRPTRFilled_L,
      &      PP_FIRST2SWAP_U,  MonBloc%LastPanelWritten_U,
      &      PP_LastPIVRPTRFilled_U,
-     &      PIVOT_OPTION, LR_ACTIVATED, IEND_BLR, 
+     &      PIVOT_OPTION, LR_ACTIVATED, IEND_BLR,
      &      Inextpiv, OOC_EFFECTIVE_ON_FRONT,
      &      NVSCHUR, PARPIV_T1,
      &      TIPIV=IPIV 
      &      )
-            IF (IFLAG.LT.0) GOTO 500   
+            IF (IFLAG.LT.0) GOTO 500  
           IF (INOPV.EQ.1) THEN
               IF (STATICMODE) THEN
                 INOPV = -1
                 GOTO 50
               ENDIF
-              LASTBL = .TRUE.
+              LASTPANEL = .TRUE.
           ELSE IF (INOPV .LE. 0) THEN 
             INOPV = 0
             IF (PIVOT_OPTION.GE.3) THEN
@@ -431,29 +433,29 @@ C
               LAST_COL = IEND_BLR
             ENDIF
             CALL SMUMPS_FAC_MQ(IBEG_BLOCK, IEND_BLOCK,
-     &             NFRONT, NASS, IW(IOLDPS+1+XSIZE),
-     &             LAST_COL, A, LA, POSELT, IFINB,
-     &             LR_ACTIVATED)
+     &              NFRONT, NASS, IW(IOLDPS+1+XSIZE),
+     &              LAST_COL, A, LA, POSELT, IFINB,
+     &              LR_ACTIVATED)
             IW(IOLDPS+1+XSIZE) = IW(IOLDPS+1+XSIZE) + 1
             NPVW = NPVW + 1
             IF (IFINB.EQ.0) THEN
               GOTO 50 
             ELSE IF (IFINB .EQ. -1) THEN
-              LASTBL = .TRUE.
+              LASTPANEL = .TRUE.
             ENDIF
           ENDIF
           NPIV = IW(IOLDPS+1+XSIZE)
           IF (K263.EQ.0) THEN
             NELIM = IEND_BLR - NPIV
-            CALL SMUMPS_SEND_FACTORED_BLK( COMM_LOAD, ASS_IRECV, 
+            CALL SMUMPS_SEND_FACTORED_PANEL( COMM_LOAD, ASS_IRECV, 
      &           N, INODE, FPERE, IW, LIW, IOLDPS, POSELT, A, LA,
-     &           NFRONT, IBEG_BLOCK, NPIV, IPIV, NASS,LASTBL, idummy, 
+     &           NFRONT, IBEG_BLOCK, NPIV, IPIV,NASS,LASTPANEL,idummy, 
      &           COMM, MYID, BUFR, LBUFR, LBUFR_BYTES,NBFIN,LEAF,
      &           IFLAG, IERROR, IPOOL,LPOOL,
      &           SLAVEF, POSFAC, IWPOS, IWPOSCB, IPTRLU, LRLU,
      &           LRLUS, COMP, PTRIST, PTRAST, PTLUST_S, PTRFAC, STEP,
      &           PIMASTER, PAMASTER, NSTK_S,PERM,PROCNODE_STEPS,
-     &           root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &           root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &           FILS, DAD, PTRARW, PTRAIW,
      &           PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &           INTARR,DBLARR, ICNTL,KEEP,KEEP8,
@@ -482,7 +484,7 @@ C
           ENDIF
           NPIV       =  IW(IOLDPS+1+XSIZE)
           IF ( IEND_BLR .GT. IEND_BLOCK ) THEN
-              CALL SMUMPS_BUF_TEST()
+              CALL MUMPS_BUF_TEST()
               IF (PIVOT_OPTION.GE.3) THEN
                 LAST_COL = NFRONT
               ELSEIF (PIVOT_OPTION.EQ.2) THEN
@@ -498,7 +500,7 @@ C
      &            .FALSE.,  
      &            LR_ACTIVATED)         
           ENDIF
-          CALL SMUMPS_BUF_TEST()
+          CALL MUMPS_BUF_TEST()
         END DO 
         NPIV   = IW(IOLDPS+1+XSIZE)
         IF (LR_ACTIVATED) THEN
@@ -533,7 +535,7 @@ C
               CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              1, 
-     &              CURRENT_BLR, BLR_U)
+     &        CURRENT_BLR, BLR_U, 0) 
               DO J=1,NPARTSASS-CURRENT_BLR
                  BLR_L(J)%M=0
                  BLR_L(J)%N=0
@@ -545,7 +547,7 @@ C
               CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              0, 
-     &              CURRENT_BLR, BLR_L)
+     &        CURRENT_BLR, BLR_L, 0) 
               NULLIFY(BLR_L)
               NULLIFY(BLR_U)
             ENDIF
@@ -576,7 +578,7 @@ C
               CALL SMUMPS_BLR_SAVE_PANEL_LORU(
      &            IW(IOLDPS+XXF),
      &            1, 
-     &            CURRENT_BLR, BLR_U)
+     &        CURRENT_BLR, BLR_U, 0) 
             ENDIF
           ENDIF
 #if ! defined(BLR_NOOPENMP)
@@ -607,15 +609,15 @@ C
           IF (associated(BLR_U)) THEN
             BLR_SEND=>BLR_U
           ENDIF
-          CALL SMUMPS_SEND_FACTORED_BLK( COMM_LOAD, ASS_IRECV, 
+          CALL SMUMPS_SEND_FACTORED_PANEL( COMM_LOAD, ASS_IRECV, 
      &         N, INODE, FPERE, IW, LIW, IOLDPS, POSELT, A, LA, NFRONT,
-     &         IBEG_BLR, NPIV, IPIV, NASS,LASTBL, idummy, 
+     &         IBEG_BLR, NPIV, IPIV, NASS,LASTPANEL, idummy, 
      &         COMM, MYID, BUFR, LBUFR, LBUFR_BYTES,NBFIN,LEAF,
      &         IFLAG, IERROR, IPOOL,LPOOL,
      &         SLAVEF, POSFAC, IWPOS, IWPOSCB, IPTRLU, LRLU,
      &         LRLUS, COMP, PTRIST, PTRAST, PTLUST_S, PTRFAC, STEP,
      &         PIMASTER, PAMASTER, NSTK_S,PERM,PROCNODE_STEPS,
-     &         root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &         root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &         FILS, DAD, PTRARW, PTRAIW,
      &         PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &         INTARR,DBLARR,ICNTL,KEEP,KEEP8,DKEEP,ND,FRERE,
@@ -646,15 +648,15 @@ C
             IF (associated(BLR_U)) THEN
               BLR_SEND=>BLR_U
             ENDIF
-            CALL SMUMPS_SEND_FACTORED_BLK( COMM_LOAD, ASS_IRECV, 
+            CALL SMUMPS_SEND_FACTORED_PANEL( COMM_LOAD, ASS_IRECV, 
      &           N, INODE, FPERE, IW, LIW, IOLDPS, POSELT, A, LA,
-     &           NFRONT, IBEG_BLR, NPIV, IPIV, NASS,LASTBL, idummy, 
+     &           NFRONT, IBEG_BLR, NPIV, IPIV, NASS,LASTPANEL, idummy, 
      &           COMM, MYID, BUFR, LBUFR, LBUFR_BYTES,NBFIN,LEAF,
      &           IFLAG, IERROR, IPOOL,LPOOL,
      &           SLAVEF, POSFAC, IWPOS, IWPOSCB, IPTRLU, LRLU,
      &           LRLUS, COMP, PTRIST, PTRAST, PTLUST_S, PTRFAC, STEP,
      &           PIMASTER, PAMASTER, NSTK_S,PERM,PROCNODE_STEPS,
-     &           root, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
+     &           root, roota, OPASSW, OPELIW, ITLOC, RHS_MUMPS,
      &           FILS, DAD, PTRARW, PTRAIW,
      &           PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &           INTARR,DBLARR,ICNTL,KEEP,KEEP8,DKEEP,ND,FRERE,
@@ -722,7 +724,7 @@ C
      &            -77777, 
      &            .TRUE., .FALSE., .FALSE.,
      &            .FALSE.,  
-     &            LR_ACTIVATED)         
+     &            LR_ACTIVATED)
            ENDIF
           ENDIF
 #if ! defined(BLR_NOOPENMP)
@@ -751,7 +753,7 @@ C
               CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &             IW(IOLDPS+XXF),
      &             0, 
-     &             CURRENT_BLR, BLR_L)
+     &        CURRENT_BLR, BLR_L, 0) 
             ENDIF
           ENDIF
 #if ! defined(BLR_NOOPENMP)
@@ -950,7 +952,7 @@ C
             ENDDO
             CALL SMUMPS_BLR_SAVE_DIAG_BLOCK(
      &            IW(IOLDPS+XXF),
-     &            IP, DIAG)
+     &            IP, DIAG, KEEP(34))
           ENDDO
 #if ! defined(BLR_NOOPENMP)
 !$OMP ENDDO

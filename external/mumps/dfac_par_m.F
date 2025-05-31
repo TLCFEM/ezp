@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -26,15 +26,21 @@ C
      & NBROOT_UNDER_L0, 
      & UU, ICNTL, PTLUST, PTRFAC, INFO, KEEP,KEEP8, PROCNODE_STEPS,
      & SLAVEF,MYID, COMM_NODES, MYID_NODES, BUFR, LBUFR, LBUFR_BYTES,
-     & INTARR, DBLARR, root, PERM, NELT, FRTPTR, FRTELT, LPTRAR,
+     & INTARR, DBLARR, root, roota, PERM, NELT, FRTPTR, FRTELT, LPTRAR,
      & COMM_LOAD, ASS_IRECV, SEUIL, SEUIL_LDLT_NIV2, MEM_DISTRIB, NE,
      & DKEEP, PIVNUL_LIST_STRUCT, LRGROUPS )
 !$    USE OMP_LIB
       USE DMUMPS_DYNAMIC_MEMORY_M, ONLY : 
      &                                    DMUMPS_DM_FREEALLDYNAMICCB
-      USE DMUMPS_BUF, ONLY : DMUMPS_BUF_TEST
-      USE DMUMPS_LOAD
-      USE DMUMPS_OOC
+      USE MUMPS_BUF_COMMON, ONLY : MUMPS_BUF_TEST
+      USE MUMPS_LOAD
+      USE DMUMPS_OOC, ONLY:  DMUMPS_OOC_CLEAN_PENDING,
+     &                       IO_BLOCK,
+     &                       DMUMPS_OOC_FORCE_WRT_BUF_PANEL,
+     &                       DMUMPS_NEW_FACTOR,
+     &                       DMUMPS_OOC_IO_LU_PANEL,
+     &                       DMUMPS_FORCE_WRITE_BUF
+      USE MUMPS_OOC_COMMON, ONLY: TYPEF_L, STRAT_WRITE_MAX
       USE DMUMPS_FAC_ASM_MASTER_M
       USE DMUMPS_FAC_ASM_MASTER_ELT_M
       USE DMUMPS_FAC1_LDLT_M
@@ -44,10 +50,12 @@ C
       USE OMP_LIB
       USE MUMPS_TPS_M
       USE DMUMPS_TPS_M
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
       USE MUMPS_PIVNUL_MOD
       IMPLICIT NONE
-      TYPE (DMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (DMUMPS_ROOT_STRUC) :: roota
       INTEGER N, LIW, LPTRAR, NSTEPSDONE, INFO(80)
       DOUBLE PRECISION, INTENT(INOUT) :: OPASS, OPELI
       INTEGER, INTENT(INOUT) :: NELVA, COMP
@@ -212,7 +220,7 @@ C
       IF ( KEEP(38).NE.0 ) THEN
         IF (root%yes) THEN
             CALL DMUMPS_ROOT_ALLOC_STATIC(
-     &        root, KEEP(38), N, IW, LIW,
+     &        root, roota, KEEP(38), N, IW, LIW,
      &        A, LA,
      &        FILS, DAD, MYID_NODES, SLAVEF, PROCNODE_STEPS,
      &        LPTRAR, NELT, FRTPTR, FRTELT,
@@ -261,7 +269,7 @@ C
      &      PTRAST, STEP, PIMASTER, PAMASTER, NSTK_STEPS,
      &      COMP, INFO(1), INFO(2), COMM_NODES, PERM,
      &      IPOOL, LPOOL, LEAF, NBFIN, MYID_NODES, SLAVEF,
-     &      root, OPASS, OPELI, ITLOC, RHS_MUMPS, FILS, DAD,
+     &      root, roota, OPASS, OPELI, ITLOC, RHS_MUMPS, FILS, DAD,
      &      PTRARW, PTRAIW,
      &      PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &      INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
@@ -270,7 +278,7 @@ C
      &      STACK_RIGHT_AUTHORIZED
      &               , LRGROUPS
      &       )
-        CALL DMUMPS_LOAD_RECV_MSGS(COMM_LOAD)
+        CALL MUMPS_LOAD_RECV_MSGS(COMM_LOAD)
       ENDIF
       IF (MPA.GT.0)
      &   CALL MUMPS_PRINT_STILL_ACTIVE (MYID_NODES, KEEP, 
@@ -288,7 +296,7 @@ C
      &      (.NOT. STACK_RIGHT_AUTHORIZED) )
             STACK_RIGHT_AUTHORIZED = .TRUE.
             IF (KEEP(47) .GE. 3) THEN
-              CALL DMUMPS_LOAD_POOL_UPD_NEW_POOL(
+              CALL MUMPS_LOAD_POOL_UPD_NEW_POOL(
      &              IPOOL, LPOOL,
      &              PROCNODE_STEPS, KEEP,KEEP8, SLAVEF, COMM_LOAD,
      &              MYID_NODES, STEP, N, ND, FILS )
@@ -302,20 +310,20 @@ C
                      IS_ISOLATED_NODE=.FALSE.
                   ENDIF
                ENDIF
-               CALL DMUMPS_LOAD_SBTR_UPD_NEW_POOL(
+               CALL MUMPS_LOAD_SBTR_UPD_NEW_POOL(
      &              IS_ISOLATED_NODE,INODE,IPOOL,LPOOL,
      &              MYID_NODES,SLAVEF,COMM_LOAD,KEEP,KEEP8)
             ENDIF
             IF ((( KEEP(80) == 2 .OR. KEEP(80)==3 ) .AND.
      &           ( KEEP(47) == 4 )).OR.
      &           (KEEP(80) == 1 .AND. KEEP(47) .GE. 1)) THEN
-               CALL DMUMPS_UPPER_PREDICT(INODE,STEP,KEEP(28),
+               CALL MUMPS_UPPER_PREDICT(INODE,STEP,KEEP(28),
      &         PROCNODE_STEPS,FRERE,ND,COMM_LOAD,SLAVEF,
      &         MYID_NODES,KEEP,KEEP8,N)
             END IF
             GOTO 30
           ELSE
-            CALL DMUMPS_BUF_TEST()
+            CALL MUMPS_BUF_TEST()
           ENDIF
       ENDIF
       GO TO 20
@@ -355,7 +363,7 @@ C
      &        LRLUS, COMP, PTRIST, PTRAST, PTLUST, PTRFAC,
      &        STEP, PIMASTER, PAMASTER,
      &        NSTK_STEPS,PERM,PROCNODE_STEPS,
-     &        root, OPASS, OPELI, ITLOC, RHS_MUMPS,
+     &        root, roota, OPASS, OPELI, ITLOC, RHS_MUMPS,
      &        FILS, DAD, PTRARW, PTRAIW,
      &        PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &        INTARR, DBLARR, ICNTL, KEEP,KEEP8, ND, FRERE,
@@ -381,7 +389,7 @@ C
      &             LRLUS, COMP, PTRIST, PTRAST, PTLUST, PTRFAC,
      &             STEP, PIMASTER, PAMASTER,
      &             NSTK_STEPS,PERM,PROCNODE_STEPS,
-     &             root, OPASS, OPELI, ITLOC, RHS_MUMPS,
+     &             root, roota, OPASS, OPELI, ITLOC, RHS_MUMPS,
      &             FILS, DAD, PTRARW, PTRAIW, 
      &             PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &             INTARR, DBLARR, ICNTL, KEEP,KEEP8, ND, FRERE,
@@ -404,7 +412,7 @@ C
       ENDIF
       IF (INODE.EQ.KEEP(38)) THEN
          CALL  DMUMPS_LAST_RTNELIND( COMM_LOAD, ASS_IRECV,
-     &    root, FRERE,
+     &    root, roota, FRERE,
      &    INODE,
      &    BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
      &    IWPOS, IWPOSCB, IPTRLU,
@@ -436,10 +444,10 @@ C
       IF (TYPE.EQ.1) THEN
         IF (KEEP(55).NE.0) THEN
          CALL DMUMPS_FAC_ASM_NIV1_ELT( COMM_LOAD, ASS_IRECV,
-     &        NELT, FRTPTR, FRTELT,
+     &        UU, NELT, FRTPTR, FRTELT,
      &        N,INODE,IW,LIW,A,LA,
      &        INFO(1),ND,
-     &        FILS,FRERE,DAD,MAXFRT,root,OPASS, OPELI,
+     &        FILS,FRERE,DAD,MAXFRT,root,roota,OPASS, OPELI,
      &        PTRIST,PTLUST,PTRFAC,PTRAST,STEP, PIMASTER,PAMASTER,
      &        PTRARW,PTRAIW,
      &        PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -459,9 +467,9 @@ C
         ELSE
          JOBASS = 0
          CALL DMUMPS_FAC_ASM_NIV1(COMM_LOAD, ASS_IRECV,
-     &        N,INODE,IW,LIW,A,LA,
+     &        UU, N,INODE,IW,LIW,A,LA,
      &        INFO(1),ND,
-     &        FILS,FRERE,DAD,MAXFRT,root,OPASS, OPELI,
+     &        FILS,FRERE,DAD,MAXFRT,root,roota,OPASS, OPELI,
      &        PTRIST,PTLUST,PTRFAC,PTRAST,STEP, PIMASTER,PAMASTER,
      &        PTRARW,PTRAIW, PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &        ITLOC, RHS_MUMPS, NSTEPSDONE, SON_LEVEL2,
@@ -496,7 +504,7 @@ C
      &    ND, FILS, FRERE, DAD, CAND,
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE,
      &    MAXFRT,
-     &    root, OPASS, OPELI, PTRIST, PTLUST, PTRFAC,
+     &    root, roota, OPASS, OPELI, PTRIST, PTLUST, PTRFAC,
      &    PTRAST, STEP, PIMASTER, PAMASTER, PTRARW, NSTK_STEPS,
      &    PTRAIW, PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    ITLOC, RHS_MUMPS, NSTEPSDONE,
@@ -516,7 +524,7 @@ C
      &    ND, FILS, FRERE, DAD, CAND,
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE,
      &    MAXFRT,
-     &    root, OPASS, OPELI, PTRIST, PTLUST, PTRFAC,
+     &    root, roota, OPASS, OPELI, PTRIST, PTLUST, PTRFAC,
      &    PTRAST, STEP, PIMASTER, PAMASTER, PTRARW, NSTK_STEPS,
      &    PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
@@ -606,9 +614,9 @@ C
           JOBASS = ETATASS          
           IF (JOBASS.EQ.1) THEN
               CALL DMUMPS_FAC_ASM_NIV1(COMM_LOAD, ASS_IRECV,
-     &        N,INODE,IW,LIW,A,LA,
+     &        UU, N,INODE,IW,LIW,A,LA,
      &        INFO(1),ND,
-     &        FILS,FRERE,DAD,MAXFRT,root,OPASS, OPELI,
+     &        FILS,FRERE,DAD,MAXFRT,root,roota,OPASS, OPELI,
      &        PTRIST,PTLUST,PTRFAC,PTRAST,STEP,PIMASTER,PAMASTER,
      &        PTRARW,PTRAIW,PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &        ITLOC, RHS_MUMPS, NSTEPSDONE, SON_LEVEL2,
@@ -647,7 +655,8 @@ C
      &       PROCNODE_STEPS,SLAVEF,FPERE,COMM_NODES,MYID_NODES,
      &       IPOOL, LPOOL, LEAF,
      &       NSTK_STEPS, PERM, BUFR, LBUFR, LBUFR_BYTES, NBFIN,
-     &       root, OPASS, ITLOC, RHS_MUMPS, FILS, DAD, PTRARW, PTRAIW,
+     &       root, roota,
+     &       OPASS, ITLOC, RHS_MUMPS, FILS, DAD, PTRARW, PTRAIW,
      &       PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &       INTARR, DBLARR,
      &       ND, FRERE, LPTRAR, NELT, FRTPTR, FRTELT,
@@ -709,7 +718,7 @@ C
      &         PROCNODE_STEPS, SLAVEF, KEEP(199), KEEP(28), KEEP(76),
      &         KEEP(80), KEEP(47), STEP, FPERE )
           IF (KEEP(47) .GE. 3) THEN
-             CALL DMUMPS_LOAD_POOL_UPD_NEW_POOL(
+             CALL MUMPS_LOAD_POOL_UPD_NEW_POOL(
      &            IPOOL, LPOOL,
      &            PROCNODE_STEPS, KEEP,KEEP8, SLAVEF, COMM_LOAD,
      &            MYID_NODES, STEP, N, ND, FILS )
@@ -719,7 +728,7 @@ C
      &           KEEP(50), KEEP(253), FLOP1,
      &           IW, LIW, KEEP(IXSZ) )
           IF (FPERE.NE.KEEP(20))
-     &    CALL DMUMPS_LOAD_UPDATE(1,.FALSE.,FLOP1,KEEP,KEEP8)
+     &    CALL MUMPS_LOAD_UPDATE(1,.FALSE.,FLOP1,KEEP,KEEP8)
         ENDIF
       ENDIF
       GO TO 20
@@ -733,7 +742,7 @@ C
      &       LBUFR_BYTES,
      &       COMM_NODES,
      &       MYID_NODES, SLAVEF)
-       CALL DMUMPS_CLEAN_PENDING( INFO(1), KEEP,
+       CALL MUMPS_CLEAN_PENDING( INFO(1), KEEP,
      &      BUFR, LBUFR,
      &      LBUFR_BYTES,
      &      COMM_NODES, COMM_LOAD, SLAVEF,
@@ -802,7 +811,7 @@ C
                IF (INFO(1).GE.0) THEN
                  CALL DMUMPS_FACTO_ROOT( 
      &               MPA, MYID_NODES, MASTER_ROOT,
-     &               root, N, KEEP(38),
+     &               root, roota, N, KEEP(38),
      &               COMM_NODES, IW, LIW, IWPOS + 1,
      &               A, LA, PTRAST, PTLUST, PTRFAC, STEP,
      &               INFO(1), KEEP(50), KEEP(19),
@@ -879,12 +888,12 @@ C
                      LRLUS = LRLUS + ITMP8 
                      KEEP8(69) = KEEP8(69) - ITMP8 
                      IF (KEEP(252).NE.0) THEN
-                       CALL DMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+                       CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &                 LA-LRLUS
      &                 ,0_8,-ITMP8,
      &                 KEEP,KEEP8,LRLUS)
                      ELSE         
-                       CALL DMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+                       CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &                 LA-LRLUS
      &                 ,ITMP8,    
      &                 0_8,
@@ -895,7 +904,7 @@ C
                        LRLU   = LRLU    + ITMP8
                      ENDIF
                   ELSE
-                       CALL DMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+                       CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &                 LA-LRLUS
      &                 ,ITMP8,    
      &                 0_8,
@@ -914,7 +923,7 @@ C
                     ELSE
                       LRHS_CNTR_MASTER_ROOT = 1
                     ENDIF
-                    ALLOCATE(root%RHS_CNTR_MASTER_ROOT( 
+                    ALLOCATE(roota%RHS_CNTR_MASTER_ROOT( 
      &                       LRHS_CNTR_MASTER_ROOT), stat=IERR )
                     IF (IERR.gt.0) THEN
                       INFO(1) = -13
@@ -933,9 +942,9 @@ C
                     FWD_LOCAL_N_RHS = max(1,FWD_LOCAL_N_RHS)
                     CALL DMUMPS_GATHER_ROOT( MYID_NODES,
      &              root%TOT_ROOT_SIZE, KEEP(253),
-     &              root%RHS_CNTR_MASTER_ROOT(1), LOCAL_M,
+     &              roota%RHS_CNTR_MASTER_ROOT(1), LOCAL_M,
      &              FWD_LOCAL_N_RHS, root%MBLOCK, root%NBLOCK,
-     &              root%RHS_ROOT(1,1), MASTER_ROOT,
+     &              roota%RHS_ROOT(1,1), MASTER_ROOT,
      &              root%NPROW, root%NPCOL, COMM_NODES )
                   ENDIF
                 ENDIF
@@ -1019,6 +1028,7 @@ C
      &                    PTLUST(STEP(INODE))+KEEP(IXSZ)+4)
      &                 = RECORD_ROOT(KEEP(IXSZ)+1:KEEP(IXSZ)+5)
                    IW(PTLUST(STEP(INODE))+XXLR) = 0
+                   AVOID_DELAYED = .TRUE.
                    IF (KEEP(50).EQ.0) THEN
                     CALL DMUMPS_FAC1_LU_I ( 
      &               N, INODE, IW, LIW, A_ROOT_SAVE(1),
@@ -1120,7 +1130,7 @@ C
                  ENDIF
                   CALL DMUMPS_SEQ_FACTO_ROOT_SVD_QR(
      &                 NFRONT,A(PTRAST(STEP(KEEP(20)))),
-     &                 root,
+     &                 root, roota,
      &                 BUFRX(1), int(LBUFRX),
      &                 KEEP,KEEP8, INFO, LP, DKEEP,
      &                 GLOBK109, OPELI,
@@ -1213,7 +1223,7 @@ C
                           GOTO 735
                          ENDIF
                       ENDIF
-                      CALL DMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+                      CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &                LA-LRLUS,ITMP8,0_8,KEEP,KEEP8,LRLUS)
                 ENDIF
  735         CONTINUE
@@ -1236,7 +1246,7 @@ C
                     LRLUS  = LRLUS  + ITMP8
                     LRLU   = LRLUS  + ITMP8
                     KEEP8(69) = KEEP8(69) - ITMP8
-                    CALL DMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+                    CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &              LA-LRLUS,0_8,-ITMP8,KEEP,KEEP8,LRLUS)
                   ENDIF
                 ENDIF
@@ -1260,6 +1270,18 @@ C
            MAXFRT = max ( MAXFRT, root%TOT_ROOT_SIZE)
          END IF
        END IF
+       IF ((KEEP(201).EQ.1) .OR. (KEEP(201).EQ.2)) THEN
+         CALL DMUMPS_OOC_CLEAN_PENDING(IERR)
+         IF(IERR.LT.0)THEN
+           INFO(1)=IERR
+           INFO(2)=0
+         ENDIF
+         CALL MUMPS_PROPINFO( ICNTL, INFO, COMM_NODES, MYID_NODES )
+       ENDIF
+      IF (associated(roota%RHS_ROOT)) THEN
+        DEALLOCATE(roota%RHS_ROOT)
+        NULLIFY(roota%RHS_ROOT)
+      ENDIF
       RETURN
       END SUBROUTINE DMUMPS_FAC_PAR
       SUBROUTINE DMUMPS_CHANGE_HEADER( HEADER, KEEP253 )

@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -14,7 +14,7 @@ C
 C
 C**********************************************************************
 C
-      SUBROUTINE SMUMPS_SET_TYPE_SIZES( K34, K35, K16, K10 ) 
+      SUBROUTINE SMUMPS_SET_TYPE_SIZES( K34, K149, K150, K10 ) 
       IMPLICIT NONE
 C
 C     Purpose:
@@ -22,7 +22,7 @@ C     =======
 C
 C     Set the size in bytes of an "INTEGER" in K34
 C     Set the size of the default arithmetic (REAL, DOUBLE PRECISION,
-C     REAL or DOUBLE REAL) in K35
+C     REAL or DOUBLE REAL) in K149
 C     Set the size of floating-point types that are real or double
 C     precision even for complex versions of MUMPS (REAL for S and
 C     C versions, DOUBLE PRECISION for D and Z versions)
@@ -31,20 +31,19 @@ C     nb_bytes(INTEGER(8)) / nb_bytes(INTEGER) = 8 / K34 into K10.
 C
 C     In practice, we have:
 C
-C     K35:  Arithmetic   Value    Value for T3E
+C     K149:  Arithmetic   Value    Value for T3E
 C              S           4           8
 C              D           8          16
 C              C           8          16
 C              Z          16          32
 C
-C     K16 = K35 for S and D arithmetics
-C     K16 = K35 / 2 for C and Z arithmetics
+C     K150 = K149 for S and D arithmetics
+C     K150 = K149 / 2 for C and Z arithmetics
 C
 C     K34= 4 and K10 = 2, except on CRAY machines or when compilation
 C     flag -i8 is used, in which case, K34 = 8 and K10 = 1
 C
-C
-      INTEGER, INTENT(OUT) :: K34, K35, K10, K16
+      INTEGER, INTENT(OUT) :: K34, K149, K10, K150
       INTEGER(8) :: SIZE_INT, SIZE_REAL_OR_DOUBLE ! matches MUMPS_INT8
       INTEGER I(2)
       REAL R(2) ! Will be DOUBLE PRECISION if 0
@@ -52,8 +51,8 @@ C
       CALL MUMPS_SIZE_C(R(1),R(2),SIZE_REAL_OR_DOUBLE)
       K34 = int(SIZE_INT)
       K10 = 8 / K34
-      K16 = int(SIZE_REAL_OR_DOUBLE)
-      K35 = K16
+      K150 = int(SIZE_REAL_OR_DOUBLE)
+      K149 = K150
       RETURN
       END SUBROUTINE SMUMPS_SET_TYPE_SIZES
 C
@@ -708,10 +707,9 @@ C             Default value is 0
 C             0: UFSC variant, no recompression: Compress step is
 C             performed after the Solve; the low-rank updates are not
 C             recompressed
-C             1: UCFS variant, no recompression: Compress step is
-C             performed before the Solve; pivoting strategy is adapted
-C             to pe performed on low-rank blocks; the low-rank updates are not
-C             recompressed
+C             1: UFCS variant, no recompression: Factor (with pivoting) on full-rank blocks,
+C             then Compress and finally Solve on low-rank blocks (those where pivoting is not needed, 
+C             which depends on the context)
 C      
 C    ICNTL(37) : Compress CB strategy need be set before factorization
 C             0 = DONT compress CB (default)
@@ -733,6 +731,55 @@ C                Between 0 and 1000; other values ares treated as 0;
 C                corresponds to an estimated compression rate of
 C                ICNTL(39)/1000%.
 C                Default value: 500 (50.0% compression rate).
+C   ICNTL(48) :  Controls L0_OMP feature. It must be set on the host
+C               before the analysis phase to prepare datastructures 
+C               for factorization. 
+C               If ICNTL(48) was nonzero during analysis, 
+C               L0-OMP will be activated during factorization.
+C               OMP_NUM_THREADS should not change between analysis 
+C               and factorization, as long as L0 task scheduling during 
+C               factorization is static.
+C               ICNTL(48) can however change between factorization
+C               and solve phases. If activated during analysis, the 
+C               number of threads for L0OMP (for both analysis and 
+C               factorization) is saved in KEEP(400) (see above).
+C               For LO_OMP feature to be effective during solve
+C               both KEEP(400)>0 and ICNTL(48)>0 are needed
+C               Possible values at analysis:
+C                  0 : off -- L0-OMP is not activated for analysis 
+C                      and factorization
+C                 >0 : on -- L0-OMP is activated for analysis 
+C                      and factorization
+C                 out-of-range values (<0) : off
+C               Possible values at solve:
+C                  0 : off --L0-OMP is not activated for solve.
+C                      Possible even if L0-OMP was activated during 
+C                      analysis/factorization
+C                 >0 : on --L0-OMP activated for solve.
+C                      Possible only if L0-OMP was activated during 
+C                      analysis/factorization
+C              if (defined(_OPENMP)) then
+C               default value is 1 (L0-thread ON) 
+C              else
+C               default value is 0 (L0thread OFF) 
+C              endif
+C              out of range values are treated as 0
+C 
+C 
+C   ICNTL(49): compact workarray id%S before solution phase
+C       must be set before factorization
+C       0 : nothing is done.
+C       1 : compact workarray id%S(MAXS) at the end of the 
+C           factorization phase while satisfying the
+C           memory contraint that might have been provided 
+C           with ICNTL(23) feature.
+C       2 : compact workarray id%S(MAXS) at the end of the 
+C           factorization phase. The memory
+C           constraint that might have been provided with 
+C           ICNTL(23) feature does not apply to this process
+C       Other values are treated as 0.
+C      Default value: 0
+C 
 C
 C  ICNTL(56) has default value 0 and is only accessed by the host.
 C      During the analysis phase, a positive value prepares the data for
@@ -749,7 +796,6 @@ C          2: Null space analysis on last root node using QR,
 C
 C       The singular values (ICNTL(56)=1) or the diagonal entries of R
 C       (ICNTL(56)=2) are available in root%SINGULAR_VALUES
-C
 C
 C
 C 
@@ -1181,8 +1227,11 @@ C===================================
         KEEP(11)=200
       KEEP(63) = 60
       KEEP(48) = 5
-      CALL SMUMPS_SET_TYPE_SIZES( KEEP(34), KEEP(35),
-     &                            KEEP(16), KEEP(10) )
+      CALL SMUMPS_SET_TYPE_SIZES( KEEP(34), KEEP(149),
+     &                            KEEP(150), KEEP(10) )
+      KEEP(35)=KEEP(149)
+      KEEP(16)=KEEP(150)
+      KEEP(151)=KEEP(35)
       KEEP(51) = 70
       KEEP(37) = max(800, int(sqrt(real(NSLAVES+1))*real(KEEP(51))))
       IF ( NSLAVES > 256 ) THEN
@@ -1206,8 +1255,8 @@ C      KEEP(69) = 1
 C     Forcing proportional is ok with strategy 5
       KEEP(75) = 1
       KEEP(76) = 2
-      KEEP(77) = 30
-      KEEP(78)= -1
+      KEEP(77) = 0
+      KEEP(78)= 0
       KEEP(79) = 0  ! old splitting
       KEEP(210) = 2 
       KEEP8(79) = -10_8
@@ -1241,6 +1290,37 @@ C     Scaling is enabled by default with the Schur complement option
       KEEP(125)=1
 C     Columns of LMAT handled by block of size KEEP(147)
       KEEP(147)=20000
+C     Control buffer size estimation and minimum granularities:
+C     Try to avoid messages smaller than KEEP(170)/1000 of recv buf
+C     ... minimum number of blocks
+      KEEP(171)=10
+C     ... buffer size reduction factor with respect to worst case
+      IF (SYM.EQ.0) THEN
+        KEEP(172)= 5  
+      ELSE
+        KEEP(172)= 3
+      ENDIF
+      KEEP(173)= 0  ! 0 = normal
+      IF (SYM.EQ.0) THEN
+       KEEP(178)= 2   
+      ELSE
+       KEEP(178)= 3
+      ENDIF
+      KEEP(179)= 10  ! default outer block size increase by factor K179
+      IF (SYM.EQ.0) THEN
+        KEEP(180) = 80 ! % of KEEP(44) to bound MIN_BUF_SIZE_FR
+        KEEP(181) = 50 ! % of KEEP(44) to bound MIN_BUF_SIZE_BLR
+      ELSE
+        KEEP(180) = 200 ! % of KEEP(44) to bound MIN_BUF_SIZE_FR
+        KEEP(181) = 200 ! % of KEEP(44) to bound MIN_BUF_SIZE_BLR
+      ENDIF
+C     amalgamation: to define sons KEEP(191) larger than fathers 
+      KEEP(191)= 50
+C     amalgamation: to define tiny son nodes 
+C                   (KEEP(192 smaller than father)
+      KEEP(192)= 900
+C     to limit the amalgamation of tiny nodes
+      KEEP(193)= 50
 C     More amalgamation of tiny fronts
       KEEP(197)=1
 C     KEEP(199) for MUMPS_PROCNODE, MUMPS_TYPENODE, etc
@@ -1264,10 +1344,10 @@ C     even if NASS is small.
       KEEP(206)=1 
       KEEP(207) = 1
       KEEP(211)=2
-      IF (NSLAVES .EQ. 2) THEN
-        KEEP(213) = 101
+      IF (SYM.EQ.0) THEN
+        KEEP(213) = 301
       ELSE
-        KEEP(213) = 201
+        KEEP(213) = 401
       ENDIF
       KEEP(217)=0
       KEEP(215)=0
@@ -1296,7 +1376,7 @@ C     even if NASS is small.
       DKEEP(24) = 1000.0E0 ! gap should be larger than dkeep(14)
       DKEEP(25) = 10.0E0 ! gap precision
       DKEEP(22) = 0.5E0 ! to check for slow convergence
-      KEEP(238)=18
+      KEEP(238)=24
       KEEP(234)= 1
       KEEP(235)=-1
       DKEEP(3) =-5.0E0
@@ -1304,7 +1384,9 @@ C     even if NASS is small.
       KEEP(242) = -9
       KEEP(243) = -1
       KEEP(255)=100
-      KEEP(281) = 0
+C     Multithreading of norm1 loop during scaling
+      KEEP(281)=8
+      KEEP(337) = 1
 C     Parallel analysis compatible with analysis by blocks
 C                       and detection out-of-range 
       KEEP(339)= 1
@@ -1323,9 +1405,14 @@ C                       and detection out-of-range
       KEEP(361) = 2048
       KEEP(362) = 4
       KEEP(363) = 512
-      KEEP(364) = 32768
+      KEEP(364) = 32768 ! 32KiB
+      KEEP(365) = 1024*1024 ! 1MiB
+      KEEP(366) = 450
+      KEEP(370) = 1
+      KEEP(375) = 1
       KEEP(378) = 1
-      KEEP(399) = 1
+C     OMP parallelization of arrowheads
+      KEEP(399) = -1
       KEEP(397) = -1
       KEEP(402) = 1
       KEEP(405) = 0 ! 1 under L0OMP
@@ -1348,6 +1435,12 @@ C     0.9 equilibration
       KEEP(421) = 3000
 #endif
 #endif
+#if defined(ANA_BLKAUTO)
+C     automatic graph compression effective
+C     only if reduction of the number of nodes
+C     in graph smaller than 75%
+      KEEP(440) = 75
+#endif
 C     Default size of KEEP(424) is defined below.
 C     It does not depend on arithmetic,
 C     it is related to L1 cache size: 250 * 64 bytes
@@ -1357,6 +1450,7 @@ C     of size 250*sizeof(arith). (4k bytes for z)
 C     At each new block of size KEEP(424), there is
 C     probably a cache miss on the pivot.
       KEEP(424) = 250
+      KEEP(448) = 0
       KEEP(458)=0
 #if defined(__ve__)
       KEEP(458)=1
@@ -1364,7 +1458,7 @@ C     probably a cache miss on the pivot.
       KEEP(459) = 10 ! max number of panels
       KEEP(460) = 63 ! min panel size
       KEEP(461) = 10
-      KEEP(462) = 10
+      KEEP(462) = 100
       KEEP(466) = 1
       KEEP(468) = 3
       KEEP(469) = 3
@@ -1374,11 +1468,11 @@ C     probably a cache miss on the pivot.
       KEEP(472) = 1
       KEEP(476) = 50  
       KEEP(477) = 100  
-      KEEP(483) = 50  
-      KEEP(484) = 50
+      KEEP(483) = 80
+      KEEP(484) = 80
       KEEP(487) = 1
       IF (KEEP(472).EQ.1) THEN
-        KEEP(488) = 512
+        KEEP(488) = 768
       ELSE
         KEEP(488) =  8*KEEP(6)   ! if KEEP(6)=32 then 256
       ENDIF
@@ -1431,6 +1525,7 @@ C        KEEP(11) not too small either
 !$       id%KEEP(362) = 1
 !$       id%KEEP(363) = 2
          id%KEEP(364) = 10
+         id%KEEP(366) = 2
          id%KEEP(420) = 4
          id%KEEP(488) = 4
          id%KEEP(490) = 5
@@ -1438,14 +1533,39 @@ C        KEEP(11) not too small either
          id%ICNTL(27)=-3
          id%KEEP(227)=3
          id%KEEP(30) = 1000
+C     ... Try to avoid messages smaller than KEEP(170)/1000 of recv buf 
+C         large value to test deadlock
+C         (no effect with KEEP(173)=1)
+         id%KEEP(170) = 500  ! default is 100 
+C        reduce buffer size estimated during analysis
+C        with respect to message size without SMB mechanism
+C        ... minimum nb of blocks is reduced to stress more buffers
+         id%KEEP(171) = 3   ! default is 10 blocs
+C        ... buffer size factor of reduction is increased
+C            to stress more buffers
+         id%KEEP(172) = 10  ! default is 3
+C        both values of KEEP(173) should be tested
+         id%KEEP(173) = 1   ! 0=normal 1=force blocking
+         id%KEEP(178) = 1   ! reduce it to one panel for FR LDLT CB buf
+C        ... factor of reduction of CB messages is increased
+         id%KEEP(238) = 36  ! default is 24
       ELSE IF (id%KEEP(72)==2) THEN
+C{
          id%KEEP(85)=2            ! default is 
          id%KEEP(85)=-10000         ! default is 160 
          id%KEEP(210) = 1       ! defaults is 0 (automatic)
          id%KEEP8(79) = 160000_8   
          id%KEEP(1) = 2  ! default is 8
          id%KEEP(102) = 110     ! defaults is 150 up to 48 procs
+C        reduce buffer size estimated during analysis
+C        with respect to message size without SMB mechanism
+C        ... minimum nb of blocks is reduced to stress more buffers
+         id%KEEP(171) = 3   ! default is 10 blocs
+C        ... buffer size factor of reduction is increased
+C            to stress more buffers
+         id%KEEP(172) = 10  ! default is 3
          id%KEEP(213) = 121   ! default is 201
+C}
       END IF
       RETURN
       END SUBROUTINE SMUMPS_SET_KEEP72

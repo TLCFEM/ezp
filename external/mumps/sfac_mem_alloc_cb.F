@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -21,7 +21,7 @@ C
      &   LREQ, LREQCB, NODE_ARG, STATE_ARG, SET_HEADER,
      &   COMP, LRLUS, LRLUSM, IFLAG, IERROR )
 !$    USE OMP_LIB
-      USE SMUMPS_LOAD
+      USE MUMPS_LOAD
       IMPLICIT NONE
       INTEGER N,LIW, KEEP(500)
       INTEGER(8) LA, LRLU, IPTRLU, LRLUS, LRLUSM, LREQCB
@@ -178,7 +178,7 @@ C
         KEEP8(68) = max(KEEP8TMPCOPY, KEEP8(68))
 !$OMP   END ATOMIC
       ENDIF
-      CALL SMUMPS_LOAD_MEM_UPDATE(SSARBR,PROCESS_BANDE,
+      CALL MUMPS_LOAD_MEM_UPDATE(SSARBR,PROCESS_BANDE,
      &              LA-LRLUS,0_8,LREQCB_EFF,KEEP,KEEP8,LRLUS)
  650  CONTINUE
       RETURN

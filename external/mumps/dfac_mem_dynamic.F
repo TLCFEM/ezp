@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -13,6 +13,49 @@ C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       MODULE DMUMPS_DYNAMIC_MEMORY_M
       CONTAINS
+      SUBROUTINE DMUMPS_DM_ALLOC_S_WK(S, MAXS, allocok,
+     &           KEEP430, KEEP35 )
+      IMPLICIT NONE
+      DOUBLE PRECISION, DIMENSION(:), POINTER :: S
+      INTEGER(8) :: MAXS
+      INTEGER, INTENT(IN)  :: KEEP35
+      INTEGER, INTENT(IN)  :: KEEP430
+      INTEGER, INTENT(OUT) :: allocok
+      INTEGER(8) :: TMP_ADDRESS8
+      IF (KEEP430.EQ.0) THEN
+        ALLOCATE(S(MAXS), stat=allocok)
+      ELSE
+        IF (KEEP430.EQ.1) THEN
+          CALL MUMPS_MALLOC_C( TMP_ADDRESS8, max(MAXS,1_8) * KEEP35 )
+        ELSE
+          WRITE(*,*) "KEEP430: wrong value", KEEP430
+          CALL MUMPS_ABORT()
+        ENDIF
+        IF (TMP_ADDRESS8 .EQ. 0_8) THEN
+          allocok = 1
+        ELSE
+          allocok = 0
+          CALL DMUMPS_DM_SET_PTR( TMP_ADDRESS8, max(MAXS,1_8), S )
+        ENDIF
+      ENDIF
+      RETURN
+      END SUBROUTINE DMUMPS_DM_ALLOC_S_WK
+      SUBROUTINE DMUMPS_DM_FREE_S_WK( S, KEEP430 )
+      IMPLICIT NONE
+      DOUBLE PRECISION, DIMENSION(:), POINTER :: S
+      INTEGER, INTENT(IN) :: KEEP430
+      IF ( KEEP430 .EQ. 0 ) THEN
+        DEALLOCATE(S)
+      ELSE IF ( KEEP430 .EQ. 1 ) THEN
+        CALL MUMPS_FREE_C(S(1))
+#if defined(USE_XKBLAS)
+#endif
+      ELSE
+        WRITE(*,*) "KEEP430: wrong value", KEEP430
+        CALL MUMPS_ABORT()
+      ENDIF
+      RETURN
+      END SUBROUTINE DMUMPS_DM_FREE_S_WK
       SUBROUTINE DMUMPS_DM_SET_DYNPTR( CB_STATE, A, LA,
      &                                PAMASTER_OR_PTRAST, IXXD,
      &                                IXXR, SON_A, IACHK, RECSIZE )
@@ -142,7 +185,7 @@ C
      &           STEP, PTRAST, PAMASTER,
      &           PROCNODE_STEPS, DAD, IFLAG, IERROR)
 !$    USE OMP_LIB
-      USE DMUMPS_LOAD, ONLY : DMUMPS_LOAD_MEM_UPDATE
+      USE MUMPS_LOAD, ONLY : MUMPS_LOAD_MEM_UPDATE
       IMPLICIT NONE
       INTEGER, INTENT(in) :: STRATEGY
       INTEGER(8), INTENT(in) :: SIZER_NEEDED
@@ -314,7 +357,7 @@ C
             CALL MUMPS_SET_SSARBR_DAD(SSARBRDAD, INODE,
      &           DAD, N, KEEP(28),
      &           STEP, PROCNODE_STEPS, KEEP(199))
-            CALL DMUMPS_LOAD_MEM_UPDATE( SSARBRDAD, .FALSE.,
+            CALL MUMPS_LOAD_MEM_UPDATE( SSARBRDAD, .FALSE.,
      &      LA - LRLUS, 0_8, -(RCURRENT_SIZE-SIZEHOLE),
      &      KEEP, KEEP8, LRLUS)
             IF (ICURRENT .EQ. IWPOSCB+1) THEN

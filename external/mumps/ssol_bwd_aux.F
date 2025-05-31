@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -1188,8 +1188,7 @@ C
               DO JJ=0, LONG-1
                 IPOSINRHSINTR = abs( POSINRHSINTR_BWD( IWCB(
      &                                    POSIWCB+1+JJ ) ) )
-                IF ( (IPOSINRHSINTR.EQ.0) .OR.
-     &            ( IPOSINRHSINTR.GT.N ) ) CYCLE  
+                IF (IPOSINRHSINTR.EQ.0)  CYCLE
                 RHSINTR(IPOSINRHSINTR,K) = W(POSWCB+1+JJ)
               ENDDO
             ENDDO

@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -740,7 +740,7 @@ C
       include 'scotchf.h'
       INTEGER(8) :: HALOEDGENBR
       INTEGER    :: NHALO, NBGROUPS
-      INTEGER    :: JCNHALO(HALOEDGENBR), PARTS(NHALO)
+      INTEGER    :: JCNHALO(max(HALOEDGENBR,1)), PARTS(NHALO)
       INTEGER(8) :: IPTRHALO(NHALO+1)
       INTEGER, INTENT(IN)    :: LP, KEEP10
       LOGICAL, INTENT(IN)    :: LPOK
@@ -801,7 +801,7 @@ C
       include 'scotchf.h'
       INTEGER(8) :: HALOEDGENBR
       INTEGER    :: NHALO, NBGROUPS
-      INTEGER    :: JCNHALO(HALOEDGENBR), PARTS(NHALO)
+      INTEGER    :: JCNHALO(max(HALOEDGENBR,1)), PARTS(NHALO)
       INTEGER(8) :: IPTRHALO(NHALO+1)
       INTEGER, INTENT(IN)    :: LP, KEEP10
       LOGICAL, INTENT(IN)    :: LPOK
@@ -813,7 +813,7 @@ C
       INTEGER(8) :: NHALO_I8, NBGROUPS_I8, EDGENBR_I8,
      &     BASEVAL_I8
       INTEGER :: allocok
-      ALLOCATE(JCNHALO_I8(IPTRHALO(NHALO+1)-1_8),
+      ALLOCATE(JCNHALO_I8(max(IPTRHALO(NHALO+1)-1_8,1_8)),
      &   PARTS_I8(size(PARTS)),  stat=allocok)
       IF (allocok > 0) THEN
         IFLAG  =-7
@@ -865,7 +865,7 @@ C
       IMPLICIT NONE
       INTEGER(8) :: HALOEDGENBR
       INTEGER    :: NHALO, NBGROUPS
-      INTEGER    :: JCNHALO(HALOEDGENBR), PARTS(NHALO)
+      INTEGER    :: JCNHALO(max(HALOEDGENBR,1)), PARTS(NHALO)
       INTEGER(8) :: IPTRHALO(NHALO+1)
       INTEGER, INTENT(IN)    :: LP, KEEP10
       LOGICAL, INTENT(IN)    :: LPOK
@@ -900,7 +900,7 @@ C
       IMPLICIT NONE
       INTEGER(8) :: HALOEDGENBR
       INTEGER    :: NHALO, NBGROUPS
-      INTEGER    :: JCNHALO(HALOEDGENBR), PARTS(NHALO)
+      INTEGER    :: JCNHALO(max(HALOEDGENBR,1)), PARTS(NHALO)
       INTEGER(8) :: IPTRHALO(NHALO+1)
       INTEGER, INTENT(IN)    :: LP, KEEP10
       LOGICAL, INTENT(IN)    :: LPOK
@@ -908,7 +908,7 @@ C
       INTEGER(8), ALLOCATABLE, DIMENSION(:) :: JCNHALO_I8, PARTS_I8
       INTEGER(8) :: NHALO_I8, NBGROUPS_I8
       INTEGER :: allocok
-      ALLOCATE(JCNHALO_I8(IPTRHALO(NHALO+1)-1_8),
+      ALLOCATE(JCNHALO_I8(max(IPTRHALO(NHALO+1)-1_8,1_8)),
      &         PARTS_I8(size(PARTS)), stat=allocok)
       IF (allocok > 0) THEN
         IFLAG  = -7
@@ -936,7 +936,8 @@ C
       IMPLICIT NONE
       INTEGER(8) :: HALOEDGENBR
       INTEGER    :: NHALO, NBGROUPS
-      INTEGER    :: JCNHALO(HALOEDGENBR), PARTS(NHALO), VWGT(NHALO)
+      INTEGER    :: JCNHALO(max(HALOEDGENBR,1)), PARTS(NHALO),
+     &              VWGT(NHALO)
       INTEGER(8) :: IPTRHALO(NHALO+1)
       INTEGER, INTENT(IN)    :: LP, KEEP10
       LOGICAL, INTENT(IN)    :: LPOK
@@ -971,7 +972,8 @@ C
       IMPLICIT NONE
       INTEGER(8) :: HALOEDGENBR
       INTEGER    :: NHALO, NBGROUPS
-      INTEGER    :: JCNHALO(HALOEDGENBR), PARTS(NHALO), VWGT(NHALO)
+      INTEGER    :: JCNHALO(max(HALOEDGENBR,1)), PARTS(NHALO),
+     &              VWGT(NHALO)
       INTEGER(8) :: IPTRHALO(NHALO+1)
       INTEGER, INTENT(IN)    :: LP, KEEP10
       LOGICAL, INTENT(IN)    :: LPOK
@@ -980,7 +982,7 @@ C
       INTEGER(8), ALLOCATABLE, DIMENSION(:) :: VWGT_I8
       INTEGER(8) :: NHALO_I8, NBGROUPS_I8
       INTEGER :: allocok
-      ALLOCATE(JCNHALO_I8(IPTRHALO(NHALO+1)-1_8),
+      ALLOCATE(JCNHALO_I8(max(IPTRHALO(NHALO+1)-1_8,1_8)),
      &         PARTS_I8(size(PARTS)), VWGT_I8(NHALO), stat=allocok)
       IF (allocok > 0) THEN
         IFLAG  = -7

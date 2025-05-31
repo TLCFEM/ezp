@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -12,39 +12,7 @@ C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       MODULE DMUMPS_SOL_L0OMP_M
-!$    USE OMP_LIB, ONLY: OMP_LOCK_KIND
-      INTEGER, PARAMETER :: NB_LOCK_MAX = 18
-!$    INTEGER(OMP_LOCK_KIND),
-!$   &ALLOCATABLE, DIMENSION(:), SAVE :: LOCK_FOR_SCATTER
       CONTAINS
-      SUBROUTINE DMUMPS_SOL_L0OMP_LI( K400 )
-!$    USE OMP_LIB, ONLY: OMP_INIT_LOCK
-      IMPLICIT NONE
-      INTEGER, INTENT(IN) :: K400
-!$    INTEGER :: I
-!$    IF (K400 .GT. 0) THEN
-!$      ALLOCATE(LOCK_FOR_SCATTER(min(NB_LOCK_MAX,K400)))
-!$      DO I = 1, min(NB_LOCK_MAX,K400)
-!$        CALL OMP_INIT_LOCK(LOCK_FOR_SCATTER(I))
-!$      ENDDO
-!$    ENDIF
-      RETURN
-      END SUBROUTINE DMUMPS_SOL_L0OMP_LI
-      SUBROUTINE DMUMPS_SOL_L0OMP_LD( K400 )
-!$    USE OMP_LIB, ONLY : OMP_DESTROY_LOCK
-      IMPLICIT NONE
-      INTEGER, INTENT(IN) :: K400
-!$    INTEGER :: I
-!$    IF (allocated(LOCK_FOR_SCATTER)) THEN
-!$      IF (K400 .GT. 0) THEN
-!$        DO I = 1, min(NB_LOCK_MAX,K400)
-!$          CALL OMP_DESTROY_LOCK(LOCK_FOR_SCATTER(I))
-!$        ENDDO
-!$        DEALLOCATE(LOCK_FOR_SCATTER)
-!$      ENDIF
-!$    ENDIF
-      RETURN
-      END SUBROUTINE DMUMPS_SOL_L0OMP_LD
       SUBROUTINE DMUMPS_SOL_L0OMP_R(N, MTYPE,
      &  NRHS, LIW, IW, PTRICB, RHSINTR, LRHSINTR, POSINRHSINTR_FWD,
      &  STEP, FRERE, DAD, FILS, NSTK, PTRIST, PTRFAC, INFO,
@@ -61,7 +29,7 @@ C
      &  L0_OMP_MAPPING, LL0_OMP_MAPPING,
      &  L0_OMP_FACTORS, LL0_OMP_FACTORS,
      &  DO_PRUN, TO_PROCESS )
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_L0OMPFAC_T
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_L0OMPFAC_T
 !$      USE OMP_LIB
       IMPLICIT NONE
       INTEGER, INTENT( in ) :: N, MTYPE, NRHS, SLAVEF, LIW
@@ -124,9 +92,33 @@ C
       INTEGER :: NEXT_TASK_DYN 
 !$    INTEGER :: NOMP_SAVE
       INTEGER :: NBFIN_DUMMY
+!$    INTEGER :: NOMP_TOTAL
+!$    INTEGER :: NOMP_INNER
+!$    LOGICAL :: SAVE_NESTED
       NBFIN_DUMMY = huge(NBFIN_DUMMY)
       NBROOT_PROCESSED = 0
       PTRICB = 0
+!$    NOMP_INNER = 1
+!$    IF (KEEP(369).GT.0) THEN
+!$      NOMP_TOTAL = omp_get_max_threads()
+!$      IF (NOMP_TOTAL .NE. KEEP(400)) THEN
+!$        IF (KEEP(439) .GT. 1) THEN
+!$          NOMP_INNER = KEEP(439)
+!$        ELSE IF ( KEEP(439) .EQ. -1
+!$   &      ) THEN
+!$          NOMP_INNER = NOMP_TOTAL / KEEP(400)
+!$        ENDIF
+!$      ENDIF
+!$      IF (NOMP_INNER .GT. 1) THEN
+!$        SAVE_NESTED = omp_get_nested()
+!$        CALL OMP_SET_NESTED(.TRUE.)
+!$      ENDIF
+#if defined(WORKAROUNDINTELILP64OPENMPLIMITATION)
+!$      CALL omp_set_num_threads(int(KEEP(400),4))
+#else
+!$      CALL omp_set_num_threads(KEEP(400))
+#endif
+!$    ENDIF
       NEXT_TASK_DYN = KEEP(400)+1
 !$OMP PARALLEL
 !$OMP& SHARED ( NEXT_TASK_DYN, IPOOL_B_L0_OMP,
@@ -144,7 +136,7 @@ C
       THREAD_ID = 1
 !$    THREAD_ID = OMP_GET_THREAD_NUM() + 1
 !$OMP BARRIER
-!$    CALL omp_set_num_threads(1)
+!$    CALL omp_set_num_threads(NOMP_INNER)
       LPOOL_P = LPOOL_B_L0_OMP
       INFO_P(1:2) = 0
       LWCB_P  = int(KEEP(133),8)*int(NRHS,8)
@@ -284,6 +276,16 @@ C
 !$    CALL omp_set_num_threads(NOMP_SAVE)
 #endif
 !$OMP END PARALLEL
+!$    IF (KEEP(369).GT.0) THEN
+#if defined(WORKAROUNDINTELILP64OPENMPLIMITATION)
+!$      CALL omp_set_num_threads(int(NOMP_TOTAL),4))
+#else
+!$      CALL omp_set_num_threads(NOMP_TOTAL)
+#endif
+!$      IF (NOMP_INNER .GT. 1) THEN
+!$        CALL OMP_SET_NESTED(SAVE_NESTED)
+!$      ENDIF
+!$    ENDIF
       NBROOT_UNDER_L0 = NBROOT_PROCESSED
       RETURN
       END SUBROUTINE DMUMPS_SOL_L0OMP_R
@@ -298,7 +300,7 @@ C
      &  L_VIRT_L0_OMP, VIRT_L0_OMP, L_PHYS_L0_OMP, PHYS_L0_OMP,
      &  PERM_L0_OMP, PTR_LEAFS_L0_OMP, L0_OMP_MAPPING, LL0_OMP_MAPPING,
      &  L0_OMP_FACTORS, LL0_OMP_FACTORS )
-      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_L0OMPFAC_T
+      USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_L0OMPFAC_T
       USE OMP_LIB
       IMPLICIT NONE
       INTEGER, INTENT( in ) :: N, MTYPE, NRHS, SLAVEF, LIW
@@ -363,6 +365,7 @@ C
 !$    INTEGER :: NOMP_SAVE
       INTEGER :: NBFIN_DUMMY
       LOGICAL, ALLOCATABLE, DIMENSION(:) :: DEJA_SEND_DUMMY
+!$    INTEGER :: NOMP_TOTAL
       NBFIN_DUMMY = huge(NBFIN_DUMMY)
       ALLOCATE(DEJA_SEND_DUMMY( 0:SLAVEF-1 ), stat=allocok)
       if(allocok.ne.0) then
@@ -372,6 +375,14 @@ C
          INFO(2)=SLAVEF
          GOTO 100
       endif
+!$    IF (KEEP(369).GT.0) THEN
+!$        NOMP_TOTAL = omp_get_max_threads()
+#if defined(WORKAROUNDINTELILP64OPENMPLIMITATION)
+!$        CALL omp_set_num_threads(int(KEEP(400),4))
+#else
+!$        CALL omp_set_num_threads(KEEP(400))
+#endif
+!$    ENDIF
       PTRICB = 0
       NEXT_TASK_DYN = KEEP(400)+1
 !$OMP PARALLEL
@@ -490,6 +501,13 @@ C
 !$    CALL omp_set_num_threads(NOMP_SAVE)
 #endif
 !$OMP END PARALLEL
+!$    IF (KEEP(369).GT.0) THEN
+#if defined(WORKAROUNDINTELILP64OPENMPLIMITATION)
+!$        CALL omp_set_num_threads(int(NOMP_TOTAL),4))
+#else
+!$        CALL omp_set_num_threads(NOMP_TOTAL)
+#endif
+!$    ENDIF
  100  CONTINUE
       IF (allocated(DEJA_SEND_DUMMY)) DEALLOCATE(DEJA_SEND_DUMMY)
       RETURN

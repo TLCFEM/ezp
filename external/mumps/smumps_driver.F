@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -17,13 +17,17 @@ C       (MPI based code)
 C  ===========================
 C
       SUBROUTINE SMUMPS( id )
-      USE SMUMPS_OOC
       USE MUMPS_MEMORY_MOD
       USE SMUMPS_STRUC_DEF
       USE SMUMPS_STATIC_PTR_M ! For Schur pointer
 #if ! defined(NO_SAVE_RESTORE)
       USE SMUMPS_SAVE_RESTORE
 #endif
+      USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_INTR_STRUC,
+     &    SMUMPS_ENCODE_INTR,
+     &    SMUMPS_DECODE_INTR,
+     &    SMUMPS_INIT_INTR_ENCODING,
+     &    SMUMPS_FREE_INTR_ENCODING
 C      
 !$    USE OMP_LIB
 C
@@ -78,187 +82,7 @@ C
 C
 C References :
 C -----------
-C
-C  P. Amestoy, J.-Y. L'Excellent, G. Moreau, On exploiting sparsity of 
-C    multiple right-hand sides in sparse direct solvers,
-C    SIAM Journal on Scientific Computing, volume 41, number 2,
-C    pages A269-A291 (2019)
-C
-C  G. Moreau, PhD Thesis, ENS-Lyon, University of Lyon,  
-C    On the solution phase of direct methods for sparse linear systems
-C    with multiple sparse right-hand sides, December 10th, 2018 
-C
-C  P. Amestoy, A. Buttari, J.-Y. L'Excellent and T. Mary, 
-C    Performance and scalability of the block low-rank multifrontal 
-C    factorization on multicore architectures, 
-C    ACM Transactions on Mathematical Software (2018)
-C
-C  T. Mary, PhD Thesis, University of Toulouse,
-C    Block Low-Rank multifrontal solvers: complexity, performance, and 
-C    scalability, November 2017.
-C
-C  S. de la Kethulle de Ryhove, P. Jaysaval and D.V. Shantsev, 
-C    P. R. Amestoy, J.-Y. L'Excellent and T. Mary, 
-C    Large-scale 3D EM modeling with a Block Low-Rank MUMPS solver, 
-C    Geophysical Journal International, volume 209, number 3, 
-C    pages 1558-1571 (2017) .
-C
-C  P. Amestoy, A. Buttari, J.-Y. L'Excellent and T. Mary, 
-C    On the complexity of the Block Low-Rank multifrontal factorization, 
-C    SIAM Journal on Scientific Computing, volume 39, 
-C    number 4, pages A1710-A1740 (2017).
-C
-C  P. Amestoy, R. Brossier, A. Buttari, J.-Y. L'Excellent, T. Mary,
-C   L. Metivier, A. Miniussi, and S. Operto.
-C   Fast 3D frequency-domain full waveform inversion with a parallel
-C   Block Low-Rank multifrontal direct solver: application to OBC data 
-C   from the North Sea, Geophysics, 81(6):R363--R383, (2016).
-C  
-C  P. Amestoy, C. Ashcraft, O. Boiteau, A. Buttari, J.-Y. L'Excellent, 
-C   and C. Weisbecker.
-C   Improving multifrontal methods by means of block low-rank representations.
-C   SIAM Journal on Scientific Computing, 37(3):A1451--A1474 (2015).
-C
-C  W. M. Sid-Lakhdar, PhD Thesis from Universite de Lyon prepared at ENS Lyon,
-C   Scaling the solution of large sparse linear systems using multifrontal
-C   methods on hybrid shared-distributed memory architectures (2014).
-C
-C  P. Amestoy, J.-Y. L'Excellent, W. Sid-Lakhdar,
-C   Characterizing asynchronous broadcast trees for multifrontal factorizations,
-C   Workshop on Combinatorial Scientific Computing,
-C   Lyon, France, July 21-23 (2014).
-C
-C  P. Amestoy, J.-Y. L'Excellent, F.-H. Rouet, W. Sid-Lakhdar,
-C   Modeling 1D distributed-memory dense kernels for an asynchronous
-C   multifrontal sparse solver, High-Performance Computing for Computational
-C   Science, VECPAR 2014, Eugene, Oregon, USA, June 30 - July 3 (2014).
-C
-C  J.-Y. L'Excellent and W. M. Sid-Lakhdar,
-C   Introduction of shared-memory parallelism in a distributed-memroy
-C   multifrontal solver, Parallel Computing (40):3-4, pages 34-46 (2014).
-C  
-C  C. Weisbecker, PhD Thesis supported by EDF, INPT-IRIT,
-C   Improving multifrontal solvers by means of algebraic block low-rank
-C   representations (2013).
-C
-C  E. Agullo, P. Amestoy, A. Buttari, A. Guermouche,  G. Joslin, J.-Y.
-C  L'Excellent, X. S. Li, A. Napov, F.-H. Rouet, M. Sid-Lakhdar, S. Wang, C.
-C  Weisbecker, I. Yamazaki,
-C   Recent Advances in Sparse Direct Solvers, 22nd Conference on Structural
-C   Mechanics in Reactor Technology, San Francisco (2013).
-C
-C  P. Amestoy, A. Buttari, G. Joslin, J.-Y. L'Excellent, W. Sid-Lakhdar, C.
-C   Weisbecker, M. Forzan, C. Pozza, R. Perrin, V. Pellissier,
-C   Shared memory parallelism and low-rank approximation techniques applied
-C   applied to direct solvers in FEM simulation in <i>IEEE Transactions on
-C   Magnetics</i>, IEEE, Special issue, Compumag 2013 (2013).
-C
-C  L. Boucher, P. Amestoy, A, Buttari, F.-H. Rouet and M. Chauvin,
-C   INTEGRAL/SPI data segmentation to retrieve sources intensity variations,
-C   Astronomy & Astrophysics, Article 52, 20 pages,
-C   http://dx.doi.org/10.1051/0004-6361/201219605 (2013).
-C
-C  F.-H. Rouet, PhD thesis from INPT, Toulouse, France,
-C   Memory and Performance issues in parallel multifrontal factorization and
-C   triangular solutions with sparse right-hand sides (2014).
-C
-C  J.-Y. L'Excellent, Habilitation thesis from ENS Lyon,
-C   Multifrontal methods: Parallelism, Memory Usage and Numerical
-C   Aspects (2012).
-C
-C  P. Amestoy, I.S. Duff, J.-Y. L'Excellent, Y. Robert, F.H. Rouet
-C   and B. Ucar, On computing inverse entries of a sparse matrix in 
-C   an out-of-core environment,
-C   SIAM J. on Scientific Computing Vol. 34 N. 4, p. 1975-1999 (2012).
-C
-C  Amestoy, Buttari, Duff, Guermouche, L'Excellent, and Ucar
-C   The Multifrontal Method, Encyclopedia of Parallel Computing,
-C   editor David Padua, Springer (2011).
-C
-C  Amestoy, Buttari, Duff, Guermouche, L'Excellent, and Ucar
-C   MUMPS, Encyclopedia of Parallel Computing,
-C   editor David Padua, Springer (2011).
-C
-C  Agullo, Guermouche and L'Excellent, Reducing the {I/O} Volume in 
-C   Sparse Out-of-core Multifrontal Methods}, SIAM SISC, Vol 31, Nb. 6, 
-C   4774-4794 (2010).
-C
-C  Amestoy, Duff, Guermouche, Slavova, Analysis of the Solution Phase of a
-C   Parallel Multifrontal Approach, Parallel Computing, Vol. 36, 3--15 (2010). 
-C
-C  Tzvetomila Slavova, PhD from INPT prepared at CERFACS,
-C   Parallel triangular solution in the out-of-core multifrontal approach 
-C   for solving large sparse linear systems, available as CERFACS 
-C   Report TH/PA/09/59 (2009).
-C
-C  Agullo, Guermouche and L'Excellent, A Parallel Out-of-core Multifrontal 
-C   Method: Storage of Factors on Disk and Analysis of Models for an 
-C   Out-of-core Active Memory, Parallel Computing, Special Issue on Parallel 
-C   Matrix Algorithms, Vol. 34, Nb 6-8, 296--317 (2008).
-C
-C  Emmanuel Agullo, PhD Thesis from LIP-Ecole Normale Superieure de Lyon,
-C   On the Out-of-core Factorization of Large Sparse Matrices (Nov 2008).
-C
-C  Amestoy, Duff, Ruiz, and Ucar, "A parallel
-C   matrix scaling algorithm".
-C   In proceedings of VECPAR'08-International Meeting-High 
-C   Performance Computing for Computational Science, (Jan 2008).
-C
-C  Guermouche and L'Excellent, Constructing Memory-minimizing Schedules 
-C   for Multifrontal Methods, ACM TOMS, Vol. 32, Nb. 1, 17--32 (2006).
-C
-C  Amestoy, Guermouche, L'Excellent, and Pralet, 
-C   Hybrid scheduling for the parallel solution
-C   of linear systems.  Vol 32 (2), pp 136-156 (2006).
-C
-C  Stephane Pralet, PhD from INPT prepared at CERFACS,
-C   Constrained orderings and scheduling for parallel sparse linear algebra,
-C   available as CERFACS technical report, TH/PA/04/105, (Sept 2004).
-C
-C  Abdou Guermouche, PhD Thesis from LIP-Ecole Normale Superieure de Lyon,
-C   Etude et optimisation du comportement memoire dans les methodes paralleles 
-C   de factorisation de matrices creuses (2004).
-C
-C  Guermouche, L'Excellent and Utard, Impact of Reordering on the Memory of a
-C   Multifrontal Solver, Parallel Computing, Vol. 29, Nb. 9, 1191--1218 (2003).
-C
-C  Amestoy, Duff, L'Excellent and Xiaoye S. Li, Impact of the Implementation 
-C   of MPI Point-to-Point Communications on the Performance of Two General 
-C   Sparse Solvers, Parallel Computing, Vol. 29, Nb 7, 833--847 (2003).
-C
-C  Amestoy, Duff, L'Excellent and Xiaoye S. Li, Analysis and Comparison of 
-C   Two General Sparse Solvers for Distributed Memory Computers, ACM TOMS,
-C   Vol. 27, Nb 4, 388--421 (2001).
-C
-C  Amestoy, Duff, Koster and  L'Excellent (2001), 
-C   A fully asynchronous multifrontal solver using distributed dynamic
-C   scheduling, SIAM Journal of Matrix Analysis and Applications,
-C   Vol 23, No 1, pp 15-41 (2001).
-C
-C  Amestoy, Duff and  L'Excellent (2000),
-C   Multifrontal parallel distributed symmetric and unsymmetric solvers,
-C   Comput. Methods in Appl. Mech. Eng., 184,  501-520 (2000)
-C
-C  Amestoy, Duff and L'Excellent (1998),
-C   Parallelisation de la factorisation LU de matrices
-C   creuses non-symmetriques pour des architectures a memoire distribuee,
-C   Calculateurs Paralleles Reseaux et systemes repartis, 
-C   Vol 10(5), 509-520 (1998).
-C
-C  PARASOL Deliverable D2.1d (final report), 
-C   SMUMPS Version 3.1, A MUltifrontal Massively Parallel Solver,
-C   PARASOL project, EU ESPRIT IV LTR project 20160, (June 1999).
-C
-C  Jacko Koster, PhD from INPT prepared at CERFACS, On the parallel solution 
-C   and the reordering of unsymmetric sparse linear systems (1997).
-C
-C  Vincent Espirat, Master's thesis from INPT(ENSEEIHT)-IRIT, Developpement 
-C   d'une approche multifrontale pour machines a memoire distribuee et 
-C   reseau heterogene de stations de travail (1996).
-C
-C  Patrick Amestoy, PhD from INPT prepared at CERFACS, Factorization of large 
-C  sparse matrices based on a multifrontal approach in a multiprocessor 
-C  environment, Available as CERFACS report TH/PA/91/2 (1991).
+C  Please see https://mumps-solver.org/index.php?page=doc
 C
 C============================================
 C Argument lists and calling sequences
@@ -369,17 +193,23 @@ C     --------------------------------------
       INTEGER, intent(in)    :: idN, idNRHS, idLRHS
       INTEGER, intent(inout) :: idINFO(:)
       END SUBROUTINE SMUMPS_CHECK_DENSE_RHS
-      SUBROUTINE SMUMPS_ANA_DRIVER( id )
+      SUBROUTINE SMUMPS_ANA_DRIVER( id, idintr )
       USE SMUMPS_STRUC_DEF
+      USE SMUMPS_INTR_TYPES
       TYPE (SMUMPS_STRUC), TARGET :: id
+      TYPE (SMUMPS_INTR_STRUC)    :: idintr
       END SUBROUTINE SMUMPS_ANA_DRIVER
-      SUBROUTINE SMUMPS_FAC_DRIVER( id )
+      SUBROUTINE SMUMPS_FAC_DRIVER( id, idintr )
       USE SMUMPS_STRUC_DEF
+      USE SMUMPS_INTR_TYPES
       TYPE (SMUMPS_STRUC), TARGET :: id
+      TYPE (SMUMPS_INTR_STRUC)    :: idintr
       END SUBROUTINE SMUMPS_FAC_DRIVER
-      SUBROUTINE SMUMPS_SOLVE_DRIVER( id )
+      SUBROUTINE SMUMPS_SOLVE_DRIVER( id, idintr )
       USE SMUMPS_STRUC_DEF
+      USE SMUMPS_INTR_TYPES
       TYPE (SMUMPS_STRUC), TARGET :: id
+      TYPE (SMUMPS_INTR_STRUC)    :: idintr
       END SUBROUTINE SMUMPS_SOLVE_DRIVER
       SUBROUTINE SMUMPS_PRINT_ICNTL(id, LP)
       USE SMUMPS_STRUC_DEF
@@ -594,7 +424,8 @@ C
 !$    INTEGER NOMP, NOMPMIN, NOMPMAX
       INTEGER I, J, MP, LP, MPG, KEEP235SAVE, KEEP242SAVE,
      &        KEEP243SAVE, KEEP495SAVE, KEEP497SAVE,
-     &        KEEP77SAVE, KEEP78SAVE, KEEP83SAVE, KEEP91SAVE
+     &        KEEP77SAVE, KEEP78SAVE, KEEP83SAVE, KEEP91SAVE,
+     &        KEEP172SAVE, KEEP178SAVE
       INTEGER(8) :: I8
       LOGICAL LANA, LFACTO, LSOLVE, PROK, LPOK, FLAG, PROKG
       LOGICAL NOERRORBEFOREPERM
@@ -614,6 +445,22 @@ C     TIMINGS
 #endif
       INTEGER:: ICNTL16_LOC
 !$    INTEGER:: PREVIOUS_OMP_THREADS_NUM
+      TYPE (SMUMPS_INTR_STRUC) :: idintr
+      LOGICAL :: MUST_ENCODE_IDINTR_ON_EXIT
+      LOGICAL :: IDINTR_MEANINGFUL_ON_EXIT
+C
+C     idintr is local to SMUMPS_DRIVER. It continas pointers to
+C     internal datastructures. On exit from SMUMPS_DRIVER, it is
+C     saved in the main MUMPS structure in the form of a character
+C     string, that ius allocated of the correct size. On entry,
+C     it is set from the character string and the character string
+C     is freed.
+C     Special cases:
+C       * after JOB=-2: do not save idintr into idintr_ENCODING
+C       * before JOB=-1: idintr_ENCODING is nullified, do not set
+C                        idintr_ENCODING from idintr
+      MUST_ENCODE_IDINTR_ON_EXIT = .FALSE.
+      IDINTR_MEANINGFUL_ON_EXIT = .FALSE.
       IF (id%JOB .EQ. -200) THEN
 C       -----------------
 C       QUICK TERMINATION:
@@ -751,17 +598,19 @@ C       Value defined on MASTER is the reference
         CALL MPI_BCAST( id%KEEP(370), 2, MPI_INTEGER, MASTER, id%COMM,
      &         IERR )
         IF (LANA) THEN
-           KEEP77SAVE = id%KEEP(77)
-           KEEP78SAVE = id%KEEP(78)
-           KEEP83SAVE = id%KEEP(83)
-           KEEP91SAVE = id%KEEP(91)
+           KEEP77SAVE  = id%KEEP(77)
+           KEEP78SAVE  = id%KEEP(78)
+           KEEP83SAVE  = id%KEEP(83)
+           KEEP91SAVE  = id%KEEP(91)
+           KEEP172SAVE =  id%KEEP(172)
+           KEEP178SAVE =  id%KEEP(178)
            id%KEEP(198) = 0
            CALL MPI_BCAST( id%KEEP(198), 1, MPI_INTEGER, MASTER, 
      &          id%COMM, IERR )
-          IF (id%KEEP(370) .EQ. 1) THEN     
-            id%KEEP(77)=0
-            id%KEEP(78)=0
-            id%KEEP(375)=1           
+          IF (id%KEEP(370) .EQ. 0) THEN     
+            id%KEEP(77) = 30
+            id%KEEP(78) = -1 ! automatic
+            id%KEEP(375) = 0
           ENDIF
         ENDIF
         IF (id%KEEP(371) .EQ. 1) THEN 
@@ -782,6 +631,8 @@ C           Nothing for the moment
             id%KEEP(77)=0
             id%KEEP(78)=0
             id%KEEP(375)=1           
+            id%KEEP(172)=1
+            id%KEEP(178)=id%KEEP(172)
             IF ((id%KEEP(50).EQ.0) .AND. (id%NSLAVES.GT.1)) THEN
               id%KEEP(376) = 1
             ENDIF
@@ -815,7 +666,7 @@ C
 #endif
      &     .OR. JOB.EQ.9 
      &     ) THEN
-C       Value of JOB is correct and differnet from -1
+C       Value of JOB is correct and different from -1
 C       ICNTL should have been initialized and can be used
         LP      = id%ICNTL(1)
         MP      = id%ICNTL(2)
@@ -904,7 +755,7 @@ C          MPI and OpenMP information
 !$   &                 id%NPROCS, ' and #OMP = ', NOMP
 !$           IF ( NOMPMIN .NE. NOMPMAX ) THEN
 !$             WRITE(MPG, '(A,I4,A,I4,A)')
-!$   &  '      WARNING detected: different number of threads (max ',
+!$   &  '      REMARK: different nb of threads per MPI proc (max ',
 !$   &         NOMPMAX, ', min ', NOMPMIN, ')'
 !$           END IF
 !$         ELSE
@@ -925,10 +776,11 @@ C          MPI and OpenMP information
 C
 C----------------------------------------------------------------
 C
-C     JOB = -1 : START INITIALIZATION PHASE
-C                (NEW INSTANCE)
+C     Start with special JOB values and retrieve idintr from
+C     id%INTR_ENCODING as needed. In case of error -3 or in
+C     case JOB -2 is done twice we avoid retrieving idintr
+C     from id%INTR_ENCODING (see below).
 C
-C     JOB = -2 : TERMINATE AN INSTANCE
 C----------------------------------------------------------------
 C
       IF ( JOB .EQ. -1 ) THEN
@@ -946,8 +798,8 @@ C       --------------------------------------------
      &       OLDJOB .EQ. 1 .OR.
      &       OLDJOB .EQ. 2 .OR.
      &       OLDJOB .EQ. 3  ) THEN
-           id%INFO(1)=-3
-           id%INFO(2)=JOB
+           id%INFO(1) = -3
+           id%INFO(2) = JOB
         ENDIF
 C       Initialize id%MYID now because it is
 C       required by MUMPS_PROPINFO. id%MYID
@@ -958,54 +810,132 @@ C       leading to an uninitialized access here.
      &                       id%INFO(1),
      &                       id%COMM, id%MYID )
         IF ( id%INFO(1) .LT. 0 ) THEN
-C
-C         If there was an error, then initialization
-C         was already called and we can rely on the null
-C         or non null value of the pointers related to OOC
-C         stuff.
-C         We use SMUMPS_CLEAN_OOC_DATA that should work even
-C         on the master. Note that KEEP(201) was also
-C         initialized in a previous call to Mumps.
-C
-C         If SMUMPS_END_DRIVER or SMUMPS_FAC_DRIVER is called after
-C         this error, then SMUMPS_CLEAN_OOC_DATA will be called
-C         a second time, though.
-C
-           IF (id%KEEP(201).GT.0) THEN
-             CALL SMUMPS_CLEAN_OOC_DATA(id, IERR)
-           ENDIF
            GOTO 499
         ENDIF
+      ENDIF
+C     -----------------------------------------------------------------
+C
+C     FIRST PERFORM JOBS that do not need idintr encoding/decoding
+C
+C     -----------------------------------------------------------------
+C     JOB =  9 : fill IRHS_loc
+C     -----------------------------------------------------------------
+      IF (JOB.EQ.9) THEN
+C       Check that factorization was performed
+        IF ( OLDJOB .LT. 2 ) THEN
+          id%INFO(1)=-3
+          id%INFO(2)=JOB
+        ELSE
+          CALL SMUMPS_SOL_INIT_IRHS_loc(id)
+        ENDIF
+        IF ( id%INFO(1) .LT. 0 ) GOTO 499
+        GOTO 500
+      ENDIF
+C     -----------------------------------------------------------
+C     EARLY CHECK IF ERROR -3 SHOULD BE RAISED
+C
+C     This must be done before retrieving idintr from
+C     id%INTR_ENCODING that may not be allocated yet,
+C     typically if if JOB -1 has not been performed, or
+C     if the last JOB was -2.
+C
+C     Done for:
+C
+C                JOB = -4         (free facto data)
+#if ! defined(NO_SAVE_RESTORE)
+C                JOB = 8          (restore)
+#endif
+C     -----------------------------------------------------------
+      IF (JOB.EQ.-4) THEN
+C       Allowed if last factorization failed, i.e., OLDJOB=1
+        IF (OLDJOB .LT. 1) THEN
+          id%INFO(1)=-3
+          id%INFO(2)=JOB
+          GOTO 499
+        ENDIF
+      ENDIF
+#if ! defined(NO_SAVE_RESTORE)
+      IF( JOB.EQ.8 .AND. OLDJOB.NE.-1) THEN
+        id%INFO(1) = -3 
+        id%INFO(2) = JOB
+        GOTO 499
+      END IF
+#endif
+C     -----------------------------------------------------------
+C     JOB = -2 : if OLDJOB was -2 do nothing and GO TO 500
+C                To be checked before retrieving idintr from
+C                id%INTR_ENCODING that may not be allocated.
+C     -----------------------------------------------------------
+      IF (JOB .EQ. -2 .AND. OLDJOB .EQ. -2) THEN
+C       Nothing to do
+        GOTO 500
+      ENDIF
+C     --------------------------------------
+C     JOB = -1: PERFORM INITIALIZATION PHASE
+C               (NEW INSTANCE)
+C     --------------------------------------
+      IF ( JOB .EQ. -1 ) THEN
+        CALL SMUMPS_INIT_INTR_ENCODING(id%INTR_ENCODING)
+        MUST_ENCODE_IDINTR_ON_EXIT=.TRUE.
+        IDINTR_MEANINGFUL_ON_EXIT=.TRUE.
+C       idintr will be set in SMUMPS_INI_DRIVER, therefore
+C       we must save it in id%INTR_ENCODING on exit.
 C       ----------------------------------------
 C       Initialization SMUMPS_INI_DRIVER 
-C       ----------------------------------------
+C       ---------------------------------------
 C       - Default values for ICNTL, KEEP,KEEP8, CNTL
-C       - Attach emission buffer for buffered Send
-C       - Nullify pointers in the structure
+C       - Nullify pointers in the structures
 C       - Get rank and size of the communicator
 C       ----------------------------------------
-        CALL SMUMPS_INI_DRIVER( id )
+        CALL SMUMPS_INI_DRIVER( id, idintr )
         IF ( id%INFO(1) .LT. 0 ) GOTO 499       
         GOTO 500
       END IF
+C     --------------------------------------------------------
+C     RETRIEVE INTERNAL STRUCTURE idintr
+C
+C     JOB != -1. If we reach this, error -3 has not occurred,
+C     and we now retrieve idintr from id%INTR_ENCODING
+C     --------------------------------------------------------
+      CALL SMUMPS_DECODE_INTR(id%INTR_ENCODING, idintr)
+      MUST_ENCODE_IDINTR_ON_EXIT=.TRUE.
+      IDINTR_MEANINGFUL_ON_EXIT=.TRUE.
+C     idintr has been decoded from id%INTR_ENCODING, therefore
+C     we must reencode idintr into id%INTR_ENCODING on exit
+C     -----------------------------------------------
+C     JOB = -4: Free data associated to factorization
+C     -----------------------------------------------
+      IF (JOB.EQ.-4) THEN
+        CALL SMUMPS_FREE_DATA_FACTO(id,idintr)
+C       Reset last successful phase
+        OLDJOB=min(OLDJOB, 1)
+        id%KEEP(40) = OLDJOB - 456789
+        IF ( id%INFO(1) .LT .0 ) GOTO 499
+        GOTO 500
+      ENDIF
+C     -------------------------------
+C     JOB = -2: TERMINATE AN INSTANCE
+C     -------------------------------
       IF ( JOB .EQ. -2 ) THEN
-C       -------------------------------------
-C       Deallocation of the instance id
-C       -------------------------------------
         id%KEEP(40)= -2 - 456789
-        CALL SMUMPS_END_DRIVER( id )
+C       We free all fields of id and idintr:
+        CALL SMUMPS_END_DRIVER( id, idintr )
+        MUST_ENCODE_IDINTR_ON_EXIT=.FALSE. ! because of JOB -2
+C       IDINTR_MEANINGFUL_ON_EXIT remains true in that case
+#if !defined(NO_SAVE_RESTORE)
+C       to update save-restore statistics to small values)
+#endif
         GOTO 500
       END IF
 C
-C     TIMINGS: for JOBS different from -1 and -2,
-C     we measure TIMETOTAL:
+C     TIMINGS: for JOB values different from -1 and -2, -4,
+C     measure TIMETOTAL:
 C
       IF (id%MYID.EQ.MASTER) THEN
         id%DKEEP(70)=0.0E0
         CALL MUMPS_SECDEB(TIMETOTAL)
       ENDIF
 #if ! defined(NO_SAVE_RESTORE)
-C
 C----------------------------------------------------------------
 C
 C     JOB = 7 : SAVE THE INSTANCE
@@ -1014,11 +944,6 @@ C     JOB = 8 : RESTORE THE INSTANCE
 C----------------------------------------------------------------
 C
       IF ( JOB .EQ. 7 .OR. JOB .EQ. 8 ) THEN
-         IF( JOB.EQ.8 .AND. OLDJOB.NE.-1) THEN
-            id%INFO(1) = -3 
-            id%INFO(2) = JOB
-            GOTO 499
-         END IF
          IF (id%MYID.EQ.MASTER) THEN
 C       -----------------------------
 C       Check incompatibility between
@@ -1038,7 +963,7 @@ C       -----------------------------
             IF (id%MYID.EQ.MASTER) THEN
              CALL MUMPS_SECDEB(TIMEG)
             ENDIF
-            CALL SMUMPS_SAVE( id )
+            CALL SMUMPS_SAVE( id, idintr )
             IF (id%MYID.EQ.MASTER) THEN
                CALL MUMPS_SECFIN(TIMEG)
                IF (PROKG) THEN
@@ -1050,7 +975,7 @@ C       -----------------------------
             IF (id%MYID.EQ.MASTER) THEN
              CALL MUMPS_SECDEB(TIMEG)
             ENDIF
-            CALL SMUMPS_RESTORE( id )
+            CALL SMUMPS_RESTORE( id, idintr )
             IF (id%MYID.EQ.MASTER) THEN
                CALL MUMPS_SECFIN(TIMEG)
                IF (PROKG) THEN
@@ -1076,42 +1001,6 @@ C
         GOTO 500
       ENDIF
 #endif
-C----------------------------------------------------------------
-C
-C     JOB =  9 : fill IRHS_loc
-C
-C----------------------------------------------------------------
-      IF (JOB.EQ.9) THEN
-C       Check that factorization was performed
-        IF ( OLDJOB .LT. 2 ) THEN
-          id%INFO(1)=-3
-          id%INFO(2)=JOB
-        ELSE
-          CALL SMUMPS_SOL_INIT_IRHS_loc(id)
-        ENDIF
-        IF ( id%INFO(1) .LT. 0 ) GOTO 499
-        GOTO 500
-      ENDIF
-C----------------------------------------------------------------
-C
-C     JOB = -4 : Free data associated to factorization
-C
-C----------------------------------------------------------------
-      IF (JOB.EQ.-4) THEN
-C       Allowed if last factorization failed, i.e. OLDJOB=1
-        IF (OLDJOB .LT. 1) THEN
-          id%INFO(1)=-3
-          id%INFO(2)=JOB
-        ELSE
-          CALL SMUMPS_FREE_DATA_FACTO(id)
-C         Reset last successful phase
-          OLDJOB=min(OLDJOB, 1)
-          id%KEEP(40) = OLDJOB - 456789
-        ENDIF
-        IF ( id%INFO(1) .LT .0 ) GOTO 499
-        GOTO 500
-      ENDIF
-C
 C
 C----------------------------------------------------------------
 C
@@ -1162,7 +1051,7 @@ C
         END IF
 C       Free data associated to previous analysis/facto/solve   
         IF (OLDJOB .NE. -1) THEN
-          CALL SMUMPS_FREE_DATA_ANAFACSOL(id)
+          CALL SMUMPS_FREE_DATA_ANAFACSOL(id, idintr)
         ENDIF
       END IF
       IF ( LFACTO ) THEN
@@ -1179,7 +1068,7 @@ C        --------------------------
 C        Free data from previous
 C        factorization-solve phases
 C        --------------------------
-           CALL SMUMPS_FREE_DATA_FACTO(id)
+           CALL SMUMPS_FREE_DATA_FACTO(id,idintr)
       END IF
       IF ( LSOLVE ) THEN
 C        -------------------------------
@@ -1447,12 +1336,14 @@ C}
         ENDIF
 C
 C       ANALYSIS PHASE:
-        CALL SMUMPS_ANA_DRIVER( id )
+        CALL SMUMPS_ANA_DRIVER( id, idintr )
 C       restore values
         id%KEEP(77) =  KEEP77SAVE 
         id%KEEP(78) =  KEEP78SAVE 
         id%KEEP(83) =  KEEP83SAVE
         id%KEEP(91) =  KEEP91SAVE
+        id%KEEP(172) =  KEEP172SAVE
+        id%KEEP(178) =  KEEP178SAVE
 #if ! defined(LARGEMATRICES)
         IF (id%MYID .eq. MASTER .AND. id%KEEP(23) .NE. 0) THEN
          IF (.not.associated(id%UNS_PERM)) THEN
@@ -1911,28 +1802,28 @@ C  Check Schur complement on all processors.
 C  SMUMPS_PROPINFO will be called right after those checks.
 C
         IF (id%KEEP(60).EQ.2.OR.id%KEEP(60).EQ.3) THEN
-          IF ( id%root%yes ) THEN
+          IF ( idintr%root%yes ) THEN
             IF ( associated( id%SCHUR_CINTERFACE )) THEN
 C             Called from C interface...
 C             The next instruction may cause
 C             bound check errors at runtime
 C             id%SCHUR=>id%SCHUR_CINTERFACE
-C    &          (1:id%SCHUR_LLD*(id%root%SCHUR_NLOC-1)+
-C    &          id%root%SCHUR_MLOC)
+C    &          (1:id%SCHUR_LLD*(idintr%root%SCHUR_NLOC-1)+
+C    &          idintr%root%SCHUR_MLOC)
 C             Instead, we set a temporary
 C             pointer and then retrieve it
               CALL SMUMPS_SET_TMP_PTR(id%SCHUR_CINTERFACE(1),
-     &         int(id%SCHUR_LLD,8)*int(id%root%SCHUR_NLOC-1,8)+
-     &         int(id%root%SCHUR_MLOC,8))
+     &         int(id%SCHUR_LLD,8)*int(idintr%root%SCHUR_NLOC-1,8)+
+     &         int(idintr%root%SCHUR_MLOC,8))
               CALL SMUMPS_GET_TMP_PTR(id%SCHUR)
               NULLIFY(id%SCHUR_CINTERFACE)
             ENDIF
 C           Check that SCHUR_LLD is large enough
-            IF (id%SCHUR_LLD < id%root%SCHUR_MLOC) THEN
+            IF (id%SCHUR_LLD < idintr%root%SCHUR_MLOC) THEN
               IF (LP.GT.0) write(LP,*) 
      &          ' SCHUR leading dimension SCHUR_LLD ', 
      &          id%SCHUR_LLD, 'too small with respect to', 
-     &          id%root%SCHUR_MLOC
+     &          idintr%root%SCHUR_MLOC
               id%INFO(1)=-30
               id%INFO(2)=id%SCHUR_LLD
             ELSE IF ( .NOT. associated (id%SCHUR)) THEN
@@ -1941,25 +1832,25 @@ C           Check that SCHUR_LLD is large enough
               id%INFO(1)=-22
               id%INFO(2)=9
             ELSE IF (size(id%SCHUR) <
-     &          id%SCHUR_LLD*(id%root%SCHUR_NLOC-1)+
-     &          id%root%SCHUR_MLOC) THEN
+     &          id%SCHUR_LLD*(idintr%root%SCHUR_NLOC-1)+
+     &          idintr%root%SCHUR_MLOC) THEN
               IF (LP.GT.0) THEN 
                 write(LP,'(A)') 
      &                      ' SCHUR allocated but too small'
                 write(LP,*) id%MYID, ' : Size Schur=', 
      &          size(id%SCHUR), 
      &          ' SCHUR_LLD= ', id%SCHUR_LLD, 
-     &          ' SCHUR_MLOC=', id%root%SCHUR_NLOC, 
-     &          ' SCHUR_NLOC=', id%root%SCHUR_NLOC
+     &          ' SCHUR_MLOC=', idintr%root%SCHUR_NLOC, 
+     &          ' SCHUR_NLOC=', idintr%root%SCHUR_NLOC
               ENDIF
               id%INFO(1)=-22
               id%INFO(2)= 9
             ELSE
 C              We initialize the pointer that
 C              we will use within SMUMPS here.
-               id%root%SCHUR_LLD=id%SCHUR_LLD
-               IF (id%root%SCHUR_NLOC==0) THEN
-                  ALLOCATE(id%root%SCHUR_POINTER(1), stat=IERR)
+               idintr%root%SCHUR_LLD=id%SCHUR_LLD
+               IF (idintr%root%SCHUR_NLOC==0) THEN
+                  ALLOCATE(idintr%roota%SCHUR_POINTER(1), stat=IERR)
                   IF (IERR .GT.0) THEN
                      id%INFO(1)=-13
                      id%INFO(2)=1
@@ -1969,7 +1860,7 @@ C              we will use within SMUMPS here.
                      ENDIF
                   END IF
                ELSE
-                id%root%SCHUR_POINTER=>id%SCHUR
+                idintr%roota%SCHUR_POINTER=>id%SCHUR
                ENDIF
             ENDIF
           ENDIF
@@ -1984,20 +1875,20 @@ C       -------------------------
 C       -----------------------------------------------
 C       Call factorization procedure SMUMPS_FAC_DRIVER
 C       -----------------------------------------------
-        CALL SMUMPS_FAC_DRIVER(id)
+        CALL SMUMPS_FAC_DRIVER(id,idintr)
 C       Save scaling in INFOG(33)
         IF (id%MYID .eq. MASTER) id%INFOG(33)=id%KEEP(52)
 C
 C       In the case of Schur, free or not associated
-C       id%root%SCHUR_POINTER now rather than in end_driver.F
+C       idintr%roota%SCHUR_POINTER now rather than in end_driver.F
 C       (Case of repeated factorizations).
         IF (id%KEEP(60).EQ.2.OR.id%KEEP(60).EQ.3) THEN
-           IF (id%root%yes) THEN
-              IF (id%root%SCHUR_NLOC==0) THEN
-                 DEALLOCATE(id%root%SCHUR_POINTER)
-                 NULLIFY(id%root%SCHUR_POINTER)
+           IF (idintr%root%yes) THEN
+              IF (idintr%root%SCHUR_NLOC==0) THEN
+                 DEALLOCATE(idintr%roota%SCHUR_POINTER)
+                 NULLIFY(idintr%roota%SCHUR_POINTER)
               ELSE
-                 NULLIFY(id%root%SCHUR_POINTER)
+                 NULLIFY(idintr%roota%SCHUR_POINTER)
               ENDIF
            ENDIF
         ENDIF
@@ -2018,7 +1909,7 @@ C         -------------------------------------------------------
 C         Free data from this factorization. Since factorization
 C         fails, factors, etc. can not be used to perform a solve
 C         -------------------------------------------------------
-          CALL SMUMPS_FREE_DATA_FACTO(id)
+          CALL SMUMPS_FREE_DATA_FACTO(id,idintr)
           GO TO 499
         ENDIF
 C
@@ -2089,7 +1980,7 @@ C     -------------------------
      &       id%INFO(1),
      &       id%COMM, id%MYID )
         IF ( id%INFO(1) .LT. 0 ) GO TO 499
-        CALL SMUMPS_SOLVE_DRIVER(id)
+        CALL SMUMPS_SOLVE_DRIVER(id,idintr)
         IF (id%MYID .eq. MASTER) THEN
            CALL MUMPS_SECFIN(TIMEG)
            id%DKEEP(111) = real(TIMEG)
@@ -2180,7 +2071,12 @@ C
 * Compute space for save
 *=======================
       IF (id%INFOG(1).GE.0) THEN
-         CALL SMUMPS_COMPUTE_MEMORY_SAVE(id,FILE_SIZE,STRUC_SIZE)
+        IF ( IDINTR_MEANINGFUL_ON_EXIT ) THEN
+C        Only do this if idintr is meaningful on exit. This includes
+C        the case of JOB -2 that needs to update statistics. This excludes
+C        the cases of JOBs that did not decode idintr, for which the save
+C        restore statistics have not changed.
+         CALL SMUMPS_COMPUTE_MEMORY_SAVE(id,idintr,FILE_SIZE,STRUC_SIZE)
          id%KEEP8(55)=FILE_SIZE
          call MPI_ALLREDUCE(id%KEEP8(55),id%KEEP8(57),1,
      &        MPI_INTEGER8, MPI_SUM,id%COMM,IERR)
@@ -2191,6 +2087,7 @@ C
          id%RINFO(8)=REAL(id%KEEP8(56))/1E6
          id%RINFOG(17)=REAL(id%KEEP8(57))/1E6
          id%RINFOG(18)=REAL(id%KEEP8(58))/1E6
+        ENDIF
       ENDIF
 #endif
 !$    IF (ICNTL16_LOC .GT. 0) THEN
@@ -2216,6 +2113,12 @@ C     Restore user communicator
 C     -------------------------
       CALL MPI_COMM_FREE( id%COMM, IERR )
       id%COMM = COMM_SAVE
+C     ------------------------------------
+C     Set id%INTR_ENCODING from idintr 
+C     ------------------------------------
+      IF (MUST_ENCODE_IDINTR_ON_EXIT) THEN
+        CALL SMUMPS_ENCODE_INTR(id%INTR_ENCODING, idintr)
+      ENDIF
       RETURN
 *
 99995 FORMAT (' ** ERROR RETURN ** FROM SMUMPS INFO(1)=', I5)

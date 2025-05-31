@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -18,7 +18,7 @@ C
      &       IWPOSCB, LA, KEEP, KEEP8, IN_PLACE_STATS
      &     )
 !$    USE OMP_LIB
-      USE DMUMPS_LOAD
+      USE MUMPS_LOAD
       IMPLICIT NONE
       INTEGER IPOSBLOCK,
      &         LIW, IWPOSCB, N
@@ -64,7 +64,7 @@ C
          IF (IN_PLACE_STATS) THEN
            MEM_INC= 0_8
          ENDIF
-         CALL DMUMPS_LOAD_MEM_UPDATE(SSARBR,.FALSE.,
+         CALL MUMPS_LOAD_MEM_UPDATE(SSARBR,.FALSE.,
      &         LA-LRLUS,0_8,MEM_INC,KEEP,KEEP8,LRLUS)
  90      IF ( IWPOSCB .eq. LIW ) GO TO 100
          SIZFI = IW( IWPOSCB+1+XXI )
@@ -79,7 +79,7 @@ C
          IW( IWPOSCB+1+XXP)=TOP_OF_STACK
       ELSE
          IW( IPOSBLOCK +XXS)=S_FREE
-         CALL DMUMPS_LOAD_MEM_UPDATE(SSARBR,.FALSE.,
+         CALL MUMPS_LOAD_MEM_UPDATE(SSARBR,.FALSE.,
      &                LA-LRLUS,0_8,-SIZFR_BLOCK_EFF,KEEP,KEEP8,LRLUS)
       END IF
       RETURN

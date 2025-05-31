@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -19,8 +19,10 @@ C
      &            LINTARR, LDBLARR,
      &            KEEP,KEEP8, MAXELT_SIZE,
      &            FRTPTR, FRTELT, A, LA, FILS,
-     &            id, root )
+     &            id, root, roota )
       USE ZMUMPS_STRUC_DEF
+      USE MUMPS_INTR_TYPES, ONLY: MUMPS_ROOT_STRUC
+      USE ZMUMPS_INTR_TYPES, ONLY: ZMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INTEGER N, NELT
       INTEGER(8) :: NA_ELT8
@@ -37,7 +39,8 @@ C
       COMPLEX(kind=8) ELTVAL_LOC( LDBLARR )
       COMPLEX(kind=8) A( LA )
       TYPE(ZMUMPS_STRUC)     :: id
-      TYPE(ZMUMPS_ROOT_STRUC) :: root
+      TYPE(MUMPS_ROOT_STRUC) :: root
+      TYPE(ZMUMPS_ROOT_STRUC) :: roota
       INCLUDE 'mpif.h'
       INCLUDE 'mumps_tags.h'
       INTEGER :: IERR_MPI
@@ -181,7 +184,8 @@ C
             ELTVAR_LOC( RECV_IELTPTR8: RECV_IELTPTR8 + SIZEI - 1 )
      &      = id%ELTVAR( IELTPTR8: IELTPTR8 + SIZEI - 1 )
             RECV_IELTPTR8 = RECV_IELTPTR8 + SIZEI
-            IF ( KEEP(52) .ne. 0 ) THEN
+            IF ( KEEP(52) .ne. 0
+     &         ) THEN
               ELTVAL_LOC( RECV_RELTPTR8: RECV_RELTPTR8 + SIZER - 1)
      &        = TEMP_ELT_R( 1: SIZER )
               RECV_RELTPTR8 = RECV_RELTPTR8 + SIZER
@@ -268,7 +272,7 @@ C
         IF ( I_AM_SLAVE .and. root%yes ) THEN
           CALL ZMUMPS_GET_ROOT_INFO(root,
      &                              LOCAL_M, LOCAL_N, PTR_ROOT, LA)
-          CALL ZMUMPS_SET_ROOT_TO_ZERO(root, KEEP, A, LA)
+          CALL ZMUMPS_SET_ROOT_TO_ZERO(root, roota, KEEP, A, LA)
         END IF
         IF ( MYID .NE. MASTER ) THEN
           ALLOCATE( BUFI( NBRECORDS * 2 + 1, 1 ), stat = allocok )
@@ -349,10 +353,10 @@ C
      &             + int(ILOCROOT - 1,8) )
      &          + VAL
               ELSE
-                root%SCHUR_POINTER( int(JLOCROOT-1,8)
+                roota%SCHUR_POINTER( int(JLOCROOT-1,8)
      &                            * int(root%SCHUR_LLD,8)
      &                            + int(ILOCROOT,8) )
-     &          = root%SCHUR_POINTER( int(JLOCROOT-1,8)
+     &          = roota%SCHUR_POINTER( int(JLOCROOT-1,8)
      &                            * int(root%SCHUR_LLD,8)
      &                            + int(ILOCROOT,8) )
      &          + VAL
@@ -403,10 +407,10 @@ C
      &                       + int(ILOCROOT-1,8))
      &           + VAL
               ELSE
-                root%SCHUR_POINTER(int(JLOCROOT-1,8)
+                roota%SCHUR_POINTER(int(JLOCROOT-1,8)
      &                         * int(root%SCHUR_LLD,8)
      &                         + int(ILOCROOT,8) )
-     &        = root%SCHUR_POINTER( int(JLOCROOT - 1,8)
+     &        = roota%SCHUR_POINTER( int(JLOCROOT - 1,8)
      &                         * int(root%SCHUR_LLD,8)
      &                         + int(ILOCROOT,8))
      &          + VAL

@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -17,6 +17,7 @@ C
       INTEGER, PARAMETER, PUBLIC :: TYPEF_INVALID = -999999
       INTEGER, PUBLIC  ::  TYPEF_L, TYPEF_U, TYPEF_CB
       INTEGER OOC_NB_FILE_TYPE, OOC_FCT_TYPE
+      INTEGER, PARAMETER :: FILENAMELENGTH=1300
       INTEGER, DIMENSION(:,:),POINTER :: OOC_INODE_SEQUENCE
       INTEGER(8), DIMENSION(:,:),POINTER :: OOC_VADDR
       INTEGER,DIMENSION(:),POINTER:: KEEP_OOC

@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -17,7 +17,7 @@ C
      &SSARBR,INODE,IERR
      & , LRGROUPS, NASS
      &)
-      USE ZMUMPS_LOAD
+      USE MUMPS_LOAD
       USE ZMUMPS_OOC
 !$    USE OMP_LIB
       USE ZMUMPS_LR_CORE
@@ -80,7 +80,7 @@ C
      &    IW(IOLDSHIFT+6+NSLAVES+NFRONT), SIZELU)
           SIZELU = SIZELU + int( NROW - NPIV, 8 ) * int( NPIV, 8 )
         ELSE
-        SIZELU =   int(NROW,8) * int(NPIV,8)
+          SIZELU =   int(NROW,8) * int(NPIV,8)
         ENDIF
       ENDIF
       CALL MUMPS_GETI8(SIZEXXR, IW(IOLDPS+XXR))
@@ -200,13 +200,13 @@ C
       ENDIF
  500  CONTINUE
       IF (LRCOMPRESS_PANEL.AND.KEEP(486).EQ.2) THEN
-        CALL ZMUMPS_LOAD_MEM_UPDATE(SSARBR,.FALSE.,
+        CALL MUMPS_LOAD_MEM_UPDATE(SSARBR,.FALSE.,
      &     LA-LRLUS,
      &     0_8, 
      &     -SIZESHIFT+SIZE_INPLACE,
      &     KEEP,KEEP8,LRLUS)
       ELSE
-        CALL ZMUMPS_LOAD_MEM_UPDATE(SSARBR,.FALSE.,
+        CALL MUMPS_LOAD_MEM_UPDATE(SSARBR,.FALSE.,
      &     LA-LRLUS,SIZELU,-SIZENOTLU+SIZE_INPLACE,
      &     KEEP,KEEP8,LRLUS)
       ENDIF
@@ -221,7 +221,7 @@ C
      &     )
 !$    USE OMP_LIB
       USE ZMUMPS_OOC
-      USE ZMUMPS_LOAD
+      USE MUMPS_LOAD
       USE ZMUMPS_DYNAMIC_MEMORY_M, ONLY : ZMUMPS_DM_SET_DYNPTR
       IMPLICIT NONE
       INTEGER(8) :: LA, LRLU, LRLUS, POSFAC, IPTRLU
@@ -347,10 +347,10 @@ C
         KEEP8(69) = KEEP8(69) + LREQA
         KEEP8(68) = max(KEEP8(69), KEEP8(68))
         IF(KEEP(201).NE.2)THEN
-           CALL ZMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+           CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &          LA-LRLUS,LREQA,LREQA,KEEP,KEEP8,LRLUS)
         ELSE
-           CALL ZMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+           CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &          LA-LRLUS,0_8,LREQA,KEEP,KEEP8,LRLUS)
         ENDIF
       ENDIF
@@ -389,14 +389,26 @@ C
      &  IW(PTRIST(STEP(ISON))+XXD),
      &  IW(PTRIST(STEP(ISON))+XXR),
      &  SON_A, IACHK, SIZFR_SON_A)
-        POSALOC = POSA
-        DO I = 1, NROW_L
-          OLDPOS =  IACHK + int(I-1,8)*int(LDA_BAND,8)
-          DO JJ = 0_8, int(NCOL_L-1,8)
-            A( POSALOC+JJ ) = SON_A( OLDPOS+JJ )
-          ENDDO
-          POSALOC = POSALOC + int(NCOL_L,8)
-        END DO
+        IF (int(NROW_L,8)*int(NCOL_L,8).GT.int(KEEP(361),8)) THEN
+!$OMP PARALLEL DO COLLAPSE(2) PRIVATE(I,JJ,OLDPOS,POSALOC)
+          DO I = 1, NROW_L
+            DO JJ = 0_8, int(NCOL_L-1,8)
+              OLDPOS =  IACHK + int(I-1,8)*int(LDA_BAND,8)
+              POSALOC = POSA + int(NCOL_L,8)*int(I-1,8)
+              A( POSALOC+JJ ) = SON_A( OLDPOS+JJ )
+            ENDDO
+          END DO
+!$OMP END PARALLEL DO
+        ELSE
+          POSALOC = POSA
+          DO I = 1, NROW_L
+            OLDPOS =  IACHK + int(I-1,8)*int(LDA_BAND,8)
+            DO JJ = 0_8, int(NCOL_L-1,8)
+              A( POSALOC+JJ ) = SON_A( OLDPOS+JJ )
+            ENDDO
+            POSALOC = POSALOC + int(NCOL_L,8)
+          END DO
+        ENDIF
       ENDIF
       ITMP8 = int(NCOL_L,8) * int(NROW_L,8)
       IF (KEEP(405) .EQ.1) THEN
@@ -427,7 +439,7 @@ C
 !$OMP ATOMIC UPDATE
         KEEP8(69) = KEEP8(69) - LREQA
 !$OMP END ATOMIC
-        CALL ZMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+        CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &            LA-LRLUS,LREQA,0_8,KEEP,KEEP8,LRLUS)
       ENDIF
   80  CONTINUE
@@ -453,9 +465,9 @@ C
      &     dble( 2 * LDA_BAND - NROW_L - NASS + 1)
         END IF
       END IF
-      CALL ZMUMPS_LOAD_UPDATE(1,.FALSE.,FLOP1_EFFECTIVE-FLOP1,
+      CALL MUMPS_LOAD_UPDATE(1,.FALSE.,FLOP1_EFFECTIVE-FLOP1,
      &                        KEEP,KEEP8)
-      CALL ZMUMPS_LOAD_UPDATE(2,.FALSE.,-FLOP1,KEEP,KEEP8)
+      CALL MUMPS_LOAD_UPDATE(2,.FALSE.,-FLOP1,KEEP,KEEP8)
  90   CONTINUE
       RETURN
  700  CONTINUE
@@ -1092,7 +1104,6 @@ C
         NB_INT = NB_INT + OOC_NB_FILE_TYPE * NSTEPS8 * I8OVERI
         NB_INT = NB_INT + OOC_NB_FILE_TYPE * NSTEPS8
       ENDIF
-      NB_REAL = NB_REAL + KEEP8(26)
       IF (KEEP(252).EQ.1 .AND. .NOT. I_AM_MASTER) THEN
         NB_REAL = NB_REAL + N8
       ENDIF
@@ -1135,9 +1146,10 @@ C
           TEMPR = TEMPR + int(1+2*NSLAVES,8) * int(NBRECORDS,8)
         END IF
       END IF
-      TEMP = max( NB_BYTES + (NB_INT + TEMPI) * int(KEEP(34),8)
-     &           + (NB_REAL+TEMPR) * int(KEEP(35),8)
-     &            , TEMP )
+      TEMP =  NB_BYTES + (NB_INT + TEMPI) * int(KEEP(34),8)
+     &        + NB_REAL * int(KEEP(35),8)
+     &        + (TEMPR+KEEP8(26)) * int(KEEP(149),8)
+      NB_REAL = NB_REAL + KEEP8(26)
       IF ( I_AM_SLAVE ) THEN
         IF (BLR_STRAT.NE.0) THEN
          ZMUMPS_LBUFR_BYTES8 = int(KEEP(380),8) * int(KEEP(35),8)
@@ -1145,15 +1157,21 @@ C
          ZMUMPS_LBUFR_BYTES8 = int(KEEP(44),8) * int(KEEP(35),8)
         ENDIF
         ZMUMPS_LBUFR_BYTES8 = max( ZMUMPS_LBUFR_BYTES8,
-     &                      100000_8 )
+     &                      200000_8 )
         IF (KEEP(48).EQ.5) THEN
           MIN_PERLU=2
         ELSE
           MIN_PERLU=0
         ENDIF
-        ZMUMPS_LBUFR_BYTES8 = ZMUMPS_LBUFR_BYTES8
-     &        + int( 2.0D0 * dble(max(PERLU,MIN_PERLU))*
+        IF (KEEP(72).NE.1) THEN
+          ZMUMPS_LBUFR_BYTES8 = ZMUMPS_LBUFR_BYTES8
+     &        + int( dble(max(PERLU/2,MIN_PERLU))*
      &        dble(ZMUMPS_LBUFR_BYTES8)/100D0,8)
+        ELSE
+          ZMUMPS_LBUFR_BYTES8 = ZMUMPS_LBUFR_BYTES8
+     &        + int( dble(max(PERLU,MIN_PERLU))*
+     &        dble(ZMUMPS_LBUFR_BYTES8)/100D0,8)
+        ENDIF
         ZMUMPS_LBUFR_BYTES8 = min(ZMUMPS_LBUFR_BYTES8,
      &                            int(huge (I4)-100,8))
         NB_BYTES = NB_BYTES + ZMUMPS_LBUFR_BYTES8
@@ -1165,10 +1183,16 @@ C
            ZMUMPS_LBUF8 = int( dble(KEEP(213)) / 100.0D0
      &                       * dble(KEEP( 43 ) * KEEP( 35 )), 8 )
           ENDIF
-          ZMUMPS_LBUF8 = max( ZMUMPS_LBUF8, 100000_8 )
-          ZMUMPS_LBUF8 = ZMUMPS_LBUF8
-     &                   + int( 2.0D0 * dble(max(PERLU,MIN_PERLU))*
+          ZMUMPS_LBUF8 = max( ZMUMPS_LBUF8, 200000_8 )
+          IF (KEEP(72).NE.1) THEN
+            ZMUMPS_LBUF8 = ZMUMPS_LBUF8
+     &                   + int( dble(max(PERLU/2,MIN_PERLU))*
      &                     dble(ZMUMPS_LBUF8)/100D0, 8)
+          ELSE
+            ZMUMPS_LBUF8 = ZMUMPS_LBUF8
+     &                   + int( dble(max(PERLU,MIN_PERLU))*
+     &                     dble(ZMUMPS_LBUF8)/100D0, 8)
+          ENDIF
           ZMUMPS_LBUF8 = min(ZMUMPS_LBUF8, int(huge(I4)-100,8))
           ZMUMPS_LBUF8 = max(ZMUMPS_LBUF8, ZMUMPS_LBUFR_BYTES8+
      &                   3_8*int(KEEP(34),8))
@@ -1874,10 +1898,13 @@ C
       ENDDO
       RETURN
       END SUBROUTINE ZMUMPS_COMPUTE_MAXPERCOL
-      SUBROUTINE ZMUMPS_SIZE_IN_STRUCT( id, NB_INT, NB_CMPLX, NB_CHAR )
-      USE ZMUMPS_STRUC_DEF
+      SUBROUTINE ZMUMPS_SIZE_IN_STRUCT( id, idintr,
+     &           NB_INT, NB_CMPLX, NB_CHAR )
+      USE ZMUMPS_STRUC_DEF, ONLY: ZMUMPS_STRUC
+      USE ZMUMPS_INTR_TYPES, ONLY: ZMUMPS_INTR_STRUC
       IMPLICIT NONE
-      TYPE(ZMUMPS_STRUC) :: id
+      TYPE(ZMUMPS_STRUC)      :: id
+      TYPE(ZMUMPS_INTR_STRUC) :: idintr
       INTEGER(8) NB_INT, NB_CMPLX 
       INTEGER(8) NB_REAL,NB_CHAR
       NB_INT        = 0_8
@@ -2005,25 +2032,25 @@ C
      &     NB_INT=NB_INT+size(id%L0_OMP_MAPPING)
       IF (associated(id%SINGULAR_VALUES))
      &     NB_REAL=NB_REAL+size(id%SINGULAR_VALUES)
-        IF (associated(id%root%RG2L)) THEN
-           NB_INT=NB_INT+size(id%root%RG2L)
+        IF (associated(idintr%root%RG2L)) THEN
+           NB_INT=NB_INT+size(idintr%root%RG2L)
         ENDIF
-      IF (associated(id%root%IPIV))
-     &     NB_INT=NB_INT+size(id%root%IPIV)
-      IF (associated(id%root%RHS_CNTR_MASTER_ROOT))
-     &     NB_CMPLX=NB_CMPLX+size(id%root%RHS_CNTR_MASTER_ROOT)
-      IF (associated(id%root%SCHUR_POINTER))
-     &     NB_CMPLX=NB_CMPLX+size(id%root%SCHUR_POINTER)
-      IF (associated(id%root%QR_TAU))
-     &     NB_CMPLX=NB_CMPLX+size(id%root%QR_TAU)
-      IF (associated(id%root%RHS_ROOT))
-     &     NB_CMPLX=NB_CMPLX+size(id%root%RHS_ROOT)
-      IF (associated(id%root%SVD_U))
-     &     NB_CMPLX=NB_CMPLX+size(id%root%SVD_U)
-      IF (associated(id%root%SVD_VT))
-     &     NB_CMPLX=NB_CMPLX+size(id%root%SVD_VT)
-      IF (associated(id%root%SINGULAR_VALUES))
-     &     NB_REAL=NB_REAL+size(id%root%SINGULAR_VALUES)
+      IF (associated(idintr%root%IPIV))
+     &     NB_INT=NB_INT+size(idintr%root%IPIV)
+      IF (associated(idintr%roota%RHS_CNTR_MASTER_ROOT))
+     &     NB_CMPLX=NB_CMPLX+size(idintr%roota%RHS_CNTR_MASTER_ROOT)
+      IF (associated(idintr%roota%SCHUR_POINTER))
+     &     NB_CMPLX=NB_CMPLX+size(idintr%roota%SCHUR_POINTER)
+      IF (associated(idintr%roota%QR_TAU))
+     &     NB_CMPLX=NB_CMPLX+size(idintr%roota%QR_TAU)
+      IF (associated(idintr%roota%RHS_ROOT))
+     &     NB_CMPLX=NB_CMPLX+size(idintr%roota%RHS_ROOT)
+      IF (associated(idintr%roota%SVD_U))
+     &     NB_CMPLX=NB_CMPLX+size(idintr%roota%SVD_U)
+      IF (associated(idintr%roota%SVD_VT))
+     &     NB_CMPLX=NB_CMPLX+size(idintr%roota%SVD_VT)
+      IF (associated(idintr%roota%SINGULAR_VALUES))
+     &     NB_REAL=NB_REAL+size(idintr%roota%SINGULAR_VALUES)
       IF (associated(id%RHSINTR)) NB_CMPLX = NB_CMPLX + id%KEEP8(25)
       IF (associated(id%S))       NB_CMPLX=NB_CMPLX+id%KEEP8(23)
       IF (associated(id%COLSCA).AND.(id%KEEP(52).NE.-1))
@@ -2045,7 +2072,6 @@ C
       NB_CHAR=NB_CHAR+len(id%SAVE_DIR)
       NB_CHAR=NB_CHAR+len(id%SAVE_PREFIX)
       NB_CMPLX = NB_CMPLX + NB_REAL/2_8
-      NB_CMPLX = NB_CMPLX + id%KEEP8(71) + id%KEEP8(64)
       RETURN
       END SUBROUTINE ZMUMPS_SIZE_IN_STRUCT 
       SUBROUTINE ZMUMPS_COPYI8SIZE(N8,SRC,DEST)
@@ -2143,8 +2169,8 @@ C
      &        A, LA, POSELT, IFLAG, IERROR, NFRONT,
      &        BEGS_BLR_L, sizeBEGS_BLR_L,
      &        BEGS_BLR_U, sizeBEGS_BLR_U, CURRENT_BLR, BLR_L, NB_BLR_L, 
-     &        BLR_U,
-     &        NB_BLR_U, NELIM, LBANDSLAVE, ISHIFT, NIV, SYM,
+     &        BLR_U, NB_BLR_U, 
+     &        NELIM, LBANDSLAVE, ISHIFT, NIV, SYM,
      &        MIDBLK_COMPRESS, TOLEPS, TOL_OPT, KPERCENT)
       USE ZMUMPS_LR_TYPE, ONLY : LRB_TYPE
       USE ZMUMPS_FAC_LR, ONLY : ZMUMPS_BLR_UPDATE_TRAILING
@@ -2248,7 +2274,7 @@ C
       INTEGER :: MAXI_CLUSTER
       DOUBLE PRECISION    :: RWORK(2*MAXI_CLUSTER*OMP_NUM)
       COMPLEX(kind=8) :: BLOCK(MAXI_CLUSTER,MAXI_CLUSTER*OMP_NUM)
-      COMPLEX(kind=8) :: WORK(MAXI_CLUSTER*MAXI_CLUSTER*OMP_NUM)
+      COMPLEX(kind=8) :: WORK(LWORK*OMP_NUM)
       COMPLEX(kind=8) :: TAU(MAXI_CLUSTER*OMP_NUM)
       INTEGER :: JPVT(MAXI_CLUSTER*OMP_NUM)
       INTEGER :: sizeBEGS_BLR
@@ -2323,7 +2349,7 @@ C
       RETURN
       END SUBROUTINE ZMUMPS_BLR_UPD_NELIM_VAR_L_I
       SUBROUTINE ZMUMPS_BLR_SLV_UPD_TRAIL_LDLT_I(A, LA, POSELT, 
-     &        IFLAG, IERROR, NCOL, NROW,
+     &        IFLAG, IERROR, NCOL, NROW, JBEG_BLOCK,
      &        A_BLOCFACTO, LA_BLOCFACTO, LD_BLOCFACTO, 
      &        BEGS_BLR_LM, sizeBEGS_BLR_LM,
      &        NB_BLR_LM, BLR_LM, ISHIFT_LM,
@@ -2343,7 +2369,8 @@ C
       INTEGER(8), intent(in)  :: POSELT 
       INTEGER, intent(inout)  :: IFLAG, IERROR
       INTEGER, intent(in)     :: NCOL, NROW, IW2(*), TOL_OPT,
-     &                           MAXI_CLUSTER, OMP_NUM, LD_BLOCFACTO
+     &                           MAXI_CLUSTER, OMP_NUM, LD_BLOCFACTO,
+     &                           JBEG_BLOCK
       INTEGER, intent(in)     :: NB_BLR_LM, NB_BLR_LS, 
      &                           ISHIFT_LM, ISHIFT_LS, 
      &                           CURRENT_BLR_LM, CURRENT_BLR_LS
@@ -2357,7 +2384,7 @@ C
       INTEGER,intent(in) :: MIDBLK_COMPRESS, KPERCENT
       DOUBLE PRECISION,intent(in) :: TOLEPS
       CALL  ZMUMPS_BLR_SLV_UPD_TRAIL_LDLT(A, LA, POSELT, 
-     &        IFLAG, IERROR, NCOL, NROW,
+     &        IFLAG, IERROR, NCOL, NROW, JBEG_BLOCK,
      &        A_BLOCFACTO, LA_BLOCFACTO, LD_BLOCFACTO, 
      &        BEGS_BLR_LM, NB_BLR_LM, BLR_LM, ISHIFT_LM,
      &        BEGS_BLR_LS, NB_BLR_LS, BLR_LS, ISHIFT_LS,

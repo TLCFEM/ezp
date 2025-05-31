@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -27,7 +27,7 @@ C
       USE SMUMPS_OOC
       USE SMUMPS_FAC_LR  
       USE SMUMPS_LR_TYPE
-      USE SMUMPS_LR_STATS
+      USE MUMPS_LR_STATS
       USE SMUMPS_ANA_LR, ONLY : GET_CUT
       USE SMUMPS_LR_DATA_M
       USE MUMPS_PIVNUL_MOD, ONLY: PIVNUL_LIST_STRUCT_T
@@ -71,7 +71,7 @@ C
       INTEGER PARPIV_T1, OFFSET
       INTEGER NFS4FATHER
       REAL, ALLOCATABLE, DIMENSION(:) :: M_ARRAY
-      LOGICAL LASTBL
+      LOGICAL LASTPANEL
       INTEGER CURRENT_BLR
       LOGICAL LR_ACTIVATED 
       LOGICAL COMPRESS_CB, COMPRESS_PANEL
@@ -184,13 +184,7 @@ C
       IF (PIVOT_OPTION.LE.1) THEN
          PARPIV_T1 = 0
       ENDIF
-      IF (NASS.LT.KEEP(4)) THEN
-        NBKJIB_ORIG = NASS
-      ELSE IF (NASS .GT. KEEP(3)) THEN
-        NBKJIB_ORIG = min( KEEP(6), NASS )
-      ELSE
-        NBKJIB_ORIG = min( KEEP(5), NASS )
-      ENDIF
+      CALL SMUMPS_SET_INNERBLOCKSIZE( NBKJIB_ORIG, NASS, KEEP)
       IF (.not.LR_ACTIVATED) THEN
           NBLR_ORIG     = KEEP(420)
       ELSE
@@ -212,26 +206,26 @@ C
       IEND_BLOCK  = 0
       IEND_BLR    = 0
       CURRENT_BLR = 0
-      LASTBL      = .FALSE.
+      LASTPANEL   = .FALSE.
       CALL MUMPS_GETI8(LAFAC,IW(IOLDPS+XXR))
       LIWFAC    = IW(IOLDPS+XXI)
       IF (OOC_EFFECTIVE_ON_FRONT) THEN
-          IDUMMY    = -8765
-          NextPiv2beWritten = 1 
-          PP_FIRST2SWAP_L = NextPiv2beWritten 
-          MonBloc%LastPanelWritten_L = 0 
-          PP_LastPIVRPTRFilled       = 0
-          MonBloc%INODE    = INODE
-          MonBloc%MASTER   = .TRUE.
-          MonBloc%Typenode = 1
-          MonBloc%NROW     = NFRONT
-          MonBloc%NCOL     = NFRONT
-          MonBloc%NFS      = NASS
-          MonBloc%Last     = .FALSE.   
-          MonBloc%LastPiv  = -77777    
-          MonBloc%INDICES  =>
-     &              IW(IOLDPS+6+NFRONT+XSIZE:
-     &                 IOLDPS+5+NFRONT+XSIZE+NFRONT)
+        IDUMMY    = -8765
+        NextPiv2beWritten = 1 
+        PP_FIRST2SWAP_L = NextPiv2beWritten 
+        MonBloc%LastPanelWritten_L = 0 
+        PP_LastPIVRPTRFilled       = 0
+        MonBloc%INODE    = INODE
+        MonBloc%MASTER   = .TRUE.
+        MonBloc%Typenode = 1
+        MonBloc%NROW     = NFRONT
+        MonBloc%NCOL     = NFRONT
+        MonBloc%NFS      = NASS
+        MonBloc%Last     = .FALSE.   
+        MonBloc%LastPiv  = -77777    
+        MonBloc%INDICES  =>
+     &            IW(IOLDPS+6+NFRONT+XSIZE:
+     &               IOLDPS+5+NFRONT+XSIZE+NFRONT)
       ENDIF
       IF (LR_ACTIVATED) THEN
              IF (KEEP(405) .EQ. 1) THEN
@@ -256,7 +250,7 @@ C
          NB_BLR = NPARTSASS + NPARTSCB
          call MAX_CLUSTER(BEGS_BLR,NB_BLR,MAXI_CLUSTER)
          MAXI_RANK = KEEP(479)*MAXI_CLUSTER
-         LWORK = MAXI_CLUSTER*MAXI_CLUSTER
+         LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
          OMP_NUM = 1
 #if ! defined(BLR_NOOPENMP)
 !$       OMP_NUM = OMP_GET_MAX_THREADS()
@@ -273,9 +267,9 @@ C
          ENDIF
          ALLOCATE(ACC_LUA(OMP_NUM),stat=allocok)
          IF (allocok > 0) THEN
-            IFLAG  = -13
-            IERROR = OMP_NUM
-            GOTO 490
+           IFLAG  = -13
+           IERROR = OMP_NUM
+           GOTO 490
          ENDIF
          IF (KEEP(480).GE.3) THEN
            DO MY_NUM=1,OMP_NUM
@@ -309,7 +303,8 @@ C
         IERROR = INFO_TMP(2) 
         IF (IFLAG.LT.0) GOTO 500
       ENDIF
-      IF (COMPRESS_CB.AND.NPARTSCB.GT.0) THEN
+      IF (COMPRESS_CB) THEN
+       IF (NPARTSCB.GT.0) THEN
         allocate(CB_LRB(NPARTSCB,NPARTSCB),stat=allocok)
         IF (allocok > 0) THEN
           IFLAG  = -13
@@ -326,6 +321,7 @@ C
         ENDDO
         ENDDO
         CALL SMUMPS_BLR_SAVE_CB_LRB(IW(IOLDPS+XXF),CB_LRB)
+       ENDIF
       ENDIF
       DO WHILE (IEND_BLR < NASS ) 
         CURRENT_BLR = CURRENT_BLR + 1
@@ -337,7 +333,7 @@ C
           BEGS_BLR( CURRENT_BLR ) = IBEG_BLR
           IF ( IEND_BLR - IBEG_BLR + 1 .GT. MAXI_CLUSTER ) THEN
             MAXI_CLUSTER = IEND_BLR - IBEG_BLR + 1
-            LWORK = MAXI_CLUSTER*MAXI_CLUSTER
+            LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
             DEALLOCATE(BLOCK, WORK, RWORK, TAU, JPVT)
             ALLOCATE(BLOCK(MAXI_CLUSTER, OMP_NUM*MAXI_CLUSTER),
      &             RWORK(2*MAXI_CLUSTER*OMP_NUM), 
@@ -373,7 +369,7 @@ C
                 CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              0, 
-     &              CURRENT_BLR, BLR_L)
+     &              CURRENT_BLR, BLR_L, 0)  
               ENDIF
             ELSE
               IF (NB_BLR.GT.CURRENT_BLR) THEN
@@ -394,7 +390,7 @@ C
                 CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              0, 
-     &              CURRENT_BLR+1, NEXT_BLR_L)
+     &      CURRENT_BLR+1, NEXT_BLR_L, 0)
               ENDIF
             ENDIF
           ELSE
@@ -439,7 +435,7 @@ C
               INOPV = -1
               GOTO 50 
             ENDIF
-            LASTBL = .TRUE.
+            LASTPANEL = .TRUE.
           ELSE IF ( INOPV.LE.0 ) THEN 
             INOPV = 0
             NPVW = NPVW + PIVSIZ
@@ -472,11 +468,11 @@ C
             IF (IFINB.EQ.0) THEN
               GOTO 50 
             ELSE IF (IFINB.EQ.-1) THEN
-              LASTBL = .TRUE.
+              LASTPANEL = .TRUE.
             ENDIF
           ENDIF
           IF ( OOC_EFF_AND_WRITE_BYPANEL ) THEN
-            MonBloc%Last = LASTBL
+            MonBloc%Last = LASTPANEL
             MonBloc%LastPiv= IW(IOLDPS+1+XSIZE)
             LAST_CALL=.FALSE.
             CALL SMUMPS_OOC_IO_LU_PANEL(
@@ -521,7 +517,7 @@ C
           ELSE
             LAST_ROW = IEND_BLR
           ENDIF
-          CALL SMUMPS_FAC_SQ_LDLT(IBEG_BLR,IEND_BLR,NPIV,
+            CALL SMUMPS_FAC_SQ_LDLT(IBEG_BLR,IEND_BLR,NPIV,
      &             NFRONT,NASS,INODE,A,LA,
      &             LDA, POSELT,
      &             KEEP, KEEP8,
@@ -549,7 +545,7 @@ C
               CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              0, 
-     &              CURRENT_BLR, BLR_L)
+     &              CURRENT_BLR, BLR_L, 0)
               NULLIFY(BLR_L)
             IF (KEEP(480).GE.2 .AND. IEND_BLR.LT.NASS) THEN
               IF (LRTRSM_OPTION.EQ.2) THEN
@@ -694,7 +690,7 @@ C
               CALL SMUMPS_BLR_SAVE_PANEL_LORU (
      &              IW(IOLDPS+XXF),
      &              0, 
-     &              CURRENT_BLR, BLR_L)
+     &          CURRENT_BLR, BLR_L, 0)  
             ENDIF
           ENDIF
 #if ! defined(BLR_NOOPENMP)
@@ -770,7 +766,7 @@ C
           NULLIFY(BLR_L)
         ENDIF
         IF ( OOC_EFF_AND_WRITE_BYPANEL ) THEN
-             MonBloc%Last = LASTBL
+             MonBloc%Last = LASTPANEL
              MonBloc%LastPiv= NPIV
              LAST_CALL=.FALSE.
              CALL SMUMPS_OOC_IO_LU_PANEL(
@@ -840,7 +836,7 @@ C
             ENDDO
             CALL SMUMPS_BLR_SAVE_DIAG_BLOCK(
      &            IW(IOLDPS+XXF),
-     &            IP, DIAG)
+     &            IP, DIAG, KEEP(34))
           ENDDO
 #if ! defined(BLR_NOOPENMP)
 !$OMP ENDDO
@@ -934,7 +930,7 @@ C
             IEND_BLR = BEGS_BLR(CURRENT_BLR+2)
             IF ( IEND_BLR - IBEG_BLR + 1 .GT. MAXI_CLUSTER ) THEN
               MAXI_CLUSTER = IEND_BLR - IBEG_BLR + 1
-              LWORK = MAXI_CLUSTER*MAXI_CLUSTER
+              LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
               DEALLOCATE(BLOCK, WORK, RWORK, TAU, JPVT)
               ALLOCATE(BLOCK(MAXI_CLUSTER, OMP_NUM*MAXI_CLUSTER),
      &             RWORK(2*MAXI_CLUSTER*OMP_NUM), 

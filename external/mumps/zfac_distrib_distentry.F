@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -97,12 +97,14 @@ C
      & PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      & FILS, KEEP,KEEP8, MYID, COMM, NBRECORDS,
      &
-     & A, LA, root, PROCNODE_STEPS, SLAVEF, PERM, STEP,
+     & A, LA, root, roota, PROCNODE_STEPS, SLAVEF, PERM, STEP,
      & ICNTL, INFO, NSEND8, NLOCAL8,
      & ISTEP_TO_INIV2, CANDIDATES
      & )
 !$    USE OMP_LIB
-      USE ZMUMPS_STRUC_DEF
+      USE ZMUMPS_STRUC_DEF, ONLY: ZMUMPS_STRUC
+      USE MUMPS_INTR_TYPES, ONLY: MUMPS_ROOT_STRUC
+      USE ZMUMPS_INTR_TYPES, ONLY: ZMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INTEGER N
       INTEGER(8) :: NZ_loc8
@@ -123,7 +125,8 @@ C
       INTEGER ISTEP_TO_INIV2(KEEP(71))
       INTEGER CANDIDATES(SLAVEF+1, max(1,KEEP(56)))
       COMPLEX(kind=8) A( LA )
-      TYPE (ZMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (ZMUMPS_ROOT_STRUC) :: roota
       INTEGER PROCNODE_STEPS(KEEP(28)), PERM( N ), STEP( N )
       INTEGER INFO( 80 ), ICNTL(60)
       INTEGER MUMPS_TYPESPLIT
@@ -293,7 +296,7 @@ C
      &        .OR.  ( KEEP(200) .LT. 0 .AND. KEEP(400) .EQ. 0 )
       IF ( KEEP(38) .NE. 0 .AND. EARLYT3ROOTINS ) THEN
         CALL ZMUMPS_GET_ROOT_INFO(root,LOCAL_M, LOCAL_N, PTR_ROOT, LA)
-        CALL ZMUMPS_SET_ROOT_TO_ZERO(root, KEEP, A, LA)
+        CALL ZMUMPS_SET_ROOT_TO_ZERO(root, roota, KEEP, A, LA)
       ELSE
         LOCAL_M = -19999; LOCAL_N = -29999; PTR_ROOT = -99999_8
       END IF
@@ -365,7 +368,8 @@ C
      &                   MSGSOU, ARR_REAL, COMM, STATUS, IERR )
               CALL ZMUMPS_DIST_TREAT_RECV_BUF(
      &               BUFRECI, BUFRECR, NBRECORDS, N, IW4(1,1),
-     &               KEEP,KEEP8, LOCAL_M, LOCAL_N, root, PTR_ROOT,
+     &               KEEP,KEEP8, LOCAL_M, LOCAL_N,
+     &               root, roota, PTR_ROOT,
      &               A, LA,
      &               END_MSG_2_RECV, MYID, PROCNODE_STEPS, SLAVEF,
      &               PTRAW,
@@ -496,10 +500,10 @@ C
      &                   + int(ILOCROOT - 1,8) )
      &                 + VAL
                      ELSE
-                       root%SCHUR_POINTER( int(JLOCROOT-1,8)
+                       roota%SCHUR_POINTER( int(JLOCROOT-1,8)
      &                                 * int(root%SCHUR_LLD,8)
      &                                 + int(ILOCROOT,8) )
-     &                 = root%SCHUR_POINTER( int(JLOCROOT - 1,8)
+     &                 = roota%SCHUR_POINTER( int(JLOCROOT - 1,8)
      &                                 * int(root%SCHUR_LLD,8)
      &                                 + int(ILOCROOT,8))
      &                 + VAL
@@ -606,7 +610,7 @@ C
      &                 MSGSOU, ARR_REAL, COMM, STATUS, IERR )
         CALL ZMUMPS_DIST_TREAT_RECV_BUF(
      &           BUFRECI, BUFRECR, NBRECORDS, N, IW4(1,1),
-     &           KEEP,KEEP8, LOCAL_M, LOCAL_N, root, PTR_ROOT,
+     &           KEEP,KEEP8, LOCAL_M, LOCAL_N, root, roota, PTR_ROOT,
      &           A, LA,
      &           END_MSG_2_RECV, MYID, PROCNODE_STEPS, SLAVEF,
      &           PTRAW,
@@ -669,7 +673,7 @@ C
      &                  ARR_REAL, COMM, STATUS, IERR )
                   CALL ZMUMPS_DIST_TREAT_RECV_BUF(
      &              BUFRECI, BUFRECR, NBRECORDS, N, IW4(1,1),
-     &              KEEP,KEEP8, LOCAL_M, LOCAL_N, root, PTR_ROOT,
+     &              KEEP,KEEP8, LOCAL_M, LOCAL_N, root, roota, PTR_ROOT,
      &              A, LA,
      &              END_MSG_2_RECV, MYID, PROCNODE_STEPS, SLAVEF,
      &              PTRAW,
@@ -715,7 +719,7 @@ C
      &              BUFI(1,3-IACT(ISLAVE),ISLAVE),
      &              BUFR(1,3-IACT(ISLAVE),ISLAVE),
      &              NBRECORDS, N, IW4(1,1),
-     &              KEEP,KEEP8, LOCAL_M, LOCAL_N, root, PTR_ROOT,
+     &              KEEP,KEEP8, LOCAL_M, LOCAL_N, root, roota, PTR_ROOT,
      &              A, LA,
      &              END_MSG_2_RECV, MYID, PROCNODE_STEPS, SLAVEF,
      &              PTRAW,
@@ -729,16 +733,19 @@ C
       END SUBROUTINE ZMUMPS_REDISTRIBUTION
       SUBROUTINE ZMUMPS_DIST_TREAT_RECV_BUF
      &           ( BUFI, BUFR, NBRECORDS, N, IW4,
-     &             KEEP,KEEP8, LOCAL_M, LOCAL_N, root, PTR_ROOT, A, LA,
+     &             KEEP,KEEP8, LOCAL_M, LOCAL_N, root, roota,
+     &             PTR_ROOT, A, LA,
      &             END_MSG_2_RECV, MYID, PROCNODE_STEPS,
      &             SLAVEF,
      &             PTRAW, 
      &             PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &             PERM, STEP,
      &             INTARR, LINTARR, DBLARR, LDBLARR )
-      USE ZMUMPS_STRUC_DEF, ONLY : ZMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE ZMUMPS_INTR_TYPES, ONLY : ZMUMPS_ROOT_STRUC
       IMPLICIT NONE
-      TYPE (ZMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (ZMUMPS_ROOT_STRUC) :: roota
       INTEGER NBRECORDS, N, MYID, SLAVEF
       INTEGER BUFI( NBRECORDS * 2 + 1 )
       COMPLEX(kind=8) BUFR( NBRECORDS )
@@ -803,10 +810,10 @@ C
      &        + int(ILOCROOT - 1,8) )
      &      + VAL
           ELSE
-            root%SCHUR_POINTER( int(JLOCROOT-1,8)
+            roota%SCHUR_POINTER( int(JLOCROOT-1,8)
      &                      * int(root%SCHUR_LLD,8)
      &                      + int(ILOCROOT,8) )
-     &      = root%SCHUR_POINTER( int(JLOCROOT - 1,8)
+     &      = roota%SCHUR_POINTER( int(JLOCROOT - 1,8)
      &                      * int(root%SCHUR_LLD,8)
      &                      + int(ILOCROOT,8))
      &      + VAL

@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -12,7 +12,7 @@ C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       SUBROUTINE SMUMPS_PROCESS_ROOT2SLAVE( TOT_ROOT_SIZE,
-     &    TOT_CONT_TO_RECV, root,
+     &    TOT_CONT_TO_RECV, root, roota,
      &    BUFR, LBUFR, LBUFR_BYTES, PROCNODE_STEPS, POSFAC,
      &    IWPOS, IWPOSCB, IPTRLU,
      &    LRLU, LRLUS, N, IW, LIW, A, LA, PTRIST,
@@ -28,12 +28,14 @@ C
      &    PTRARW, PTRAIW,
      &    PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &    INTARR, DBLARR, ICNTL, KEEP, KEEP8, DKEEP, ND)
-      USE SMUMPS_LOAD
+      USE MUMPS_LOAD
       USE SMUMPS_OOC        
-      USE SMUMPS_STRUC_DEF, ONLY : SMUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       IMPLICIT NONE
       INCLUDE 'mpif.h'
-      TYPE (SMUMPS_ROOT_STRUC) :: root
+      TYPE (MUMPS_ROOT_STRUC) :: root
+      TYPE (SMUMPS_ROOT_STRUC) :: roota
       INTEGER KEEP(500), ICNTL(60)
       INTEGER(8) KEEP8(150)
       REAL DKEEP(230)
@@ -149,19 +151,20 @@ C
         PTRFAC(STEP(IROOT)) = -4445_8
         IF (root%yes .and. NO_OLD_ROOT) THEN
           IF (NEW_LOCAL_N .GT. 0) THEN
-            CALL SMUMPS_SET_TO_ZERO(root%SCHUR_POINTER(1),
+            CALL SMUMPS_SET_TO_ZERO(roota%SCHUR_POINTER(1),
      &      root%SCHUR_LLD, root%SCHUR_MLOC, root%SCHUR_NLOC,
      &      KEEP)
             IF (KEEP(55).EQ.0) THEN
-              CALL SMUMPS_ASM_ARR_ROOT( N, root, IROOT, STEP(IROOT),
-     &        root%SCHUR_POINTER(1), root%SCHUR_LLD, root%SCHUR_MLOC,
+              CALL SMUMPS_ASM_ARR_ROOT( N, root, roota,
+     &        IROOT, STEP(IROOT),
+     &        roota%SCHUR_POINTER(1), root%SCHUR_LLD, root%SCHUR_MLOC,
      &        root%SCHUR_NLOC, FILS,
      &        KEEP, PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &        INTARR, DBLARR,
      &        KEEP8(27), KEEP8(26), MYID )
             ELSE
-              CALL SMUMPS_ASM_ELT_ROOT(N, root,
-     &        root%SCHUR_POINTER(1), root%SCHUR_LLD, root%SCHUR_MLOC,
+              CALL SMUMPS_ASM_ELT_ROOT(N, root, roota,
+     &        roota%SCHUR_POINTER(1), root%SCHUR_LLD, root%SCHUR_MLOC,
      &        root%SCHUR_NLOC, LPTRAR, NELT, FRTPTR, FRTELT,
      &        PTRAIW, PTRARW, INTARR, DBLARR,
      &        KEEP8(27), KEEP8(26), KEEP, KEEP8, MYID )
@@ -201,7 +204,7 @@ C
         KEEP8(67) = min(KEEP8(67), LRLUS)
         KEEP8(69) = KEEP8(69) + LREQA
         KEEP8(68) = max(KEEP8(69), KEEP8(68))
-        CALL SMUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
+        CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,
      &            LA-LRLUS,0_8,LREQA,KEEP,KEEP8,LRLUS)
         POSHEAD = PTLUST( STEP(IROOT))
         IW( POSHEAD + XXI )     = LREQI
@@ -223,7 +226,8 @@ C
           CALL SMUMPS_SET_TO_ZERO(A(PTRAST(STEP(IROOT))),
      &    NEW_LOCAL_M, NEW_LOCAL_M, NEW_LOCAL_N, KEEP)
           IF (KEEP(55) .EQ.0 ) THEN
-            CALL SMUMPS_ASM_ARR_ROOT( N, root, IROOT, STEP(IROOT),
+            CALL SMUMPS_ASM_ARR_ROOT( N, root, roota,
+     &      IROOT, STEP(IROOT),
      &      A(PTRAST(STEP(IROOT))),
      &      NEW_LOCAL_M, NEW_LOCAL_M, NEW_LOCAL_N,
      &      FILS,
@@ -231,7 +235,7 @@ C
      &      INTARR, DBLARR,
      &      KEEP8(27), KEEP8(26), MYID )
           ELSE
-            CALL SMUMPS_ASM_ELT_ROOT( N, root,
+            CALL SMUMPS_ASM_ELT_ROOT( N, root, roota,
      &      A(PTRAST(STEP(IROOT))),
      &      NEW_LOCAL_M, NEW_LOCAL_M, NEW_LOCAL_N,
      &      LPTRAR, NELT, FRTPTR, FRTELT,
@@ -281,8 +285,8 @@ C
           ELSE
             root%RHS_NLOC = 1
           ENDIF
-          IF (associated(root%RHS_ROOT)) DEALLOCATE(root%RHS_ROOT)
-          ALLOCATE(root%RHS_ROOT(NEW_LOCAL_M, root%RHS_NLOC),
+          IF (associated(roota%RHS_ROOT)) DEALLOCATE(roota%RHS_ROOT)
+          ALLOCATE(roota%RHS_ROOT(NEW_LOCAL_M, root%RHS_NLOC),
      &              stat=allocok)
           IF ( allocok.GT.0 ) THEN
              IFLAG = -13
@@ -290,14 +294,14 @@ C
             GOTO 700
           ENDIF
           IF (KEEP(253) .NE. 0) THEN
-            root%RHS_ROOT=ZERO
-            CALL SMUMPS_ASM_RHS_ROOT( N, FILS, root, KEEP, KEEP8,
+            roota%RHS_ROOT=ZERO
+            CALL SMUMPS_ASM_RHS_ROOT( N, FILS, root, roota, KEEP, KEEP8,
      &      RHS_MUMPS, IFLAG, IERROR )
           ENDIF
       ELSE IF (NEW_LOCAL_M.GT.OLD_LOCAL_M .AND. KEEP(253) .GT.0) THEN
-          TMP => root%RHS_ROOT
-          NULLIFY(root%RHS_ROOT)
-          ALLOCATE (root%RHS_ROOT(NEW_LOCAL_M, root%RHS_NLOC), 
+          TMP => roota%RHS_ROOT
+          NULLIFY(roota%RHS_ROOT)
+          ALLOCATE (roota%RHS_ROOT(NEW_LOCAL_M, root%RHS_NLOC), 
      &                stat=allocok)
           IF ( allocok.GT.0) THEN
               IFLAG=-13
@@ -306,10 +310,10 @@ C
           ENDIF
           DO J = 1, root%RHS_NLOC
             DO I = 1, OLD_LOCAL_M
-              root%RHS_ROOT(I,J)=TMP(I,J)
+              roota%RHS_ROOT(I,J)=TMP(I,J)
             ENDDO
             DO I = OLD_LOCAL_M+1, NEW_LOCAL_M
-              root%RHS_ROOT(I,J) = ZERO
+              roota%RHS_ROOT(I,J) = ZERO
             ENDDO
           ENDDO
           DEALLOCATE(TMP)
@@ -326,7 +330,7 @@ C
      &       SLAVEF, KEEP(199), KEEP(28), KEEP(76), KEEP(80), KEEP(47),
      &       STEP, IROOT + N )
         IF (KEEP(47) .GE. 3) THEN
-           CALL SMUMPS_LOAD_POOL_UPD_NEW_POOL(
+           CALL MUMPS_LOAD_POOL_UPD_NEW_POOL(
      &          IPOOL, LPOOL, 
      &          PROCNODE_STEPS, KEEP,KEEP8, SLAVEF, COMM_LOAD,
      &          MYID, STEP, N, ND, FILS )

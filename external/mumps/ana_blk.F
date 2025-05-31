@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -360,6 +360,10 @@ C
      &     LMAT, GCOMP, INFO, ICNTL
      &     , MEMCNT )
       USE MUMPS_ANA_BLK_M, ONLY : LMATRIX_T, COMPACT_GRAPH_T
+#if defined(DETERMINISTIC_PARALLEL_GRAPH)
+      USE MUMPS_TOOLS_COMMON_M, ONLY : MUMPS_MERGESORT,
+     &                                 MUMPS_MERGESWAP1
+#endif
       IMPLICIT NONE
       INTEGER, INTENT(IN)    :: MYID
       LOGICAL, INTENT(IN)    :: UNFOLD, READY_FOR_ANA_F
@@ -490,93 +494,6 @@ C
      &          + (GCOMP%LAST-GCOMP%FIRST+1)+1 
      &          + 5
       RETURN
-#if defined(DETERMINISTIC_PARALLEL_GRAPH)
-      CONTAINS
-      SUBROUTINE MUMPS_MERGESORT(N, K, L)
-      INTEGER    :: N
-      INTEGER    :: K(:), L(0:)
-      INTEGER    :: P, Q, S, T
-      L(0) = 1
-      T = N + 1
-      DO  P = 1,N - 1
-         IF (K(P) <= K(P+1)) THEN
-            L(P) = P + 1
-         ELSE
-            L(T) = - (P+1)
-            T = P
-       END IF
-      END DO
-      L(T) = 0
-      L(N) = 0
-      IF (L(N+1) == 0) THEN
-         RETURN 
-      ELSE
-         L(N+1) = iabs(L(N+1))
-      END IF
- 200  CONTINUE
-      S = 0
-      T = N+1
-      P = L(S)
-      Q = L(T)
-      IF(Q .EQ. 0) RETURN
- 300  CONTINUE
-      IF(K(P) .GT. K(Q)) GOTO 600 
-      L(S) = sign(P,L(S))
-      S = P
-      P = L(P)
-      IF (P .GT. 0) GOTO 300
-      L(S) = Q
-      S = T
-      DO
-         T = Q
-         Q = L(Q)
-         IF (Q .LE. 0) EXIT
-      END DO
-      GOTO 800
- 600  CONTINUE
-      L(S) = sign(Q, L(S))
-      S = Q
-      Q = L(Q)
-      IF (Q .GT. 0) GOTO 300
-      L(S) = P
-      S = T
-      DO
-         T = P
-         P = L(P)
-         IF (P .LE. 0) EXIT
-      END DO
- 800  CONTINUE
-      P = -P
-      Q = -Q
-      IF(Q.EQ.0) THEN
-         L(S) = sign(P, L(S))
-         L(T) = 0
-         GOTO 200
-      END IF
-      GOTO 300
-      END SUBROUTINE MUMPS_MERGESORT
-      SUBROUTINE MUMPS_MERGESWAP1(N, L, A)
-      INTEGER   :: I, LP, ISWAP, N
-      INTEGER   :: L(0:), A(:)
-      LP = L(0)
-      I  = 1
-      DO 
-         IF ((LP==0).OR.(I>N)) EXIT
-         DO 
-            IF (LP >= I) EXIT
-            LP = L(LP)
-         END DO
-         ISWAP    = A(LP)
-         A(LP)   = A(I)
-         A(I)    = ISWAP
-         ISWAP    = L(LP)
-         L(LP) = L(I)
-         L(I)  = LP
-         LP = ISWAP 
-         I  = I + 1
-      ENDDO
-      END SUBROUTINE MUMPS_MERGESWAP1
-#endif
       END SUBROUTINE MUMPS_AB_LMAT_TO_CLEAN_G
       SUBROUTINE MUMPS_AB_COL_DISTRIBUTION ( OPTION,
      &     INFO, ICNTL, COMM, NBLK, MYID, NPROCS,

@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -11,8 +11,9 @@ C  released under the CeCILL-C license
 C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
-      SUBROUTINE DMUMPS_END_DRIVER( id )
-      USE DMUMPS_STRUC_DEF
+      SUBROUTINE DMUMPS_END_DRIVER( id, idintr )
+      USE DMUMPS_STRUC_DEF, ONLY: DMUMPS_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY: DMUMPS_INTR_STRUC
       IMPLICIT NONE
 C
 C     Purpose:
@@ -24,7 +25,8 @@ C
 C     Argument:
 C     ========
 C
-      TYPE( DMUMPS_STRUC ) :: id
+      TYPE( DMUMPS_STRUC )      :: id
+      TYPE( DMUMPS_INTR_STRUC ) :: idintr
 C
 C     Local declarations
 C     ==================
@@ -36,7 +38,7 @@ C     =====================
 C
 C     First, free all MUMPS internal data except communicators created
 C     during a call to MUMPS wit JOB=-1
-      CALL DMUMPS_FREE_DATA_ANAFACSOL( id )
+      CALL DMUMPS_FREE_DATA_ANAFACSOL( id, idintr )
 C
 C     Allocated during JOB=-1:
       IF ( id%MYID .NE. MASTER .OR. id%KEEP(46) .ne. 0 ) THEN
@@ -57,8 +59,25 @@ C
       RETURN
       END SUBROUTINE DMUMPS_END_DRIVER
 C
-      SUBROUTINE DMUMPS_FREE_DATA_ANAFACSOL(id)
+      SUBROUTINE DMUMPS_END_ROOT(roota)
+      USE DMUMPS_INTR_TYPES, ONLY: DMUMPS_ROOT_STRUC
+      IMPLICIT NONE
+      TYPE(DMUMPS_ROOT_STRUC) :: roota
+      IF (associated(roota%RHS_CNTR_MASTER_ROOT)) THEN
+        DEALLOCATE(roota%RHS_CNTR_MASTER_ROOT)
+        NULLIFY(roota%RHS_CNTR_MASTER_ROOT)
+      ENDIF
+      IF (associated(roota%RHS_ROOT))THEN
+        DEALLOCATE(roota%RHS_ROOT)
+        NULLIFY(roota%RHS_ROOT)
+      ENDIF
+      CALL DMUMPS_RR_FREE_POINTERS(roota)
+      RETURN
+      END SUBROUTINE DMUMPS_END_ROOT
+C
+      SUBROUTINE DMUMPS_FREE_DATA_ANAFACSOL(id, idintr)
       USE DMUMPS_STRUC_DEF
+      USE DMUMPS_INTR_TYPES, ONLY: DMUMPS_INTR_STRUC
       IMPLICIT NONE
 C
 C   Purpose:
@@ -73,7 +92,10 @@ C   Therefore, scaling arrays and STEP2NODE are freed here.
 C
 C   Arguments
 C   =========
-      TYPE( DMUMPS_STRUC ) :: id
+      TYPE( DMUMPS_STRUC )      :: id
+      TYPE( DMUMPS_INTR_STRUC ) :: idintr
+C  Local declarations
+C  ==================
       LOGICAL I_AM_SLAVE
       INTEGER, PARAMETER :: MASTER = 0
 C
@@ -83,7 +105,7 @@ C
       I_AM_SLAVE = ( id%MYID .ne. MASTER .OR. id%KEEP(46) .NE. 0 )
 C
 C     First, free data from factoriation and solve:
-      CALL DMUMPS_FREE_DATA_FACTO(id)
+      CALL DMUMPS_FREE_DATA_FACTO(id,idintr)
 C      -------------------------------------
 C      Right-hand-side and solutions are
 C      always user data, we do not free them
@@ -166,32 +188,7 @@ C     Allocated during analysis:
         DEALLOCATE(id%UNS_PERM)
         NULLIFY(id%UNS_PERM)
       ENDIF
-C     Allocated during analysis:
-      IF (associated(id%PTRAR))     THEN
-        DEALLOCATE(id%PTRAR)
-        NULLIFY(id%PTRAR)
-      ENDIF
-C     Allocated during analysis:
-      IF (associated(id%PTR8ARR))   THEN
-        DEALLOCATE(id%PTR8ARR)
-        NULLIFY(id%PTR8ARR)
-      ENDIF
-C     Allocated during analysis:
-      IF (associated(id%NINCOLARR))   THEN
-        DEALLOCATE(id%NINCOLARR)
-        NULLIFY(id%NINCOLARR)
-      ENDIF
-C     Allocated during analysis:
-      IF (associated(id%NINROWARR))   THEN
-        DEALLOCATE(id%NINROWARR)
-        NULLIFY(id%NINROWARR)
-      ENDIF
-C     Allocated during analysis:
-      IF (associated(id%PTRDEBARR))   THEN
-        DEALLOCATE(id%PTRDEBARR)
-        NULLIFY(id%PTRDEBARR)
-      ENDIF
-C     Allocated during analysis:
+CC     Allocated during analysis:
       IF (associated(id%FRTPTR))    THEN
         DEALLOCATE(id%FRTPTR)
         NULLIFY(id%FRTPTR)
@@ -280,6 +277,11 @@ C     Allocated and initialized at analysis:
         DEALLOCATE(id%CROIX_MANU)
         NULLIFY(id%CROIX_MANU)
       ENDIF
+C     Allocated during analysis:
+      IF (associated(id%PTRAR))     THEN
+        DEALLOCATE(id%PTRAR)
+        NULLIFY(id%PTRAR)
+      ENDIF
 C     Allocated at analysis:
       IF (associated(id%MEM_SUBTREE)) THEN
         DEALLOCATE(id%MEM_SUBTREE)
@@ -322,6 +324,41 @@ C     Allocated at analysis:
            NULLIFY(id%LRGROUPS)
         ENDIF
 !     ENDIF
+C
+C     free data concerned when redoing cheap analysis
+      CALL DMUMPS_FREE_DATA_REDO_ANA( id )
+C
+C     gridinit performed at analysis:
+#if ! defined(NOSCALAPACK)
+      IF (idintr%root%gridinit_done) THEN
+        IF ( id%KEEP(38).NE.0 .and. idintr%root%yes ) THEN
+          CALL blacs_gridexit( idintr%root%CNTXT_BLACS )
+          idintr%root%gridinit_done = .FALSE.
+        END IF
+      END IF
+#endif
+      RETURN
+      END SUBROUTINE DMUMPS_FREE_DATA_ANAFACSOL
+      SUBROUTINE DMUMPS_FREE_DATA_REDO_ANA ( id )
+      USE DMUMPS_STRUC_DEF
+      IMPLICIT NONE
+C
+C   Purpose:
+C   =======
+C   Free all MUMPS internal data concerned 
+C   when redoing a cheap analysis :
+C    - data related to MPI2KOMP allocated during analysis
+C    - data related to L0OMP allocated during analysis
+C    - data related to building arrowheads because 
+C      of EARLYT3ROOTINS that might change when of
+C      L0-thread (KEEP(400)
+C   Arguments
+C   =========
+      TYPE( DMUMPS_STRUC ) :: id
+C
+C     Executable statements
+C     ---------------------
+CCN#if defined(MPI_TO_K_OMP)
 C     Allocated at analysis:
       IF (associated(id%MTKO_PROCS_MAP)) THEN
         DEALLOCATE(id%MTKO_PROCS_MAP)
@@ -366,17 +403,37 @@ C     Allocated at analysis:
         DEALLOCATE(id%I8_L0_OMP)
         NULLIFY(id%I8_L0_OMP)
       END IF
-C     gridinit performed at analysis:
-#if ! defined(NOSCALAPACK)
-      IF (id%root%gridinit_done) THEN
-        IF ( id%KEEP(38).NE.0 .and. id%root%yes ) THEN
-          CALL blacs_gridexit( id%root%CNTXT_BLACS )
-          id%root%gridinit_done = .FALSE.
-        END IF
-      END IF
-#endif
+C     =================================================
+C     BEGIN Pointers to original matrix
+C     allocated during analysis
+C     in format ready for assembly during factorization
+C     (arrowheads if assembled format)
+C     Allocated during analysis:
+C     id%PTRAR is allocated in ana_driver and
+C     should not be deallocated here (it does not 
+C     change in sze)
+      IF (associated(id%PTR8ARR))   THEN
+        DEALLOCATE(id%PTR8ARR)
+        NULLIFY(id%PTR8ARR)
+      ENDIF
+C     Allocated during analysis:
+      IF (associated(id%NINCOLARR))   THEN
+        DEALLOCATE(id%NINCOLARR)
+        NULLIFY(id%NINCOLARR)
+      ENDIF
+C     Allocated during analysis:
+      IF (associated(id%NINROWARR))   THEN
+        DEALLOCATE(id%NINROWARR)
+        NULLIFY(id%NINROWARR)
+      ENDIF
+C     Allocated during analysis:
+      IF (associated(id%PTRDEBARR))   THEN
+        DEALLOCATE(id%PTRDEBARR)
+        NULLIFY(id%PTRDEBARR)
+      ENDIF
+C     =================================================
       RETURN
-      END SUBROUTINE DMUMPS_FREE_DATA_ANAFACSOL
+      END SUBROUTINE DMUMPS_FREE_DATA_REDO_ANA
       SUBROUTINE DMUMPS_FREE_ID_DATA_MODULES(id_FDM_F_ENCODING,
      &  id_BLRARRAY_ENCODING, KEEP8, K34)
       USE MUMPS_FRONT_DATA_MGT_M, only : MUMPS_FDM_STRUC_TO_MOD,
@@ -432,7 +489,7 @@ C       ---------------------------------------
 C
 C     -----------------------------------------------------------------
 C
-      SUBROUTINE DMUMPS_FREE_DATA_FACTO(id)
+      SUBROUTINE DMUMPS_FREE_DATA_FACTO(id,idintr)
 C
 C     Purpose:
 C     -------
@@ -444,19 +501,23 @@ C     is possible.
 C     
 C     Module depencies
 C     ----------------
-      USE DMUMPS_STRUC_DEF
-      USE DMUMPS_OOC, ONLY : DMUMPS_CLEAN_OOC_DATA
+      USE DMUMPS_STRUC_DEF, ONLY: DMUMPS_STRUC
+      USE DMUMPS_INTR_TYPES, ONLY: DMUMPS_INTR_STRUC
       USE DMUMPS_FACSOL_L0OMP_M, ONLY : DMUMPS_FREE_L0_OMP_FACTORS
-      USE DMUMPS_BUF
+      USE DMUMPS_DYNAMIC_MEMORY_M, ONLY : DMUMPS_DM_FREE_S_WK
+      USE MUMPS_BUF_COMMON, ONLY : 
+     &    MUMPS_BUF_DEALL_CB,
+     &    MUMPS_BUF_DEALL_SMALL_BUF
       IMPLICIT NONE
 C
 C     Argument:
 C     --------
 C
-C     id is the main MUMPS structure, giving access to all internal
-C     objects allocated by the package.
+C     id is the main MUMPS structure, giving with idintr access
+C     to all internal objects allocated by the package.
 C
       TYPE( DMUMPS_STRUC) :: id
+      TYPE( DMUMPS_INTR_STRUC ) :: idintr
 C
 C     Local declarations
 C     ------------------
@@ -526,19 +587,11 @@ C     (this includes suppression of OOC files)
       NULLIFY(id%COLSCA_loc)
 C     IPIV is used both for ScaLAPACK and RR
 C     Keep it outside DMUMPS_RR_FREE_POINTERS
-      IF (associated(id%root%IPIV))    THEN
-        DEALLOCATE(id%root%IPIV)
-        NULLIFY(id%root%IPIV)
+      IF (associated(idintr%root%IPIV))    THEN
+        DEALLOCATE(idintr%root%IPIV)
+        NULLIFY(idintr%root%IPIV)
       ENDIF
-      IF (associated(id%root%RHS_CNTR_MASTER_ROOT)) THEN
-        DEALLOCATE(id%root%RHS_CNTR_MASTER_ROOT)
-        NULLIFY(id%root%RHS_CNTR_MASTER_ROOT)
-      ENDIF
-      IF (associated(id%root%RHS_ROOT))THEN
-        DEALLOCATE(id%root%RHS_ROOT)
-        NULLIFY(id%root%RHS_ROOT)
-      ENDIF
-      CALL DMUMPS_RR_FREE_POINTERS(id)
+      CALL DMUMPS_END_ROOT(idintr%roota)
       IF (associated(id%SINGULAR_VALUES)) THEN
         DEALLOCATE(id%SINGULAR_VALUES)
         NULLIFY(id%SINGULAR_VALUES)
@@ -552,9 +605,13 @@ C     ---------------------------
       IF (id%KEEP8(24).EQ.0_8) THEN
 C       -- deallocate only when not provided/allocated by the user
         IF (associated(id%S)) THEN
-          DEALLOCATE(id%S)
-          id%KEEP8(23)=0_8
+          CALL DMUMPS_DM_FREE_S_WK(id%S, id%KEEP(430))
         ENDIF
+C       Reset KEEP(430)=0 since S is free
+C       KEEP(430) will be redefined during facto
+        id%KEEP(430) = 0
+C       Update allocated size of S:
+        id%KEEP8(23)=0_8
       ENDIF
       NULLIFY(id%S)
       IF (I_AM_SLAVE) THEN
@@ -565,17 +622,17 @@ C       solve). Note that this
 C       will cancel all possible
 C       pending requests.
 C       ------------------------
-        CALL DMUMPS_BUF_DEALL_CB( IERR )
+        CALL MUMPS_BUF_DEALL_CB( IERR )
 C       Deallocate buffer for integers (facto/solve)
-        CALL DMUMPS_BUF_DEALL_SMALL_BUF( IERR )
+        CALL MUMPS_BUF_DEALL_SMALL_BUF( IERR )
       END IF
 C
       IF (associated(id%L0_OMP_MAPPING)) THEN
         DEALLOCATE(id%L0_OMP_MAPPING)
         NULLIFY(id%L0_OMP_MAPPING)
       END IF
-      IF (associated(id%L0_OMP_FACTORS)) THEN
-        CALL DMUMPS_FREE_L0_OMP_FACTORS(id%L0_OMP_FACTORS)
+      IF (associated(idintr%L0_OMP_FACTORS)) THEN
+        CALL DMUMPS_FREE_L0_OMP_FACTORS(idintr%L0_OMP_FACTORS)
       END IF
 C
 C     Data allocated during solve
@@ -622,8 +679,8 @@ C
 C     Argument:
 C     --------
 C
-C     id is the main MUMPS structure, giving access to all internal
-C     objects allocated by the package.
+C     id is the main MUMPS structure, giving with idintr access
+C     to all internal objects allocated by the package.
 C
       TYPE( DMUMPS_STRUC) :: id
 C
@@ -644,3 +701,81 @@ C
       ENDIF
       RETURN
       END SUBROUTINE DMUMPS_FREE_DATA_RHSINTR
+      SUBROUTINE DMUMPS_CLEAN_OOC_DATA(id,IERR)
+      USE DMUMPS_STRUC_DEF, ONLY : DMUMPS_STRUC
+      IMPLICIT NONE
+      TYPE(DMUMPS_STRUC) :: id
+      INTEGER IERR
+      IERR=0
+      CALL DMUMPS_OOC_CLEAN_FILES(id,IERR)
+      IF(associated(id%OOC_TOTAL_NB_NODES))THEN
+         DEALLOCATE(id%OOC_TOTAL_NB_NODES)
+         NULLIFY(id%OOC_TOTAL_NB_NODES)
+      ENDIF
+      IF(associated(id%OOC_INODE_SEQUENCE))THEN
+         DEALLOCATE(id%OOC_INODE_SEQUENCE)
+         NULLIFY(id%OOC_INODE_SEQUENCE)
+      ENDIF
+      IF(associated(id%OOC_SIZE_OF_BLOCK))THEN
+         DEALLOCATE(id%OOC_SIZE_OF_BLOCK)
+         NULLIFY(id%OOC_SIZE_OF_BLOCK)
+      ENDIF
+      IF(associated(id%OOC_VADDR))THEN
+         DEALLOCATE(id%OOC_VADDR)
+         NULLIFY(id%OOC_VADDR)
+      ENDIF
+      RETURN
+      END SUBROUTINE DMUMPS_CLEAN_OOC_DATA
+      SUBROUTINE DMUMPS_OOC_CLEAN_FILES(id,IERR)
+      USE DMUMPS_STRUC_DEF
+      USE MUMPS_OOC_COMMON, ONLY : ERR_STR_OOC,
+     &                             DIM_ERR_STR_OOC,
+     &                             FILENAMELENGTH
+      IMPLICIT NONE
+      EXTERNAL MUMPS_OOC_REMOVE_FILE_C
+      TYPE(DMUMPS_STRUC) :: id
+      INTEGER IERR
+      INTEGER I,J,I1,K
+      CHARACTER(len=1):: TMP_NAME(FILENAMELENGTH)
+C     Note that Fortran initializes IERR to 0.
+C     The C layer modifies it in case of error.
+      IERR=0
+      K=1
+C     WHEN SAVE/RESTORE IS ON, OOC FILES ASSOCIATED TO A SAVED INSTANCE
+C     ARE NOT REMOVED
+      IF(.NOT. id%ASSOCIATED_OOC_FILES) THEN
+        IF(associated(id%OOC_FILE_NAMES).AND.
+     &       associated(id%OOC_FILE_NAME_LENGTH))THEN
+           DO I1=1,id%OOC_NB_FILE_TYPE
+              DO I=1,id%OOC_NB_FILES(I1)
+                 DO J=1,id%OOC_FILE_NAME_LENGTH(K)
+                    TMP_NAME(J)=id%OOC_FILE_NAMES(K,J)
+                 ENDDO
+C       Note that termination character '0' is included
+                 CALL MUMPS_OOC_REMOVE_FILE_C(IERR, TMP_NAME(1))
+                 IF(IERR.LT.0)THEN
+                    IF (id%ICNTL(1).GT.0 .AND. id%ICNTL(4).GE.1)THEN
+                       WRITE(id%ICNTL(1),*) id%MYID,': ',
+     &                      ERR_STR_OOC(1:DIM_ERR_STR_OOC)
+                       RETURN
+                    ENDIF
+                 ENDIF
+                 K=K+1
+              ENDDO
+           ENDDO
+        ENDIF
+      ENDIF
+      IF(associated(id%OOC_FILE_NAMES))THEN
+         DEALLOCATE(id%OOC_FILE_NAMES)
+         NULLIFY(id%OOC_FILE_NAMES)
+      ENDIF
+      IF(associated(id%OOC_FILE_NAME_LENGTH))THEN
+         DEALLOCATE(id%OOC_FILE_NAME_LENGTH)
+         NULLIFY(id%OOC_FILE_NAME_LENGTH)
+      ENDIF      
+      IF(associated(id%OOC_NB_FILES))THEN
+         DEALLOCATE(id%OOC_NB_FILES)
+         NULLIFY(id%OOC_NB_FILES)
+      ENDIF
+      RETURN
+      END SUBROUTINE DMUMPS_OOC_CLEAN_FILES

@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -115,6 +115,9 @@ C
       INTEGER, TARGET    :: IDUMMY_ARRAY(1)
       INTEGER            :: LSIZEOFBLOCKS_PTR
       LOGICAL            :: SIZEOFBLOCKS_AVAIL
+#if defined (MUMPS_SCOTCHIMPORTOMPTHREADS)
+      INTEGER            :: ESMUMPSCONTEXT
+#endif
       EXTERNAL MUMPS_ANA_H, SMUMPS_ANA_J, 
      &     SMUMPS_ANA_K, SMUMPS_ANA_GNEW,
      &     SMUMPS_ANA_LNEW, SMUMPS_ANA_M
@@ -135,7 +138,8 @@ C
       ENDIF
       SCOTCH_SYMBOLIC=(KEEP(270).EQ.0) 
 #if defined(MUMPS_SCOTCHIMPORTOMPTHREADS)
-      SCOTCH_SYMBOLIC=.FALSE.
+      CALL MUMPS_SCOTCH_ESMUMPSCONTEXT( ESMUMPSCONTEXT )
+      SCOTCH_SYMBOLIC=SCOTCH_SYMBOLIC .AND. (ESMUMPSCONTEXT.EQ.1)
 #endif
       symmetry      = INFO(8)
       NBQD          = 0
@@ -1060,7 +1064,8 @@ C
      &     KEEP(20),KEEP(38),PTRAR(1,2),KEEP(104),IW(1),KEEP(50), 
      &     ICNTL(13), KEEP(37), KEEP(197), NSLAVES, KEEP(250).EQ.1,
      &     SIZEOFBLOCKS_AVAIL, SIZEOFBLOCKS_PTR(1), LSIZEOFBLOCKS_PTR
-     &     , INODE_Scalapack_CAND, NBSONS_Scalapack_CAND, KEEP(11)
+     &     , INODE_Scalapack_CAND, NBSONS_Scalapack_CAND, 
+     &     KEEP(11), KEEP(191), KEEP(192), KEEP(193)
      &      )
       DEALLOCATE(WTEMP)
       IF (KEEP(60).NE.0)  THEN
@@ -1724,7 +1729,15 @@ C
             ENDIF
          ENDDO
       ENDIF
-      IF (NUMNZ.LT.N) GO TO 400
+      IF (NUMNZ.LT.N) then
+        IF (MTRANSLOC.EQ.1) THEN
+         IF (MINVAL(PERM(1:N)) .LE. 0) THEN
+           GOTO 400
+         ENDIF
+        ELSE
+         GO TO 400
+        ENDIF
+      ENDIF
       IF(K50 .EQ. 0) THEN
          IDENT = .TRUE.
          IF (MTRANS .EQ. 0 ) GOTO 102
@@ -2240,7 +2253,7 @@ C
      &               ALLOW_AMALG_TINY_NODES 
      &               , BLKON, SIZEOFBLOCKS, LSIZEOFBLOCKS
      &               , INODE_Scalapack_CAND, NBSONS_Scalapack_CAND
-     &               , KEEP11
+     &               , KEEP11, KEEP191, KEEP192, KEEP193
      &               )
       IMPLICIT NONE
       INTEGER  N, NSTEPS, KEEP60, KEEP20, KEEP38, KEEP50
@@ -2260,7 +2273,7 @@ C
       INTEGER, INTENT(IN) :: SIZEOFBLOCKS(LSIZEOFBLOCKS) 
       INTEGER, INTENT(OUT):: INODE_Scalapack_CAND, 
      &                       NBSONS_Scalapack_CAND
-      INTEGER, INTENT(IN) :: KEEP11
+      INTEGER, INTENT(IN) :: KEEP11, KEEP191, KEEP192, KEEP193
 #if  defined(NOAMALGTOFATHER)
 #else
 #endif
@@ -2476,18 +2489,22 @@ C
      &          ROOT_WITH_FEW_SONS= .FALSE.
              ENDIF
            ENDIF
-           IF ( (NV(I).GT. 50*NV(DADI)).AND. (NSLAVES.GT.1) 
+           IF (  (NV(I).GT. max(KEEP191,1)*NV(DADI))
+     &          .AND. (NSLAVES.GT.1) 
      &          .AND. (ICNTL13.LE.0)
      &          .AND. (NV(I).GT. KEEP37) 
      &          .AND. ROOT_WITH_FEW_SONS
      &        )  THEN
-             IF ( ( ACCU / SIZE_DADI_AMALGAMATED ) .LT. 0.2 ) THEN
+             IF ( ( ACCU / SIZE_DADI_AMALGAMATED ) .LT. 
+     &                    10.0D0/dble(max(KEEP191,1)) ) THEN
                AMALG_TO_father_OK = .TRUE.
              ENDIF
            ENDIF
            IF ( ALLOW_AMALG_TINY_NODES .AND.
-     &     NODE(I) * 900 .LE. NV(DADI) - NAMALG(DADI)) THEN
-             IF ( NAMALG(DADI) < (NV(DADI)-NAMALG(DADI))/50 ) THEN
+     &      (NODE(I)*max(KEEP192,1)) .LE. (NV(DADI)-NAMALG(DADI)) ) 
+     &     THEN
+             IF ( NAMALG(DADI) < 
+     &            (NV(DADI)-NAMALG(DADI))/max(KEEP193,1) ) THEN
                 AMALG_TO_father_OK = .TRUE.
                 NAMALG(DADI) = NAMALG(DADI) + NODE(I)
              ENDIF
@@ -2767,7 +2784,8 @@ C
      &  INFOG(5), KEEP(28), INFOG(32), INFOG(7), KEEP(23), 
      &  ICNTL(7), KEEP(95), ICNTL(13), KEEP(12), 
      &  ITMP,
-     &  ICNTL(18), KEEP(252), KEEP(494), ICNTL48_EFF,
+     &  ICNTL(18), KEEP(252), KEEP(494),
+     &  ICNTL48_EFF,
      &  KEEP(106),
      &  KEEP(56), KEEP(61), RINFOG(1)
        IF (KEEP(95).GT.1)             

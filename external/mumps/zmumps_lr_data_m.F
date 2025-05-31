@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.7.3, released
-C  on Mon Jul 15 11:44:21 UTC 2024
+C  This file is part of MUMPS 5.8.0, released
+C  on Tue May  6 08:27:40 UTC 2025
 C
 C
-C  Copyright 1991-2024 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -22,6 +22,7 @@ C
      &  ZMUMPS_BLR_SAVE_BEGS_BLR_C, ZMUMPS_BLR_RETRIEVE_BEGS_BLR_C,
      &  ZMUMPS_BLR_DEC_AND_RETRIEVE_L, ZMUMPS_BLR_RETRIEVE_PANEL_LORU,
      &  ZMUMPS_BLR_DEC_AND_TRYFREE_L, ZMUMPS_BLR_TRY_FREE_PANEL, 
+     &  ZMUMPS_BLR_FORCE_FREE_PANEL_L,
      &  ZMUMPS_BLR_FREE_CB_LRB, ZMUMPS_BLR_FREE_ALL_PANELS,
      &  ZMUMPS_BLR_SAVE_CB_LRB,
      &  ZMUMPS_BLR_RETRIEVE_CB_LRB, ZMUMPS_BLR_RETRIEVE_BEGSBLR_STA,
@@ -43,7 +44,7 @@ C
          type(LRB_TYPE), pointer :: LRB_PANEL(:)
       END TYPE blr_panel_type
       TYPE diag_block_type
-        COMPLEX(kind=8), POINTER :: DIAG_BLOCK(:)
+        COMPLEX(kind=8), POINTER   :: DIAG_BLOCK(:)
       END TYPE diag_block_type
       TYPE BLR_STRUC_T
          LOGICAL   :: IsSYM, IsT2, IsSLAVE
@@ -74,7 +75,8 @@ C
       INCLUDE 'mumps_save_restore_modes.h'
 #endif
       CONTAINS
-      SUBROUTINE ZMUMPS_BLR_INIT_MODULE(INITIAL_SIZE, INFO)
+      SUBROUTINE ZMUMPS_BLR_INIT_MODULE(INITIAL_SIZE, INFO
+     &  )
        INTEGER, INTENT(IN) :: INITIAL_SIZE
        INTEGER, INTENT(INOUT) :: INFO(2)
        INTEGER :: I, IERR
@@ -383,7 +385,7 @@ C
      &          IWHANDLER, "NB_ACCESSES_INIT=", 
      &          BLR_ARRAY(IWHANDLER)%NB_ACCESSES_INIT, 
      &          "Pointer to panel number ",IPANEL," still associated",
-     &          "NB_ACCESSES_LEFT= ",THEPANEL%NB_ACCESSES_LEFT
+     &          " NB_ACCESSES_LEFT= ",THEPANEL%NB_ACCESSES_LEFT
                CALL MUMPS_ABORT()
              ELSE
                CALL DEALLOC_BLR_PANEL(THEPANEL%LRB_PANEL,
@@ -430,18 +432,17 @@ C
             THEBLOCK => BLR_ARRAY(IWHANDLER)%DIAG_BLOCKS(IPANEL)
             IF (associated(THEBLOCK%DIAG_BLOCK)) THEN
               IF (INFO1 .GE. 0 
-     &             .AND..NOT.LRSOLVE_ACT
+     &               .AND..NOT.LRSOLVE_ACT
      &           ) THEN
-              WRITE(*,*) " Internal Error 3 in MUMPS_BLR_END_FRONT ",
-     &           IWHANDLER, "NB_ACCESSES_INIT=", 
-     &           BLR_ARRAY(IWHANDLER)%NB_ACCESSES_INIT, 
-     &           "Pointer to panel number ",IPANEL," still associated"
-              CALL MUMPS_ABORT()
-              ELSE
-                MEM_FREED = MEM_FREED + int(size(THEBLOCK%DIAG_BLOCK),8)
-                DEALLOCATE    (THEBLOCK%DIAG_BLOCK)
-                NULLIFY       (THEBLOCK%DIAG_BLOCK)
+                WRITE(*,*) " Internal Error 3 in MUMPS_BLR_END_FRONT ",
+     &             IWHANDLER, "NB_ACCESSES_INIT=", 
+     &             BLR_ARRAY(IWHANDLER)%NB_ACCESSES_INIT, 
+     &             "Pointer to panel number ",IPANEL," still associated"
+                CALL MUMPS_ABORT()
               ENDIF
+              MEM_FREED = MEM_FREED + int(size(THEBLOCK%DIAG_BLOCK),8)
+              DEALLOCATE    (THEBLOCK%DIAG_BLOCK)
+              NULLIFY       (THEBLOCK%DIAG_BLOCK)
             ENDIF
           ENDDO
           IF ( MEM_FREED .GT. 0_8 ) THEN
@@ -459,7 +460,8 @@ C
      &           BLR_ARRAY(IWHANDLER)%IsSLAVE) THEN
           IF (associated(BLR_ARRAY(IWHANDLER)%CB_LRB)) THEN
              IF (INFO1 .GE. 0) THEN
-             WRITE(*,*) " Internal Error 4 in MUMPS_BLR_END_FRONT ",
+             WRITE(*,*) 
+     &          " Internal Error 4 in MUMPS_BLR_END_FRONT ",
      &          IWHANDLER, "CB block still associated", 
      &          BLR_ARRAY(IWHANDLER)%IsT2,
      &          BLR_ARRAY(IWHANDLER)%IsSLAVE
@@ -511,9 +513,9 @@ C
        RETURN
        END SUBROUTINE ZMUMPS_BLR_END_FRONT
        SUBROUTINE ZMUMPS_BLR_SAVE_PANEL_LORU (
-     &    IWHANDLER, LORU, IPANEL, LRB_PANEL )
+     &    IWHANDLER, LORU, IPANEL, LRB_PANEL, NB_ACCESSES_INIT_IN )
        type(LRB_TYPE), DIMENSION(:), pointer  :: LRB_PANEL
-       INTEGER, INTENT(IN) :: IWHANDLER, IPANEL
+       INTEGER, INTENT(IN) :: IWHANDLER, IPANEL, NB_ACCESSES_INIT_IN
        INTEGER, INTENT(IN) :: LORU
        TYPE(blr_panel_type), POINTER  :: THEPANEL
        IF ( IWHANDLER .GT. size(BLR_ARRAY) .OR. IWHANDLER .LE. 0 ) THEN
@@ -525,8 +527,12 @@ C
        ELSE 
          THEPANEL => BLR_ARRAY(IWHANDLER)%PANELS_U(IPANEL)
        ENDIF
-       THEPANEL%NB_ACCESSES_LEFT = 
+       IF (NB_ACCESSES_INIT_IN.GT.0) THEN
+         THEPANEL%NB_ACCESSES_LEFT = NB_ACCESSES_INIT_IN
+       ELSE
+         THEPANEL%NB_ACCESSES_LEFT = 
      &           BLR_ARRAY(IWHANDLER)%NB_ACCESSES_INIT
+       ENDIF
        THEPANEL%LRB_PANEL => LRB_PANEL
        RETURN
        END SUBROUTINE ZMUMPS_BLR_SAVE_PANEL_LORU
@@ -546,9 +552,11 @@ C
        RETURN
        END SUBROUTINE ZMUMPS_BLR_SAVE_CB_LRB
        SUBROUTINE ZMUMPS_BLR_SAVE_DIAG_BLOCK (
-     &    IWHANDLER, IPANEL, D )
+     &    IWHANDLER, IPANEL, D, KEEP34 )
+         use iso_c_binding
        COMPLEX(kind=8),POINTER :: D(:)
        INTEGER, INTENT(IN) :: IWHANDLER, IPANEL
+       INTEGER, INTENT(IN) :: KEEP34
        IF ( IWHANDLER .GT. size(BLR_ARRAY) .OR. IWHANDLER .LE. 0 ) THEN
          WRITE(*,*) "Internal error 1 in ZMUMPS_BLR_SAVE_DIAG_BLOCK"
          CALL MUMPS_ABORT()
@@ -557,7 +565,7 @@ C
          WRITE(*,*) "Internal error 2 in ZMUMPS_BLR_SAVE_DIAG_BLOCK"
          CALL MUMPS_ABORT()
        ENDIF
-       BLR_ARRAY(IWHANDLER)%DIAG_BLOCKS(IPANEL)%DIAG_BLOCK => D
+          BLR_ARRAY(IWHANDLER)%DIAG_BLOCKS(IPANEL)%DIAG_BLOCK => D
        RETURN
        END SUBROUTINE ZMUMPS_BLR_SAVE_DIAG_BLOCK
        SUBROUTINE ZMUMPS_BLR_SAVE_BEGS_BLR_C (
@@ -683,9 +691,10 @@ C
        RETURN
        END SUBROUTINE ZMUMPS_BLR_RETRIEVE_NB_PANELS
        SUBROUTINE ZMUMPS_BLR_DEC_AND_RETRIEVE_L(IWHANDLER, IPANEL,
-     &                                      BEGS_BLR_L, THELRBPANEL)
+     &                                      BEGS_BLR_L, THELRBPANEL, 
+     &                                      NBDEC )
        INTEGER, INTENT(IN) :: IWHANDLER
-       INTEGER, INTENT(IN) :: IPANEL
+       INTEGER, INTENT(IN) :: IPANEL, NBDEC
 #if defined(MUMPS_NOF2003)
        INTEGER, POINTER, DIMENSION(:) :: BEGS_BLR_L
        TYPE(LRB_TYPE), POINTER, DIMENSION(:) :: THELRBPANEL
@@ -714,7 +723,7 @@ C
        THELRBPANEL =>
      &        BLR_ARRAY(IWHANDLER)%PANELS_L(IPANEL)%LRB_PANEL
        BLR_ARRAY(IWHANDLER)%PANELS_L(IPANEL)%NB_ACCESSES_LEFT = 
-     & BLR_ARRAY(IWHANDLER)%PANELS_L(IPANEL)%NB_ACCESSES_LEFT - 1
+     & BLR_ARRAY(IWHANDLER)%PANELS_L(IPANEL)%NB_ACCESSES_LEFT - NBDEC
        RETURN
        END SUBROUTINE ZMUMPS_BLR_DEC_AND_RETRIEVE_L
        LOGICAL FUNCTION ZMUMPS_BLR_EMPTY_PANEL_LORU
@@ -931,20 +940,20 @@ C
        RETURN
        END SUBROUTINE ZMUMPS_BLR_FREE_M_ARRAY
        SUBROUTINE ZMUMPS_BLR_DEC_AND_TRYFREE_L( IWHANDLER, IPANEL,
-     &                            KEEP8, K34)      
+     &                            KEEP8, K34, NBDEC)      
        IMPLICIT NONE
-       INTEGER, INTENT(IN) :: IWHANDLER, IPANEL, K34
+       INTEGER, INTENT(IN) :: IWHANDLER, IPANEL, K34, NBDEC
        INTEGER(8) :: KEEP8(150)
        IF (IWHANDLER.LE.0) RETURN
        IF ( BLR_ARRAY(IWHANDLER)%NB_ACCESSES_INIT.LT.0)
      &    RETURN
        BLR_ARRAY(IWHANDLER)%PANELS_L(IPANEL)%NB_ACCESSES_LEFT = 
-     & BLR_ARRAY(IWHANDLER)%PANELS_L(IPANEL)%NB_ACCESSES_LEFT - 1
+     & BLR_ARRAY(IWHANDLER)%PANELS_L(IPANEL)%NB_ACCESSES_LEFT - NBDEC
        CALL ZMUMPS_BLR_TRY_FREE_PANEL (IWHANDLER, IPANEL,
      &                   KEEP8, K34)
        RETURN
        END SUBROUTINE ZMUMPS_BLR_DEC_AND_TRYFREE_L
-       SUBROUTINE ZMUMPS_BLR_TRY_FREE_PANEL( IWHANDLER, IPANEL, 
+       SUBROUTINE ZMUMPS_BLR_FORCE_FREE_PANEL_L( IWHANDLER, IPANEL, 
      &           KEEP8, K34 )
        IMPLICIT NONE
        INTEGER, INTENT(IN) :: IWHANDLER, IPANEL
@@ -953,6 +962,29 @@ C
        TYPE(blr_panel_type), POINTER  :: THEPANEL
        IF (IWHANDLER.LE.0) RETURN
        IF ( BLR_ARRAY(IWHANDLER)%NB_ACCESSES_INIT.LT.0)
+     &    RETURN
+       THEPANEL => BLR_ARRAY(IWHANDLER)%PANELS_L(IPANEL)
+         IF (associated(THEPANEL%LRB_PANEL)) THEN
+          IF (size(THEPANEL%LRB_PANEL) .GT.0) THEN
+           CALL DEALLOC_BLR_PANEL(THEPANEL%LRB_PANEL,
+     &        size(THEPANEL%LRB_PANEL), KEEP8, K34)
+          ENDIF
+          DEALLOCATE(THEPANEL%LRB_PANEL)
+          NULLIFY(THEPANEL%LRB_PANEL)
+         ENDIF
+         THEPANEL%NB_ACCESSES_LEFT = PANELS_FREED 
+       RETURN
+       END SUBROUTINE ZMUMPS_BLR_FORCE_FREE_PANEL_L
+       SUBROUTINE ZMUMPS_BLR_TRY_FREE_PANEL( IWHANDLER, IPANEL, 
+     &           KEEP8, K34 )
+       IMPLICIT NONE
+       INTEGER, INTENT(IN) :: IWHANDLER, IPANEL
+       INTEGER(8) :: KEEP8(150)
+       INTEGER, INTENT(IN)    :: K34
+       TYPE(blr_panel_type), POINTER  :: THEPANEL
+       IF (IWHANDLER.LE.0) RETURN
+       IF ( BLR_ARRAY(IWHANDLER)%NB_ACCESSES_INIT.LT.0.OR.
+     &      BLR_ARRAY(IWHANDLER)%NB_ACCESSES_INIT.eq.huge(IPANEL) )
      &    RETURN
        THEPANEL => BLR_ARRAY(IWHANDLER)%PANELS_L(IPANEL)
        IF ( THEPANEL%NB_ACCESSES_LEFT .EQ. 0 ) THEN
@@ -1046,7 +1078,7 @@ C
          ENDDO
          ENDIF
        ENDIF
-       IF (.NOT.BLR_ARRAY(IWHANDLER)%IsSLAVE) THEN
+       IF (LorU.GE.1.AND..NOT.BLR_ARRAY(IWHANDLER)%IsSLAVE) THEN
          IF (associated(BLR_ARRAY(IWHANDLER)%DIAG_BLOCKS)) THEN
            MEM_FREED = 0_8
            DO IPANEL = 1, size(BLR_ARRAY(IWHANDLER)%DIAG_BLOCKS)
