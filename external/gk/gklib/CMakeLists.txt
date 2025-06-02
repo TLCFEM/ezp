@@ -4,15 +4,9 @@ project(gklib C)
 
 include_directories(.)
 
-option(GK_ENABLE_OPENMP "Enable OpenMP" ON)
 if (EZP_ENABLE_OPENMP_GK)
-    set(GK_ENABLE_OPENMP ON)
-endif ()
-
-if (GK_ENABLE_OPENMP)
     add_compile_definitions(__OPENMP__)
     find_package(OpenMP REQUIRED COMPONENTS C)
-    link_libraries(OpenMP::OpenMP_C)
 endif ()
 
 include(CheckIncludeFile)
@@ -43,3 +37,7 @@ file(GLOB_RECURSE SRC_GK *.c)
 list(REMOVE_ITEM SRC_GK check_thread_storage.c)
 
 add_library(${PROJECT_NAME} ${SRC_GK})
+
+if (EZP_ENABLE_OPENMP_GK)
+    target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_C)
+endif ()
