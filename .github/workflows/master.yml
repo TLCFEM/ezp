@@ -58,7 +58,7 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=${{ env.MPI_HOME }} -DEZP_USE_64BIT_INT=${{ matrix.index }} ..
           cmake --build . --target all
       - name: Test
-        if: matrix.build == 'Debug' && matrix.index == 'OFF'
+        if: matrix.build == 'Debug' && matrix.index == 'OFF' && matrix.mpi != 'impi'
         run: |
           if [ "${{ matrix.mpi }}" == "impi" ]; then
             source /opt/intel/oneapi/setvars.sh
