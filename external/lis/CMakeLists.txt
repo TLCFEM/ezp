@@ -31,9 +31,9 @@ endif ()
 add_compile_options(-w)
 
 add_library(${PROJECT_NAME} STATIC ${lis_src})
-target_link_libraries(${PROJECT_NAME} PRIVATE MPI::MPI_C MPI::MPI_Fortran)
+target_link_libraries(${PROJECT_NAME} MPI::MPI_C)
 
 if (EZP_ENABLE_OPENMP_LIS)
     find_package(OpenMP REQUIRED COMPONENTS C)
-    target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_C)
+    target_link_libraries(${PROJECT_NAME} OpenMP::OpenMP_C)
 endif ()

@@ -234,7 +234,7 @@ else ()
     endif ()
     target_link_libraries(${PROJECT_NAME} PRIVATE lapack blas)
 endif ()
-target_link_libraries(${PROJECT_NAME} PRIVATE parmetis gfortran MPI::MPI_C MPI::MPI_Fortran)
+target_link_libraries(${PROJECT_NAME} PRIVATE parmetis MPI::MPI_Fortran)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wno-unused-function>)

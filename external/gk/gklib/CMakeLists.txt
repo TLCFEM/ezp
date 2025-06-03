@@ -39,5 +39,5 @@ list(REMOVE_ITEM SRC_GK check_thread_storage.c)
 add_library(${PROJECT_NAME} ${SRC_GK})
 
 if (EZP_ENABLE_OPENMP_GK)
-    target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_C)
+    target_link_libraries(${PROJECT_NAME} OpenMP::OpenMP_C)
 endif ()

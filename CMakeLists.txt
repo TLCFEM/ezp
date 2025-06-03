@@ -151,7 +151,7 @@ if (EZP_ENABLE_TBB)
     endif ()
 endif ()
 
-link_libraries(MPI::MPI_C MPI::MPI_Fortran)
+link_libraries(MPI::MPI_C)
 
 if (PROJECT_IS_TOP_LEVEL)
     file(GLOB EXAMPLES "*.cpp" "examples/*.cpp")
