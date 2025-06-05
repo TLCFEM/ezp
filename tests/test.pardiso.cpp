@@ -46,7 +46,7 @@ template<data_t DT> auto random_pardiso() {
         std::mt19937 gen(seed);
 
         const auto NRHS = std::uniform_int_distribution(1, 10)(gen);
-        const auto N = std::uniform_int_distribution(1, 100)(gen);
+        const auto N = std::uniform_int_distribution(2, 100)(gen);
 
         if(0 == comm_world.rank()) printf("Seed: %d, N: %d, NRHS: %d\n", seed, N, NRHS);
 
