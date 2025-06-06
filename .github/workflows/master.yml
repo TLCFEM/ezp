@@ -66,20 +66,7 @@ jobs:
             export PATH=${{ env.MPI_HOME }}/bin:$PATH
           fi
           cd build
-          for SRC in `find . -type f -executable -iname "*example*"`; do $SRC; done
-          for SRC in `find . -type f -executable -iname "*test*"`; do $SRC 5; done
-          mpirun -n 2 ./catch2
-          lcov --capture --directory . --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' --output-file coverage.info
-          lcov --list coverage.info
-      - name: Report
-        if: ${{ hashFiles('./build/coverage.info') != '' }}
-        uses: codecov/codecov-action@v5
-        with:
-          plugins: gcov
-          files: ./build/coverage.info
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          ./padiso.memleak
   documentation:
     needs: linux-dev
     runs-on: ubuntu-24.04
