@@ -26,5 +26,5 @@ jobs:
           mkdir build && cd build
           source /opt/intel/oneapi/setvars.sh
           cmake -DCMAKE_BUILD_TYPE=Debug -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=/opt/intel/oneapi/mpi/latest -DEZP_ASAN=ON ..
-          cmake --build . --target all
+          cmake --build . --target pardiso.memleak
           cd build && ./padiso.memleak
