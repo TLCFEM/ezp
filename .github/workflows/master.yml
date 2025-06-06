@@ -1,9 +1,6 @@
 name: master
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
 permissions:
   contents: write
 env:
@@ -14,14 +11,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        build: [ RelWithDebInfo, Debug ]
         mpi: [ impi, mpich, openmpi ]
-        index: [ 'ON', 'OFF' ]
-        exclude:
-          - mpi: mpich
-            index: 'ON'
-          - mpi: openmpi
-            index: 'ON'
     steps:
       - name: Clone
         uses: actions/checkout@v4
@@ -55,10 +45,9 @@ jobs:
           fi
           echo "MPI_HOME=$MPI_HOME" >> "$GITHUB_ENV"
           echo $MPI_HOME
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=${{ env.MPI_HOME }} -DEZP_USE_64BIT_INT=${{ matrix.index }} ..
+          cmake -DCMAKE_BUILD_TYPE=Debug -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=${{ env.MPI_HOME }} -DEZP_ASAN=ON ..
           cmake --build . --target all
       - name: Test
-        if: matrix.build == 'Debug' && matrix.index == 'OFF'
         run: |
           if [ "${{ matrix.mpi }}" == "impi" ]; then
             source /opt/intel/oneapi/setvars.sh
@@ -67,32 +56,3 @@ jobs:
           fi
           cd build
           ./padiso.memleak
-  documentation:
-    needs: linux-dev
-    runs-on: ubuntu-24.04
-    if: github.event_name == 'push'
-    steps:
-      - name: Delete All
-        uses: strumwolf/delete-deployment-environment@v3
-        with:
-          token: ${{ secrets.ALL }}
-          environment: github-pages
-      - name: Clone
-        uses: actions/checkout@v4
-      - name: Setup
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-      - name: Deploy
-        run: |
-          sudo apt-get install doxygen graphviz libmpich-dev
-          doxygen
-          cp README.md docs/README.md
-          pip install -r requirements.txt
-          mkdocs build
-          git fetch origin
-          git config --global user.name "Theodore Chang"
-          git config --global user.email "tlcfem@gmail.com"
-          git pull
-          mkdocs gh-deploy
