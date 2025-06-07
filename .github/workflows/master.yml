@@ -23,8 +23,8 @@ jobs:
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt-get update && sudo apt-get install intel-oneapi-mkl-devel intel-oneapi-mpi-devel
-          mkdir build && cd build
           source /opt/intel/oneapi/setvars.sh
+          mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=Debug -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=/opt/intel/oneapi/mpi/latest -DEZP_ASAN=ON ..
-          cmake --build . --target all
-          cd build && ./padiso.memleak
+          cmake --build . --target padiso.memleak
+          ./padiso.memleak
