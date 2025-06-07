@@ -154,7 +154,7 @@ endif ()
 link_libraries(MPI::MPI_C)
 
 if (PROJECT_IS_TOP_LEVEL)
-    file(GLOB EXAMPLES "*.cpp" "examples/*.cpp")
+    file(GLOB EXAMPLES "*.c" "*.cpp" "examples/*.cpp")
     foreach (EXAMPLE ${EXAMPLES})
         get_filename_component(EXAMPLE_NAME ${EXAMPLE} NAME_WLE)
         if (EXAMPLE_NAME MATCHES "mumps" AND NOT EZP_ENABLE_MUMPS)
