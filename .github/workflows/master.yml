@@ -1,10 +1,6 @@
 name: master
 on:
   push:
-permissions:
-  contents: write
-env:
-  MPI_HOME: ""
 jobs:
   linux-dev:
     runs-on: ubuntu-24.04
