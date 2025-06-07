@@ -6,6 +6,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
+      fail-fast: false
       matrix:
         mpi: [ impi, mpich, openmpi ]
     steps:
@@ -15,10 +16,10 @@ jobs:
           submodules: recursive
       - name: Compile
         run: |
+          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt-get update && sudo apt-get install intel-oneapi-mkl-devel intel-oneapi-mpi-devel
           if [ "${{ matrix.mpi }}" == "impi" ]; then
-            wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
-            echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-            sudo apt-get update && sudo apt-get install intel-oneapi-mkl-devel intel-oneapi-mpi-devel
             source /opt/intel/oneapi/setvars.sh
             export MPI_HOME=/opt/intel/oneapi/mpi/latest
           elif [ "${{ matrix.mpi }}" == "mpich" ]; then
