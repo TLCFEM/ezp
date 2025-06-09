@@ -7,6 +7,8 @@
 #include <stdlib.h>
 
 int main(void) {
+    mkl_disable_fast_mm();
+
     MKL_INT n = 1;
     MKL_INT ia[2] = {1, 2};
     MKL_INT ja[1] = {1};
