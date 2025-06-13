@@ -6,7 +6,7 @@ The architecture can be illustrated as follows.
 
 ![architecture design](communication.svg)
 
-The `esp` solvers are also available as standalone executables that follow the above design.
+The `ezp` solvers are also available as standalone executables that follow the above design.
 Such a form is particularly beneficial if the following holds.
 
 1. The main application is not suitable for distributed-memory model due to, for example, latency constraints.
