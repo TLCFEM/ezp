@@ -4,6 +4,11 @@ project(gklib C)
 
 include_directories(.)
 
+# not interested in any debugging related functions
+# as some checks are very slow
+# too slow even for debugging
+add_compile_definitions(NDEBUG)
+
 if (EZP_ENABLE_OPENMP_GK)
     add_compile_definitions(__OPENMP__)
     find_package(OpenMP REQUIRED COMPONENTS C)
