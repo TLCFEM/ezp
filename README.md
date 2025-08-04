@@ -27,6 +27,10 @@ The following solvers are implemented.
 |      ✅       | sparse (one-indexing COO format)           | direct    | MUMPS   | MUMPS     |
 |      ✅       | sparse (zero-indexing CSR format)          | iterative | Lis     | Lis       |
 
+> [!IMPORTANT]
+> Use branch [`master`](https://github.com/TLCFEM/ezp/tree/master) for development and testing.
+> Use branch [`lite-lib`](https://github.com/TLCFEM/ezp/tree/lite-lib) for integration into other projects.
+
 ## Dependency
 
 The `ezp` library requires C++ 20 compatible compiler.
