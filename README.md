@@ -28,8 +28,8 @@ The following solvers are implemented.
 |      ✅       | sparse (zero-indexing CSR format)          | iterative | Lis     | Lis       |
 
 > [!IMPORTANT]
-> Use branch [`master`](https://github.com/TLCFEM/ezp/tree/master) for development and testing.
-> Use branch [`lite-lib`](https://github.com/TLCFEM/ezp/tree/lite-lib) for integration into other projects.
+> * Use branch [`master`](https://github.com/TLCFEM/ezp/tree/master) for development and testing.
+> * Use branch [`lite-lib`](https://github.com/TLCFEM/ezp/tree/lite-lib) for integration into other projects.
 
 ## Dependency
 
