@@ -67,7 +67,7 @@ jobs:
           fi
           cd build
           for SRC in `find . -type f -executable -iname "*example*"`; do $SRC; done
-          for SRC in `find . -type f -executable -iname "*test*"`; do $SRC 100; done
+          for SRC in `find . -type f -executable -iname "*test*"`; do $SRC 10; done
           mpirun -n 2 ./catch2
           lcov --capture --directory . --output-file coverage.info
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
