@@ -1,7 +1,7 @@
 /*
  *
- *  This file is part of MUMPS 5.8.0, released
- *  on Tue May  6 08:27:40 UTC 2025
+ *  This file is part of MUMPS 5.8.1, released
+ *  on Wed Jul 30 16:49:18 UTC 2025
  *
  *
  *  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -28,7 +28,7 @@
  *     knowledge, there is no way to perform the conversion with CPP
  *     directives only.
  */
-#if defined(UPPER)
+#if defined(UPPER) || defined(MUMPS_WIN32)
 #define F_SYMBOL(lower_case, upper_case) MUMPS_##upper_case
 #elif defined(Add_)
 #define F_SYMBOL(lower_case, upper_case) mumps_##lower_case##_

@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.0, released
-C  on Tue May  6 08:27:40 UTC 2025
+C  This file is part of MUMPS 5.8.1, released
+C  on Wed Jul 30 16:49:18 UTC 2025
 C
 C
 C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -1541,9 +1541,9 @@ C
       END SUBROUTINE MUMPS_GET_NNZ_INTERNAL
       SUBROUTINE MUMPS_NPIV_CRITICAL_PATH(
      &     N, NSTEPS, STEP, FRERE, FILS,
-     &     NA, LNA, NE, MAXNPIVTREE )
+     &     NA, LNA, NE, KEEP127, MAXNPIVTREE )
       IMPLICIT NONE
-      INTEGER, intent(in) :: N, NSTEPS, LNA
+      INTEGER, intent(in) :: N, NSTEPS, LNA, KEEP127
       INTEGER, intent(in) :: FRERE(NSTEPS), FILS(N), STEP(N)
       INTEGER, intent(in) :: NA(LNA), NE(NSTEPS)
       INTEGER, intent(out) :: MAXNPIVTREE
@@ -1551,6 +1551,12 @@ C
       INTEGER :: NPIV,ILEAF,NBLEAF
       INTEGER, DIMENSION(:) , ALLOCATABLE :: MAXNPIV
       INTEGER :: I, allocok
+      IF ( (NA(2).EQ.1) .AND. (NA(1).GT. max(int(N/20),10000)) )  THEN
+        NPIV        = max(N-NA(1),2)
+        MAXNPIVTREE = int(log(real(NPIV))/log(real(2)))+max(KEEP127,2)
+        MAXNPIVTREE = max (MAXNPIVTREE, KEEP127+1)
+        RETURN
+      ENDIF
       MAXNPIVTREE = -9999
       ALLOCATE ( MAXNPIV(NSTEPS), stat=allocok)
       IF (allocok .gt.0) THEN

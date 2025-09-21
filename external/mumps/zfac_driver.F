@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.0, released
-C  on Tue May  6 08:27:40 UTC 2025
+C  This file is part of MUMPS 5.8.1, released
+C  on Wed Jul 30 16:49:18 UTC 2025
 C
 C
 C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -162,7 +162,7 @@ C temporary variables for collecting stats from all processors
       DOUBLE PRECISION :: LR_TAB(LR_TABSIZE), LR_EPSILON
       DOUBLE PRECISION :: TMP_MRY_LU_FR
       DOUBLE PRECISION :: TMP_MRY_LU_LRGAIN
-      INTEGER :: KEEP399_SAVE
+      INTEGER :: KEEP399_SAVE, KEEP20_SAVE
       DOUBLE PRECISION :: TMP_MRY_CB_FR
       DOUBLE PRECISION :: TMP_MRY_CB_LRGAIN
       DOUBLE PRECISION :: TMP_FLOP_LRGAIN
@@ -323,6 +323,8 @@ C     Measure recursivity =max number of simultaneous calls to
 C     ZMUMPS_FAC_PROCESS_BLOCFACTO_LDLT
       id%KEEP(174) = 0
       id%KEEP(175) = 0
+C
+      KEEP20_SAVE = KEEP(20)
       PRINT_MAXAVG = .NOT.(id%NSLAVES.EQ.1 .AND. KEEP(46).EQ.1)
 C     Print per node informtation only in case ther are several
 C     compute nodes (id%KEEP(412): #MPI procs on comupte node)
@@ -792,7 +794,8 @@ C     Compute \sum of memories allowed
           WRITE( MPG, 172 ) 
      &    NWORKING, id%ICNTL(22), KEEP_486_FOR_PRINT,
      &    KEEP(489),
-     &    id%ICNTL(49),
+     &    id%ICNTL(49), 
+     &    id%KEEP(19),
      &    KEEP(12), 
      &    id%KEEP8(111), TMP_INFOG_4, KEEP(127), KEEP(28),
      &    id%KEEP8(4)/1000000_8, ITMP8, id%KEEP8(124), CNTL1
@@ -1468,11 +1471,12 @@ C
          ENDIF
        ENDIF
        IF (KEEP(19).EQ.0) THEN 
-C        -- RR is off
+C{       -- RR is off
          SEUIL = ZERO
          id%DKEEP(9) = ZERO
+C}
        ELSE
-C        -- RR is on
+C{       -- RR is on
 C
 C      CNTL(3) is the threshold used in the following to compute  
 C      DKEEP(9) the threshold under which the sing val. are considered
@@ -1485,7 +1489,8 @@ C      sing val.
          ELSE  !  (CNTL(3) .EQ. ZERO) THEN
            CALL MUMPS_NPIV_CRITICAL_PATH(
      &     N, KEEP(28), id%STEP(1), id%FRERE_STEPS(1), id%FILS(1),
-     &     id%NA(1), id%LNA, id%NE_STEPS(1), NPIV_CRITICAL_PATH )
+     &     id%NA(1), id%LNA, id%NE_STEPS(1), KEEP(127), 
+     &     NPIV_CRITICAL_PATH )
            id%DKEEP(9) = sqrt(dble(NPIV_CRITICAL_PATH))*EPS*ANORMINF  
          ENDIF
          IF (PROKG) THEN 
@@ -1503,23 +1508,25 @@ C        DKEEP(13) should be bigger than 1.
          SEUIL = id%DKEEP(9)*Thresh_Seuil
          IF (PROKG) WRITE(MPG,'(A,1PD16.4)')
      &   ' ...Threshold for postponing                =',SEUIL
-       ENDIF !end KEEP(19)
+C}
+       ENDIF !end KEEP(19).ne.0
        SEUIL_LDLT_NIV2 = SEUIL
 C     -------------------------------
 C     -- Null pivot row detection
 C     -------------------------------
        IF (KEEP(110).EQ.0) THEN 
-C        -- Null pivot is off
+C{       -- Null pivot is off
 C        Initialize DKEEP(1) to a negative value
 C        in order to avoid detection of null pivots
 C        (test max(AMAX,RMAX,abs(PIVOT)).LE.PIVNUL
 C        in ZMUMPS_FAC_I, where PIVNUL=DKEEP(1))
          id%DKEEP(1) = -1.0D0
          id%DKEEP(2) = ZERO
+C}
        ELSE
-C        -- Null pivot is on
+C{       -- Null pivot detection is on
         IF (KEEP(19).NE.0) THEN
-C        -- RR is on
+C{       -- RR is on
 C      RR postponing considers that pivot rows of norm smaller that SEUIL 
 C      should be postponed, but pivot rows smaller than DKEEP(1) are 
 C      directly added to null space and thus considered as null pivot rows. 
@@ -1529,8 +1536,9 @@ C           DKEEP(10) is out of range, set to the default value 10-1
          ELSE
            id%DKEEP(1) = id%DKEEP(9)*id%DKEEP(10) 
          ENDIF    
+C}
         ELSE
-C        -- RR is off
+C{       -- RR is off
 C        -- only Null pivot detection
 C         We keep strategy currently used in MUMPS 4.10.0
           IF (CNTL3 .LT. ZERO) THEN
@@ -1541,9 +1549,11 @@ C         We keep strategy currently used in MUMPS 4.10.0
 c          id%DKEEP(1)  = NPIV_CRITICAL_PATH*EPS*ANORMINF
            CALL MUMPS_NPIV_CRITICAL_PATH(
      &         N, KEEP(28), id%STEP(1), id%FRERE_STEPS(1), id%FILS(1),
-     &         id%NA(1), id%LNA, id%NE_STEPS(1), NPIV_CRITICAL_PATH )
+     &         id%NA(1), id%LNA, id%NE_STEPS(1), KEEP(127), 
+     &         NPIV_CRITICAL_PATH )
            id%DKEEP(1)  = sqrt(dble(NPIV_CRITICAL_PATH))*EPS*ANORMINF
           ENDIF
+C}
         ENDIF ! fin rank revealing        
         IF ((KEEP(110).NE.0).AND.(PROKG)) THEN
            WRITE(MPG, '(A,I16)')
@@ -1568,14 +1578,22 @@ C            Sym
              id%DKEEP(2) = ZERO
            ENDIF
          ENDIF
+C}
        ENDIF ! fin null pivot detection.
 C     Find id of root node if RR is on 
-      IF (KEEP(53).NE.0) THEN
+      IF (KEEP(19).NE.0) THEN
         ID_ROOT =MUMPS_PROCNODE(id%PROCNODE_STEPS(id%STEP(KEEP(20))),
      &                          id%KEEP(199))
         IF ( KEEP( 46 )  .NE. 1 ) THEN
           ID_ROOT = ID_ROOT + 1
         END IF
+      ENDIF
+      IF (KEEP(19).EQ.0.AND.KEEP(53).NE.0) THEN 
+C       ICNTL(56)>0 at analysis and =0 at facto
+C       save special root index
+        KEEP20_SAVE = KEEP(20)
+C       suppress special RR treatment
+        KEEP(20)   = 0
       ENDIF
 C Second pass:  set parameters for null pivot detection
 C Allocate PIVNUL_LIST_STRUCT in case of null pivot detection
@@ -3690,6 +3708,10 @@ C           flops when BLR activated
 C     ==============================
 C     NULL PIVOTS AND RANK-REVEALING
 C     ==============================
+      IF (KEEP(19).EQ.0.AND.KEEP(53).NE.0) THEN 
+C       restore KEEP(20)
+        KEEP(20) = KEEP20_SAVE
+      ENDIF
       IF(KEEP(110) .EQ. 1) THEN
 C        -- make available to users the local number of null pivots detected 
 C        -- with ICNTL(24) = 1.
@@ -4244,6 +4266,7 @@ C
      &        ' ICNTL(35) BLR activation (eff. choice)     =',I16/
      &        ' ICNTL(37) BLR CB compression (eff. choice) =',I16/
      &        ' ICNTL(49) Compact workarray S (end facto.) =',I16/
+     &        ' ICNTL(56) Effective value during facto.    =',I16/
      &        ' ICNTL(14) Memory relaxation                =',I16/
      &        ' INFOG(3) Real space for factors (estimated)=',I16/
      &        ' INFOG(4) Integer space for factors (estim.)=',I16/

@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.0, released
-C  on Tue May  6 08:27:40 UTC 2025
+C  This file is part of MUMPS 5.8.1, released
+C  on Wed Jul 30 16:49:18 UTC 2025
 C
 C
 C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -370,7 +370,7 @@ C    NSOL_loc will be equal to KEEP(89) in case ICNTL(21)=1
       LOGICAL WORK_WCB_ALLOCATED, IS_INIT_OOC_DONE
       LOGICAL PTR_RHS_ROOT_ALLOCATED
       LOGICAL :: IS_LR_MOD_TO_STRUC_DONE
-      INTEGER :: KEEP350_SAVE
+      INTEGER :: KEEP350_SAVE, KEEP20_SAVE
       LOGICAL STOP_AT_NEXT_EMPTY_COL
       INTEGER  MTYPE_LOC
       INTEGER(4) :: I4
@@ -468,6 +468,15 @@ C     It is then tested to free S befgore returning
       K16_8    = int(KEEP(16), 8)
       K149_8   = int(KEEP(149),8) ! complex in instance
       K151_8   = int(KEEP(151),8) ! complex in instance
+C     RR 
+      KEEP20_SAVE = KEEP(20)
+      IF (KEEP(19).EQ.0.AND.KEEP(53).NE.0) THEN 
+C       ICNTL(56)>0 at analysis and =0 at facto
+C       save special root index
+        KEEP20_SAVE = KEEP(20)
+C       suppress special RR treatment
+        KEEP(20)   = 0
+      ENDIF
       NBENT_RHSINTR = 0
 C     Used by DISTRIBUTED_SOLUTION to skip empty columns
 C     that are skipped (case of sparse RHS)
@@ -6140,6 +6149,10 @@ C     -- related to exploit sparsity
           CALL MUMPS_FDM_MOD_TO_STRUC('F',id%FDM_F_ENCODING,
      &             id%INFO(1))
         ENDIF
+      ENDIF
+      IF (KEEP(19).EQ.0.AND.KEEP(53).NE.0) THEN 
+C       restore KEEP(20)
+        KEEP(20) = KEEP20_SAVE
       ENDIF
       IF (KEEP(201).GT.0)THEN
         IF (IS_INIT_OOC_DONE) THEN

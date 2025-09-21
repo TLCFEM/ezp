@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.0, released
-C  on Tue May  6 08:27:40 UTC 2025
+C  This file is part of MUMPS 5.8.1, released
+C  on Wed Jul 30 16:49:18 UTC 2025
 C
 C
 C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -24,7 +24,8 @@ C
       INTEGER ICNTL1 
       INTEGER(8), DIMENSION(:),ALLOCATABLE :: AddVirtLibre
       LOGICAL,SAVE :: STRAT_IO_ASYNC,WITH_BUF,SOLVE
-      INTEGER, DIMENSION(:),POINTER :: STEP_OOC,PROCNODE_OOC
+      INTEGER, DIMENSION(:),POINTER :: PROCNODE_OOC  => null()
+      INTEGER, DIMENSION(:),POINTER :: STEP_OOC      => null()
       INTEGER, SAVE :: MYID_OOC,SLAVEF_OOC,LOW_LEVEL_STRAT_IO
       INTEGER(8), SAVE :: HBUF_SIZE, DIM_BUF_IO
       INTEGER ERR_STR_OOC_MAX_LEN

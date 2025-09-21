@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.0, released
-C  on Tue May  6 08:27:40 UTC 2025
+C  This file is part of MUMPS 5.8.1, released
+C  on Wed Jul 30 16:49:18 UTC 2025
 C
 C
 C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -952,7 +952,7 @@ C
                DO I=1,NV
                   LRGROUPS(WORK(I))=NBGROUPS+1+(I-1)/GROUP_SIZE2
                END DO
-               NBGROUPS = NBGROUPS + (NV-1)/GROUP_SIZE2 + 1
+               NBGROUPS = NBGROUPS +  ( (NV-1)/GROUP_SIZE2 + 1 )
                K142 = max(K142, min(NV,GROUP_SIZE2))
             ELSE
               CALL SEP_GROUPING( ND_STEPS(NODE), KEEP, 
@@ -1228,7 +1228,7 @@ C
      &    THEN
 !$OMP ATOMIC CAPTURE
             NBG_CAPT = NBGROUPS
-            NBGROUPS = NBGROUPS + (NV-1)/GROUP_SIZE2 + 1
+            NBGROUPS = NBGROUPS + ( (NV-1)/GROUP_SIZE2 + 1 )
 !$OMP END ATOMIC 
             DO I=1,NV
               LRGROUPS(WORK(I))=NBG_CAPT+1+(I-1)/GROUP_SIZE2
@@ -1580,7 +1580,7 @@ C
      &                             /COMPRESS_RATIO), 1)
 !$OMP ATOMIC CAPTURE
           NBG_CAPT = NBGROUPS
-          NBGROUPS = NBGROUPS + (NV-1)/GROUP_SIZE2_TMP + 1
+          NBGROUPS = NBGROUPS + ( (NV-1)/GROUP_SIZE2_TMP + 1 )
 !$OMP END ATOMIC 
             DO I=1,NV
               LRGROUPS(WORK(I))=NBG_CAPT+1+(I-1)/GROUP_SIZE2_TMP

@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.0, released
-C  on Tue May  6 08:27:40 UTC 2025
+C  This file is part of MUMPS 5.8.1, released
+C  on Wed Jul 30 16:49:18 UTC 2025
 C
 C
 C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -820,6 +820,7 @@ C
       INTEGER    :: NB_END_MSG_2_RECV_COPY
       DOUBLE PRECISION    :: VAL
       LOGICAL    :: LAST_MESSAGE
+      TYPE_NODE    = -997
       LAST_MESSAGE = .FALSE.
       NB_REC = BUFRECVI( 1, ISLAVE )
       IF ( NB_REC .LE. 0 ) THEN
