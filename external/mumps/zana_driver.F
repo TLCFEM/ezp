@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.0, released
-C  on Tue May  6 08:27:40 UTC 2025
+C  This file is part of MUMPS 5.8.1, released
+C  on Wed Jul 30 16:49:18 UTC 2025
 C
 C
 C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -25,6 +25,21 @@ C
       USE ZMUMPS_ANA_AUX_M
       USE MUMPS_ANA_BLK_M, ONLY: COMPACT_GRAPH_T, LMATRIX_T
       IMPLICIT NONE
+      INTERFACE
+C     Explicit interfaces when id has the TARGET attribute
+      SUBROUTINE ZMUMPS_ANA_ARROWHEADS_WRAPPER
+     &          (id, GATHER_MATRIX_ALLOCATED)
+      USE ZMUMPS_STRUC_DEF
+      TYPE (ZMUMPS_STRUC), TARGET :: id
+      LOGICAL, INTENT(INOUT) :: GATHER_MATRIX_ALLOCATED
+      END SUBROUTINE ZMUMPS_ANA_ARROWHEADS_WRAPPER
+      SUBROUTINE ZMUMPS_ANA_COMPUTE_ESTIMATES (id, idintr)
+      USE ZMUMPS_STRUC_DEF
+      USE ZMUMPS_INTR_TYPES, ONLY: ZMUMPS_INTR_STRUC
+      TYPE (ZMUMPS_STRUC), TARGET :: id
+      TYPE (ZMUMPS_INTR_STRUC)    :: idintr
+      END SUBROUTINE ZMUMPS_ANA_COMPUTE_ESTIMATES
+      END INTERFACE
 C     
       INCLUDE 'mpif.h'
       INCLUDE 'mumps_tags.h'
@@ -2285,6 +2300,7 @@ C       Broadcast errors
         CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
      &      id%COMM, id%MYID )
         IF ( INFO(1).LT.0 ) GOTO 500
+C       update KEEP(142): maximum group size
         CALL MPI_BCAST( KEEP(142), 1, MPI_INTEGER, MASTER, 
      &                      id%COMM, IERR )
 C     ============
@@ -2318,9 +2334,6 @@ C           during grouping
         END IF
 C}    Grouping: KEEP(494) .NE. 0
       ENDIF
-      IF (id%MYID.NE. MASTER) THEN
-      ENDIF
-C
 C     ALLOCATE id%FILS(id%N)on all procs possibly using mpi3
         CALL MUMPS_REALLOC(id%FILS, id%N, id%INFO, LP, FORCE=.TRUE.,
      &     STRING='id%FILS (Analysis)', ERRCODE=-7)
@@ -2421,6 +2434,7 @@ C
 C       -------------------------------------------
 C       Adjust LR_GROUPING to bound size of groups 
 C       and update KEEP(142): maximum group size
+C       that should then be broadcasted again
 C       -------------------------------------------
         IF (id%N.GT.NBLK.AND.KEEP(494).NE.0) THEN
           CALL MUMPS_ADJUST_SIZE_LRGROUPS ( 
@@ -2430,6 +2444,10 @@ C       -------------------------------------------
          ENDIF
 C}
       ENDIF
+C     update KEEP(142): maximum group size that might have been
+C     updated in MUMPS_ADJUST_SIZE_LRGROUPS
+      CALL MPI_BCAST( KEEP(142), 1, MPI_INTEGER, MASTER, 
+     &                      id%COMM, IERR )
 C
  97   CONTINUE
 C
