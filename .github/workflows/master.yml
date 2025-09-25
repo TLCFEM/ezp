@@ -10,10 +10,11 @@ env:
   MPI_HOME: ""
 jobs:
   linux-dev:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
       matrix:
+        os: [ ubuntu-22.04 ]
         build: [ RelWithDebInfo, Debug ]
         mpi: [ impi, mpich, openmpi ]
         index: [ 'ON', 'OFF' ]
@@ -43,13 +44,13 @@ jobs:
             source /opt/intel/oneapi/setvars.sh
             export MPI_HOME=/opt/intel/oneapi/mpi/latest
           elif [ "${{ matrix.mpi }}" == "mpich" ]; then
-            wget -q https://github.com/TLCFEM/prebuilds/releases/download/latest/MPICH-linux.tar.gz
-            tar -xzf MPICH-linux.tar.gz
+            wget -q https://github.com/TLCFEM/prebuilds/releases/download/latest/MPICH-${{ matrix.os }}.tar.gz
+            tar -xzf MPICH-${{ matrix.os }}.tar.gz
             sudo mv MPICH /MPICH
             export MPI_HOME=/MPICH
           elif [ "${{ matrix.mpi }}" == "openmpi" ]; then
-            wget -q https://github.com/TLCFEM/prebuilds/releases/download/latest/OpenMPI-linux.tar.gz
-            tar -xzf OpenMPI-linux.tar.gz
+            wget -q https://github.com/TLCFEM/prebuilds/releases/download/latest/OpenMPI-${{ matrix.os }}.tar.gz
+            tar -xzf OpenMPI-${{ matrix.os }}.tar.gz
             sudo mv OpenMPI /OpenMPI
             export MPI_HOME=/OpenMPI
           fi
@@ -82,7 +83,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   documentation:
     needs: linux-dev
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: github.event_name == 'push'
     steps:
       - name: Delete All
