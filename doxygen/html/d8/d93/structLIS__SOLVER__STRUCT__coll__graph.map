@@ -1,23 +1,10 @@
 <map id="LIS_SOLVER_STRUCT" name="LIS_SOLVER_STRUCT">
-<area shape="rect" id="Node000001" title=" " alt="" coords="172,271,329,297"/>
-<area shape="rect" id="Node000007" href="$de/db7/structLIS__PRECON__STRUCT.html" title=" " alt="" coords="231,391,392,416"/>
-<area shape="poly" id="edge12_Node000007_Node000001" title=" " alt="" coords="268,307,285,336,309,389,304,391,280,339,263,310"/>
-<area shape="rect" id="Node000002" href="$d0/d39/structLIS__MATRIX__STRUCT.html" title=" " alt="" coords="296,108,453,133"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="355,145,343,159,295,222,260,273,256,270,290,219,339,156,351,142"/>
-<area shape="poly" id="edge8_Node000007_Node000002" title=" " alt="" coords="379,147,381,190,380,247,370,308,350,368,330,392,326,389,345,365,365,307,374,246,376,190,374,147"/>
-<area shape="rect" id="Node000003" href="$dc/d56/structLIS__MATRIX__CORE__STRUCT.html" title=" " alt="" coords="246,5,446,31"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="347,44,347,64,351,83,366,107,361,109,346,85,342,64,341,44"/>
-<area shape="rect" id="Node000004" href="$dc/dff/structLIS__MATRIX__DIAG__STRUCT.html" title=" " alt="" coords="25,5,222,31"/>
-<area shape="poly" id="edge6_Node000001_Node000004" title=" " alt="" coords="150,38,181,69,210,107,230,151,243,199,252,271,247,271,238,200,225,153,205,109,177,72,146,42"/>
-<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="195,31,261,52,356,105,353,110,258,57,193,36"/>
-<area shape="poly" id="edge10_Node000007_Node000004" title=" " alt="" coords="92,40,55,69,39,88,26,109,10,141,8,150,11,161,103,312,120,342,129,353,144,364,186,384,231,394,230,399,184,389,141,369,125,357,115,345,99,315,6,163,3,150,5,139,21,107,34,85,52,65,89,36"/>
-<area shape="rect" id="Node000005" href="$d1/d04/structLIS__COMMTABLE__STRUCT.html" title=" " alt="" coords="471,5,662,31"/>
-<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="458,35,419,44,395,57,386,68,381,82,377,108,371,108,376,80,381,65,391,53,417,39,457,30"/>
-<area shape="poly" id="edge13_Node000007_Node000005" title=" " alt="" coords="560,44,536,106,496,191,441,284,409,328,373,369,339,393,336,388,370,365,405,325,437,281,491,189,531,104,555,43"/>
-<area shape="rect" id="Node000006" href="$d0/d77/structLIS__VECTOR__STRUCT.html" title=" " alt="" coords="36,108,196,133"/>
-<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="132,144,159,185,193,229,237,269,234,273,190,232,155,188,127,147"/>
-<area shape="poly" id="edge11_Node000007_Node000006" title=" " alt="" coords="112,147,107,182,105,225,110,270,127,312,151,340,182,362,217,377,250,388,249,393,215,382,180,366,148,344,123,315,105,272,99,225,101,182,107,146"/>
-<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="250,386,231,368,224,349,226,329,240,296,245,298,231,330,230,349,235,365,253,382"/>
-<area shape="rect" id="Node000008" href="$de/dbe/structLIS__MATRIX__ILU__STRUCT.html" title=" " alt="" coords="528,271,714,297"/>
-<area shape="poly" id="edge9_Node000007_Node000008" title=" " alt="" coords="601,308,560,340,510,369,451,388,393,398,392,393,450,383,508,364,557,336,597,304"/>
+<area shape="rect" id="node1" title=" " alt="" coords="329,273,486,300"/>
+<area shape="rect" id="node2" href="$de/db7/structLIS__PRECON__STRUCT.html" title=" " alt="" coords="393,393,555,420"/>
+<area shape="rect" id="node3" href="$d1/d04/structLIS__COMMTABLE__STRUCT.html" title=" " alt="" coords="5,5,196,32"/>
+<area shape="rect" id="node6" href="$d0/d39/structLIS__MATRIX__STRUCT.html" title=" " alt="" coords="202,109,359,136"/>
+<area shape="rect" id="node4" href="$d0/d77/structLIS__VECTOR__STRUCT.html" title=" " alt="" coords="459,109,619,136"/>
+<area shape="rect" id="node5" href="$dc/dff/structLIS__MATRIX__DIAG__STRUCT.html" title=" " alt="" coords="445,5,642,32"/>
+<area shape="rect" id="node7" href="$dc/d56/structLIS__MATRIX__CORE__STRUCT.html" title=" " alt="" coords="221,5,421,32"/>
+<area shape="rect" id="node8" href="$de/dbe/structLIS__MATRIX__ILU__STRUCT.html" title=" " alt="" coords="695,273,880,300"/>
 </map>

@@ -1,9 +1,6 @@
 <map id="ezp::pdbsv&lt; DT, IT &gt;" name="ezp::pdbsv&lt; DT, IT &gt;">
-<area shape="rect" id="Node000001" title=" " alt="" coords="18,301,178,327"/>
-<area shape="rect" id="Node000002" href="$d0/db0/classezp_1_1detail_1_1band__solver.html" title=" " alt="" coords="5,197,191,252"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="101,266,101,301,95,301,95,266"/>
-<area shape="rect" id="Node000003" href="$d0/df0/classezp_1_1detail_1_1abstract__solver.html" title=" " alt="" coords="15,108,181,148"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="101,162,101,197,95,197,95,162"/>
-<area shape="rect" id="Node000004" title=" " alt="" coords="79,5,117,31"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="101,45,101,108,95,108,95,45"/>
+<area shape="rect" id="node1" title=" " alt="" coords="18,305,178,332"/>
+<area shape="rect" id="node2" href="$d0/db0/classezp_1_1detail_1_1band__solver.html" title=" " alt="" coords="5,200,191,256"/>
+<area shape="rect" id="node3" href="$d0/df0/classezp_1_1detail_1_1abstract__solver.html" title=" " alt="" coords="15,109,181,151"/>
+<area shape="rect" id="node4" title=" " alt="" coords="79,5,117,32"/>
 </map>

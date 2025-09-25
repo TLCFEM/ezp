@@ -825,6 +825,19 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    ppbsv
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -836,6 +849,43 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      Constructor
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solving" class="md-nav__link">
+    <span class="md-ellipsis">
+      Solving
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1063,6 +1113,32 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      Constructor
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solving" class="md-nav__link">
+    <span class="md-ellipsis">
+      Solving
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1086,6 +1162,37 @@
 <li>data type: DSZC</li>
 <li>index type: <code>std::int32_t</code>, <code>std::int64_t</code></li>
 </ul>
+<p>The <code>ppbsv</code> solves a square real banded symmetric positive definite distributed matrix with bandwidth <span class="arithmatex">\(KLU\)</span> using Cholesky factorization.
+The matrix of size <span class="arithmatex">\(N\)</span> is stored in a memory block of size <span class="arithmatex">\(N*(KLU+1)\)</span>.</p>
+<h2 id="constructor">Constructor</h2>
+<p>There are two template arguments.</p>
+<ol>
+<li>data type, e.g., <code>double</code>, <code>float</code>, <code>std::complex&lt;double&gt;</code>, <code>std::complex&lt;float&gt;</code>.</li>
+<li>index type, e.g., <code>std::int32_t</code>, <code>std::int64_t</code>.</li>
+<li>flag to indicate which half is stored, <code>U</code> or <code>L</code>.</li>
+</ol>
+<p>This solver uses a 1D process grid.
+It takes a single argument that represents the number of rows in the grid.</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">C++</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">auto</span><span class="w"> </span><span class="n">solver</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ppbsv</span><span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="sc">&#39;U&#39;</span><span class="o">&gt;</span><span class="p">(</span><span class="n">np_row</span><span class="p">);</span>
+</code></pre></div></td></tr></table></div>
+<p>Since the matrix is symmetric, <code>ScaLAPCK</code> expect only half of the matrix.
+Thus the caller must provide the matrix exactly stored in contiguous memory block <span class="arithmatex">\(N*(KLU+1)\)</span>.
+For different <code>UPLO</code> flags, the internal storage varies.</p>
+<h2 id="solving">Solving</h2>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">C++</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span>
+<span class="normal"><a href="#__codelineno-1-2">2</a></span>
+<span class="normal"><a href="#__codelineno-1-3">3</a></span>
+<span class="normal"><a href="#__codelineno-1-4">4</a></span>
+<span class="normal"><a href="#__codelineno-1-5">5</a></span>
+<span class="normal"><a href="#__codelineno-1-6">6</a></span>
+<span class="normal"><a href="#__codelineno-1-7">7</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="k">constexpr</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="n">KLU</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="c1">// storage for the matrices A and B</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3"></a><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">;</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4"></a><span class="c1">// ...</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5"></a><span class="c1">// ... storage is populated by some utility on the root process</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6"></a><span class="c1">// ...</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7"></a><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">info</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">solver</span><span class="p">.</span><span class="n">solve</span><span class="p">({</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">KLU</span><span class="p">,</span><span class="w"> </span><span class="n">A</span><span class="p">.</span><span class="n">data</span><span class="p">()},</span><span class="w"> </span><span class="p">{</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">NRHS</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">.</span><span class="n">data</span><span class="p">()});</span>
+</code></pre></div></td></tr></table></div>
 
 
 

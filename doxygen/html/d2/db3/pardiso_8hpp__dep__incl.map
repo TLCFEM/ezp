@@ -1,7 +1,5 @@
 <map id="ezp/pardiso.hpp" name="ezp/pardiso.hpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="167,5,292,31"/>
-<area shape="rect" id="Node000002" href="$d5/d08/example_8pardiso_8cpp.html" title="Example caller to the pardiso solver." alt="" coords="5,79,232,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="201,40,138,81,135,76,199,36"/>
-<area shape="rect" id="Node000003" href="$d0/d73/pardiso_8parser_8hpp.html" title=" " alt="" coords="257,79,426,104"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="261,36,324,76,322,81,258,40"/>
+<area shape="rect" id="node1" title=" " alt="" coords="167,5,292,32"/>
+<area shape="rect" id="node2" href="$d5/d08/example_8pardiso_8cpp.html" title="Example caller to the pardiso solver." alt="" coords="5,80,232,107"/>
+<area shape="rect" id="node3" href="$d0/d73/pardiso_8parser_8hpp.html" title=" " alt="" coords="257,80,426,107"/>
 </map>
