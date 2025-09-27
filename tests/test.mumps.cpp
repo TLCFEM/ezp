@@ -74,6 +74,45 @@ template<data_t DT> auto random_mumps() {
 
         if(0 == comm_world.rank()) REQUIRE(info == 0);
     }
+
+    solver.icntl_output_error_message(0);
+    solver.icntl_output_diagnostic_statistics_warning(0);
+    solver.icntl_output_global_information(0);
+    solver.icntl_printing_level(0);
+    solver.icntl_permutation_and_scaling(0);
+    solver.icntl_symmetric_permutation(0);
+    solver.icntl_scaling_strategy(0);
+    solver.icntl_transpose_matrix(0);
+    solver.icntl_iterative_refinement(0);
+    solver.icntl_error_analysis(0);
+    solver.icntl_ordering_strategy(0);
+    solver.icntl_root_parallelism(0);
+    solver.icntl_working_space_percentage_increase(0);
+    solver.icntl_compression_block_format(0);
+    solver.icntl_openmp_threads(0);
+    solver.icntl_distribution_strategy_input(0);
+    solver.icntl_schur_complement(0);
+    solver.icntl_distribution_strategy_solution(0);
+    solver.icntl_out_of_core(0);
+    solver.icntl_maximum_working_memory(0);
+    solver.icntl_null_pivot_row_detection(0);
+    solver.icntl_deficient_and_null_space_basis(0);
+    solver.icntl_schur_complement_solution(0);
+    solver.icntl_rhs_block_size(0);
+    solver.icntl_ordering_computation(0);
+    solver.icntl_inverse_computation(0);
+    solver.icntl_forward_elimination(0);
+    solver.icntl_determinant_computation(0);
+    solver.icntl_out_of_core_file(0);
+    solver.icntl_blr(0);
+    solver.icntl_blr_variant(0);
+    solver.icntl_blr_compression(0);
+    solver.icntl_lu_compression_rate(0);
+    solver.icntl_block_compression_rate(0);
+    solver.icntl_tree_parallelism(0);
+    solver.icntl_compact_working_space(0);
+    solver.icntl_rank_revealing_factorization(0);
+    solver.icntl_symbolic_factorization(0);
 }
 
 #ifdef EZP_ENABLE_TEST
