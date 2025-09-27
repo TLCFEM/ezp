@@ -1,6 +1,5 @@
 var NAVTREEINDEX1 =
 {
-"d4/d16/structezp_1_1sparse__coo__mat.html#af17e7be2d145929486c4432264242b9c":[3,0,0,1,4],
 "d4/d31/example_8pposvx_8cpp.html":[4,0,0,9],
 "d4/d31/example_8pposvx_8cpp.html#ae66f6b31b5ad750f1fe042a706a4e3d4":[4,0,0,9,0],
 "d4/d47/classpposvx.html":[3,0,21],
@@ -249,5 +248,6 @@ var NAVTREEINDEX1 =
 "da/d16/example_8lis_8cpp.html":[4,0,0,0],
 "da/d16/example_8lis_8cpp.html#ae66f6b31b5ad750f1fe042a706a4e3d4":[4,0,0,0,0],
 "da/d2f/classezp_1_1ppbsv_1_1indexer.html":[3,0,0,21,0],
-"da/d2f/classezp_1_1ppbsv_1_1indexer.html#a10f41eaf8e5402b0fae55942e084ffe9":[3,0,0,21,0,2]
+"da/d2f/classezp_1_1ppbsv_1_1indexer.html#a10f41eaf8e5402b0fae55942e084ffe9":[3,0,0,21,0,2],
+"da/d2f/classezp_1_1ppbsv_1_1indexer.html#a28c58f7e8953f57f97b5061e615ba0a6":[3,0,0,21,0,0]
 };
