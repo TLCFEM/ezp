@@ -16,7 +16,7 @@
  ******************************************************************************/
 
 #include <chrono>
-#include <ezp/pardiso.hpp>
+#include <ezp/pardiso.parser.hpp>
 #include <random>
 #include <thread>
 
@@ -90,6 +90,40 @@ template<data_t DT> auto random_pardiso() {
         info = solver.solve({N, NRHS, b.data()});
 
         if(0 == comm_world.rank()) REQUIRE(info == 0);
+
+        solver.iparm_default_value(0);
+        solver.iparm_reducing_ordering(0);
+        solver.iparm_user_permutation(0);
+        solver.iparm_iterative_refinement(0);
+        solver.iparm_pivoting_perturbation(0);
+        solver.iparm_scaling(0);
+        solver.iparm_transpose_matrix(0);
+        solver.iparm_weighted_matching(0);
+        solver.iparm_nnz_factor(0);
+        solver.iparm_pivoting_type(0);
+        solver.iparm_matrix_checker(0);
+        solver.iparm_precision(0);
+        solver.iparm_partial_solve(0);
+        solver.iparm_zero_based_indexing(0);
+        solver.iparm_schur_complement(0);
+        solver.iparm_out_of_core(0);
+
+        pardiso_set("--default-value 0 "
+                    "--reducing-ordering 2 "
+                    "--user-permutation 0 "
+                    "--iterative-refinement 0 "
+                    "--pivoting-perturbation 13 "
+                    "--scaling 0 "
+                    "--transpose-matrix 0 "
+                    "--weighted-matching 0 "
+                    "--nnz-factor -1 "
+                    "--pivoting-type 0 "
+                    "--matrix-checker 0 "
+                    "--partial-solve 0 "
+                    "--zero-based-indexing 0 "
+                    "--schur-complement 0 "
+                    "--out-of-core 0 ",
+                    solver);
     }
 }
 

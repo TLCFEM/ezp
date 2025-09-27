@@ -113,6 +113,46 @@ template<data_t DT> auto random_mumps() {
     solver.icntl_compact_working_space(0);
     solver.icntl_rank_revealing_factorization(0);
     solver.icntl_symbolic_factorization(0);
+
+    mumps_set("--output-error-message 0 "
+              "--output-diagnostic-statistics-warning 0 "
+              "--output-global-information 0 "
+              "--printing-level 0 "
+              "--permutation-and-scaling 0 "
+              "--symmetric-permutation 0 "
+              "--scaling-strategy 0 "
+              "--transpose-matrix 0 "
+              "--iterative-refinement 0 "
+              "--error-analysis 0 "
+              "--ordering-strategy 0 "
+              "--root-parallelism 0 "
+              "--working-space-percentage-increase 0 "
+              "--compression-block-format 0 "
+              "--openmp-threads 0 "
+              "--distribution-strategy-input 0 "
+              "--schur-complement 0 "
+              "--distribution-strategy-solution 0 "
+              "--out-of-core 0 "
+              "--maximum-working-memory 0 "
+              "--null-pivot-row-detection 0 "
+              "--deficient-and-null-space-basis 0 "
+              "--schur-complement-solution 0 "
+              "--rhs-block-size 0 "
+              "--ordering-computation 0 "
+              "--inverse-computation 0 "
+              "--forward-elimination 0 "
+              "--determinant-computation 0 "
+              "--out-of-core-file 0 "
+              "--blr 0 "
+              "--blr-variant 0 "
+              "--blr-compression 0 "
+              "--lu-compression-rate 0 "
+              "--block-compression-rate 0 "
+              "--tree-parallelism 0 "
+              "--compact-working-space 0 "
+              "--rank-revealing-factorization 0 "
+              "--symbolic-factorization 0 ",
+              solver);
 }
 
 #ifdef EZP_ENABLE_TEST

@@ -69,6 +69,8 @@
 #ifndef PARDISO_PARSER_HPP
 #define PARDISO_PARSER_HPP
 
+#ifdef EZP_MKL
+
 #include "pardiso.hpp"
 #include "parser.hpp"
 
@@ -93,6 +95,8 @@ namespace ezp {
         }
     }
 } // namespace ezp
+
+#endif
 
 #endif
 
