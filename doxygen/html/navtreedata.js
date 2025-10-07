@@ -25,9 +25,10 @@
 var NAVTREE =
 [
   [ "ezp", "index.html", [
-    [ "Features", "index.html#autotoc_md1", null ],
-    [ "Dependency", "index.html#autotoc_md2", null ],
-    [ "Example", "index.html#autotoc_md3", null ],
+    [ "You May Be Interested if You...", "index.html#autotoc_md1", null ],
+    [ "Features", "index.html#autotoc_md2", null ],
+    [ "Dependency", "index.html#autotoc_md3", null ],
+    [ "Example", "index.html#autotoc_md4", null ],
     [ "Classes", "annotated.html", [
       [ "Class List", "annotated.html", "annotated_dup" ],
       [ "Class Index", "classes.html", null ],
