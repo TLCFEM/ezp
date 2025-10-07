@@ -5,12 +5,19 @@
 
 `ezp` is a lightweight C++ wrapper for selected distributed solvers for linear systems.
 
+## You May Be Interested if You...
+
+1. want to solve linear systems on distributed clusters
+2. want to avoid the hassles of learning how to call various C/Fortran solvers
+
+Solving a linear system shall be as easy as calling a method `solver.solve(A, B)`.
+
 ## Features
 
 1. easy to use interface
 2. drop-in header-only library
 3. standalone solver binaries that can be invoked by various callers
-4. random tested implementation
+4. implementation validated with randomly generated inputs
 
 The following solvers are implemented.
 
