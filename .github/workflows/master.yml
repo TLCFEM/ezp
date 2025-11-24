@@ -25,7 +25,7 @@ jobs:
             index: 'ON'
     steps:
       - name: Clone
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Update
@@ -92,7 +92,7 @@ jobs:
           token: ${{ secrets.ALL }}
           environment: github-pages
       - name: Clone
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup
         uses: actions/setup-python@v6
         with:
