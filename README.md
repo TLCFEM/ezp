@@ -1,5 +1,6 @@
 # ezp
 
+[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/TLCFEM/ezp)
 [![codecov](https://codecov.io/gh/TLCFEM/ezp/graph/badge.svg?token=ME0M312F5M)](https://codecov.io/gh/TLCFEM/ezp)
 [![master](https://github.com/TLCFEM/ezp/actions/workflows/master.yml/badge.svg?branch=master)](https://github.com/TLCFEM/ezp/actions/workflows/master.yml)
 
