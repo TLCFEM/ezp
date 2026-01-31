@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.8.1, released
-C  on Wed Jul 30 16:49:18 UTC 2025
+C  This file is part of MUMPS 5.8.2, released
+C  on Mon Jan 12 15:17:08 UTC 2026
 C
 C
-C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -750,8 +750,7 @@ C}
      &                    (IC.GE.1).AND.(IC.LE.N)) THEN
                         ELM = abs(A_loc(NZIND))*ROWSCA(IR)*COLSCA(IC)
                         WRKR_TH(IR,IOMP) = WRKR_TH(IR,IOMP) + ELM
-                        IF (IR.NE.IC)
-     &                  WRKC_TH(IC,IOMP) = WRKC_TH(IC,IOMP) + ELM
+                        WRKC_TH(IC,IOMP) = WRKC_TH(IC,IOMP) + ELM
                      ELSE
                         OORANGEIND = .TRUE.
                      ENDIF
@@ -771,8 +770,7 @@ C}
                      IC = JCN_loc(NZIND)
                      ELM = abs(A_loc(NZIND))*ROWSCA(IR)*COLSCA(IC)
                      WRKR_TH(IR,IOMP) = WRKR_TH(IR,IOMP) + ELM
-                     IF (IR.NE.IC)
-     &               WRKC_TH(IC,IOMP) = WRKC_TH(IC,IOMP) + ELM
+                     WRKC_TH(IC,IOMP) = WRKC_TH(IC,IOMP) + ELM
                   ENDDO
 !$OMP     END DO
 !$OMP   END PARALLEL

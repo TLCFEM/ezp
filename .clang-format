@@ -130,7 +130,6 @@ JavaScriptQuotes: Leave
 JavaScriptWrapImports: true
 KeepEmptyLinesAtTheStartOfBlocks: false
 LambdaBodyIndentation: Signature
-Language: Cpp
 LineEnding: DeriveLF
 MacroBlockBegin: ""
 MacroBlockEnd: ""
@@ -163,7 +162,7 @@ RequiresClausePosition: OwnLine
 RequiresExpressionIndentation: OuterScope
 SeparateDefinitionBlocks: Leave
 ShortNamespaceLines: 1
-SortIncludes: CaseSensitive
+SortIncludes: Never
 SortJavaStaticImport: Before
 SortUsingDeclarations: LexicographicNumeric
 SpaceAfterCStyleCast: false

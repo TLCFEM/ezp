@@ -1,10 +1,10 @@
 /*
  *
- *  This file is part of MUMPS 5.8.1, released
- *  on Wed Jul 30 16:49:18 UTC 2025
+ *  This file is part of MUMPS 5.8.2, released
+ *  on Mon Jan 12 15:17:08 UTC 2026
  *
  *
- *  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+ *  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
  *  Mumps Technologies, University of Bordeaux.
  *
  *  This version of MUMPS is provided to you free of charge. It is
@@ -597,6 +597,10 @@ mumps_c(MUMPS_STRUC_C* mumps_par) {
     /* colsca_loc and rowsca_loc are always out */
     mumps_par->colsca_loc = MUMPS_COLSCA_LOC_STATIC;
     mumps_par->rowsca_loc = MUMPS_ROWSCA_LOC_STATIC;
+    /* glob2loc_rhs, glob2loc_sol and rhsintr are out */
+    mumps_par->glob2loc_rhs = mumps_get_glob2loc_rhs();
+    mumps_par->glob2loc_sol = mumps_get_glob2loc_sol();
+    mumps_par->rhsintr = MUMPS_RHSINTR_STATIC;
     /* singular_values is always out */
     mumps_par->singular_values = MUMPS_SINGULAR_VALUES_STATIC;
     /*
