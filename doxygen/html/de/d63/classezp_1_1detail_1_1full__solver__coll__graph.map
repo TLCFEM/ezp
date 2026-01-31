@@ -1,6 +1,10 @@
 <map id="ezp::detail::full_solver&lt; DT, IT, ODER &gt;" name="ezp::detail::full_solver&lt; DT, IT, ODER &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="423,49,589,90"/>
-<area shape="rect" id="node2" href="$d0/df0/classezp_1_1detail_1_1abstract__solver.html" title=" " alt="" coords="166,5,317,61"/>
-<area shape="rect" id="node3" title=" " alt="" coords="132,86,351,127"/>
-<area shape="rect" id="node4" title=" " alt="" coords="5,93,44,120"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="423,47,589,87"/>
+<area shape="rect" id="Node000002" href="$d0/df0/classezp_1_1detail_1_1abstract__solver.html" title=" " alt="" coords="166,5,317,60"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="330,42,423,54,422,59,330,47"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,60,44,85"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="56,57,67,54,165,37,166,42,69,59,58,63"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="132,89,351,129"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="45,94,69,113,100,122,132,124,132,130,99,127,67,118,41,98"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="364,87,422,78,423,83,365,92"/>
 </map>

@@ -1,5 +1,7 @@
 <map id="ezp::ppbsv&lt; DT, IT, UL &gt;" name="ezp::ppbsv&lt; DT, IT, UL &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="29,199,178,240"/>
-<area shape="rect" id="node2" href="$d0/db0/classezp_1_1detail_1_1band__solver.html" title=" " alt="" coords="5,95,201,151"/>
-<area shape="rect" id="node3" href="$d0/df0/classezp_1_1detail_1_1abstract__solver.html" title=" " alt="" coords="20,5,187,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="29,196,178,236"/>
+<area shape="rect" id="Node000002" href="$d0/db0/classezp_1_1detail_1_1band__solver.html" title=" " alt="" coords="5,93,201,148"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="106,162,106,196,101,196,101,162"/>
+<area shape="rect" id="Node000003" href="$d0/df0/classezp_1_1detail_1_1abstract__solver.html" title=" " alt="" coords="20,5,187,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="106,59,106,93,101,93,101,59"/>
 </map>

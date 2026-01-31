@@ -1,5 +1,7 @@
 <map id="ezp::sparse_csr_mat&lt; DT, IT &gt;" name="ezp::sparse_csr_mat&lt; DT, IT &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="5,139,160,180"/>
-<area shape="rect" id="node2" title=" " alt="" coords="23,5,62,32"/>
-<area shape="rect" id="node3" title=" " alt="" coords="104,5,144,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,137,160,177"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="23,5,62,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="41,45,40,78,46,112,63,136,58,139,42,114,34,78,36,44"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="104,5,144,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="119,45,91,138,86,136,114,43"/>
 </map>

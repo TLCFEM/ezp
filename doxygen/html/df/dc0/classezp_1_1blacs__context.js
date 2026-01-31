@@ -1,31 +1,11 @@
 var classezp_1_1blacs__context =
 [
-    [ "blacs_context", "df/dc0/classezp_1_1blacs__context.html#a8c580a683043255e63c1b81ee98ec9fe", null ],
-    [ "blacs_context", "df/dc0/classezp_1_1blacs__context.html#abae66067cc4cea33946a7e50b889000a", null ],
-    [ "blacs_context", "df/dc0/classezp_1_1blacs__context.html#ae39571842bff56c441b029bc6521a758", null ],
-    [ "blacs_context", "df/dc0/classezp_1_1blacs__context.html#ab0c53937bb5d64f6c2e55eed3bb79a20", null ],
-    [ "blacs_context", "df/dc0/classezp_1_1blacs__context.html#aedf290bf18304f547f99a9b00ebe85d3", null ],
-    [ "~blacs_context", "df/dc0/classezp_1_1blacs__context.html#a13a43c9210f4e9bec8bfae92accc90d7", null ],
     [ "amn", "df/dc0/classezp_1_1blacs__context.html#a0bd338317fb686fc60d7843de95faaec", null ],
     [ "amx", "df/dc0/classezp_1_1blacs__context.html#a88277eb4844036606dc52a3f4619ba1c", null ],
     [ "col_block", "df/dc0/classezp_1_1blacs__context.html#a538d81ff653101dea6ea38ea2c4fc250", null ],
     [ "cols", "df/dc0/classezp_1_1blacs__context.html#ab35ac3623a19dcb5bc3c4a4e502f170a", null ],
-    [ "copy_to", "df/dc0/classezp_1_1blacs__context.html#ab8dc7bfa7ddd7c30e9b7b35b5ad20a12", null ],
     [ "desc_g", "df/dc0/classezp_1_1blacs__context.html#acddbddbdc76f08edcefcdd2b6c0557ba", null ],
-    [ "desc_l", "df/dc0/classezp_1_1blacs__context.html#adf7f6b947721e74bcad5ea8da971ea9f", null ],
     [ "desc_l", "df/dc0/classezp_1_1blacs__context.html#a410ec5bb3ea2ee98ba683165aa104a03", null ],
-    [ "gather", "df/dc0/classezp_1_1blacs__context.html#ac23aeede37fd15aa2a41ed9a1eb2c9f8", null ],
-    [ "is_valid", "df/dc0/classezp_1_1blacs__context.html#a306dc9307b5c5e0512d35c9514f0b6db", null ],
-    [ "operator=", "df/dc0/classezp_1_1blacs__context.html#aa125cbba37c0412407eaab0356a0197b", null ],
-    [ "operator=", "df/dc0/classezp_1_1blacs__context.html#ae8dc48e5b929b064d7d1b04b085ce4df", null ],
     [ "row_block", "df/dc0/classezp_1_1blacs__context.html#a7f9a53810f17eaa2f37d953b13ad8251", null ],
-    [ "rows", "df/dc0/classezp_1_1blacs__context.html#a5327677df8db07830eb93b67fc396aec", null ],
-    [ "scatter", "df/dc0/classezp_1_1blacs__context.html#ab20a7b355da75ea3e05d7256d67e6f10", null ],
-    [ "context", "df/dc0/classezp_1_1blacs__context.html#aaaa7e3de5978396c3a7808bca7b7087a", null ],
-    [ "my_col", "df/dc0/classezp_1_1blacs__context.html#a46a24d7dbfed672791b71f0f9d7e4fd6", null ],
-    [ "my_row", "df/dc0/classezp_1_1blacs__context.html#a7a953cf37ef9fbdf35b04b31dc1e070a", null ],
-    [ "n_cols", "df/dc0/classezp_1_1blacs__context.html#afd453bf43ab3ff99dec4992e75f6f9ab", null ],
-    [ "n_rows", "df/dc0/classezp_1_1blacs__context.html#a3ef3258332b138043f43d71ccb699c58", null ],
-    [ "rank", "df/dc0/classezp_1_1blacs__context.html#acaeb9e6d392b7fea79a8750b84bd3716", null ],
-    [ "size", "df/dc0/classezp_1_1blacs__context.html#a87b7afb293c2d3f0156a5f6d3028f60a", null ]
+    [ "rows", "df/dc0/classezp_1_1blacs__context.html#a5327677df8db07830eb93b67fc396aec", null ]
 ];

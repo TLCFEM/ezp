@@ -12,13 +12,13 @@ var hierarchy =
       [ "ezp::detail::band_solver< DT, IT, WT >", "d0/db0/classezp_1_1detail_1_1band__solver.html", null ]
     ] ],
     [ "ezp::detail::abstract_solver< DT, IT, full_mat< DT, IT > >", "d0/df0/classezp_1_1detail_1_1abstract__solver.html", [
-      [ "ezp::detail::full_solver< DT, IT, 'R' >", "df/df0/classezp_1_1detail_1_1full__solver.html", [
+      [ "ezp::detail::full_solver< DT, IT, 'R' >", "df/df0/classezp_1_1detail_1_1full__solver.html", null ],
+      [ "ezp::detail::full_solver< DT, IT, ODER >", "df/df0/classezp_1_1detail_1_1full__solver.html", [
         [ "ezp::pgesv< DT, IT, ODER >", "d5/d48/classezp_1_1pgesv.html", null ],
         [ "ezp::pgesvx< DT, IT, FCT, ODER >", "d5/d6a/classezp_1_1pgesvx.html", null ],
         [ "ezp::pposv< DT, IT, UL, ODER >", "de/d12/classezp_1_1pposv.html", null ],
         [ "ezp::pposvx< DT, IT, UL, ODER >", "d0/d05/classezp_1_1pposvx.html", null ]
-      ] ],
-      [ "ezp::detail::full_solver< DT, IT, ODER >", "df/df0/classezp_1_1detail_1_1full__solver.html", null ]
+      ] ]
     ] ],
     [ "bandsymm_mat", "d0/d33/classbandsymm__mat.html", null ],
     [ "ezp::base_mat< DT, IT >", "d3/d46/structezp_1_1base__mat.html", [

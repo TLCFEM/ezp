@@ -1,6 +1,9 @@
 <map id="LIS_MATRIX_STRUCT" name="LIS_MATRIX_STRUCT">
-<area shape="rect" id="node1" title=" " alt="" coords="241,109,398,136"/>
-<area shape="rect" id="node2" href="$d1/d04/structLIS__COMMTABLE__STRUCT.html" title=" " alt="" coords="5,5,196,32"/>
-<area shape="rect" id="node3" href="$dc/dff/structLIS__MATRIX__DIAG__STRUCT.html" title=" " alt="" coords="221,5,418,32"/>
-<area shape="rect" id="node4" href="$dc/d56/structLIS__MATRIX__CORE__STRUCT.html" title=" " alt="" coords="442,5,642,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="249,108,407,133"/>
+<area shape="rect" id="Node000002" href="$dc/d56/structLIS__MATRIX__CORE__STRUCT.html" title=" " alt="" coords="5,5,205,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="145,34,304,106,302,110,142,39"/>
+<area shape="rect" id="Node000003" href="$dc/dff/structLIS__MATRIX__DIAG__STRUCT.html" title=" " alt="" coords="229,5,427,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="331,45,331,108,325,108,325,45"/>
+<area shape="rect" id="Node000004" href="$d1/d04/structLIS__COMMTABLE__STRUCT.html" title=" " alt="" coords="451,5,642,31"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="510,39,354,110,352,106,508,34"/>
 </map>

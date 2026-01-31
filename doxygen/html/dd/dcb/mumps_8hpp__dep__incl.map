@@ -1,6 +1,9 @@
 <map id="ezp/mumps.hpp" name="ezp/mumps.hpp">
-<area shape="rect" id="node1" title=" " alt="" coords="166,5,293,32"/>
-<area shape="rect" id="node2" href="$d6/da5/example_8mumps_8cpp.html" title="Example caller to the mumps solver." alt="" coords="5,80,232,107"/>
-<area shape="rect" id="node3" href="$d7/db7/mumps_8parser_8hpp.html" title=" " alt="" coords="256,80,427,107"/>
-<area shape="rect" id="node4" href="$dc/dff/solver_8mumps_8cpp.html" title="Standalone mumps solver." alt="" coords="233,155,450,181"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="166,5,293,31"/>
+<area shape="rect" id="Node000002" href="$d6/da5/example_8mumps_8cpp.html" title="Example caller to the mumps solver." alt="" coords="5,79,232,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="201,40,138,81,135,76,199,36"/>
+<area shape="rect" id="Node000003" href="$d7/db7/mumps_8parser_8hpp.html" title=" " alt="" coords="256,79,427,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="261,36,324,76,322,81,258,40"/>
+<area shape="rect" id="Node000004" href="$dc/dff/solver_8mumps_8cpp.html" title="Standalone mumps solver." alt="" coords="233,152,450,177"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="344,118,344,152,339,152,339,118"/>
 </map>
