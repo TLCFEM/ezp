@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        os: [ ubuntu-22.04 ]
+        os: [ ubuntu-24.04 ]
         build: [ RelWithDebInfo, Debug ]
         mpi: [ impi, mpich, openmpi ]
         index: [ 'ON', 'OFF' ]
@@ -83,7 +83,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   documentation:
     needs: linux-dev
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.event_name == 'push'
     steps:
       - name: Delete All
