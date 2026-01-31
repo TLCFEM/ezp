@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.8.1, released
-C  on Wed Jul 30 16:49:18 UTC 2025
+C  This file is part of MUMPS 5.8.2, released
+C  on Mon Jan 12 15:17:08 UTC 2026
 C
 C
-C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -1807,7 +1807,8 @@ C{
 C             ICNTL(35) should not been accessed during SOLVE thus
 C             print KEEP(486) value set during factorization
      &        id%NRHS, NBRHS, ICNTL(9), ICNTL(10), ICNTL(11),
-     &        ICNTL(20), ICNTL(21), ICNTL(30), KEEP(486),
+     &        ICNTL(20), ICNTL(21),
+     &        ICNTL(30), KEEP(486),
      &        ICNTL48_EFF
           IF (KEEP(111).NE.0) THEN
             WRITE (MPG, 151) KEEP(111)

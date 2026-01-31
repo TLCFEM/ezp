@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.8.1, released
-C  on Wed Jul 30 16:49:18 UTC 2025
+C  This file is part of MUMPS 5.8.2, released
+C  on Mon Jan 12 15:17:08 UTC 2026
 C
 C
-C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -2345,7 +2345,7 @@ C
      &                     IN_OUT_TAB48, SIZETAB)
       IMPLICIT NONE
       INTEGER(8), intent(in) :: SIZETAB
-      INTEGER :: IN_OUT_TAB48(2*SIZETAB)
+      REAL :: IN_OUT_TAB48(2*SIZETAB)
       INTEGER(8) :: IBEG24, IBEG28, SIZE1, SIZE2
       IF (SIZETAB.LE. 1000_8) THEN
         CALL MUMPS_RCOPY_64TO32_64C_IP_C(IN_OUT_TAB48,

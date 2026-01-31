@@ -1,9 +1,9 @@
 !
-!  This file is part of MUMPS 5.8.1, released
-!  on Wed Jul 30 16:49:18 UTC 2025
+!  This file is part of MUMPS 5.8.2, released
+!  on Mon Jan 12 15:17:08 UTC 2026
 !
 !
-!  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+!  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 !  Mumps Technologies, University of Bordeaux.
 !
 !  This version of MUMPS is provided to you free of charge. It is

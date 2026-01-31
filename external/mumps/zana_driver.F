@@ -1,9 +1,9 @@
 C
-C  This file is part of MUMPS 5.8.1, released
-C  on Wed Jul 30 16:49:18 UTC 2025
+C  This file is part of MUMPS 5.8.2, released
+C  on Mon Jan 12 15:17:08 UTC 2026
 C
 C
-C  Copyright 1991-2025 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
+C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
 C  Mumps Technologies, University of Bordeaux.
 C
 C  This version of MUMPS is provided to you free of charge. It is
@@ -4664,8 +4664,10 @@ C             Special case of empty matrix
      &      id%NSLAVES, id%KEEP8(28), DUMP_RHS, id%NRHS,
      &      DUMP_BLKPTR, DUMP_BLKVAR, id%NBLK, id%ICNTL(15) )
             CLOSE( IUNIT )
+C           type of numerical values should be the type 
+C           of the matrix values as provided by the user
             CALL MUMPS_DUMPMATBINARY_C( id%N, id%KEEP8(28),
-     &      id%KEEP(35),
+     &      id%KEEP(149),
      &      IRN_PASSED(1), JCN_PASSED(1), A_PASSED(1),
      &      IS_A_PROVIDED,
      &      trim(id%WRITE_PROBLEM)//char(0) )
@@ -4738,8 +4740,10 @@ C               extension by a .header extension
      &          DUMP_BLKPTR, DUMP_BLKVAR, id%NBLK, id%ICNTL(15) )
                 CLOSE( IUNIT )
               ENDIF
+C             type of numerical values should be the type 
+C             of the matrix values as provided by the user
               CALL MUMPS_DUMPMATBINARY_C( id%N, id%KEEP8(29),
-     &        id%KEEP(35),
+     &        id%KEEP(149),
      &        IRN_PASSED(1), JCN_PASSED(1), A_PASSED(1),
      &        IS_A_PROVIDED_GLOB,
      &        trim(id%WRITE_PROBLEM)//trim(adjustl(IDSTR))//char(0) )
@@ -4763,8 +4767,10 @@ C     ===============
       IF ( DUMP_RHS ) THEN
         IF (BINARY_FORMAT) THEN
 C         dump RHS in binary format
+C         type of numerical values should be the type 
+C         of the RHS as provided by the user
           CALL MUMPS_DUMPRHSBINARY_C( id%N, id%NRHS, id%LRHS, id%RHS(1),
-     &    id%KEEP(35),
+     &    id%KEEP(149),
      &    trim(id%WRITE_PROBLEM)//'.rhs'//char(0) )
         ELSE
 C         dump RHS in matrix-market format
