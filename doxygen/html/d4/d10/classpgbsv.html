@@ -109,16 +109,15 @@ See: <a href="https://github.com/Reference-ScaLAPACK/scalapack/issues/116">https
 <div class="fragment"><div class="line"> .    .    .    .    .    .</div>
 <div class="line"> .    .    .    .    .    .</div>
 <div class="line"> .    .    .    .    .    .</div>
-<div class="line"> .   <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a12</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a23</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a34</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a45</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a56</a></div>
-<div class="line"><a class="code hl_class" href="../../dc/d7b/classpardiso.html">a11</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a22</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a33</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a44</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a55</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a66</a></div>
-<div class="line"><a class="code hl_class" href="../../dc/d7b/classpardiso.html">a21</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a32</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a43</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a54</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a65</a>   .</div>
-<div class="line">a31  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a42</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a53</a>  <a class="code hl_class" href="../../dc/d7b/classpardiso.html">a64</a>   .    .</div>
-<div class="ttc" id="aclasspardiso_html"><div class="ttname"><a href="../../dc/d7b/classpardiso.html">pardiso</a></div><div class="ttdoc">Solver for general sparse matrices.</div></div>
+<div class="line"> .   a12  a23  a34  a45  a56</div>
+<div class="line">a11  a22  a33  a44  a55  a66</div>
+<div class="line">a21  a32  a43  a54  a65   .</div>
+<div class="line">a31  a42  a53  a64   .    .</div>
 </div><!-- fragment --><p>The lead dimension should be <code>2*(KL+KU)+1</code>.</p>
 <p>With zero based indexing, for a general band matrix <code>A</code>, the element at row <code>i</code> and column <code>j</code> is stored at <code>A[IDX(i, j)]</code>.</p>
-<div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a> = [&amp;](<span class="keyword">const</span> <span class="keywordtype">int</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a>, <span class="keyword">const</span> <span class="keywordtype">int</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">j</a>) {</div>
-<div class="line">    <span class="keywordflow">if</span>(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> - <a class="code hl_class" href="../../dc/d7b/classpardiso.html">j</a> &gt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> || <a class="code hl_class" href="../../dc/d7b/classpardiso.html">j</a> - <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> &gt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a>) <span class="keywordflow">return</span> -1;</div>
-<div class="line">    <span class="keywordflow">return</span> 2 * <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> + 2 * <a class="code hl_class" href="../../dc/d7b/classpardiso.html">j</a> * (<a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a>);</div>
+<div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keyword">auto</span> IDX = [&amp;](<span class="keyword">const</span> <span class="keywordtype">int</span> i, <span class="keyword">const</span> <span class="keywordtype">int</span> j) {</div>
+<div class="line">    <span class="keywordflow">if</span>(i - j &gt; KL || j - i &gt; KU) <span class="keywordflow">return</span> -1;</div>
+<div class="line">    <span class="keywordflow">return</span> 2 * KU + KL + i + 2 * j * (KL + KU);</div>
 <div class="line">};</div>
 </div><!-- fragment --><p>The example usage can be seen as follows.</p>
 <div class="fragment"><div class="line"><span class="comment">/*******************************************************************************</span></div>
@@ -145,47 +144,49 @@ See: <a href="https://github.com/Reference-ScaLAPACK/scalapack/issues/116">https
 <div class="line"> </div>
 <div class="line"><span class="keywordtype">int</span> main() {</div>
 <div class="line">    <span class="comment">// get the current blacs environment</span></div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; env = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">get_env&lt;int_t&gt;</a>();</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; env = get_env&lt;int_t&gt;();</div>
 <div class="line"> </div>
-<div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> N = 10, NRHS = 1, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> = 2, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a> = 2;</div>
-<div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">LDA</a> = 2 * (<a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a> + <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a>) + 1;</div>
+<div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> N = 10, NRHS = 1, KL = 2, KU = 2;</div>
+<div class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> LDA = 2 * (KL + KU) + 1;</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// storage for the matrices A and B</span></div>
-<div class="line">    std::vector&lt;double&gt; A, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>;</div>
+<div class="line">    std::vector&lt;double&gt; A, B;</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// helper function to convert 2D indices to 1D indices</span></div>
 <div class="line">    <span class="comment">// the band symmetric matrix used for gbsv subroutine requires the matrix to be stored with a leading dimension of (2 * (KL + KU) + 1)</span></div>
 <div class="line">    <span class="comment">// see Fig. 4.10 https://netlib.org/scalapack/slug/node84.html</span></div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a> = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">par_dgbsv&lt;int_t&gt;::indexer</a>{N, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a>};</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> IDX = <a class="code hl_class" href="../../d4/d94/classezp_1_1pgbsv_1_1indexer.html">par_dgbsv&lt;int_t&gt;::indexer</a>{N, KL, KU};</div>
 <div class="line"> </div>
 <div class="line">    <span class="keywordflow">if</span>(0 == env.rank()) {</div>
 <div class="line">        <span class="comment">// the matrices are only initialized on the root process</span></div>
-<div class="line">        A.resize(N * <a class="code hl_class" href="../../dc/d7b/classpardiso.html">LDA</a>, 0.);</div>
-<div class="line">        <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>.resize(N * NRHS, 1.);</div>
+<div class="line">        A.resize(N * LDA, 0.);</div>
+<div class="line">        B.resize(N * NRHS, 1.);</div>
 <div class="line"> </div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> = 0; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> &lt; N; ++<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>) A[<a class="code hl_class" href="../../dc/d7b/classpardiso.html">IDX</a>(<a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a>)] = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">I</a> + 1;</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">auto</span> I = 0; I &lt; N; ++I) A[IDX(I, I)] = I + 1;</div>
 <div class="line">    }</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// create a parallel solver</span></div>
 <div class="line">    <span class="comment">// it uses a one-dimensional process grid</span></div>
 <div class="line">    <span class="comment">// it takes the number of processes as arguments</span></div>
-<div class="line">    <span class="keyword">auto</span> solver = <a class="code hl_class" href="../../dc/d7b/classpardiso.html">par_dgbsv</a>(env.size());</div>
+<div class="line">    <span class="keyword">auto</span> solver = <a class="code hl_class" href="../../d1/d7e/classezp_1_1pgbsv.html">par_dgbsv</a>(env.size());</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// need to wrap the data in full_mat objects</span></div>
 <div class="line">    <span class="comment">// it requires the number of rows and columns of the matrix, and a pointer to the data</span></div>
 <div class="line">    <span class="comment">// on non-root processes, the data pointer is nullptr as the vector is empty</span></div>
 <div class="line">    <span class="comment">// solver.solve(band_mat{N, N, KL, KU, A.data()}, full_mat{N, NRHS, B.data()});</span></div>
-<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> info = solver.solve({N, N, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KL</a>, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">KU</a>, A.data()}, {N, NRHS, <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>.data()});</div>
+<div class="line">    <span class="keyword">const</span> <span class="keyword">auto</span> info = solver.solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});</div>
 <div class="line"> </div>
 <div class="line">    <span class="keywordflow">if</span>(0 == env.rank() &amp;&amp; 0 == info) {</div>
 <div class="line">        std::cout &lt;&lt; std::setprecision(6) &lt;&lt; std::fixed &lt;&lt; <span class="stringliteral">&quot;Info: &quot;</span> &lt;&lt; info &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
 <div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Solution:\n&quot;</span>;</div>
-<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">double</span> <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> : <a class="code hl_class" href="../../dc/d7b/classpardiso.html">B</a>) <a class="code hl_class" href="../../dc/d7b/classpardiso.html">std</a>::<a class="code hl_class" href="../../dc/d7b/classpardiso.html">cout</a> &lt;&lt; <a class="code hl_class" href="../../dc/d7b/classpardiso.html">i</a> &lt;&lt; <span class="stringliteral">&#39;\n&#39;</span>;</div>
+<div class="line">        <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">double</span> i : B) std::cout &lt;&lt; i &lt;&lt; <span class="stringliteral">&#39;\n&#39;</span>;</div>
 <div class="line">    }</div>
 <div class="line"> </div>
 <div class="line">    <span class="keywordflow">return</span> info;</div>
 <div class="line">}</div>
 <div class="line"> </div>
+<div class="ttc" id="aclassezp_1_1pgbsv_1_1indexer_html"><div class="ttname"><a href="../../d4/d94/classezp_1_1pgbsv_1_1indexer.html">ezp::pgbsv::indexer</a></div><div class="ttdef"><b>Definition</b> pgbsv.hpp:104</div></div>
+<div class="ttc" id="aclassezp_1_1pgbsv_html"><div class="ttname"><a href="../../d1/d7e/classezp_1_1pgbsv.html">ezp::pgbsv</a></div><div class="ttdef"><b>Definition</b> pgbsv.hpp:70</div></div>
 <div class="ttc" id="apgbsv_8hpp_html"><div class="ttname"><a href="../../d0/d4f/pgbsv_8hpp.html">pgbsv.hpp</a></div></div>
 </div><!-- fragment --><dl class="section author"><dt>Author</dt><dd>tlc </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>07/03/2025 </dd></dl>
