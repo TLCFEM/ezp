@@ -48,8 +48,8 @@ int main() {
         a.resize(N);
         b.resize(N * NRHS);
 
-        for(auto i = 0; i < N; i++) ia[i] = ja[i] = a[i] = i + 1;
-        ia[N] = N + 1;
+        for(auto i = 0; i < N; i++) ia[i] = ja[i] = int_t(a[i] = i + 1);
+        ia[N] = int_t(N + 1);
 
         std::ranges::fill(b, 1.);
     };
