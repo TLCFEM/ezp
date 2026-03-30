@@ -75,7 +75,7 @@ jobs:
           lcov --list coverage.info
       - name: Report
         if: ${{ hashFiles('./build/coverage.info') != '' }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           plugins: gcov
           files: ./build/coverage.info
