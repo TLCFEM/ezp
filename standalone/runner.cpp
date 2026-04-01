@@ -28,12 +28,15 @@
 #include <mpl/mpl.hpp>
 
 int main(int argc, char** argv) {
-    if(argc < 2) {
-        std::cout << "Usage: runner ge|gex|po|pox|gb|db|pb [n]\n";
-        std::cout << "Example: runner ge 3\n";
+    if(argc < 4) {
+        std::cout << "Usage: runner ge|gex|po|pox|gb|db|pb [n] [m]\n\n";
+        std::cout << "    Generate a matrix of size [m] and solve it with [n] processes using ge|gex|po|pox|gb|db|pb solver.\n";
+        std::cout << "Example: runner ge 3 100\n";
         return 0;
     }
-    constexpr auto N = 6, NRHS = 1;
+    constexpr auto NRHS = 1;
+
+    const auto N = std::stoi(argv[3]);
 
     std::vector<double> A, B(N * NRHS, 1.);
     std::vector<int> config;
@@ -104,7 +107,7 @@ int main(int argc, char** argv) {
         for(auto I = 0; I < N; ++I) A[I + I * KLU] = I + 1.;
     }
     else {
-        std::cout << "Usage: runner ge|gex|po|pox|gb|db|pb [n]\n";
+        std::cout << "Usage: runner ge|gex|po|pox|gb|db|pb [n] [m]\n";
         return 0;
     }
 
