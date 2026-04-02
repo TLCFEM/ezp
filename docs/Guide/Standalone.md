@@ -72,29 +72,29 @@ From the above code snippets, one may observe that the caller needs to
 
 1. broadcast `config`,
 2. send `A` and `B`,
-3. receive the error code and the solution `X` if no error occured.
+3. receive the error code and the solution `X` if no error occurred.
 
 To this end, one can declare the corresponding containers using `std::vector`.
 
-```cpp title="runner.cpp:38:39" hl_lines="1 2"
+```cpp title="runner.cpp:41:42" hl_lines="1 2"
 --8<--
-./standalone/runner.cpp:38:39
+./standalone/runner.cpp:41:42
 --8<--
 ```
 
 The following creates a diagonal matrix for illustration.
 
-```cpp title="runner.cpp:45:50" hl_lines="5 6"
+```cpp title="runner.cpp:48:53" hl_lines="5 6"
 --8<--
-./standalone/runner.cpp:45:50
+./standalone/runner.cpp:48:53
 --8<--
 ```
 
 Now since all the data is ready to be communicated, the actual communication is very concise and straightforward.
 
-```cpp title="runner.cpp:111:126" hl_lines="2 5 9 10 15 16"
+```cpp title="runner.cpp:114:129" hl_lines="2 5 9 10 15 16"
 --8<--
-./standalone/runner.cpp:111:126
+./standalone/runner.cpp:114:129
 --8<--
 ```
 
@@ -151,7 +151,7 @@ The following is a full reference implementation of a standalone solver and the 
 ??? note "runner.cpp"
     ```cpp title="runner.cpp"
     --8<--
-    ./standalone/runner.cpp:27:131
+    ./standalone/runner.cpp:27:134
     --8<--
     ```
 
