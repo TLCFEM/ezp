@@ -1,0 +1,21 @@
+[project]
+site_name = "ezp"
+site_url = "https://github.com/TLCFEM/ezp"
+site_author = "Theodore Chang"
+copyright = "Copyright © 2025-2026 Theodore Chang"
+
+extra_javascript = [
+"javascripts/mathjax.js",
+"https://polyfill.io/v3/polyfill.min.js?features=es6",
+"https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+]
+
+[[project.theme.palette]] 
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"

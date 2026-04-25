@@ -5,3 +5,4 @@ mkdocs-material
 mpi4py
 numpy
 pymdown-extensions
+zensical

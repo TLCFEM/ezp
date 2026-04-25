@@ -6,6 +6,7 @@ build/
 docs/
 libs/
 misc/
+site/
 
 .clangformat
 .git*

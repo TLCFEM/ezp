@@ -8,4 +8,5 @@ build/
 cmake-build-*/
 docs/README.md
 doxygen/
+site/
 x64/
