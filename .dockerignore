@@ -11,6 +11,6 @@ site/
 .clangformat
 .git*
 Doxfile
-mkdocs.yml
+zensical.toml
 README.md
 requirements.txt
