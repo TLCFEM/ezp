@@ -2,6 +2,8 @@
 site_name = "ezp"
 site_url = "https://tlcfem.github.io/ezp/"
 site_author = "Theodore Chang"
+repo_url = "https://github.com/TLCFEM/ezp"
+repo_name = "ezp"
 copyright = "Copyright © 2025-2026 Theodore Chang"
 
 extra_javascript = [
@@ -50,6 +52,9 @@ features = [
 "navigation.tracking",
 "navigation.sections",
 ]
+
+[project.theme.icon]
+repo = "fontawesome/brands/github"
 
 [[project.theme.palette]]
 media = "(prefers-color-scheme: light)"
