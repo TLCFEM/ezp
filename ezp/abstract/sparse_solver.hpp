@@ -154,18 +154,18 @@ namespace ezp {
             nnz = current_pos;
 
             auto current_row = current_pos = IT{0};
-            auto shift = one_based ? IT{1} : IT{0};
+            const auto shift = one_based ? IT{1} : IT{0};
 
             while(current_pos < nnz)
                 if(row_storage[current_pos] < current_row + shift) ++current_pos;
                 else row_storage[current_row++] = current_pos + shift;
 
-            row_storage[0] = IT{0} + shift;
-            row_storage[n] = nnz + shift;
-
             row_storage.resize(n + 1);
             col_storage.resize(nnz);
             data_storage.resize(nnz);
+
+            row_storage[0] = IT{0} + shift;
+            row_storage[n] = nnz + shift;
         }
 
         auto is_valid() { return row_ptr && col_idx && data; }
