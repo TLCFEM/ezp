@@ -99,6 +99,13 @@ namespace ezp {
             , col_idx(col_idx)
             , data(data) {}
 
+        /**
+         * Construct a CSR matrix from a COO matrix.
+         * The input matrix will be sorted, duplicated entries will be summed.
+         * @param coo The input matrix in the COO format.
+         * @param one_based Indicate if the input matrix uses one based indexing (if true) or zero based indexing (if false). This flag will be used to generate correct row indexing.
+         * @param full Some solvers require diagonal entries to be explicitly present even if they are trivial, if true, all diagonal entries will be explicitly set regardless of the actual values.
+         */
         template<data_t DT2, index_t IT2> explicit sparse_csr_mat(const sparse_coo_mat<DT2, IT2>& coo, const bool one_based = false, const bool full = false)
             : n(IT{coo.n})
             , nnz(IT{coo.nnz}) {
