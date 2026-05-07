@@ -67,7 +67,7 @@ int main() {
         std::cout << std::fixed << std::setprecision(10) << "Info: " << info << '\n';
         std::cout << "sign(det()): " << solver.sign_det() << '\n';
         std::cout << "Solution:\n";
-        for(const double i : b) std::cout << i << '\n';
+        for(const auto i : b) std::cout << i << '\n';
     };
 
     print();

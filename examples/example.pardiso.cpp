@@ -48,8 +48,8 @@ int main() {
         a.resize(N);
         b.resize(N * NRHS);
 
-        for(auto i = 0; i < N; i++) ia[i] = ja[i] = int_t(a[i] = i + 1);
-        ia[N] = int_t(N + 1);
+        for(auto i = 0; i < N; i++) ia[i] = ja[i] = static_cast<int_t>(a[i] = i + 1);
+        ia[N] = static_cast<int_t>(N + 1);
 
         std::ranges::fill(b, 1.);
     };
@@ -64,7 +64,7 @@ int main() {
 
         std::cout << std::fixed << std::setprecision(10) << "Info: " << info << '\n';
         std::cout << "Solution:\n";
-        for(const double i : b) std::cout << i << '\n';
+        for(const auto i : b) std::cout << i << '\n';
     };
 
     print();

@@ -71,7 +71,7 @@ int main() {
         std::cout << std::setprecision(10) << "Info: " << info << '\n';
         std::cout << "Determinant: " << det << '\n';
         std::cout << "Solution:\n";
-        for(const double i : B) std::cout << i << '\n';
+        for(const auto i : B) std::cout << i << '\n';
     }
 
     return info;
