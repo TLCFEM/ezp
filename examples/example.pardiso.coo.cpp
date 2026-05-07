@@ -58,7 +58,7 @@ int main() {
 
     populate();
 
-    ezp::sparse_coo_mat coo_system{N, N, ia.data(), ja.data(), a.data()};
+    ezp::sparse_coo_mat<double, int_t> coo_system{N, N, ia.data(), ja.data(), a.data()};
 
     // need to wrap the data in sparse_csr_mat objects
     auto info = solver.solve(ezp::sparse_csr_mat<double, int_t>{coo_system, true}, {N, NRHS, b.data()});
@@ -76,7 +76,7 @@ int main() {
     N = 20;
 
     populate();
-    info = solver.solve(ezp::sparse_csr_mat<double, int_t>{ezp::sparse_coo_mat{N, N, ia.data(), ja.data(), a.data()}, true}, {N, NRHS, b.data()});
+    info = solver.solve(ezp::sparse_csr_mat<double, int_t>{ezp::sparse_coo_mat<double, int_t>{N, N, ia.data(), ja.data(), a.data()}, true}, {N, NRHS, b.data()});
     print();
 
     return info;
