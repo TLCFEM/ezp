@@ -154,7 +154,7 @@ namespace ezp {
             nnz = current_pos;
 
             auto current_row = current_pos = IT{0};
-            auto shift = one_based ? IT{1} : IT{0};
+            const auto shift = one_based ? IT{1} : IT{0};
 
             while(current_pos < nnz)
                 if(row_storage[current_pos] < current_row + shift) ++current_pos;
