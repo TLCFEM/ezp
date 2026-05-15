@@ -1,0 +1,19 @@
+image: debian:latest
+stages:
+  - test
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  DEBIAN_FRONTEND: noninteractive
+test:
+  stage: test
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends cmake git gcc libmpich-dev
+  script:
+    - cmake -S . -B build \
+      -DCMAKE_BUILD_TYPE=Debug \
+      -DEZP_TEST=ON \
+      -DEZP_STANDALONE=ON
+    - cmake --build build --target all
+    - for SRC in $(find build -type f -executable -iname "*example*"); do "$SRC"; done
+    - for SRC in $(find build -type f -executable -iname "*test*"); do "$SRC" 10; done
+    - mpirun --allow-run-as-root -n 2 ./catch2
