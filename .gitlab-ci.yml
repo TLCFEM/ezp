@@ -8,7 +8,7 @@ test:
   stage: test
   resource_group: $CI_COMMIT_REF_SLUG
   before_script:
-    - apt-get update && apt-get install -y cmake git gcc libmpich-dev
+    - apt-get update && apt-get install -y cmake git gcc gfortran libmpich-dev
   script:
     - cmake -S . -B build \
       -DCMAKE_BUILD_TYPE=Debug \
