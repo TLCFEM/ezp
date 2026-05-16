@@ -7,8 +7,6 @@ variables:
 test:
   stage: test
   resource_group: $CI_COMMIT_REF_SLUG
-  tags:
-    - spacehub
   before_script:
     - apt-get update && apt-get install -y --no-install-recommends cmake git gcc libmpich-dev
   script:
