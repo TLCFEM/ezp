@@ -1,9 +1,9 @@
 name: master
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 permissions:
   contents: write
 env:
@@ -14,15 +14,15 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        os: [ ubuntu-24.04 ]
-        build: [ RelWithDebInfo, Debug ]
-        mpi: [ impi, mpich, openmpi ]
-        index: [ 'ON', 'OFF' ]
+        os: [ubuntu-24.04]
+        build: [RelWithDebInfo, Debug]
+        mpi: [impi, mpich, openmpi]
+        index: [ON, OFF]
         exclude:
           - mpi: mpich
-            index: 'ON'
+            index: ON
           - mpi: openmpi
-            index: 'ON'
+            index: OFF
     steps:
       - name: Clone
         uses: actions/checkout@v6
