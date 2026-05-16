@@ -17,4 +17,4 @@ test:
     - cmake --build build --target all
     - for SRC in $(find build -type f -executable -iname "*example*"); do "$SRC"; done
     - for SRC in $(find build -type f -executable -iname "*test*"); do "$SRC" 10; done
-    - mpirun -n 2 ./catch2
+    - mpirun -n 2 ./build/catch2
