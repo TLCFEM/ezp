@@ -8,12 +8,9 @@ test:
   stage: test
   resource_group: $CI_COMMIT_REF_SLUG
   before_script:
-    - apt-get update && apt-get install -y cmake git gcc gfortran libmpich-dev
+    - apt-get update && apt-get install -y ninja-build cmake gcc gfortran libmpich-dev
   script:
-    - cmake -S . -B build \
-      -DCMAKE_BUILD_TYPE=Debug \
-      -DEZP_TEST=ON \
-      -DEZP_STANDALONE=ON
+    - cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DEZP_TEST=ON -DEZP_STANDALONE=ON
     - cmake --build build --target all
     - for SRC in $(find build -type f -executable -iname "*example*"); do "$SRC"; done
     - for SRC in $(find build -type f -executable -iname "*test*"); do "$SRC" 10; done
