@@ -30,7 +30,7 @@ jobs:
           submodules: recursive
       - name: Update
         run: |
-          sudo apt-get update && sudo apt-get install lcov
+          sudo apt-get update && sudo apt-get install lcov ninja-build
       - name: MKL
         if: matrix.mpi == 'impi'
         run: |
@@ -39,7 +39,6 @@ jobs:
           sudo apt-get update && sudo apt-get install intel-oneapi-mkl-devel intel-oneapi-mpi-devel
       - name: Compile
         run: |
-          mkdir build && cd build
           if [ "${{ matrix.mpi }}" == "impi" ]; then
             source /opt/intel/oneapi/setvars.sh
             export MPI_HOME=/opt/intel/oneapi/mpi/latest
@@ -54,10 +53,9 @@ jobs:
             sudo mv OpenMPI /OpenMPI
             export MPI_HOME=/OpenMPI
           fi
-          echo "MPI_HOME=$MPI_HOME" >> "$GITHUB_ENV"
-          echo $MPI_HOME
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=${{ env.MPI_HOME }} -DEZP_USE_64BIT_INT=${{ matrix.index }} ..
-          cmake --build . --target all
+          echo "MPI_HOME=$MPI_HOME" >> "$GITHUB_ENV" && echo $MPI_HOME
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=${{ env.MPI_HOME }} -DEZP_USE_64BIT_INT=${{ matrix.index }}
+          cmake --build build --target all
       - name: Test
         if: matrix.build == 'Debug' && matrix.index == 'OFF'
         run: |
