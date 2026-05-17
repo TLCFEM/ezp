@@ -8323,7 +8323,6 @@ C
 C     Internal Workspace only
       INTEGER, INTENT(OUT) :: NDENSE(N), DEGREE(N), 
      &                        HEAD(TOTEL), NEXT(N), W(N)
-CPA2JY: FIXME should HEAD/LAST (N) instead of TOTEL ?
 C
 C  =======================
 C  INTERFACE DOCUMENTATION

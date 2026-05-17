@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -25,6 +25,9 @@ C
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE, PANEL_POS, LPANEL_POS
      &    , PRUN_BELOW, TO_PROCESS, SIZE_TO_PROCESS
      &    , RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE, FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &    , I_AM_HEAD
+#endif
      &    , L0_OMP_MAPPING, LL0_OMP_MAPPING,
      &    L0_OMP_FACTORS, LL0_OMP_FACTORS
      &    )
@@ -70,6 +73,9 @@ C
       INTEGER, intent(in) :: LRHS_BOUNDS
       INTEGER, intent(in) :: RHS_BOUNDS(LRHS_BOUNDS)
       LOGICAL, intent(in) :: FROM_PP
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, intent(in) :: I_AM_HEAD
+#endif
       INTEGER, INTENT( in ) :: LL0_OMP_MAPPING, LL0_OMP_FACTORS
       INTEGER, INTENT( in ) :: L0_OMP_MAPPING( LL0_OMP_MAPPING )
       TYPE (CMUMPS_L0OMPFAC_T), INTENT(IN) ::
@@ -141,6 +147,9 @@ C
      &       RHSINTR, LRHSINTR, POSINRHSINTR_BWD
      &       , PRUN_BELOW, TO_PROCESS, SIZE_TO_PROCESS
      &       , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &       , I_AM_HEAD
+#endif
      &     )
           IF ( INFO(1) .LT. 0 ) GOTO 340 
         ENDIF
@@ -176,6 +185,9 @@ C
      &        ISTEP_TO_INIV2, TAB_POS_IN_PERE, PANEL_POS, LPANEL_POS,
      &        PRUN_BELOW, TO_PROCESS, SIZE_TO_PROCESS
      &        , RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE, FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &        , I_AM_HEAD
+#endif
      &        , ERROR_WAS_BROADCASTED
      &        , DO_MCAST2_TERMBWD
      &        )

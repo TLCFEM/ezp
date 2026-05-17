@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -12,6 +12,9 @@ C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       MODULE ZMUMPS_FAC_FRONT_TYPE2_AUX_M
+      USE MUMPS_TOOLS_COMMON_M, ONLY : MUMPS_LR_COMPRESS_CB,
+     &                                 MUMPS_LR_COMPRESS_PANEL,
+     &                                 MUMPS_LR_FORCE_BFR
       CONTAINS
       SUBROUTINE ZMUMPS_FAC_I_LDLT_NIV2( 
      &      DIAG_ORIG, SIZEDIAG_ORIG, GW_FACTCUMUL,
@@ -691,16 +694,19 @@ C
      &          PTR8ARR, NINCOLARR, NINROWARR, PTRDEBARR,
      &          INTARR, DBLARR, ICNTL, KEEP,KEEP8,DKEEP, ND, FRERE,
      &          LPTRAR, NELT, FRTPTR, FRTELT, 
-     &          ISTEP_TO_INIV2, TAB_POS_IN_PERE
-     &          , NELIM, LR_ACTIVATED, NPARTSASS, CURRENT_BLR_PANEL
-     &          , BLR_LorU 
+     &          ISTEP_TO_INIV2, TAB_POS_IN_PERE, NELIM
+     &          , LR_ACTIV_BlocFACTO, LR_ACTIV_POSTPROC
+     &          , NPARTSASS, CURRENT_BLR_PANEL
+     &    , BLR_LorU 
      &          , LRGROUPS
      &          )
       USE ZMUMPS_BUF
       USE MUMPS_LOAD
       USE ZMUMPS_LR_TYPE
-      USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
+      USE MUMPS_INTR_TYPES,  ONLY : MUMPS_ROOT_STRUC
       USE ZMUMPS_INTR_TYPES, ONLY : ZMUMPS_ROOT_STRUC
+      USE ZMUMPS_LR_DATA_M,  ONLY : ZMUMPS_BLR_RETRIEVE_BEGSBLR_STA, 
+     &                              ZMUMPS_BLR_RETRIEVE_BEGS_BLR_C
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       TYPE (MUMPS_ROOT_STRUC) :: root
@@ -743,7 +749,7 @@ C
       DOUBLE PRECISION OPASSW, OPELIW
       COMPLEX(kind=8) DBLARR(KEEP8(26))
       INTEGER INTARR(KEEP8(27))
-      LOGICAL, intent(in) ::  LR_ACTIVATED  
+      LOGICAL, intent(in) ::  LR_ACTIV_BlocFACTO, LR_ACTIV_POSTPROC
       TYPE (LRB_TYPE), DIMENSION(:) :: BLR_LorU
       INTEGER, intent(in) :: LRGROUPS(KEEP(280))
       INTEGER ::  NELIM
@@ -755,10 +761,12 @@ C
       INTEGER :: STATUS(MPI_STATUS_SIZE)
       LOGICAL BLOCKING, SET_IRECV, MESSAGE_RECEIVED
       DOUBLE PRECISION FLOP1,FLOP2
-      LOGICAL COMPRESS_CB
+      LOGICAL LR_ACTIVATED, COMPRESS_CB
       INTEGER NBCOLS_ALREADY_SENT, NBLRB_ALREADY_SENT
-      COMPRESS_CB    = ((IW(IOLDPS+XXLR).EQ.1).OR.
-     &                    (IW(IOLDPS+XXLR).EQ.3))
+      INTEGER, POINTER, DIMENSION(:) :: BEGS_BLR_COL
+      INTEGER :: SIZE_BEGS_BLR_COL, NPARTSASS_COL
+      LR_ACTIVATED    = (IW(IOLDPS+XXLR).GT.0)
+      COMPRESS_CB    = MUMPS_LR_COMPRESS_CB(IW(IOLDPS+XXLR))
       NSLAVES= IW(IOLDPS+5+KEEP(IXSZ))
       NBCOLS_ALREADY_SENT = 0
       NBLRB_ALREADY_SENT  = 0 
@@ -795,15 +803,33 @@ C
         END IF
         IERR = -1
         DO WHILE (IERR .EQ.-1)
+          IOLDPS = PTLUST_S(STEP( INODE ))
+          SIZE_BEGS_BLR_COL = 0
+          NULLIFY(BEGS_BLR_COL)
+          IF (LR_ACTIVATED) THEN
+            IF (  (COMPRESS_CB.OR.LR_ACTIV_POSTPROC) .AND.(NPIV.GT.0)
+     &          .AND. IBEG_PANEL.EQ.1 .AND. (NBCOLS_ALREADY_SENT.EQ.0) 
+     &       ) THEN
+              IF (KEEP(50).EQ.0) THEN
+                CALL ZMUMPS_BLR_RETRIEVE_BEGSBLR_STA(IW(IOLDPS+XXF),
+     &                          BEGS_BLR_COL)
+              ELSE
+                CALL ZMUMPS_BLR_RETRIEVE_BEGS_BLR_C (IW(IOLDPS+XXF), 
+     &                      BEGS_BLR_COL, NPARTSASS_COL )
+              ENDIF
+              SIZE_BEGS_BLR_COL = size(BEGS_BLR_COL)
+            ENDIF
+          ENDIF
           WIDTH = NSLAVES   
           CALL ZMUMPS_BUF_SEND_BLOCFACTO( INODE, LDA_FS, NCOL, 
      &               NPIV, FPERE, LASTPANEL, TIPIV, A(APOS),
      &               IW(PDEST), NSLAVES, KEEP, NB_BLOC_FAC,
      &               NSLAVES, WIDTH, COMM,
      &               NELIM, NPARTSASS, CURRENT_BLR_PANEL,
-     &               LR_ACTIVATED, BLR_LorU, 
+     &               LR_ACTIV_BlocFACTO, 
+     &               BLR_LorU, SIZE_BEGS_BLR_COL, BEGS_BLR_COL,
      &               NBCOLS_ALREADY_SENT, NBLRB_ALREADY_SENT,
-     &               IBEG_PANEL, COMPRESS_CB,
+     &               IBEG_PANEL, 
      &               ICNTL, IERR )
           IF (IERR.EQ.-1) THEN
             BLOCKING  = .FALSE.

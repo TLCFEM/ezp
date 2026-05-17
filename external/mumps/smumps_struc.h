@@ -1,6 +1,6 @@
 !
-!  This file is part of MUMPS 5.8.2, released
-!  on Mon Jan 12 15:17:08 UTC 2026
+!  This file is part of MUMPS 5.9.0, released
+!  on Tue Apr 28 13:05:59 UTC 2026
 !
 !
 !  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -208,7 +208,7 @@
         INTEGER, DIMENSION(:), POINTER :: MEM_DIST
 !       Compressed RHS
         INTEGER, DIMENSION(:),   POINTER :: GLOB2LOC_RHS
-        LOGICAL  :: GLOB2LOC_SOL_ALLOC, pad11
+        LOGICAL  :: GLOB2LOC_SOL_ALLOC, pad8
         INTEGER, DIMENSION(:),   POINTER :: GLOB2LOC_SOL
         REAL, DIMENSION(:),   POINTER :: RHSINTR
 !       Info on the subtrees to be used during factorization
@@ -240,20 +240,20 @@
         INTEGER(8), DIMENSION(:,:),   POINTER :: OOC_VADDR
         INTEGER,DIMENSION(:), POINTER :: OOC_TOTAL_NB_NODES
         INTEGER,DIMENSION(:), POINTER :: OOC_NB_FILES
-        INTEGER :: OOC_NB_FILE_TYPE,pad12
+        INTEGER :: OOC_NB_FILE_TYPE,pad9
         INTEGER,DIMENSION(:), POINTER :: OOC_FILE_NAME_LENGTH
         CHARACTER,DIMENSION(:,:), POINTER :: OOC_FILE_NAMES  
 !    Indices of nul pivots
         INTEGER,DIMENSION(:), POINTER :: PIVNUL_LIST
 !    Array needed to manage additionnal candidate processor 
-        INTEGER, DIMENSION(:,:), POINTER :: SUP_PROC, pad14
+        INTEGER, DIMENSION(:,:), POINTER :: SUP_PROC, pad10
 !    Lists of nodes where processors work. Built/used in solve phase.
         INTEGER, DIMENSION(:), POINTER :: IPTR_WORKING, WORKING
 !    Internal data structures accessor
         CHARACTER, DIMENSION(:), POINTER :: INTR_ENCODING
 !    Low-rank
         INTEGER, POINTER, DIMENSION(:) :: LRGROUPS
-        INTEGER :: NBGRP,pad13
+        INTEGER :: NBGRP,pad11
 !    Pointer encoding for FDM_F data
         CHARACTER, DIMENSION(:), POINTER :: FDM_F_ENCODING
 !    Pointer array encoding BLR factors pointers
@@ -285,10 +285,9 @@
         INTEGER, DIMENSION(:), POINTER :: L0_OMP_MAPPING
 ! Mpi to omp - mumps agile
         INTEGER, DIMENSION(:), POINTER :: MTKO_PROCS_MAP
-! for RR on root
+! for Rank-Revealing on root
         REAL, DIMENSION(:), POINTER :: SINGULAR_VALUES
-        INTEGER ::  NB_SINGULAR_VALUES
-        INTEGER ::  Deficiency, pad16
+        INTEGER ::  NB_SINGULAR_VALUES,pad12
 ! To know if OOC files are associated to a saved and so if they should be removed.
-        LOGICAL :: ASSOCIATED_OOC_FILES
+        LOGICAL :: ASSOCIATED_OOC_FILES,pad13
       END TYPE SMUMPS_STRUC

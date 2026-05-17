@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -1598,6 +1598,129 @@ C
       DEALLOCATE( MAXNPIV )
       RETURN
       END SUBROUTINE MUMPS_NPIV_CRITICAL_PATH
+#if defined(USE_GPU)
+      SUBROUTINE MUMPS_GPU_DEF_BITMAP( K416, K417,
+     &                             MYID, NPROCS, COMM,
+     &                             GPUBITMAP, MAX_MPIs_PER_GPU,
+     &                             ICNTL, INFO)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: ICNTL
+      INTEGER, INTENT(INOUT) :: INFO(2)
+      INTEGER, INTENT(OUT) :: MAX_MPIs_PER_GPU
+      INTEGER, INTENT(OUT) :: GPUBITMAP
+      INTEGER, INTENT(IN) :: COMM, MYID, NPROCS
+      INTEGER, INTENT(IN) :: K416, K417
+      INCLUDE 'mpif.h'
+      INTEGER, PARAMETER  :: MASTER = 0
+      INTEGER :: NEWCOMM, IERR
+      INTEGER :: NGPUSBITMAP, CHOOSE_DEVICES
+      INTEGER :: GPUBITMAPTMP
+      INTEGER :: K416_LOC
+      CHARACTER(len=MPI_MAX_PROCESSOR_NAME) :: MYNAME, TMPNAME
+      INTEGER :: MYNAME_LENGTH, TMPNAME_LENGTH
+      INTEGER :: SMALLEST_ID_ON_SAME_NODE, MYID_COMPUTENODE
+      INTEGER :: I, K, L, IPROC, NGPUS_USED
+      IF ( MYID .EQ. MASTER ) THEN
+        NGPUSBITMAP = 0
+        DO I=0,bit_size(K416)-1
+          IF (btest(K416,I)) THEN
+            NGPUSBITMAP = NGPUSBITMAP + 1
+          ENDIF
+        ENDDO
+        IF (NGPUSBITMAP .GT. K417) THEN
+          CHOOSE_DEVICES=1
+        ELSE IF (NGPUSBITMAP .LT. K417) THEN
+          INFO(1)=-100
+          INFO(2)=NGPUSBITMAP
+        ELSE
+          CHOOSE_DEVICES=0
+        ENDIF
+      ENDIF
+      CALL MUMPS_PROPINFO( ICNTL, INFO, COMM, MYID )
+      IF (INFO(1) .LT. 0) GOTO 100
+      CALL MPI_BCAST(CHOOSE_DEVICES, 1, MPI_INTEGER,
+     &                MASTER, COMM, IERR )
+      SMALLEST_ID_ON_SAME_NODE = -1
+      CALL MPI_GET_PROCESSOR_NAME(MYNAME, MYNAME_LENGTH, IERR )
+      DO IPROC = 0, NPROCS - 1
+        IF (MYID .EQ. IPROC) THEN
+          TMPNAME = MYNAME
+          TMPNAME_LENGTH = MYNAME_LENGTH
+        ENDIF
+        CALL MPI_BCAST( TMPNAME_LENGTH, 1, MPI_INTEGER,
+     &                  IPROC, COMM, IERR )
+        CALL MPI_BCAST( TMPNAME, TMPNAME_LENGTH, MPI_CHARACTER,
+     &                  IPROC, COMM, IERR)
+        IF (SMALLEST_ID_ON_SAME_NODE .LT. 0) THEN
+         IF ( TMPNAME_LENGTH .EQ. MYNAME_LENGTH ) THEN
+          IF ( TMPNAME(1:TMPNAME_LENGTH) .EQ. MYNAME(1:MYNAME_LENGTH) )
+     &    THEN
+            SMALLEST_ID_ON_SAME_NODE = IPROC
+          ENDIF
+         ENDIF
+        ENDIF
+      ENDDO
+      CALL MPI_COMM_SPLIT( COMM, SMALLEST_ID_ON_SAME_NODE, 0,
+     &                     NEWCOMM, IERR )
+      CALL MPI_COMM_RANK( NEWCOMM, MYID_COMPUTENODE, IERR )
+      IF (CHOOSE_DEVICES .EQ.0 )THEN
+        NGPUSBITMAP = 0
+        DO I=0,bit_size(K416)-1
+          IF (btest(K416,I)) THEN
+            NGPUSBITMAP = NGPUSBITMAP + 1
+          ENDIF
+        ENDDO
+        IF (NGPUSBITMAP .NE. K417) THEN
+          INFO(1) = -101
+          INFO(2) = NGPUSBITMAP
+        ENDIF
+        CALL MUMPS_PROPINFO( ICNTL, INFO, COMM, MYID )
+        IF (INFO(1) .LT. 0) GOTO 100
+        GPUBITMAP = K416
+      ELSE
+        K416_LOC=K416
+        CALL MPI_BCAST(K416_LOC, 1, MPI_INTEGER,
+     &                MASTER, COMM, IERR )
+        CALL MPI_BCAST(NGPUSBITMAP, 1, MPI_INTEGER,
+     &                MASTER, COMM, IERR )
+        GPUBITMAPTMP = 0
+        GPUBITMAP = 0
+        DO I = 0, K417 - 1
+          K = mod( MYID_COMPUTENODE*K417+I, NGPUSBITMAP )
+          GPUBITMAPTMP=ibset(GPUBITMAPTMP, K)
+        ENDDO
+        I = 0
+        L = 0
+        K = 0
+        DO WHILE ( L < K417 )
+          DO WHILE (.NOT. btest(K416_LOC,I))
+            I=I+1
+          ENDDO
+          IF (btest(GPUBITMAPTMP,K)) THEN
+            L = L + 1
+            GPUBITMAP=ibset(GPUBITMAP,I)
+          ENDIF
+          I=I+1
+          K=K+1
+        ENDDO
+      ENDIF
+      MAX_MPIs_PER_GPU = 0
+      K=bit_size(GPUBITMAP)
+      CALL MPI_ALLREDUCE(MPI_IN_PLACE, K, 1,
+     &                    MPI_INTEGER, MPI_MAX, COMM, IERR)
+      DO I = 0, K-1
+        NGPUS_USED = ibits(GPUBITMAP,I,1) 
+        CALL MPI_ALLREDUCE(MPI_IN_PLACE, NGPUS_USED, 1,
+     &                    MPI_INTEGER, MPI_SUM, NEWCOMM, IERR)
+        CALL MPI_ALLREDUCE(MPI_IN_PLACE, NGPUS_USED, 1,
+     &                    MPI_INTEGER, MPI_MAX, COMM, IERR)
+        MAX_MPIs_PER_GPU = max(MAX_MPIs_PER_GPU, NGPUS_USED)
+      ENDDO
+      CALL MPI_COMM_FREE( NEWCOMM, IERR )
+ 100  CONTINUE
+      RETURN
+      END SUBROUTINE MUMPS_GPU_DEF_BITMAP
+#endif
       SUBROUTINE MUMPS_LDLTPANEL_NBTARGET( NPIV, NB_TARGET, KEEP )
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: NPIV
@@ -1859,6 +1982,9 @@ C
      &     MEM_DISTRIB, NCB, NFRONT, NSLAVES_NODE,
      &     TAB_POS, SLAVES_LIST, SIZE_SLAVES_LIST,MYID,INODE,
      &     TAB_MAXS_ARG,SUP_PROC_ARG,MAX_SURF,NB_ROW_MAX
+#if defined(USE_GPU)
+     &     , LDLTRegular_NIV2
+#endif
      &     )
       IMPLICIT NONE
       INTEGER, intent(in) :: KEEP(500),SIZE_SLAVES_LIST
@@ -1872,6 +1998,9 @@ C
       INTEGER, intent(out):: TAB_POS(SLAVEF+2)
       INTEGER, intent(out):: NSLAVES_NODE,NB_ROW_MAX
       INTEGER(8), intent(out):: MAX_SURF
+#if defined(USE_GPU)
+      LOGICAL, intent(in), optional :: LDLTRegular_NIV2 
+#endif
       LOGICAL :: FORCE_LDLTRegular_NIV2
       INTEGER NSLAVES,ACC
       INTEGER i,J,NELIM,NB_SUP,K50,NB_ROWS(PROCS(SLAVEF+1))
@@ -1883,6 +2012,13 @@ C
       INTEGER(8) MEM_CONSTRAINT(2)
       K50=KEEP(50)
       FORCE_LDLTRegular_NIV2 = .FALSE.
+#if defined(USE_GPU)
+      IF (K50.NE.0) THEN
+       IF (present(LDLTRegular_NIV2)) THEN
+         FORCE_LDLTRegular_NIV2 = LDLTRegular_NIV2
+       ENDIF
+      ENDIF
+#endif
       MAX_SURF=0
       NB_ROW_MAX=0
       NELIM=NFRONT-NCB
@@ -2260,6 +2396,156 @@ C
       ENDDO
       RETURN
       END SUBROUTINE MUMPS_CLEAN_PENDING
+#if defined(SINGLEINDOUBLE)
+      SUBROUTINE MUMPS_ICNTL47_SETTINGS
+     &( PHASE, ICNTL, KEEP, KEEP8, SIZE_SCHUR, 
+     &  MYID, COMM, INFO, LP, LPOK )
+      IMPLICIT NONE
+      INTEGER, PARAMETER :: MASTER=0
+      INTEGER :: ICNTL(60), MYID, COMM, INFO(2), LP
+      INTEGER :: KEEP(500), PHASE, SIZE_SCHUR
+      INTEGER(8) :: KEEP8(150)
+      INTEGER :: IERR
+      LOGICAL :: LPOK
+      INCLUDE 'mpif.h'
+      IF (PHASE.EQ.3) THEN
+        CALL MUMPS_ICNTL47_SOLVE( ICNTL, KEEP, KEEP8,
+     &  MYID, COMM, INFO, LP, LPOK )
+      ELSE
+        KEEP(148) = 0
+        IF ( MYID .EQ. MASTER ) THEN
+          KEEP(148)=ICNTL(47)
+          IF (KEEP(148).LT.0 .OR. KEEP(148).GT.2) THEN
+            KEEP(148)=0
+          ENDIF
+          IF (KEEP(148).NE.0 .AND. KEEP(53).NE.0) THEN
+            IF (LPOK) WRITE(LP,'(A)')
+     &      ' ERROR: single precision factorization in CMUMPS',
+     &      ' (ICNTL(47)) incompatible with rank-revealing (ICNTL(56))'
+            INFO(1)   = -92
+            INFO(2)   =  56
+            KEEP(148) =   0
+          ENDIF
+          IF (KEEP(148).EQ.2 .AND. ICNTL(32).EQ.1) THEN
+            IF (LPOK) WRITE(LP,'(A)')
+     &      ' ERROR: single precision factorization in CMUMPS',
+     &      ' (ICNTL(47)) incompatible with forward in facto ',
+     &      '  (ICNTL(32)=1)'
+            INFO(1)   = -92
+            INFO(2)   =  32
+            KEEP(148) =   0
+          ENDIF
+          IF (KEEP(148).NE.0 .AND. 
+     &        SIZE_SCHUR.GT.0.AND.ICNTL(19).GT.0.AND.
+     &        ICNTL(19).LE.3) THEN
+            IF (LPOK) WRITE(LP,'(A)')
+     &      ' ERROR: single precision factorization in CMUMPS',
+     &      ' (ICNTL(47)) incompatible with Schur (ICNTL(19))'
+            INFO(1)   = -92
+            INFO(2)   = 19
+            KEEP(148) =  0
+          ENDIF
+          IF (PHASE.EQ.2) THEN
+            IF (KEEP(148).NE.0 .AND. KEEP(201).GT.0) THEN
+              INFO(1)=-92
+              INFO(2)=22
+              IF (LPOK) WRITE(LP,'(A)')
+     &        ' ERROR: single precision factorization in CMUMPS',
+     &        ' (ICNTL(47)) incompatible with out-of-core (ICNTL(22))'
+              KEEP(148) = 0
+            ENDIF
+          ENDIF
+          IF (PHASE.EQ.2) THEN
+            IF (KEEP(148).NE.0 .AND. KEEP8(124).GT.0_8) THEN
+              INFO(1)=-92
+              INFO(2)=-1
+              IF (LPOK) WRITE(LP,'(A)')
+     &        ' ERROR: single precision factorization in CMUMPS',
+     &        ' (ICNTL(47)) incompatible with WK_USER'
+              KEEP(148) = 0
+            ENDIF
+          ENDIF
+        ENDIF
+        CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
+     &                 COMM, MYID )
+        IF ( INFO(1).GE.0 ) THEN
+          CALL MPI_BCAST( KEEP(148), 1, MPI_INTEGER,
+     &                    MASTER, COMM, IERR )
+          IF (KEEP(148) .NE.0) THEN
+            KEEP(35)=KEEP(149)/2
+            KEEP(16)=KEEP(150)/2
+          ELSE
+            KEEP(35)=KEEP(149)
+            KEEP(16)=KEEP(150)
+          ENDIF
+        ENDIF
+      ENDIF
+      IF ( KEEP(148).EQ.2 ) THEN
+          IF ( ICNTL(35).LE.0 ) THEN
+              KEEP(473) = 3
+          ELSE
+              KEEP(473) = 2
+          ENDIF
+          IF (PHASE.EQ.1) THEN
+             ICNTL(13) = 1
+          ENDIF
+      ENDIF
+      RETURN
+      END SUBROUTINE MUMPS_ICNTL47_SETTINGS
+      SUBROUTINE MUMPS_ICNTL47_SOLVE
+     &( ICNTL, KEEP, KEEP8, MYID, COMM, INFO, LP, LPOK )
+      IMPLICIT NONE
+      INTEGER, PARAMETER :: MASTER=0
+      INTEGER :: ICNTl(60), MYID, COMM, INFO(2), LP
+      INTEGER :: KEEP(500)
+      INTEGER(8) :: KEEP8(150)
+      LOGICAL :: LPOK
+      IF (MYID.EQ.0) THEN
+        IF (KEEP(148).NE.0 .AND. KEEP8(124).GT.0_8) THEN
+          INFO(1)=-92
+          INFO(2)=-1
+          IF (LPOK) WRITE(LP,'(A)')
+     &    ' ERROR: single precision factorization in CMUMPS',
+     &    ' (ICNTL(47)) incompatible with WK_USER'
+        ENDIF
+      ENDIF
+      CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
+     &                     COMM, MYID )
+      KEEP(151)=KEEP(35)
+      IF (KEEP(148).EQ.2) KEEP(151) = KEEP(149)
+      RETURN
+      END SUBROUTINE MUMPS_ICNTL47_SOLVE
+      SUBROUTINE MUMPS_SOL_C_64TO32(DKEEP, RHSINTR, LRHSINTR,
+     & SKIP_RHSINTR, PTR_RHS_ROOT_ALLOCATED,
+     & RHSROOT, LRHSROOT )
+      IMPLICIT NONE
+      INTEGER(8) :: LRHSINTR, LRHSROOT
+      DOUBLE PRECISION :: DKEEP(230)
+      DOUBLE PRECISION :: RHSINTR(LRHSINTR)
+      DOUBLE PRECISION :: RHSROOT(LRHSROOT)
+      LOGICAL :: SKIP_RHSINTR, PTR_RHS_ROOT_ALLOCATED
+      CALL MUMPS_RCOPY_64TO32_64C_IP(DKEEP,int(size(DKEEP),8))
+      IF (.NOT. SKIP_RHSINTR) THEN
+        CALL MUMPS_RCOPY_64TO32_64C_IP(RHSINTR,LRHSINTR)
+      ENDIF
+      IF (.NOT. PTR_RHS_ROOT_ALLOCATED) THEN
+        CALL MUMPS_RCOPY_64TO32_64C_IP(RHSROOT,LRHSROOT)
+      ENDIF
+      RETURN
+      END SUBROUTINE MUMPS_SOL_C_64TO32
+      SUBROUTINE MUMPS_SOL_C_32TO64(DKEEP, RHSINTR, LRHSINTR,
+     & RHSROOT, LRHSROOT )
+      IMPLICIT NONE
+      INTEGER(8) :: LRHSINTR, LRHSROOT
+      DOUBLE PRECISION :: DKEEP(230)
+      DOUBLE PRECISION :: RHSINTR(LRHSINTR)
+      DOUBLE PRECISION :: RHSROOT(LRHSROOT)
+      CALL MUMPS_RCOPY_32TO64_64C_IP(DKEEP,int(size(DKEEP),8))
+      CALL MUMPS_RCOPY_32TO64_64C_IP(RHSINTR,LRHSINTR)
+      CALL MUMPS_RCOPY_32TO64_64C_IP(RHSROOT,LRHSROOT)
+      RETURN
+      END SUBROUTINE MUMPS_SOL_C_32TO64
+#endif
       SUBROUTINE MUMPS_RCOPY_32TO64 (INTAB, SIZETAB, OUTTAB8)
       IMPLICIT NONE
       INTEGER, intent(in)           ::  SIZETAB
@@ -2362,3 +2648,130 @@ C
       ENDIF
       RETURN
       END SUBROUTINE MUMPS_RCOPY_64TO32_64C_IP_REC
+#if defined(USE_GPU)
+#if defined(USE_XKBLAS)
+      SUBROUTINE MUMPS_GPU_SET_KEEP (
+     &      K436, K437, KEEP, ICNTL13, PROKG, MPG )
+!$    USE OMP_LIB
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)    :: K436, K437, MPG
+      LOGICAL, INTENT(IN)    :: PROKG
+      INTEGER, INTENT(INOUT) :: KEEP(500), ICNTL13
+      INTEGER NOMP
+      LOGICAL MODIFY_K415, MODIFY_K418
+      NOMP = 1
+!$    NOMP = OMP_GET_MAX_THREADS()
+       MODIFY_K415 = (KEEP(415) .LT. 0)
+       MODIFY_K418 = (KEEP(418) .LT. 0)
+      IF (KEEP(437).EQ.1) THEN
+        IF (PROKG) 
+     &  WRITE(MPG,'(A/)') 
+     &  " GPU architecture: Nvidia V100 "
+        IF(MODIFY_K415) KEEP(415) = 1600 
+        IF(KEEP(249).GE.36) THEN
+          IF(MODIFY_K418) KEEP(418) = 800 
+        ENDIF
+      ELSE IF (KEEP(437).EQ.2) THEN
+        IF (PROKG) 
+     &  WRITE(MPG,'(A/)') 
+     &  " GPU architecture: Nvidia A100 "
+        IF(MODIFY_K415) KEEP(415) = 1200 
+        IF(MODIFY_K418) KEEP(418) = 200 
+      ELSE IF ( K437.EQ.4) THEN
+       IF (K436.EQ.1) THEN
+        IF (PROKG) 
+     &  WRITE(MPG,'(A/)') 
+     &  " GPU architecture: GraceHopper with unified memory "
+        ICNTL13   = 1   
+        KEEP(368) = min(NOMP, 32)  
+        KEEP(439) = 0   
+        IF (MODIFY_K415) KEEP(415) = 300 
+        IF (MODIFY_K418) KEEP(418) = 200 
+        KEEP(426) = min(KEEP(368), 32) 
+        KEEP(431) = 1  
+        KEEP(432) = 1  
+        KEEP(433) = 256 
+        KEEP(434) = 198 
+        KEEP(435) = 512  
+       ELSE
+        IF (PROKG) 
+     &  WRITE(MPG,'(A/)') 
+     &  " GPU architecture: GraceHopper without unified memory "
+        ICNTL13   = 1   
+        KEEP(368) = min(NOMP, 32)  
+        IF (MODIFY_K415) KEEP(415) = 512 
+        IF (MODIFY_K418) KEEP(418) = 256 
+        KEEP(426) = min(KEEP(368), 32) 
+        KEEP(431) = 2  
+        KEEP(433) = 512 
+        KEEP(434) = 374 
+        KEEP(435) = 1024 
+       ENDIF
+      ELSE IF (K437.EQ.104) THEN
+        IF (PROKG) 
+     &  WRITE(MPG,'(A/)') 
+     &  " GPU architecture: AMD Mi250 "
+        ICNTL13   = 1   
+        KEEP(368) = min(NOMP, 32)  
+        KEEP(439) = 1 
+        IF (MODIFY_K415) KEEP(415) = 400 
+        IF (MODIFY_K418) KEEP(418) = 200 
+        KEEP(426) = min(KEEP(368), 32) 
+        KEEP(431) = 2  
+        KEEP(433) = 512 
+        KEEP(434) = 374 
+        KEEP(435) = 1024 
+      ELSE IF (K437.EQ.106) THEN
+       IF (K436.EQ.1) THEN
+        IF (PROKG) 
+     &  WRITE(MPG,'(A/)') 
+     &  " GPU architecture: AMD Mi300 with unified memory "
+        ICNTL13   = 1   
+        KEEP(368) = min(NOMP, 24)  
+        KEEP(439) = 1   
+        IF (MODIFY_K415) KEEP(415) = 256 
+        IF (MODIFY_K418) KEEP(418) = 128 
+        KEEP(426) = min(KEEP(368), 24) 
+        KEEP(431) = 2  
+        KEEP(432) = 1  
+        KEEP(433) = 512 
+        KEEP(434) = 374 
+        KEEP(435) = 2048 
+       ELSE
+        IF (PROKG) 
+     &  WRITE(MPG,'(A/)') 
+     &  " GPU architecture: AMD Mi300 without unified memory "
+        ICNTL13   = 1   
+        KEEP(368) = min(NOMP, 24)  
+        KEEP(439) = 1 
+        IF (MODIFY_K415) KEEP(415) = 400 
+        IF (MODIFY_K418) KEEP(418) = 200 
+        KEEP(426) = min(KEEP(368), 24) 
+        KEEP(431) = 2  
+        KEEP(433) = 512 
+        KEEP(434) = 374 
+        KEEP(435) = 2048 
+       ENDIF
+      ELSE
+       IF (K436.EQ.1) THEN
+        IF (PROKG) 
+     &  WRITE(MPG,'(A/)') 
+     &  " GPU: unknown architecture with unified memory"
+         ICNTL13   = 1   
+         KEEP(368) = max(NOMP, 32)  
+         KEEP(439) = 1 
+         KEEP(432) = 1  
+         KEEP(431) = 2  
+         KEEP(433) = 1024 
+       ELSE
+        IF (PROKG) 
+     &  WRITE(MPG,'(A/)') 
+     &  " GPU: unknown architecture, XKblas default setting "
+       ENDIF
+      ENDIF
+      KEEP(415)=abs(KEEP(415))
+      KEEP(418)=abs(KEEP(418))
+      RETURN
+      END SUBROUTINE MUMPS_GPU_SET_KEEP
+#endif
+#endif

@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -60,7 +60,7 @@ C            No factors stored in S
           IF (associated(S)) THEN
             CALL ZMUMPS_DM_FREE_S_WK(S, KEEP(430))
 C           Reset KEEP(430)=0 since next allocations of S
-C           will be from Fotran
+C           will be from Fortran
             KEEP(430)=0
             NULLIFY(S)
             KEEP8(23) = 0

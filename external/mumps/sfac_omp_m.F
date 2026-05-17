@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -235,6 +235,9 @@ C
 !$        IF ( KEEP(439) .GT. 1 ) THEN
 !$          NOMP_INNER = KEEP(439)
 !$        ELSE IF ( KEEP(439) .EQ. -1
+#if defined(USE_GPU)
+!$   &       .OR. ( KEEP(439) .EQ. -2 .AND. KEEP(417) .GT. 0 )
+#endif
 !$   &            ) THEN
 !$          NOMP_INNER = NOMP_TOTAL / KEEP(400)
 !$        ENDIF
@@ -1344,7 +1347,7 @@ C
      &    DET_EXPW, DET_MANTW, DET_SIGNW,
      &    KEEP, KEEP8,
      &    STEP, PROCNODE_STEPS, MYID_NODES, SLAVEF,
-     &    SEUIL, AVOID_DELAYED, ETATASS,
+     &    SEUIL, AVOID_DELAYED, 
      &    DKEEP(1), PIVNUL_LIST_STRUCT, IWPOS 
      &    , LRGROUPS
      &    , PERM

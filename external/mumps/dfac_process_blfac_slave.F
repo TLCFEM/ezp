@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -36,6 +36,7 @@ C
       USE DMUMPS_LR_TYPE
       USE DMUMPS_FAC_LR
       USE DMUMPS_LR_DATA_M
+      USE MUMPS_TOOLS_COMMON_M, ONLY : MUMPS_LR_COMPRESS_CB
       USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
       USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
       USE DMUMPS_DYNAMIC_MEMORY_M, ONLY : DMUMPS_DM_SET_DYNPTR
@@ -105,8 +106,10 @@ C
       LOGICAL LASTBL_INPANEL
       INTEGER allocok
       INTEGER LR_ACTIVATED_INT
-      LOGICAL LR_ACTIVATED, COMPRESS_CB
-      INTEGER NB_BLR_U, CURRENT_BLR_U
+      LOGICAL :: LR_ACTIV_BlocFACTO, LR_ACTIVATED, 
+     &           COMPRESS_PANEL, COMPRESS_CB
+      LOGICAL :: LR_ACTIV_POSTPROC
+      INTEGER NB_BLR_U, CURRENT_BLR_U, CURRENT_BLR, IP, ISHIFT
       TYPE (LRB_TYPE), DIMENSION(:), ALLOCATABLE :: BLR_U
       INTEGER, POINTER, DIMENSION(:) :: BEGS_BLR_U
       TYPE (LRB_TYPE), DIMENSION(:), POINTER :: BLR_LS
@@ -120,7 +123,7 @@ C
       DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:) :: BLOCKLR
       DOUBLE PRECISION,ALLOCATABLE,DIMENSION(:) :: RWORK
       INTEGER :: OMP_NUM, LWORK
-      INTEGER :: II,JJ
+      INTEGER :: II,JJ, J
       INTEGER ::  MSGSOU_BL
       INTEGER :: NFS4FATHER, NASS1, NELIM, INFO_TMP(2)
       INTEGER :: NVSCHUR_K253, NSLAVES_L, IROW_L
@@ -129,6 +132,14 @@ C
       DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: UDYNAMIC
       DOUBLE PRECISION ONE,ALPHA
       PARAMETER (ONE = 1.0D0, ALPHA=-1.0D0)
+#if defined(USE_GPU)
+      INTEGER :: run_gemm_on_gpu
+      INTEGER, EXTERNAL :: DMUMPS_GEMM_ON_GPU_C 
+#endif
+      OMP_NUM = 1
+#if ! defined(BLR_NOOPENMP)
+!$    OMP_NUM = OMP_GET_MAX_THREADS()
+#endif
       DYNAMIC_ALLOC = .FALSE.
       POSITION  = 0
       CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, INODE, 1,
@@ -153,11 +164,11 @@ C
       CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, 
      &                 LR_ACTIVATED_INT, 1,
      &                 MPI_INTEGER, COMM, IERR )
-      LR_ACTIVATED   = (LR_ACTIVATED_INT.EQ.1)
+      LR_ACTIV_BlocFACTO   = (LR_ACTIVATED_INT.EQ.1)
       CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION, 
      &                 IPANEL, 1,
      &                 MPI_INTEGER, COMM, IERR )
-      IF (LR_ACTIVATED) THEN
+      IF (LR_ACTIV_BlocFACTO) THEN
           CALL MPI_UNPACK( BUFR, LBUFR_BYTES, POSITION,
      &                 NB_BLR_U, 1, MPI_INTEGER,
      &                 COMM, IERR )
@@ -208,7 +219,7 @@ C
      &   IW(PTRIST(STEP(INODE))+3+KEEP(IXSZ))) )THEN
         DYNAMIC_ALLOC = .TRUE.
       ENDIF
-      IF (LR_ACTIVATED) THEN
+      IF (LR_ACTIV_BlocFACTO) THEN
        DYNAMIC_ALLOC = .FALSE.
       ENDIF
       IF (DYNAMIC_ALLOC)  THEN
@@ -329,7 +340,7 @@ C
       NSLAV1  = IW( IOLDPS + 5  + KEEP(IXSZ))
       HS      = 6 + NSLAV1  + KEEP(IXSZ)
       NCOL1   = LCONT1 + NPIV1
-      IF (LR_ACTIVATED) THEN
+      IF (LR_ACTIV_BlocFACTO) THEN
          CALL DMUMPS_BLR_DEC_AND_RETRIEVE_L (IW(IOLDPS+XXF), IPANEL, 
      &        BEGS_BLR_LS, BLR_LS, NCOLU)
          NB_BLR_LS = size(BEGS_BLR_LS)-2   
@@ -366,6 +377,42 @@ C
       CPOS = POSELT + int(JPOSK - 1,8)
       LPOS = POSELT + int(IPOSK - 1,8)
       IF ( NPIV .GT. 0 ) THEN
+#if defined(USE_GPU)
+        run_gemm_on_gpu=DMUMPS_GEMM_ON_GPU_C(
+     &                  KEEP(417), NCOLU, NROW1, NPIV )
+        IF ( KEEP(422).NE.0 .AND. KEEP(423).EQ.1 .AND.
+     &    run_gemm_on_gpu.EQ.1 ) THEN
+          IF (DYNAMIC_ALLOC) THEN
+            CALL DMUMPS_GPU_PIN_MEMORY_C( UDYNAMIC, LAELL )
+          ELSE
+            CALL DMUMPS_GPU_PIN_MEMORY_C(
+     &           A(POSBLOCFACTO), LAELL )
+          ENDIF
+        ENDIF
+#endif
+#if defined(USE_GPU)
+        IF ( KEEP(422).EQ.2 ) THEN
+          IF (IW(IOLDPS+XXG) .EQ. PinningOnTheWay) THEN
+            CALL DMUMPS_GPU_WAIT_ENDOFPINNING_C()
+            IW(IOLDPS+XXG) = MemPinned
+          ENDIF
+        ENDIF
+        IF (run_gemm_on_gpu.EQ.1) THEN
+          IF (DYNAMIC_ALLOC) THEN
+            CALL DMUMPS_GEMM_GPU_C(0, 'T', 'N',
+     &            NCOLU, NROW1, NPIV, ALPHA,
+     &            UDYNAMIC(1), NPIV,
+     &            A_PTR( LPOS ), NCOL1, ONE,
+     &            A_PTR( CPOS ), NCOL1 )
+          ELSE
+            CALL DMUMPS_GEMM_GPU_C(0, 'T', 'N',
+     &            NCOLU, NROW1, NPIV, ALPHA,
+     &            A( POSBLOCFACTO ), NPIV,
+     &            A_PTR( LPOS ), NCOL1, ONE,
+     &            A_PTR( CPOS ), NCOL1 )
+          ENDIF
+        ELSE
+#endif
           IF (DYNAMIC_ALLOC) THEN
             CALL dgemm( 'T', 'N', NCOLU, NROW1, NPIV, ALPHA,
      &            UDYNAMIC(1), NPIV,
@@ -377,6 +424,20 @@ C
      &            A_PTR( LPOS ), NCOL1, ONE,
      &            A_PTR( CPOS ), NCOL1 )
           ENDIF
+#if defined(USE_GPU)
+        ENDIF
+#endif
+#if defined(USE_GPU)
+        IF ( KEEP(422).NE.0 .AND. KEEP(423).EQ.1 .AND.
+     &    run_gemm_on_gpu.EQ.1 ) THEN
+          IF (DYNAMIC_ALLOC) THEN
+            CALL DMUMPS_GPU_UNPIN_MEMORY_C( UDYNAMIC, LAELL )
+          ELSE
+            CALL DMUMPS_GPU_UNPIN_MEMORY_C(
+     &           A(POSBLOCFACTO), LAELL )
+          ENDIF
+        ENDIF
+#endif
       ENDIF 
       ENDIF
       IF (NPIV .GT. 0) THEN
@@ -392,7 +453,7 @@ C
          IW(IOLDPS+6+KEEP(IXSZ)) =
      &         IW(IOLDPS+6+KEEP(IXSZ)) + 1
       ENDIF
-      IF (.NOT.LR_ACTIVATED) THEN
+      IF (.NOT.LR_ACTIV_BlocFACTO) THEN
       IF (DYNAMIC_ALLOC) THEN
        DEALLOCATE(UDYNAMIC)
       ELSE
@@ -418,18 +479,134 @@ C
          END IF
       END IF
       IF (IW(PTRIST(STEP(INODE)) + 6+KEEP(IXSZ) ) .eq. 0) THEN
-           NPIV1 = IW( IOLDPS + 3  + KEEP(IXSZ))
-           NASS1 = IW( IOLDPS + 4 + KEEP(IXSZ))  
-           NELIM = NASS1 - NPIV1
-          COMPRESS_CB= .FALSE.
-          IF (LR_ACTIVATED) THEN
-            COMPRESS_CB = ((IW(PTRIST(STEP(INODE))+XXLR).EQ.1).OR.
-     &                     (IW(PTRIST(STEP(INODE))+XXLR).EQ.3))
-            IF (NPIV.EQ.0) CALL MUMPS_ABORT()
+           IOLDPS = PTRIST(STEP(INODE))
+           NPIV1  = IW( IOLDPS + 3  + KEEP(IXSZ))
+           NASS1  = IW( IOLDPS + 4 + KEEP(IXSZ))  
+           NELIM  = NASS1 - NPIV1
+          LR_ACTIVATED   = (IW(IOLDPS+XXLR).GT.0)
+          COMPRESS_PANEL = (IW(IOLDPS+XXLR).GE.2)
+          IF (
+     &         (KEEP(486).EQ.2) 
+     &       ) THEN
+            LR_ACTIV_POSTPROC =
+     &             COMPRESS_PANEL.AND.(.NOT.LR_ACTIV_BlocFACTO)
+          ELSE
+            LR_ACTIV_POSTPROC = .FALSE.
+          ENDIF
+          COMPRESS_CB    = 
+     &      MUMPS_LR_COMPRESS_CB(IW(IOLDPS+XXLR))
+          IF (COMPRESS_CB.OR.LR_ACTIV_POSTPROC) THEN
+             CALL DMUMPS_BLR_RETRIEVE_BEGS_BLR_L (IW(IOLDPS+XXF), 
+     &                     BEGS_BLR_LS)
+             NB_BLR_LS        = size(BEGS_BLR_LS) - 2
+             call MAX_CLUSTER(BEGS_BLR_LS,NB_BLR_LS+1,
+     &            MAXI_CLUSTER_LS)
+             CALL DMUMPS_BLR_RETRIEVE_BEGS_BLR_C (IW(IOLDPS+XXF), 
+     &                   BEGS_BLR_COL, NPARTSASS_MASTER )
+             NB_BLR_COL   = size(BEGS_BLR_COL) - 1
+             IF (LR_ACTIV_POSTPROC) THEN
+               DO IP=1,NPARTSASS_MASTER
+                   IF ( BEGS_BLR_COL(IP).GT. NPIV1 ) THEN
+                     BEGS_BLR_COL(IP)   = NPIV1+1
+                   ENDIF
+               ENDDO
+               BEGS_BLR_COL(NPARTSASS_MASTER+1) = NPIV1+1
+               call MAX_CLUSTER(BEGS_BLR_COL,NPARTSASS_MASTER,
+     &            MAXI_CLUSTER_COL)
+               MAXI_CLUSTER = max(MAXI_CLUSTER_COL, MAXI_CLUSTER_LS)
+               IF (allocated(BLOCKLR)) DEALLOCATE(BLOCKLR)
+               IF (allocated(RWORK))  DEALLOCATE(RWORK)
+               IF (allocated(TAU)) DEALLOCATE(TAU)
+               IF (allocated(JPVT)) DEALLOCATE(JPVT)
+               IF (allocated(WORK)) DEALLOCATE(WORK)
+               LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
+               ALLOCATE(BLOCKLR(MAXI_CLUSTER, OMP_NUM*MAXI_CLUSTER),
+     &                   RWORK(2*MAXI_CLUSTER*OMP_NUM), 
+     &                   TAU(MAXI_CLUSTER*OMP_NUM),
+     &                   JPVT(MAXI_CLUSTER*OMP_NUM), 
+     &                   WORK(LWORK*OMP_NUM),
+     &                   stat=allocok)
+               IF (allocok > 0 ) THEN
+                 IFLAG  = -13
+                 IERROR = OMP_NUM*(LWORK+MAXI_CLUSTER*(MAXI_CLUSTER+4))
+                 GOTO 700
+               ENDIF
+               DO IP=1,NPARTSASS_MASTER
+                  IF (BEGS_BLR_COL(IP+1)-BEGS_BLR_COL(IP).EQ.0) THEN
+                    NULLIFY(BLR_LS)
+                  ELSE
+                    ALLOCATE(BLR_LS(NB_BLR_LS),stat=allocok)
+                    IF (allocok > 0) THEN
+                      IFLAG  = -13
+                      IERROR = NB_BLR_LS
+                      GOTO 700
+                    ENDIF
+                    DO J=1, NB_BLR_LS
+                      BLR_LS(J)%M=0
+                      BLR_LS(J)%N=0
+                      BLR_LS(J)%K=0
+                      BLR_LS(J)%ISLR=.FALSE.
+                      NULLIFY(BLR_LS(J)%Q)
+                      NULLIFY(BLR_LS(J)%R)
+                    ENDDO
+                  ENDIF
+                  CALL DMUMPS_BLR_SAVE_PANEL_LORU (
+     &                IW(IOLDPS+XXF),
+     &                0, 
+     &                IP, BLR_LS, 0) 
+               ENDDO
+              CURRENT_BLR = 1 
+#if ! defined(BLR_NOOPENMP)
+!$OMP PARALLEL
+!$OMP& PRIVATE(IP, BLR_LS, ISHIFT)
+#endif
+              DO IP=1,NPARTSASS_MASTER
+                IF (BEGS_BLR_COL(IP+1)-BEGS_BLR_COL(IP).EQ.0) CYCLE
+                CALL DMUMPS_BLR_RETRIEVE_PANEL_LORU(
+     &            IW(IOLDPS+XXF), 0,  
+     &            IP, BLR_LS)
+                ISHIFT = BEGS_BLR_COL(IP)-1
+                CALL DMUMPS_COMPRESS_PANEL_I_NOOPT
+     &                (A_PTR(POSELT), LA_PTR, 1_8,
+     &                IFLAG, IERROR, NCOL1,
+     &                BEGS_BLR_LS(1), size(BEGS_BLR_LS), NB_BLR_LS+1,
+     &                DKEEP(8), KEEP(466), 
+     &                0, 
+     &                KEEP(473), BLR_LS(1), 
+     &                1, 'V', WORK, TAU, JPVT, LWORK, RWORK,
+     &                BLOCKLR, MAXI_CLUSTER, NELIM, 
+     &                .TRUE.,  
+     &                BEGS_BLR_COL(IP+1)-BEGS_BLR_COL(IP), ISHIFT,
+     &                2, KEEP(483), KEEP8,
+     &               (KEEP(450).GT.0), KEEP(453), KEEP(454).EQ.2,
+     &               OMP_NUM )
+#if ! defined(BLR_NOOPENMP)
+!$OMP BARRIER
+#endif
+                  IF (IFLAG.LT.0) GOTO 440
+              ENDDO
+ 440          CONTINUE
+#if ! defined(BLR_NOOPENMP)
+!$OMP END PARALLEL
+#endif          
+              IF (IFLAG.GE.0) THEN
+                DO IP=1,NPARTSASS_MASTER
+                  IF (BEGS_BLR_COL(IP+1)-BEGS_BLR_COL(IP).EQ.0) CYCLE
+                  CALL DMUMPS_BLR_RETRIEVE_PANEL_LORU(
+     &              IW(IOLDPS+XXF), 0,  
+     &              IP, BLR_LS)
+                  CALL UPD_MRY_LU_LRGAIN(BLR_LS, NB_BLR_LS
+     &               , KEEP(450) .GT. 0
+     &               )
+                ENDDO
+              ENDIF
+              IF (allocated(BLOCKLR)) DEALLOCATE(BLOCKLR)
+              IF (allocated(RWORK)) DEALLOCATE(RWORK)
+              IF (allocated(TAU)) DEALLOCATE(TAU)
+              IF (allocated(JPVT)) DEALLOCATE(JPVT)
+              IF (allocated(WORK)) DEALLOCATE(WORK)           
+            ENDIF 
             IF (COMPRESS_CB) THEN
-              CALL DMUMPS_BLR_RETRIEVE_BEGS_BLR_C (IW(IOLDPS+XXF), 
-     &                  BEGS_BLR_COL,  NPARTSASS_MASTER)
-              NB_BLR_COL   = size(BEGS_BLR_COL) - 1
               allocate(CB_LRB(NB_BLR_LS,NB_BLR_COL-NPARTSASS_MASTER),
      &                 stat=allocok)
               IF (allocok > 0) THEN
@@ -452,12 +629,8 @@ C
      &        NB_BLR_COL+1),
      &        NB_BLR_COL-max(NPARTSASS_MASTER,1), MAXI_CLUSTER_COL )
               MAXI_CLUSTER = max(MAXI_CLUSTER_LS,
-     &         MAXI_CLUSTER_COL+NELIM,NPIV)
+     &                           MAXI_CLUSTER_COL+NELIM,NPIV)
               LWORK = MAXI_CLUSTER*(MAXI_CLUSTER+1)
-              OMP_NUM = 1
-#if ! defined(BLR_NOOPENMP)
-!$            OMP_NUM = OMP_GET_MAX_THREADS()
-#endif
               ALLOCATE(BLOCKLR(MAXI_CLUSTER, OMP_NUM*MAXI_CLUSTER),
      &            RWORK(2*MAXI_CLUSTER*OMP_NUM), 
      &            TAU(MAXI_CLUSTER*OMP_NUM),
@@ -481,8 +654,10 @@ C
                 IERROR = max(NFS4FATHER,1)
                 GOTO 700
               ENDIF
-              BEGS_BLR_COL(1+NPARTSASS_MASTER) = 
+              IF (.NOT.LR_ACTIV_POSTPROC) THEN
+                BEGS_BLR_COL(1+NPARTSASS_MASTER) = 
      &               BEGS_BLR_COL(1+NPARTSASS_MASTER) - NELIM
+              ENDIF
               NBROWSinF = 0
               IF ( (KEEP(219).NE.0).AND.(KEEP(50).EQ.2).AND.
      &             NFS4FATHER.GT.0  ) THEN
@@ -550,7 +725,7 @@ C
               IF (allocated(WORK)) DEALLOCATE(WORK)           
               IF (IFLAG.LT.0) GOTO 700
             ENDIF 
-          ENDIF
+          ENDIF 
          CALL DMUMPS_END_FACTO_SLAVE( COMM_LOAD, ASS_IRECV, 
      &    N, INODE, FPERE, 
      &    root, roota,

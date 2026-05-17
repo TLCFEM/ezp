@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -11,7 +11,7 @@ C  released under the CeCILL-C license
 C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
-      SUBROUTINE ZMUMPS_ANA_COMPUTE_ESTIMATES ( id, idintr )
+      SUBROUTINE ZMUMPS_ANA_COMPUTE_ESTIMATES ( id, idintr, NBLK )
       USE ZMUMPS_STRUC_DEF, ONLY: ZMUMPS_STRUC
       USE ZMUMPS_INTR_TYPES, ONLY: ZMUMPS_INTR_STRUC
       USE MUMPS_ANA_OMP_M, ONLY: MUMPS_ANA_L0_OMP
@@ -22,6 +22,7 @@ C
       PARAMETER( MASTER = 0 )
       TYPE(ZMUMPS_STRUC), TARGET  :: id
       TYPE(ZMUMPS_INTR_STRUC) :: idintr
+      INTEGER, INTENT(IN)     :: NBLK
       INTEGER, DIMENSION(:), POINTER :: KEEP, INFO, INFOG
       INTEGER :: allocok
       INTEGER(8), DIMENSION(:), POINTER :: KEEP8
@@ -476,11 +477,29 @@ C
          IF (KEEP(48)==5) THEN
            KEEP(43)  = KEEP(44)
            KEEP(379) = KEEP(380)
+#if defined(MPI_TO_K_OMP)
+           IF ( KEEP(381).GT. 1)  THEN
+             IF (id%MTKO_PROCS_MAP(id%MYID_NODES) 
+     &              .NE.id%MYID_NODES ) THEN
+              KEEP(43)  = SBUF_SEND_FR
+              KEEP(379) = SBUF_SEND_LR
+             ELSE
+             ENDIF
+           ENDIF
+#endif
          ELSE
            KEEP(43)=SBUF_SEND_FR
            KEEP(379)=SBUF_SEND_LR
          ENDIF
          UPDATE_BUFFER = .TRUE.
+#if defined(MPI_TO_K_OMP)
+         IF ( KEEP(381).GT. 1)  THEN
+             IF (id%MTKO_PROCS_MAP(id%MYID_NODES) 
+     &              .NE.id%MYID_NODES ) THEN
+               UPDATE_BUFFER = .FALSE.
+             ENDIF
+          ENDIF
+#endif
          MIN_BUF_SIZE8 = KEEP8(22) / int(KEEP(238),8)
          MIN_BUF_SIZE8 = min(MIN_BUF_SIZE8,
      &                       int(huge(I4),8)/int(KEEP(35),8) )
@@ -651,7 +670,8 @@ C
       CALL MUMPS_SETI8TOI4( KEEP8(129), INFOG(4) )
       INFOG( 5 ) = KEEP( 127 )
       CALL MUMPS_SETI8TOI4( KEEP8(109), INFOG(20) )
-      CALL ZMUMPS_DIAG_ANA(id%MYID, id%COMM, KEEP(1), KEEP8(1),
+      CALL ZMUMPS_DIAG_ANA(id%N, NBLK,
+     &     id%MYID, id%COMM, KEEP(1), KEEP8(1),
      &     INFO(1), INFOG(1), RINFO(1), RINFOG(1), ICNTL(1),
      &     id%SIZE_SCHUR )
       IF (PROK) WRITE( MP, 112 )
@@ -900,6 +920,9 @@ C
      & ENTRIES_IN_FACTORS_LOC_MASTERS, ROOT_yes, ROOT_NPROW, ROOT_NPCOL
      &     )
       USE ZMUMPS_LR_CORE, ONLY : IS_FRONT_BLR_CANDIDATE
+      USE MUMPS_TOOLS_COMMON_M, ONLY : MUMPS_LR_COMPRESS_CB,
+     &                                 MUMPS_LR_COMPRESS_PANEL,
+     &                                 MUMPS_LR_FORCE_BFR
       IMPLICIT NONE
       LOGICAL, intent(in) :: ROOT_yes
       INTEGER, intent(in) :: ROOT_NPROW, ROOT_NPCOL
@@ -976,6 +999,7 @@ C
       INTEGER    :: LRSTATUS, IDUMMY
       INTEGER    :: NBNODES_BLR
       LOGICAL    :: COMPRESS_PANEL, COMPRESS_CB
+      LOGICAL    :: FORCE_BFR
       INTEGER ISTKI,  STKI, ISTKI_OOC
       INTEGER K,NSTK, IFATH
       INTEGER INODE, LEAF, IN
@@ -1261,13 +1285,15 @@ C
       ENDIF
       IDUMMY = -99999
       CALL IS_FRONT_BLR_CANDIDATE (INODE, LEVEL, NFR, NELIM, 
-     &                KEEP(494), 1, KEEP(490),
+     &                KEEP(494), KEEP(473), 1, KEEP(490),
      &                KEEP(491), KEEP(492),
      &                KEEP(20), KEEP(60), DAD(STEP(INODE)), KEEP(38),
      &                KEEP(123), LRSTATUS, IDUMMY)
-      COMPRESS_PANEL = (LRSTATUS.GE.2)
-      COMPRESS_CB    = ((LRSTATUS.EQ.1).OR.(LRSTATUS.EQ.3))
-      IF (COMPRESS_PANEL.OR.COMPRESS_CB) NBNODES_BLR = NBNODES_BLR+1
+      FORCE_BFR      = MUMPS_LR_FORCE_BFR(LRSTATUS)
+      COMPRESS_PANEL = MUMPS_LR_COMPRESS_PANEL(LRSTATUS)
+      COMPRESS_CB    = MUMPS_LR_COMPRESS_CB(LRSTATUS)
+      IF (FORCE_BFR.OR.COMPRESS_PANEL.OR.COMPRESS_CB) 
+     &  NBNODES_BLR = NBNODES_BLR+1
       IF (COMPRESS_PANEL) THEN
         K464_8 = int(KEEP(464),8)
       ELSE
@@ -1475,7 +1501,7 @@ C
                 I_PROCESS_SCHUR_K60_1 = .TRUE.
                 NRLADU_CURRENT_K60_1  = NRLADU_CURRENT
              ENDIF
-             IF (COMPRESS_PANEL) THEN
+             IF (FORCE_BFR.OR.COMPRESS_PANEL) THEN
                NRLADU_if_LR_LU = NRLADU_if_LR_LU + 0_8
                NRLADU_CURRENT_MISSING = NRLADU_CURRENT
                NRLADULR_UD     = NRLADULR_UD + 
@@ -1512,7 +1538,7 @@ C
               NIRADU_OOC = NIRADU_OOC +
      &        EXTRA_PERM_INFO_OOC*(2+NELIM + NELIM/PANEL_SIZE+1)
               NRLADU = NRLADU + NRLADU_CURRENT
-              IF (COMPRESS_PANEL) THEN
+              IF (FORCE_BFR.OR.COMPRESS_PANEL) THEN
                NRLADU_if_LR_LU = NRLADU_if_LR_LU + 0_8
                NRLADU_CURRENT_MISSING = NRLADU_CURRENT
                NRLADULR_UD     = NRLADULR_UD + 
@@ -1549,7 +1575,7 @@ C
              ENDIF
              NRLADU   = NRLADU + NRLADU_CURRENT
              MAX_SIZE_FACTOR=max(MAX_SIZE_FACTOR,NRLADU_CURRENT)
-             IF (COMPRESS_PANEL) THEN
+             IF (FORCE_BFR.OR.COMPRESS_PANEL) THEN
                NRLADU_if_LR_LU = NRLADU_if_LR_LU + 0_8
                NRLADU_CURRENT_MISSING = NRLADU_CURRENT
                NRLADULR_UD     = NRLADULR_UD + 
@@ -1705,11 +1731,11 @@ C
                IDUMMY = -99999
                CALL IS_FRONT_BLR_CANDIDATE 
      &               (IFSON, LEVELS, NFRS, NELIMS, 
-     &                KEEP(494), 1, KEEP(490),
+     &                KEEP(494), KEEP(473), 1, KEEP(490),
      &                KEEP(491), KEEP(492),
      &                KEEP(20), KEEP(60), DAD(STEP(IFSON)), KEEP(38),
      &                KEEP(123), LRSTATUSS, IDUMMY)
-               COMPRESS_CBS   = ((LRSTATUSS.EQ.1).OR.(LRSTATUSS.EQ.3))
+               COMPRESS_CBS   = MUMPS_LR_COMPRESS_CB(LRSTATUSS)
                IF (COMPRESS_CBS) THEN
                  K465_8    = int(KEEP(465),8)
                  SIZECBSLR = SIZECBS*K465_8/1000_8
@@ -2018,7 +2044,7 @@ C
      &         max(NRLNEC,NRLADU+CURRENT_ACTIVE_MEM+NRLADU_CURRENT)
              NRLNEC_ACTIVE = max(NRLNEC_ACTIVE,NRLADU_CURRENT+
      &         NRLADU_ROOT_3+CURRENT_ACTIVE_MEM)
-             IF (.NOT.COMPRESS_PANEL) THEN
+             IF (.NOT.COMPRESS_PANEL.AND..NOT.FORCE_BFR) THEN
               NRLNEC_if_LR_LU = max(
      &             NRLNEC_if_LR_LU,NRLADU_if_LR_LU+
      &             CURRENT_ACTIVE_MEM+NRLADU_CURRENT)
@@ -2796,9 +2822,13 @@ C
       RETURN
       CONTAINS
       SUBROUTINE ZMUMPS_PROCESS_NODE_UNDERL0
+      USE MUMPS_TOOLS_COMMON_M, ONLY : MUMPS_LR_COMPRESS_CB,
+     &                                 MUMPS_LR_COMPRESS_PANEL,
+     &                                 MUMPS_LR_FORCE_BFR
       IMPLICIT NONE
       INTEGER    :: LRSTATUS, IDUMMY
       LOGICAL    :: COMPRESS_PANEL, COMPRESS_CB
+      LOGICAL    :: FORCE_BFR
       INTEGER    :: STKI
       INTEGER(8) :: LSTK
       INTEGER   :: K, NFR, NFRF, NELIM, NELIMF, NCB, NSTK,
@@ -2855,13 +2885,15 @@ C
       ENDIF
       IDUMMY = -99999
       CALL IS_FRONT_BLR_CANDIDATE (INODE, LEVEL, NFR, NELIM, 
-     &                KEEP(494), 1, KEEP(490),
+     &                KEEP(494), KEEP(473), 1, KEEP(490),
      &                KEEP(491), KEEP(492),
      &                KEEP(20), KEEP(60), DAD(STEP(INODE)), KEEP(38),
      &                KEEP(123), LRSTATUS, IDUMMY)
-      COMPRESS_PANEL = (LRSTATUS.GE.2)
-      COMPRESS_CB    = ((LRSTATUS.EQ.1).OR.(LRSTATUS.EQ.3))
-      IF (COMPRESS_PANEL.OR.COMPRESS_CB) NBNODES_BLR = NBNODES_BLR+1
+      FORCE_BFR      = MUMPS_LR_FORCE_BFR(LRSTATUS)
+      COMPRESS_PANEL = MUMPS_LR_COMPRESS_PANEL(LRSTATUS)
+      COMPRESS_CB    = MUMPS_LR_COMPRESS_CB(LRSTATUS)
+      IF (FORCE_BFR.OR.COMPRESS_PANEL.OR.COMPRESS_CB)
+     &  NBNODES_BLR = NBNODES_BLR+1
       IF (COMPRESS_PANEL) THEN
         K464_8 = int(KEEP(464),8)
       ELSE
@@ -2918,7 +2950,7 @@ C
               NRLADU = NRLADU + NRLADU_CURRENT
               MAX_SIZE_FACTOR=max(MAX_SIZE_FACTOR,NRLADU_CURRENT)
       ENDIF
-      IF (COMPRESS_PANEL) THEN
+      IF (FORCE_BFR.OR.COMPRESS_PANEL) THEN
                NRLADU_if_LR_LU = NRLADU_if_LR_LU + 0_8
                NRLADU_CURRENT_MISSING = NRLADU_CURRENT
                NRLADULR_UD     = NRLADULR_UD + 

@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -18,6 +18,9 @@ C
       PUBLIC :: MUMPS_DISTRIBUTE, MUMPS_RETURN_CANDIDATES,
      &     MUMPS_INIT_ARCH_PARAMETERS,MUMPS_END_ARCH_CV,
      &     MUMPS_SET_K78_83_91
+#if defined(MPI_TO_K_OMP)
+     &     , MUMPS_INIT_ARCH2_MTKO
+#endif
       integer,pointer,dimension(:,:),SAVE::cv_cand
       integer,pointer,dimension(:),SAVE::cv_par2_nodes
       integer,SAVE::cv_slavef,cv_nb_niv2,cv_lp,cv_mp
@@ -4263,17 +4266,44 @@ C
       end subroutine MUMPS_FIX_ACCEPTED_MASTER
       end subroutine MUMPS_DISTRIBUTE
       subroutine MUMPS_RETURN_CANDIDATES(par2_nodes,cand,
+#if defined(MPI_TO_K_OMP)
+     &                nslaves, working_list,
+#endif
      &                istat)
       integer, intent(out) :: par2_nodes(cv_nb_niv2), istat
       integer, intent(out) :: cand(:,:)
+#if defined(MPI_TO_K_OMP)
+      integer, intent(in) :: nslaves
+      integer, intent(in) :: working_list(:)
+#endif
       character (len=48):: subname
       integer iloop
+#if defined(MPI_TO_K_OMP)
+      integer:: iniv2, icand, nb_cand
+#endif
       istat=-1
       subname='MUMPS_RETURN_CANDIDATES'
       par2_nodes=cv_par2_nodes
+#if defined(MPI_TO_K_OMP)
+      IF (cv_slavef .ne. nslaves) THEN
+        do iniv2=1, cv_nb_niv2
+          nb_cand = cv_cand(iniv2,cv_slavef+1)
+          do icand=1, nb_cand
+            cand(icand, iniv2) = working_list(cv_cand(iniv2, icand)+1)
+          enddo
+          do icand=nb_cand+1,nslaves
+            cand(icand, iniv2) = -1
+          enddo
+          cand(nslaves+1, iniv2) = nb_cand
+        enddo
+      ELSE
+#endif
       do iloop=1, cv_slavef+1
         cand(iloop,:)=cv_cand(:,iloop)
       enddo
+#if defined(MPI_TO_K_OMP)
+      ENDIF
+#endif
       deallocate(cv_par2_nodes,cv_cand,STAT=istat)
       if(istat.ne.0) then
          if(cv_lp.gt.0)
@@ -4363,6 +4393,8 @@ C
          keep69 = 1
          return
       endif
+#if defined(MPI_TO_K_OMP)
+#endif
       if (host .eq. 0) then
          if ( allocated(mem_distribmpi) ) deallocate(mem_distribmpi )
          allocate( mem_distribmpi( 0:cv_slavef-1 ), stat=ierr )
@@ -4416,6 +4448,68 @@ C
       ENDIF
       return
       end subroutine MUMPS_SET_K78_83_91
+#if defined(MPI_TO_K_OMP)
+      subroutine MUMPS_INIT_ARCH2_MTKO(
+     &     keep381, working_list, nworkers, PROCS_MAP,
+     &     nslaves,
+     &     informerr)
+      implicit none
+      integer, intent(in) :: keep381
+      integer, dimension(:) ::informerr 
+      integer, intent(in) :: nworkers, nslaves
+      INTEGER, DIMENSION(0:nworkers-1), intent(in):: working_list
+      INTEGER, DIMENSION(:), POINTER:: PROCS_MAP
+      integer i, islave, iworker, j, allocok
+      integer, allocatable, dimension(:) :: inv_working_list
+      if ( ke69 .le. 0 .or. ke69 .eq. 1 ) return
+      if ( keep381 .le. 1 ) return
+      if (nslaves .ne. cv_slavef) then
+        write(*,*) "internal error 1 MUMPS_INIT_ARCH2_MTKO",
+     &  nslaves, cv_slavef
+        call MUMPS_ABORT()
+      endif
+      allocate(inv_working_list(0:nslaves-1),stat=allocok)
+      if ( allocok .gt. 0 ) then
+          informerr(1)=-13
+          informerr(2)=nslaves
+          return
+      endif
+      j=0
+      do islave= 0, nslaves-1
+        if (PROCS_MAP(islave) .eq. islave) then
+          mem_distribmpi(j)=mem_distribmpi(islave)
+          j=j+1
+        endif
+      enddo
+      if (j.ne.nworkers) then
+        write(*,*) "internal error 2 MUMPS_INIT_ARCH2_MTKO",
+     &  j, nworkers
+        call MUMPS_ABORT()
+      endif
+      inv_working_list(0:NSLAVES-1)=-1
+      do iworker=0,nworkers-1
+        inv_working_list(working_list(iworker))=iworker
+      enddo
+      j = 0
+      do i = 0, nslaves-1
+        islave = table_of_process(i)
+        iworker = inv_working_list(islave)
+        if (iworker .ge. 0) then
+          table_of_process(j) = iworker
+          j=j+1
+        endif
+      enddo
+      if (j.ne.nworkers) then
+        write(*,*) "internal error 3 MUMPS_INIT_ARCH2_MTKO",
+     &  j, nworkers
+        call MUMPS_ABORT()
+      endif
+      table_of_process(nworkers:nslaves-1)=-999
+      mem_distribmpi  (nworkers:nslaves-1)=-999
+      deallocate(inv_working_list)
+      return
+      end subroutine MUMPS_INIT_ARCH2_MTKO
+#endif
       subroutine MUMPS_COMPUTE_NB_ARCH_NODES()
       implicit none
       integer i

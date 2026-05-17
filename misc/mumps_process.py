@@ -30,7 +30,10 @@ def replace(file: Path):
     )
 
 
-def process(src: str, dest: str):
+def process(src: str, dest: str | None = None):
+    if dest is None:
+        dest = src + "_processed"
+
     dest_folder = Path(dest)
     if dest_folder.exists():
         rmtree(dest_folder)
@@ -59,4 +62,4 @@ def process(src: str, dest: str):
 
 
 if __name__ == "__main__":
-    pass
+    process("/home/theodore/Downloads/MUMPS_5.9.0")

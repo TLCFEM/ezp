@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -31,10 +31,19 @@ C
      &               , LRGROUPS
      &    )
       USE MUMPS_LOAD
+      USE MUMPS_TOOLS_COMMON_M, ONLY : MUMPS_LR_COMPRESS_CB,
+     &                                 MUMPS_LR_COMPRESS_PANEL,
+     &                                 MUMPS_LR_FORCE_BFR
 #if ! defined(NO_FDM_MAPROW)
       USE MUMPS_FAC_MAPROW_DATA_M
 #endif
       USE CMUMPS_LR_DATA_M  
+      USE CMUMPS_LR_TYPE
+      USE CMUMPS_LR_DATA_M
+      USE CMUMPS_LR_CORE
+#if defined(USE_GPU)
+      USE CMUMPS_DYNAMIC_MEMORY_M, ONLY : CMUMPS_DM_SET_DYNPTR
+#endif
       USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
       USE CMUMPS_INTR_TYPES, ONLY : CMUMPS_ROOT_STRUC
       IMPLICIT NONE
@@ -108,16 +117,35 @@ C
       INTEGER :: IWHANDLER_SAVE
       INTEGER    :: LRSTATUS
       LOGICAL    :: CB_STORED_IN_BLRSTRUC, COMPRESS_CB
+      INTEGER :: IP, NB_PANELS
+      TYPE(LRB_TYPE), POINTER, DIMENSION(:) :: BLR_PANEL
+#if defined(USE_GPU)
+      INTEGER(8) :: POSELT, LA_PTR
+      COMPLEX, DIMENSION(:), POINTER :: A_PTR
+#endif
         IF (KEEP(50).EQ.0) THEN
           IHDR_REC=6
         ELSE
           IHDR_REC=8
         ENDIF
         IOLDPS = PTRIST(STEP(INODE))
+#if defined(USE_GPU)
+        CALL CMUMPS_DM_SET_DYNPTR( IW(IOLDPS+XXS), A, LA,
+     &       PTRAST(STEP(INODE)), IW(IOLDPS+XXD), IW(IOLDPS+XXR),
+     &       A_PTR, POSELT, LA_PTR )
+        IF (IW(IOLDPS+XXG) .EQ. MemPinned) THEN
+          IF (KEEP(422).EQ.2) THEN
+            CALL CMUMPS_GPU_ASYNC_UNPIN_MEMORY_C(A_PTR(POSELT),LA_PTR)
+            IW(IOLDPS+XXG) = UnpinningOnTheWay
+          ELSE IF (KEEP(422).EQ.1) THEN
+            CALL CMUMPS_GPU_UNPIN_MEMORY_C(A_PTR(POSELT),LA_PTR)
+            IW(IOLDPS+XXG) = MemNotPinned
+          ENDIF
+        ENDIF
+#endif
         IWHANDLER_SAVE = IW(IOLDPS+XXA)
         LRSTATUS = IW(IOLDPS+XXLR)
-        COMPRESS_CB    = ((LRSTATUS.EQ.1).OR.
-     &                  (LRSTATUS.EQ.3))
+        COMPRESS_CB = MUMPS_LR_COMPRESS_CB(LRSTATUS)
         IF (.NOT.
      &       (
      &         (KEEP(486).EQ.2) 
@@ -125,6 +153,29 @@ C
      &       .AND..NOT.COMPRESS_CB) THEN
           CALL CMUMPS_BLR_END_FRONT(IW(IOLDPS+XXF), IFLAG, KEEP8,
      &                              KEEP(34))
+        ENDIF
+        IF((LRSTATUS.GE.2).AND.(KEEP(50).NE.0) .AND.
+     &       ( (KEEP(486).EQ.2)
+     &       ) .AND. (KEEP(450).GT.0)) THEN
+          CALL CMUMPS_BLR_RETRIEVE_NB_PANELS(IW(IOLDPS+XXF), NB_PANELS)
+#if ! defined(BLR_NOOPENMP)
+!$OMP PARALLEL PRIVATE(IP, BLR_PANEL)
+#endif
+          DO IP=1,NB_PANELS
+            BLR_PANEL=>BLR_ARRAY(IW(IOLDPS+XXF))%PANELS_L(IP)%LRB_PANEL
+            IF (associated(BLR_PANEL)) THEN
+              CALL CMUMPS_LRMIXED_CONVERT_PANEL(BLR_PANEL,
+     &                 size(BLR_PANEL), 0, KEEP(34), KEEP8,
+     &                 IFLAG, IERROR)
+            ENDIF
+          ENDDO
+#if ! defined(BLR_NOOPENMP)
+!$OMP END PARALLEL
+#endif
+          IF (IFLAG .LT. 0) THEN
+            CALL CMUMPS_BDC_ERROR( MYID, SLAVEF, COMM, KEEP )
+            GOTO 600
+          ENDIF
         ENDIF
         IW(IOLDPS+XXS)=S_ALL
          IOLDPS = PTRIST(STEP(INODE))
@@ -141,8 +192,8 @@ C
           IOLDPS = PTRIST(STEP(INODE)) 
           IF (KEEP(38).NE.FPERE) THEN
             CB_STORED_IN_BLRSTRUC = .FALSE.
-            LRSTATUS              = IW(IOLDPS+XXLR)
-            IF ((LRSTATUS.EQ.1).OR.(LRSTATUS.EQ.3)) THEN
+            LRSTATUS    = IW(IOLDPS+XXLR)
+            IF (MUMPS_LR_COMPRESS_CB(LRSTATUS)) THEN
               CB_STORED_IN_BLRSTRUC = .TRUE.
               IW(IOLDPS+XXS) = S_NOLNOCB
               CALL MUMPS_GETI8(MEM_GAIN, IW(IOLDPS+XXR))

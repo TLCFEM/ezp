@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -20,16 +20,39 @@ C
      &                       ZMUMPS_OOC_END_FACTO
       USE ZMUMPS_STRUC_DEF
       USE ZMUMPS_INTR_TYPES, ONLY: ZMUMPS_INTR_STRUC
-      USE ZMUMPS_FACSOL_L0OMP_M, ONLY: ZMUMPS_FREE_L0_OMP_FACTORS,
-     &  ZMUMPS_INIT_L0_OMP_FACTORS
+#if defined(SINGLEINDOUBLE)
+      USE CMUMPS_INTR_TYPES, ONLY: CMUMPS_ROOT_STRUC
+#endif
+      USE ZMUMPS_FACSOL_L0OMP_M, ONLY: ZMUMPS_INIT_L0_OMP_FACTORS
+#if defined(SINGLEINDOUBLE)
+      USE CMUMPS_FACSOL_L0OMP_M, ONLY: CMUMPS_FREE_L0_OMP_FACTORS,
+     &  CMUMPS_INIT_L0_OMP_FACTORS
+#endif
       USE ZMUMPS_DYNAMIC_MEMORY_M, ONLY: ZMUMPS_DM_ALLOC_S_WK,
      &    ZMUMPS_DM_FREE_S_WK
+#if defined(SINGLEINDOUBLE)
+      USE CMUMPS_DYNAMIC_MEMORY_M, ONLY: CMUMPS_DM_ALLOC_S_WK,
+     &    CMUMPS_DM_FREE_S_WK
+#endif
       USE MUMPS_LR_STATS
       USE ZMUMPS_LR_DATA_M, only: ZMUMPS_BLR_INIT_MODULE, 
      &                            ZMUMPS_BLR_END_MODULE
      &                          , ZMUMPS_BLR_MOD_TO_STRUC
        USE ZMUMPS_FAC_COMPACT_FACTORS_M, ONLY:
      &     ZMUMPS_TRY_COMPACT_FACTORS
+#if defined(SINGLEINDOUBLE)
+      USE CMUMPS_LR_DATA_M, only: CMUMPS_BLR_INIT_MODULE, 
+     &                            CMUMPS_BLR_END_MODULE
+     &                          , CMUMPS_BLR_MOD_TO_STRUC
+      USE CMUMPS_FAC_COMPACT_FACTORS_M, ONLY:
+     &    CMUMPS_TRY_COMPACT_FACTORS
+#endif
+      USE ZMUMPS_LR_TYPE, only : NPREC_STOC,
+     &              ZMUMPS_INIT_LRMIXED_PRECISIONS
+#if defined(SINGLEINDOUBLE)
+      USE CMUMPS_LR_TYPE, only : NPREC_STOC,
+     &              CMUMPS_INIT_LRMIXED_PRECISIONS
+#endif
       USE MUMPS_PIVNUL_MOD, only: PIVNUL_LIST_STRUCT_T
       USE MUMPS_FRONT_DATA_MGT_M
 #if ! defined(NO_FDM_DESCBAND)
@@ -38,9 +61,15 @@ C
 #if ! defined(NO_FDM_MAPROW)
       USE MUMPS_FAC_MAPROW_DATA_M
 #endif
+#if defined(MPI_TO_K_OMP)
+      USE MUMPS_MPITOOMP_M
+#endif
 !$    USE OMP_LIB
 C     Derived datatype to pass pointers with implicit interfaces
       USE ZMUMPS_FAC_S_IS_POINTERS_M, ONLY : ZMUMPS_S_IS_POINTERS_T
+#if defined(SINGLEINDOUBLE)
+      USE CMUMPS_FAC_S_IS_POINTERS_M, ONLY : CMUMPS_S_IS_POINTERS_T
+#endif
       IMPLICIT NONE
 C
 C  Purpose
@@ -59,6 +88,22 @@ C
       LOGICAL, INTENT(IN) :: LSCAL
       INTEGER, INTENT(IN) :: EFF_SIZE_SCHUR
       END SUBROUTINE ZMUMPS_ANORMINF
+#if defined(SINGLEINDOUBLE)
+      SUBROUTINE ZMUMPS_LPid_TO_Cid(id, idintr, K34, IFLAG, IERROR)
+      USE ZMUMPS_STRUC_DEF,  ONLY: ZMUMPS_STRUC 
+      USE ZMUMPS_INTR_TYPES, ONLY: ZMUMPS_INTR_STRUC
+      USE CMUMPS_STRUC_DEF, ONLY: CMUMPS_STRUC
+      USE CMUMPS_LR_DATA_M, BLR_ARRAY_LP => BLR_ARRAY
+      USE ZMUMPS_LR_DATA_M,  BLR_ARRAY_C  => BLR_ARRAY
+      USE ZMUMPS_FACSOL_L0OMP_M, ONLY: ZMUMPS_INIT_L0_OMP_FACTORS
+      USE CMUMPS_FACSOL_L0OMP_M, ONLY: CMUMPS_FREE_L0_OMP_FACTORS
+      use iso_c_binding
+      TYPE(ZMUMPS_STRUC), INTENT(INOUT)       :: id
+      TYPE (ZMUMPS_INTR_STRUC), intent(inout) :: idintr
+      INTEGER :: K34
+      INTEGER, intent(inout) :: IFLAG, IERROR
+      END SUBROUTINE ZMUMPS_LPid_TO_Cid
+#endif
       END INTERFACE
 C
 C  Parameters
@@ -113,9 +158,26 @@ C
       INTEGER SUM_INFO22_THIS_NODE, MAX_SUM_INFO22_THIS_NODE
 C
       TYPE (ZMUMPS_S_IS_POINTERS_T) :: S_IS_POINTERS
+#if defined(USE_GPU)
+#if defined(SINGLEINDOUBLE)
+      REAL(kind(0.E0)) :: LPRINFO9, LPRINFO10
+#endif
+#endif
+#if defined(SINGLEINDOUBLE)
+C     Parameters to call CMUMPS_FAC_B
+      TYPE (CMUMPS_S_IS_POINTERS_T) :: LPS_IS_POINTERS
+      COMPLEX(kind=4), DIMENSION(:), ALLOCATABLE :: LPDBLARR
+      COMPLEX(kind=4), DIMENSION(:), ALLOCATABLE :: LPRHS_MUMPS
+      TYPE(CMUMPS_ROOT_STRUC) :: lproota 
+      REAL(kind(0.E0)) :: LPCNTL1
+      REAL(kind(0.E0)) :: LPDK8
+#endif
       INTEGER    :: MAXIS
       INTEGER(8) :: MAXS
-      INTEGER    :: ICNTL49_LOC, TMP_INFOG_4
+#if defined(SINGLEINDOUBLE)
+      INTEGER(8) :: I8
+#endif
+      INTEGER    :: ICNTL49_LOC, TMP_INFOG_4, ICNTL36_LOC
 C     For S argument to arrowhead routines:
       INTEGER(8) :: MAXS_ARG
       COMPLEX(kind=8), TARGET :: S_DUMMY_ARG(1)
@@ -131,10 +193,21 @@ C     (pointer to point on used-data in some cases--elt-entry)
       DOUBLE PRECISION TIMEAVG, TIMEMAX,
      &                 FLOPAVG, FLOPMAX
       DOUBLE PRECISION TMPFLOP
+#if defined(USE_GPU)
+      INTEGER :: GPUBITMAP, MAX_MPIs_PER_GPU, KEEP416_PROVIDED,
+     &           KEEP416_MASK, NDEVICES
+      DOUBLE PRECISION :: TIME_INIT_GPU
+      DOUBLE PRECISION :: TIME_INIT_GPU_MIN
+      DOUBLE PRECISION :: TIME_INIT_GPU_MAX
+#endif
       INTEGER NPIV_CRITICAL_PATH, EFF_SIZE_SCHUR
       DOUBLE PRECISION TIME, TIMEET
       DOUBLE PRECISION ZERO, ONE, MONE
       PARAMETER( ZERO = 0.0D0, ONE = 1.0D0, MONE = -1.0D0)
+#if defined(SINGLEINDOUBLE)
+      REAL(kind(0.E0)), PARAMETER :: LPZERO = 0.0e0
+      REAL(kind(0.E0)) :: LPSEUIL, LPSEUIL_LDLT_NIV2
+#endif
       COMPLEX(kind=8) CZERO
       PARAMETER( CZERO = (0.0D0, 0.0D0) )
       INTEGER PERLU, TOTAL_MBYTES, K231, K232, K233, BLR_STRAT
@@ -162,6 +235,9 @@ C temporary variables for collecting stats from all processors
       DOUBLE PRECISION :: LR_TAB(LR_TABSIZE), LR_EPSILON
       DOUBLE PRECISION :: TMP_MRY_LU_FR
       DOUBLE PRECISION :: TMP_MRY_LU_LRGAIN
+      DOUBLE PRECISION :: TMP_MRY_LU_LRGAIN_mixed
+      DOUBLE PRECISION :: TMP_MRY_CB_LRGAIN_mixed
+      INTEGER :: KEEP451_SAVE, KEEP452_SAVE, KEEP483_SAVE, KEEP484_SAVE
       INTEGER :: KEEP399_SAVE, KEEP20_SAVE
       DOUBLE PRECISION :: TMP_MRY_CB_FR
       DOUBLE PRECISION :: TMP_MRY_CB_LRGAIN
@@ -252,6 +328,21 @@ C
 C  External references
 C  ===================
       INTEGER, EXTERNAL :: MUMPS_NUMROC
+#if defined(MPI_TO_K_OMP)
+      INTEGER, DIMENSION(:), allocatable:: CORES_LIST
+      INTEGER:: NCORES
+      INTEGER:: ERROR
+      INTEGER:: MY_WORKING_ID
+      LOGICAL:: I_AM_HEAD
+#if defined(MTKO_VERBOSE)
+C     SETMASK:
+C                   = 2 after restoring original mask
+C                   = 1 when  MUMPS_MPITOOMP_SET_MASK called
+C                   = 0 otherwise (print original mask)
+C                   
+      INTEGER:: thread_num, SETMASK
+#endif
+#endif
       INTEGER:: NWORKING
       LOGICAL:: MEM_EFF_ALLOCATED
       INTEGER   :: TOTAL_MBYTES_UNDER_L0
@@ -310,6 +401,8 @@ C     -------------------------------------
 C     RR related
       id%KEEP(17)  = 0
       id%INFOG(28) = 0
+      id%INFOG(50) = 0
+      id%INFOG(51) = 0
 C     Number of symmetric swaps
       id%KEEP8(80)=0_8
 C     Largest increase of internal panel size
@@ -498,13 +591,20 @@ C       0.0 and 1.0 (for SYM=0) and 0.5 (for SYM=1,2)
         PARPIV_T1 = id%KEEP(268)
         IF (PARPIV_T1.EQ.77) THEN
          PARPIV_T1 = 0 
+#if defined(USE_GPU)
+         IF (KEEP(417).GT.0) THEN
+          PARPIV_T1 = -2
+         ENDIF
+#endif
 #if defined(__ve__)
          PARPIV_T1 = -2
 #endif
         ENDIF
+#if !defined(USE_GPU)
         IF (PARPIV_T1.EQ.-3) THEN
           PARPIV_T1 = 0
         ENDIF
+#endif
         IF ((PARPIV_T1.LT.-3).OR.(PARPIV_T1.GT.1)) THEN
 C        out of range values
          PARPIV_T1 =0
@@ -520,12 +620,24 @@ C         but do NOT switch off PARPIV_1 with null pivot detection
          ENDIF
         ENDIF
         id%KEEP(269) = PARPIV_T1
+C       Save few KEEP related to LRMIXED now,
+C       they may be modified later
+        KEEP451_SAVE = KEEP(451)
+        KEEP452_SAVE = KEEP(452)
+        KEEP483_SAVE = KEEP(483) 
+        KEEP484_SAVE = KEEP(484) 
 C     }
       ENDIF
       CALL MPI_BCAST(CNTL1, 1, MPI_DOUBLE_PRECISION,
      &             MASTER, id%COMM, IERR)
       CALL MPI_BCAST( KEEP(269), 1, MPI_INTEGER,
      &                  MASTER, id%COMM, IERR )
+#if defined(SINGLEINDOUBLE)
+C     single precision factorization? Set KEEP(148), etc.
+      CALL MUMPS_ICNTL47_SETTINGS( 2, id%ICNTL, id%KEEP,
+     &id%KEEP8, id%SIZE_SCHUR, id%MYID, id%COMM, id%INFO, LP, LPOK )
+      IF (id%INFO(1).LT.0) GOTO 530
+#endif
       IF (id%MYID.EQ.MASTER) THEN
 C{
 C         OMP parallelization of arrowheads
@@ -552,6 +664,9 @@ C         not activated during analysis, it cannot be activated
 C         at factorization.
 C         ------------------------------------------------------
           id%KEEP(486) = id%ICNTL(35)
+#if defined(SINGLEINDOUBLE)
+          IF (id%KEEP(473) .GE. 2) id%KEEP(486) = 1
+#endif
           IF (id%KEEP(486).EQ.1) THEN
 C         -- Automatic BLR option setting
            id%KEEP(486)= 2
@@ -596,7 +711,10 @@ C          Out of range values treated as 1000
 C          Out of range values treated as 1000
            KEEP465COPY = 1000
           ENDIF
-          IF (id%ICNTL(36).EQ.1.OR.id%ICNTL(36).EQ.3) THEN
+          ICNTL36_LOC = id%ICNTL(36)
+C         Out of range values
+          IF (ICNTL36_LOC.NE.0) ICNTL36_LOC= 0
+          IF (ICNTL36_LOC.EQ.1.OR.ICNTL36_LOC.EQ.3) THEN
             IF (CNTL1.EQ.ZERO .OR. KEEP(468).LE.1) THEN
               KEEP(475) = 3
             ELSE IF ( (KEEP(269).GT.0).OR. (KEEP(269).EQ.-2)) THEN
@@ -610,7 +728,7 @@ C          Out of range values treated as 1000
             KEEP(475) = 0
           ENDIF
           KEEP(481)=0
-          IF (id%ICNTL(36).LT.0 .OR. id%ICNTL(36).GE.2) THEN
+          IF (ICNTL36_LOC.LT.0 .OR. ICNTL36_LOC.GE.2) THEN
 C           Only options 1 and 2 are allowed
             KEEP(475) = 0
           ENDIF
@@ -624,6 +742,40 @@ C           Other values treated as zero
           IF (KEEP(79).GE.1) THEN
 C          CompressCB incompatible with type4,5,6 nodes
            KEEP(489)=0
+          ENDIF
+          IF (id%ICNTL(40).EQ.0.OR.id%ICNTL(40).EQ.1) THEN
+            KEEP(450) = id%ICNTL(40)
+          ELSE
+C           Other values treated as zero
+            KEEP(450) = 0
+          ENDIF
+C         Saves are done earlier to ensure they're always done
+C         before restoration (case of errors with "GOTO")
+C         KEEP451_SAVE = KEEP(451)
+C         KEEP452_SAVE = KEEP(452)
+C         KEEP483_SAVE = KEEP(483)
+C         KEEP484_SAVE = KEEP(484)
+          IF (KEEP(451).EQ.-1) THEN
+C           Use all storage precisions by default
+            KEEP(451) = 1
+#if defined(NOMIXHPC)
+#if defined(SINGLEINDOUBLE)
+C           KEEP(148)=0 means that we are really in double
+C           (in case of single computations, do not reset)
+            IF (KEEP(148).EQ.0) THEN
+#endif
+C             ... except in double for LRMIXED_CALC 
+C             (use only double and single)
+              IF (KEEP(448) .GT. 0) THEN
+                KEEP(451) = 0
+              ENDIF
+#if defined(SINGLEINDOUBLE)
+            ENDIF
+#endif
+#endif
+          ENDIF
+          IF (KEEP(452).EQ.-1) THEN
+            KEEP(452) = KEEP(450)
           ENDIF
 C         id%KEEP(476) \in [1,100] 
           IF ((id%KEEP(476).GT.100).OR.(id%KEEP(476).LT.1)) THEN
@@ -646,9 +798,9 @@ C         id%KEEP(480)=0,2,3,4,5,6
      &                           .OR.(id%KEEP(480).EQ.1)) THEN
                id%KEEP(480)=0
           ENDIF
-C         id%KEEP(473)=0 or 1
-          IF ((id%KEEP(473).NE.0).AND.(id%KEEP(473).NE.1)) THEN
-               id%KEEP(473)=0
+C         id%KEEP(473)=0,1,2 or 3
+          IF (id%KEEP(473).LT.0.OR.id%KEEP(473).GT.3) THEN
+             id%KEEP(473)=0
           ENDIF
 C         id%KEEP(474)=0,1,2,3
           IF ((id%KEEP(474).GT.3).OR.(id%KEEP(474).LT.0)) THEN
@@ -679,7 +831,15 @@ C}
      &                     id%COMM, id%MYID )
 C
       IF (id%INFO(1).LT.0) GOTO 530
+#if defined(SINGLEINDOUBLE)
+      IF ( KEEP(148) .EQ. 0 ) THEN
+#endif
         EPS = epsilon ( ZERO )
+#if defined(SINGLEINDOUBLE)
+      ELSE
+        EPS = epsilon( LPZERO )
+      ENDIF
+#endif
       CALL MPI_BCAST( KEEP(281), 1, MPI_INTEGER,
      &                MASTER, id%COMM, IERR )
       CALL MPI_BCAST( KEEP(399), 1, MPI_INTEGER,
@@ -693,6 +853,18 @@ C
      &                MASTER, id%COMM, IERR )
         CALL MPI_BCAST( KEEP465COPY, 1, MPI_INTEGER,
      &                MASTER, id%COMM, IERR )
+C       BCASTS KEEP(448), 450, 451, 452, 453, 454
+        CALL MPI_BCAST( KEEP(448), 1, MPI_INTEGER,
+     &                MASTER, id%COMM, IERR )
+        CALL MPI_BCAST( KEEP(450), 5, MPI_INTEGER,
+     &                MASTER, id%COMM, IERR )
+      ELSE
+C       When BLR is off during facto, 
+C       make sure that adaptive BLR (ICNTL(40) "copied" in KEEP(450)
+C       is considered off.
+C       Doing so that it can be tested also during solve by all mpi 
+C       procs even when BLR is off
+        KEEP(450)=0
       ENDIF
       IF (id%MYID.EQ.MASTER) THEN
         IF (KEEP(217).GT.2.OR.KEEP(217).LT.0) THEN
@@ -789,11 +961,23 @@ C     Compute \sum of memories allowed
      &                  MPI_SUM, MASTER, id%COMM, IERR )
       ITMP8 = ITMP8 / 1000000_8 ! Use to print \sum_{ICNTL(23)}
       IF ( PROKG ) THEN
+#if defined(MPI_TO_K_OMP)
+        IF (id%KEEP(381).gt.1) THEN
+          NWORKING = id%NSLAVES/id%KEEP(381)
+        ELSE
+#endif
           NWORKING = id%NSLAVES
+#if defined(MPI_TO_K_OMP)
+        ENDIF
+#endif
           CALL MUMPS_SETI8TOI4( id%KEEP8(129), TMP_INFOG_4)
           WRITE( MPG, 172 ) 
      &    NWORKING, id%ICNTL(22), KEEP_486_FOR_PRINT,
      &    KEEP(489),
+     &    KEEP(450),
+#if defined(SINGLEINDOUBLE)
+     &    KEEP(148),
+#endif
      &    id%ICNTL(49), 
      &    id%KEEP(19),
      &    KEEP(12), 
@@ -826,6 +1010,165 @@ C     Memory management: allocate id%S etc. from C or Fortran?
       id%KEEP(430) = 0
 #if defined(MUMPS_MALLOC_FROM_C)
       id%KEEP(430) = 1
+#endif
+#if defined(USE_GPU)
+C{
+      CALL MPI_BCAST( id%KEEP(415), 1, MPI_INTEGER,
+     &                MASTER, id%COMM, IERR )
+C     BCAST KEEP(417), KEEP(418), KEEP(419)
+      CALL MPI_BCAST( id%KEEP(417), 3, MPI_INTEGER,
+     &                MASTER, id%COMM, IERR )
+      CALL MPI_BCAST( id%KEEP(422), 1, MPI_INTEGER,
+     &                MASTER, id%COMM, IERR )
+C     BCAST KEEP(431),KEEP(432),KEEP(433),KEEP(434),KEEP(435)
+      CALL MPI_BCAST( id%KEEP(431), 5, MPI_INTEGER,
+     &                MASTER, id%COMM, IERR )
+      IF (id%KEEP(417).GT.0) then
+#if defined(MPI_TO_K_OMP)
+        IF (id%KEEP(381) .GT. 1) THEN
+          id%INFO(1)=-800
+          id%INFO(2)=17
+          IF (LPOK)
+     &    WRITE(LP,*)
+     &   'ERROR: MPI_TO_K_OMP feature currently incompatible with GPU'
+          CALL MUMPS_PROPINFO( ICNTL(1), id%INFO(1),
+     &       id%COMM, id%MYID )
+          IF ( id%INFO(1) .LT. 0 ) GOTO 530
+        ENDIF
+#endif
+        id%KEEP(428)=0
+        CALL ZMUMPS_GET_NDEVICES_C( NDEVICES )
+        IF (id%MYID .EQ. MASTER) THEN
+          KEEP416_PROVIDED = id%KEEP(416) ! 0 means automatic
+          IF (KEEP416_PROVIDED .EQ. 0) THEN
+            KEEP416_MASK = NDEVICES
+            KEEP416_MASK = ishftc(1, KEEP416_MASK)-1
+          ENDIF
+        ENDIF
+        CALL MPI_BCAST( KEEP416_PROVIDED, 1, MPI_INTEGER,
+     &                MASTER, id%COMM, IERR )
+        IF (KEEP416_PROVIDED.EQ.0) THEN
+          CALL MPI_BCAST( KEEP416_MASK, 1, MPI_INTEGER,
+     &                    MASTER, id%COMM, IERR )
+        ELSE IF (KEEP416_PROVIDED > 0) THEN
+          KEEP416_MASK = id%KEEP(416)
+        ENDIF
+        IF ( KEEP416_PROVIDED < 0 ) THEN
+C         Special case where KEEP416_PROVIDED encodes
+C         the maximum number of MPI per GPU.
+          IF ( NDEVICES < KEEP(417) ) THEN
+C           NDEVICES not big enough:
+            id%INFO(1) = -100
+            id%INFO(2) = NDEVICES
+          ELSE
+C           Set GPUBITMAP and MAX_MPI_PER_GPU
+            GPUBITMAP = 2**KEEP(417)-1
+            MAX_MPIs_PER_GPU = -KEEP416_PROVIDED
+          ENDIF
+        ELSE
+          CALL MUMPS_GPU_DEF_BITMAP( KEEP416_MASK, id%KEEP(417),
+     &                      id%MYID, id%NPROCS, id%COMM,
+C    &                              id%KEEP(46),
+C    &                      id%MYID_NODES, id%NSLAVES, id%COMM,
+     &                      GPUBITMAP, MAX_MPIs_PER_GPU,
+     &                      id%ICNTL, id%INFO )
+        ENDIF
+        CALL MUMPS_PROPINFO( ICNTL(1), id%INFO(1),
+     &        id%COMM, id%MYID )
+        IF ( id%INFO(1) .LT. 0 ) GOTO 530
+        IF ( id%KEEP(436).EQ. 1 ! unified requested
+     &       .AND. ( id%KEEP(438) .LT. 0 .OR.
+     &               id%KEEP(438) .EQ. 0 .OR.
+     &               id%KEEP(438) .EQ. 2 )) THEN
+            IF ( PROKG ) THEN
+              WRITE(MPG,'(A)')
+     & '** ERROR : Unified memory requested but not supported'
+            END IF
+            CALL MUMPS_ABORT()
+        ENDIF
+        CALL MUMPS_SECDEB(TIME_INIT_GPU)
+#if defined(SINGLEINDOUBLE)
+        IF (KEEP(148) .EQ. 0) THEN
+#endif
+        CALL ZMUMPS_INIT_GPU_C(id%KEEP(415), id%KEEP(417), id%KEEP(418),
+     &                         id%KEEP(419), id%KEEP(422), id%KEEP(430),
+     &                         id%KEEP(436),
+     &                         GPUBITMAP, MAX_MPIs_PER_GPU,
+     &                         id%INFO )
+#if defined(SINGLEINDOUBLE)
+        ELSE
+        CALL CMUMPS_INIT_GPU_C(id%KEEP(415), id%KEEP(417),id%KEEP(418),
+     &                         id%KEEP(419), id%KEEP(422), id%KEEP(430),
+     &                         id%KEEP(436),
+     &                         GPUBITMAP, MAX_MPIs_PER_GPU,
+     &                         id%INFO )
+        ENDIF
+#endif
+        CALL MUMPS_SECFIN(TIME_INIT_GPU)
+        CALL MPI_REDUCE(TIME_INIT_GPU,TIME_INIT_GPU_MAX,1,
+     &      MPI_DOUBLE_PRECISION,
+     &      MPI_MAX,MASTER,id%COMM,IERR)
+        CALL MPI_REDUCE(TIME_INIT_GPU,TIME_INIT_GPU_MIN,1,
+     &      MPI_DOUBLE_PRECISION,
+     &      MPI_MIN,MASTER,id%COMM,IERR) 
+        IF ( PROK ) THEN
+C          print on all procs
+           WRITE(MP,'(A,I16)') 
+     &     ' ICNTL(51) Number of GPUs                   =',KEEP(417)
+           WRITE(MP,'(A,I16)') 
+     &     ' KEEP(416) GPU bitset                       =',KEEP(416)
+           WRITE(MP,'(A,I16)') 
+     &     ' KEEP(418) GPU Arith. Intensity threshold   =',KEEP(418)
+           WRITE(MP,'(A,I16)')
+     &     ' KEEP(422) Memory pinning                   =',KEEP(422)
+           WRITE(MP,'(A,I16)')
+     &     ' Max number of MPI per GPU                  =',
+     &     MAX_MPIs_PER_GPU
+           WRITE(MP,'(A,I16,I4)')
+     &     ' Local GPU bit set, id%MYID                 =',GPUBITMAP,
+     &                                                     id%MYID
+           WRITE(MP,'(A,I16)')
+     &     ' KEEP(66) MPI setting for larger granularity=',KEEP(198)
+           WRITE(MP,'(A,F12.4)')
+     &     ' Local time spent in MUMPS_INIT_GPU_C       =',TIME_INIT_GPU
+         ENDIF
+         IF (PROKG .AND. .NOT. (PROK .AND. MPG .EQ. MP)) THEN
+C          print on master
+           WRITE(MPG,'(A,I16)') 
+     &     ' ICNTL(51) Offload on GPUs                  =',KEEP(417)
+           WRITE(MPG,'(A,I16)') 
+     &     ' KEEP(416) GPU bitset                       =',KEEP(416)
+           WRITE(MPG,'(A,I16)') 
+     &     ' KEEP(418) GPU Arith. Intensity threshold   =',KEEP(418)
+           WRITE(MPG,'(A,I16)')
+     &     ' KEEP(422) Memory pinning                   =',KEEP(422)
+           WRITE(MPG,'(A,I16)')
+     &     ' Max number of MPI per GPU                  =',
+     &     MAX_MPIs_PER_GPU
+           WRITE(MPG,'(A,I16)')
+     &     ' KEEP(66) MPI setting for larger granularity=',KEEP(198)
+         ENDIF
+         IF (PROKG) THEN
+           IF (id%NSLAVES.GT.1) THEN
+C            Print min and max time
+             WRITE(MPG,'(A,F12.4)')
+     &       ' Max time spent in MUMPS_INIT_GPU_C         =',
+     &       TIME_INIT_GPU_MAX
+             WRITE(MPG,'(A,F12.4)')
+     &       ' Min time spent in MUMPS_INIT_GPU_C         =',
+     &       TIME_INIT_GPU_MIN
+           ELSE 
+C            Only 1 MPI worker 
+             WRITE(MPG,'(A,F12.4)')
+     &       ' Time spent in MUMPS_INIT_GPU_C             =',
+     &       TIME_INIT_GPU_MIN
+           ENDIF
+         ENDIF
+         CALL MUMPS_PROPINFO( ICNTL(1), id%INFO(1),
+     &        id%COMM, id%MYID )
+         IF ( id%INFO(1) .LT. 0) GOTO 530
+      ENDIF
+C}
 #endif
 C
 *     **********************************
@@ -1351,6 +1694,11 @@ C             transpose).
              RHS_MUMPS_ALLOCATED = .FALSE.
           ELSE
              RHS_MUMPS_ALLOCATED = .TRUE.
+#if defined(SINGLEINDOUBLE)
+C            RHS_MUMPS will be accessed: we initialize it to avoid
+C            a possible floating point exception when accessing.
+             RHS_MUMPS(1)=1.0D0
+#endif
           ENDIF
       ENDIF
       CALL MUMPS_PROPINFO( ICNTL(1), id%INFO(1),
@@ -1447,6 +1795,21 @@ C            non recommended setting.
      &      id%DKEEP(8), CNTL(7), ANORMINF
             ENDIF
       ENDIF
+      IF (KEEP(486).NE.0) THEN
+#if defined(SINGLEINDOUBLE)
+        IF (KEEP(148).EQ.0) THEN
+#endif
+          CALL ZMUMPS_INIT_LRMIXED_PRECISIONS(id%KEEP(148), 
+     &          id%KEEP(451), id%KEEP(456), id%KEEP(457), id%DKEEP(8))
+#if defined(SINGLEINDOUBLE)
+        ELSE
+C         id%DKEEP(8): casted to single precision explicitely
+          LPDK8 = id%DKEEP(8)
+          CALL CMUMPS_INIT_LRMIXED_PRECISIONS(id%KEEP(148),
+     &          id%KEEP(451), id%KEEP(456), id%KEEP(457), LPDK8)
+        ENDIF
+#endif
+       ENDIF
 C     -------------------------------------------------------
 C        We compute ANORMINF, when needed, based on
 C        the infinite norm of Rowsca *A*Colsca
@@ -1571,8 +1934,23 @@ C}
 C            Unsym
            ! the user let us choose a fixation. set in NEGATIVE
            ! to detect during facto when to set row to zero !
+#if defined(SINGLEINDOUBLE)
+             IF (KEEP(148).EQ.0) THEN
+#endif
                id%DKEEP(2) = -max(1.0D10*ANORMINF, 
      &                 sqrt(huge(ANORMINF))/1.0D8)
+#if defined(SINGLEINDOUBLE)
+             ELSE
+C              Use single precision fixation since single
+C              precision factorization will be used. Having
+C              DKEEP(2) exceeding single precision max exponent
+C              causes floating-point exceptions in conversion
+C              before ZMUMPS_FAC_B or result in an invalid fixation.
+               id%DKEEP(2) = -max(1.0D10*ANORMINF, 
+     &                sqrt(huge(LPCNTL1))/1.0D8)
+C              (we use LCNTL1 because it is declared single precision)
+             ENDIF
+#endif
            ELSE
 C            Sym
              id%DKEEP(2) = ZERO
@@ -1924,6 +2302,17 @@ C     Manage main workarray S
 C     -----------------------
       EARLYT3ROOTINS = KEEP(200) .EQ.0
      &        .OR.  ( KEEP(200) .LT. 0 .AND. KEEP(400) .EQ. 0 )
+#if defined(SINGLEINDOUBLE)
+C     We cannot easily manage EARLYT3ROOTINS with single precision
+C     factorization since in this case, S should be single precision
+C     and allocated during ZMUMPS_FAC_B
+      EARLYT3ROOTINS = .FALSE.
+C     Note that this is done independently of KEEP(148), because
+C     KEEP(148) is known at facto and decision should be
+C     identical to the one from analysis.
+C     Also, this is done both in single precision and double precision
+C     routines, to keep the value coherent when mixing precisions.
+#endif
 #if defined (LARGEMATRICES)
       IF ( id%MYID .ne. MASTER ) THEN
 #endif
@@ -1944,8 +2333,12 @@ C           Therefore we nullify S
           ENDIF
         ENDIF
       ELSE
+#if defined(SINGLEINDOUBLE)
+#endif
         id%S => id%WK_USER(1:id%KEEP8(24))
         id%KEEP8(23) = 0_8
+#if defined(SINGLEINDOUBLE)
+#endif
       ENDIF
 #if defined (LARGEMATRICES)
       END IF
@@ -1994,8 +2387,23 @@ C         Storage of DESCBAND information
 C         Storage of MAPROW and ROOT2SON information
           CALL MUMPS_FMRD_INIT( NB_ACTIVE_FRONTS_ESTIM, id%INFO )
 #endif
+#if defined(SINGLEINDOUBLE)
+        IF (KEEP(148).EQ.0) THEN
+#endif
           CALL ZMUMPS_BLR_INIT_MODULE( NB_FRONTS_F_ESTIM, id%INFO 
      &     )
+#if defined(SINGLEINDOUBLE)
+        ELSE IF (KEEP(148).EQ.2) THEN
+C           call ZMUMPS_BLR_INIT_MODULE is postponed to 
+C           ZMUMPS_LPid_TO_Cid with final size of BLR_ARRAY
+          CALL CMUMPS_BLR_INIT_MODULE( NB_FRONTS_F_ESTIM, id%INFO 
+     &     )
+        ELSE
+C         call single precision version of BLR module
+          CALL CMUMPS_BLR_INIT_MODULE( NB_FRONTS_F_ESTIM, id%INFO
+     &    )
+        ENDIF
+#endif
  114    CONTINUE
       ENDIF
       CALL MUMPS_PROPINFO( ICNTL(1), id%INFO(1),
@@ -2092,6 +2500,10 @@ C            ----------
              NULLIFY(DBLARR)
              GOTO 100
            END IF
+#if defined(SINGLEINDOUBLE)
+C          In case it needs to be converted
+           DBLARR(1)=CZERO
+#endif
            DBLARR_ALLOCATED = .TRUE.
          END IF
       END IF
@@ -2313,6 +2725,32 @@ C        -------------------------
          IF ( PROKG ) THEN
            WRITE(MPG,125) NLOCAL_TOT8, NSEND_TOT8
          END IF
+#if defined(LARGEMATRICES)
+        write(6,*) " -DLARGEMATRICES: deallocate input matrix !!!"
+        IF (associated(IRN_loc_PTR)) THEN
+           DEALLOCATE(IRN_loc_PTR)
+           NULLIFY(IRN_loc_PTR)
+        ENDIF
+        IF (associated(JCN_loc_PTR)) THEN
+           DEALLOCATE(JCN_loc_PTR)
+           NULLIFY(JCN_loc_PTR)
+        ENDIF
+        IF (associated(A_loc_PTR)) THEN
+           DEALLOCATE(A_loc_PTR)
+           NULLIFY(A_loc_PTR)
+        ENDIF
+        IF (KEEP(54).EQ.0) THEN
+          IF (id%MYID.EQ.MASTER) THEN
+            NULLIFY(id%A)
+            NULLIFY(id%IRN)
+            NULLIFY(id%JCN)
+          ENDIF
+        ELSE
+          NULLIFY(id%A_LOC)
+          NULLIFY(id%IRN_LOC)
+          NULLIFY(id%JCN_LOC)
+        ENDIF
+#endif
 C}
       ELSE
 C{   =======================================================
@@ -2350,6 +2788,12 @@ C         --------------------------------
             NBRECORDS = int(id%KEEP8(28))
           ENDIF
 #if defined(LARGEMATRICES)
+#if defined(SINGLEINDOUBLE)
+          IF (KEEP(148).NE.0) THEN
+         WRITE(*,*) "SINGLEINDOUBLE not compatible with -DLARGEMATRICES"
+            CALL MUMPS_ABORT()
+          ENDIF
+#endif
           CALL ZMUMPS_FACTO_SEND_ARROWHEADS(id%N, id%KEEP8(28), id%A(1),
      &      id%IRN(1), id%JCN(1), id%SYM_PERM(1),
      &      LSCAL, id%COLSCA(1), id%ROWSCA(1),
@@ -2373,8 +2817,9 @@ C         write(6,*) '!!! A,IRN,JCN are freed during factorization '
           NULLIFY (id%JCN)
           IF (.NOT.WK_USER_PROVIDED) THEN
             IF (EARLYT3ROOTINS) THEN
-              CALL ZMUMPS_ALLOC_S_WORKSPACE(id%S, MAXS, IERR,
-     &        KEEP(430), KEEP(35))
+C             Standard allocation strategy
+              CALL ZMUMPS_DM_ALLOC_S_WK(id%S, MAXS, IERR,
+     &              KEEP(430), KEEP(35))
               id%KEEP8(23) = MAXS
               IF ( IERR .GT. 0 ) THEN
                 id%INFO(1) = -13
@@ -2383,8 +2828,7 @@ C         write(6,*) '!!! A,IRN,JCN are freed during factorization '
                 id%KEEP8(23)=0_8
                 write(6,*) ' PB2 ALLOC LARGEMAT',MAXS
                 CALL MUMPS_ABORT()
-               ENDIF
-             ENDIF
+              ENDIF
             ENDIF
           ELSE
             id%S => id%WK_USER(1:id%KEEP8(24))
@@ -2599,6 +3043,124 @@ C     -------------------------------------
             NULLIFY   (idintr%root%RG2L)
           ENDIF
       ENDIF
+#if defined(MPI_TO_K_OMP)
+C{
+#if defined(MTKO_VERBOSE)
+C{
+C     Print only if PROK
+      IF (id%KEEP(381).GT.1.AND.PROK) THEN
+C      original affinity mask not updated yet
+       SETMASK     = 0
+       thread_num  = 0
+!$OMP  PARALLEL private(thread_num)
+!$       thread_num = OMP_GET_THREAD_NUM()
+!$OMP    CRITICAL
+         CALL MUMPS_PRINT_THREAD_MASK(id%MYID,
+     &                       thread_num, SETMASK)
+!$OMP    END CRITICAL
+!$OMP  END PARALLEL
+      ENDIF
+      MY_WORKING_ID = -1
+C}
+#endif
+C
+C Set affinity mask on running procs if asked
+C ===========================================
+C
+      IF ( I_AM_SLAVE ) THEN
+        I_AM_HEAD = .TRUE.
+C       will be retset to false on non-working slaves
+      ELSE
+C       false on non-working master
+        I_AM_HEAD = .FALSE.
+      ENDIF
+      IF (id%KEEP(381).gt.1) THEN
+        IF (id%KEEP(382).eq.1) THEN
+          write(*,*) '[MPI_TO_K_OMP] Unexpected situation: the mask ',
+     &         'should have been unset by mumps_driver at the end.'
+        ENDIF
+        IF (I_AM_SLAVE) THEN
+          CALL MPI_COMM_RANK(id%COMM_NODES, MY_WORKING_ID, IERR)
+          CALL MUMPS_MPITOOMP_PRE_WORK_MAPS(id%KEEP(381),
+     &            id%NSLAVES,
+     &            NCORES,
+     &            ERROR)
+          IF (ERROR.ne.0) THEN
+            id%INFO(1) = -62
+            id%INFO(2) = id%MYID
+          ENDIF
+          allocok = 0
+          allocate(CORES_LIST(0:NCORES-1), STAT=allocok)
+          IF (allocok .ne. 0) THEN
+            id%INFO(1) = -62
+            id%INFO(2) = id%MYID
+          ENDIF
+        ENDIF
+C       error check
+        CALL MUMPS_PROPINFO( ICNTL(1), id%INFO(1),
+     &             id%COMM, id%MYID)
+        IF ( id%INFO( 1 ) .LT. 0) GOTO 500
+        IF (I_AM_SLAVE) THEN
+          CALL MUMPS_MPITOOMP_GET_WORK_MAPS(id%COMM_NODES,
+     &            id%KEEP(381), id%NSLAVES, NCORES,
+     &            id%MTKO_PROCS_MAP, CORES_LIST, ERROR)
+          IF (ERROR.ne.0) THEN
+            id%INFO(1) = -62
+            id%INFO(2) = id%MYID
+          ENDIF
+        ENDIF
+C       error check
+        CALL MUMPS_PROPINFO( ICNTL(1), id%INFO(1),
+     &             id%COMM, id%MYID)
+        IF ( id%INFO( 1 ) .LT. 0) GOTO 500
+        IF (I_AM_SLAVE) THEN
+          IF (MY_WORKING_ID .EQ.
+     &        id%MTKO_PROCS_MAP(MY_WORKING_ID)) THEN
+            I_AM_HEAD = .TRUE.
+            CALL MUMPS_MPITOOMP_SET_MASK(NCORES, id%KEEP(249),
+     &                CORES_LIST, .true., ERROR)
+            IF (ERROR.ne.0) THEN
+              id%INFO(1) = -61
+              id%INFO(2) = id%MYID
+            ENDIF
+          ELSE
+            I_AM_HEAD = .FALSE.
+          ENDIF
+        ENDIF
+C       error check
+        CALL MUMPS_PROPINFO( ICNTL(1), id%INFO(1),
+     &                    id%COMM, id%MYID )
+        IF ( id%INFO( 1 ) .LT. 0 ) GOTO 500
+C       The masks have been successfully set on the workers.
+        IF (I_AM_SLAVE) THEN
+          IF (MY_WORKING_ID .EQ.
+     &      id%MTKO_PROCS_MAP(MY_WORKING_ID)) THEN
+            id%KEEP(382) = 1
+          ELSE
+            id%KEEP(382) = -1
+          ENDIF
+        ELSE
+          id%KEEP(382) = -1
+        ENDIF
+      ENDIF
+#if defined(MTKO_VERBOSE)
+C{
+C     Print only if PROK
+      IF (id%KEEP(382).eq.1.AND.PROK) THEN
+C     displays new mask only for working MPIs
+        SETMASK     = 1
+        thread_num  = 0
+!$OMP PARALLEL private(thread_num)
+!$      thread_num = OMP_GET_THREAD_NUM()
+!$OMP   CRITICAL
+        CALL MUMPS_PRINT_THREAD_MASK(id%MYID,
+     &                       thread_num, SETMASK)
+!$OMP   END CRITICAL
+!$OMP END PARALLEL
+      ENDIF
+C}
+#endif
+#endif
        IF ( KEEP(400) .GT. 0 .AND. KEEP(369).EQ.0) THEN
 C{       Check if number of threads is consistent with
 C        the one used during analysis for all procs
@@ -2606,10 +3168,17 @@ C           Note that if  KEEP(369)>0
 C           KEEP(400) was set based on 
 C           KEEP(369) and KEEP(381) so that 
 C           omp_set_num_threads(KEEP(400)) will be called 
-C           explicitly before L0_OMP section
-C         and KEEP(400) cannot be check here in this way
+C           explicitly before L0_OMP section and thus
+C           KEEP(400) cannot be checked here in this way
         NOMP=1
 !$      NOMP = omp_get_max_threads()
+#if defined(MPI_TO_K_OMP)
+C       NOMP takes K_OMP factor into account
+C       (#threads was changed on MPI_TO_K_OMP masters)
+C       but test should then only be performed on
+C       MPI_TO_K_OMP masters!
+        IF (I_AM_HEAD) THEN
+#endif
           IF ( NOMP .NE. KEEP(400) ) THEN
             id%INFO(1)=-58
             id%INFO(2)=KEEP(400)
@@ -2618,6 +3187,9 @@ C         and KEEP(400) cannot be check here in this way
      &" tree parallelism changed from",KEEP(400)," at analysis to", 
      &  NOMP
           ENDIF
+#if defined(MPI_TO_K_OMP)
+        ENDIF
+#endif
 C}
        ENDIF
 C      error check done outside previous if bloc 
@@ -2935,6 +3507,8 @@ C
       IF ( I_AM_SLAVE )  THEN
 C       Store size of receive buffers in ZMUMPS_LBUF module
         CALL MUMPS_BUF_DIST_IRECV_SIZE( ZMUMPS_LBUFR_BYTES )
+#if defined(USE_GPU)
+#endif
         IF (PROK) THEN
           WRITE( MP, 170 ) MAXS, MAXIS, MAXS_BASE8, KEEP(15),
      &    id%KEEP8(26), id%KEEP8(27), id%KEEP8(11), KEEP(26), KEEP(27)
@@ -2996,14 +3570,31 @@ C         ------------------------------
         ELSE
           id%LL0_OMP_FACTORS = 1
         ENDIF
+#       if defined(SINGLEINDOUBLE)
+        IF (KEEP(148).EQ.0) THEN
+#       endif
         ALLOCATE(idintr%L0_OMP_FACTORS(id%LL0_OMP_FACTORS),
      &           stat = allocok)
+#       if defined(SINGLEINDOUBLE)
+        ELSE
+        ALLOCATE(idintr%LPL0_OMP_FACTORS(id%LL0_OMP_FACTORS),
+     &           stat = allocok)
+        ENDIF
+#       endif
         IF (allocok > 0) THEN
            id%INFO(1)=-7
            id%INFO(2)=NB_THREADS
            GOTO 115
         ENDIF
+#       if defined(SINGLEINDOUBLE)
+        IF (KEEP(148).EQ.0) THEN
+#       endif
         CALL ZMUMPS_INIT_L0_OMP_FACTORS(idintr%L0_OMP_FACTORS)
+#       if defined(SINGLEINDOUBLE)
+        ELSE
+        CALL CMUMPS_INIT_L0_OMP_FACTORS(idintr%LPL0_OMP_FACTORS)
+        ENDIF
+#       endif
       ENDIF
  115  CONTINUE
       CALL MUMPS_PROPINFO( ICNTL(1), id%INFO(1),
@@ -3034,6 +3625,9 @@ C       during ZMUMPS_FAC_B.
 C       In case of L0OMP, id%IS and id%S are allocated during
 C       ZMUMPS_FAC_B, and only after L0OMP nodes are processed,
 C       in order to limit the global memory peak. 
+#if defined(SINGLEINDOUBLE)
+        IF (KEEP(148).EQ.0) THEN
+#endif
         S_IS_POINTERS%IW => id%IS; NULLIFY(id%IS)
         S_IS_POINTERS%A  => id%S ; NULLIFY(id%S)
         CALL ZMUMPS_FAC_B(id%N,S_IS_POINTERS,MAXS,MAXIS,id%SYM_PERM(1),
@@ -3057,9 +3651,163 @@ C       in order to limit the global memory peak.
      &  idintr%L0_OMP_FACTORS(1), id%LL0_OMP_FACTORS,
      &  id%I4_L0_OMP(1,1), size(id%I4_L0_OMP,1), size(id%I4_L0_OMP,2),
      &  id%I8_L0_OMP(1,1), size(id%I8_L0_OMP,1), size(id%I8_L0_OMP,2)
+#if defined(MPI_TO_K_OMP)
+     &     ,I_AM_HEAD
+#endif
      &     )
         id%IS => S_IS_POINTERS%IW; NULLIFY(S_IS_POINTERS%IW)
         id%S  => S_IS_POINTERS%A ; NULLIFY(S_IS_POINTERS%A)
+#if defined(SINGLEINDOUBLE)
+        ELSE
+C       Arith-dependent parameters are:
+C         S_IS_POINTERS => LPS_IS_POINTERS
+C
+C         idintr%roota => lproota
+C
+C
+C         RINFO, DKEEP => translated in and out
+C                         in-place avoids allocations and is OK since
+C                         they are small
+C         DBLARR, input only: copied to single precision, freeing
+C                             DBLARR early when possible, i.e.
+C                             when allocated in this routine.
+C                Better than in-place copy to avoid memory peak
+C
+C
+C       LPS_IS_POINTERS is a wrapper around IS and LPS
+        LPS_IS_POINTERS%IW => id%IS; NULLIFY(id%IS)
+        LPS_IS_POINTERS%A  => id%LPS ; NULLIFY(id%LPS)
+C       Compress RINFO and DKEEP from double to single precision
+        CALL MUMPS_RCOPY_64TO32_64C_IP( RINFO(1),
+     &                                  int(size(RINFO),kind=8) )
+        CALL MUMPS_RCOPY_64TO32_64C_IP( id%DKEEP(1),
+     &                                  int(size(id%DKEEP),kind=8) )
+C       arrowheads or elements
+        ALLOCATE(LPDBLARR(max(id%KEEP8(26),1_8)), stat=allocok)
+        IF (allocok .GT. 0) THEN
+          id%INFO(1) = -13
+          CALL MUMPS_SET_IERROR(max(id%KEEP8(26),1_8), id%INFO(2))
+          GOTO 107
+        ENDIF
+C       2_8* because MUMPS_RCOPY_64TO32_64C expects reals
+        CALL MUMPS_RCOPY_64TO32_64C(DBLARR(1), 2_8*id%KEEP8(26),
+     &                              LPDBLARR(1) )
+C       Free DBLARR before memory peak in CMUMPS_FAC_B
+        IF (DBLARR_ALLOCATED) THEN
+          DEALLOCATE(DBLARR)
+          NULLIFY(DBLARR)
+          DBLARR_ALLOCATED = .FALSE.
+        ENDIF
+C       RHS_MUMPS -> LPRHS_MUMPS
+        ALLOCATE(LPRHS_MUMPS(id%KEEP8(85)), stat=allocok)
+        IF (allocok .GT. 0) THEN
+          id%INFO(1) = -13
+          CALL MUMPS_SET_IERROR(id%KEEP8(85), id%INFO(2))
+          GOTO 107
+        ENDIF
+C       Copy done column by column, in case of master
+C       with leading dimension higher than N
+        I8=int(N,8)
+        I8=I8+I8
+        DO K=1, id%KEEP(253)
+          CALL MUMPS_RCOPY_64TO32_64C(RHS_MUMPS(1_8+int(K-1,8)*
+     &    int(KEEP(254),8)),
+     &    I8, LPRHS_MUMPS(1_8+int(K-1,8)*int(id%KEEP(254),8)))
+        ENDDO
+        IF (RHS_MUMPS_ALLOCATED) THEN
+C         Double precision version of RHS_MUMPS will no longer be used
+          DEALLOCATE(RHS_MUMPS)
+          NULLIFY(RHS_MUMPS)
+          RHS_MUMPS_ALLOCATED=.FALSE.
+        ENDIF
+C       Nullify pointers in roota:
+        CALL CMUMPS_INI_ROOT(lproota)
+ 107    CONTINUE
+C     Exit IF I_AM_SLAVE block to call MUMPS_PROPINFO
+      ENDIF ! KEEP(148)
+      ENDIF ! I_AM_SLAVE
+      CALL MUMPS_PROPINFO( ICNTL(1), id%INFO(1),
+     &                    id%COMM, id%MYID )
+      IF ( id%INFO( 1 ) .LT. 0 ) THEN
+C       LPDBLARR and LPRHS_MUMPS are allocated and freed only around
+C       the call to CMUMPS_FAC_B and not at the end of the
+C       ZMUMPS_FAC_DRIVER. So we free them now in case of error.
+        IF (allocated(LPDBLARR)) DEALLOCATE(LPDBLARR)
+        IF (allocated(LPRHS_MUMPS)) DEALLOCATE(LPRHS_MUMPS)
+        GOTO 500
+      ENDIF
+      IF (I_AM_SLAVE) THEN
+      IF (KEEP(148).NE.0) THEN
+C       CNTL1 => casted to single implicitly
+        LPCNTL1 = CNTL1
+        LPSEUIL = SEUIL
+        LPSEUIL_LDLT_NIV2 = SEUIL_LDLT_NIV2
+      CALL CMUMPS_FAC_B(id%N,LPS_IS_POINTERS,MAXS,MAXIS,id%SYM_PERM(1)
+     &  , id%NA(1),id%LNA,id%NE_STEPS(1),id%ND_STEPS(1), id%FILS(1),
+     &  id%STEP(1),id%FRERE_STEPS(1),id%DAD_STEPS(1),id%CANDIDATES(1,1),
+     &  id%ISTEP_TO_INIV2(1),id%TAB_POS_IN_PERE(1,1), id%PTRAR(1),
+     &LDPTRAR,id%PTR8ARR(1),id%NINCOLARR(1),id%NINROWARR(1),id%PTRDEBARR
+     &  (1), IWK(PTRIST),id%PTLUST_S(1),id%PTRFAC(1),IWK(PTRWB),IWK8,
+     &  IWK(ITLOC),LPRHS_MUMPS(1),IWK(IPOOL),LPOOL,LPCNTL1,ICNTL(1),
+     &  id%INFO(1), RINFO(1),KEEP(1),id%KEEP8(1),id%PROCNODE_STEPS(1),
+     &  id%NSLAVES,id%COMM_NODES,id%MYID,id%MYID_NODES,BUFR,ZMUMPS_LBUFR
+     &  , ZMUMPS_LBUFR_BYTES, ZMUMPS_LBUF, INTARR(1), LPDBLARR(1),
+     &idintr%root, lproota, NELT_arg, id%FRTPTR(1), id%FRTELT(1),
+     &  id%COMM_LOAD,id%ASS_IRECV,LPSEUIL,LPSEUIL_LDLT_NIV2,
+     &id%MEM_DIST(0), id%DKEEP(1), PIVNUL_LIST_STRUCT, id%LRGROUPS(1)
+     &  ,id%IPOOL_B_L0_OMP(1),id%LPOOL_B_L0_OMP,
+     &  id%IPOOL_A_L0_OMP(1),id%LPOOL_A_L0_OMP,id%L_VIRT_L0_OMP,
+     &  id%VIRT_L0_OMP(1), id%VIRT_L0_OMP_MAPPING(1),id%L_PHYS_L0_OMP,
+     &  id%PHYS_L0_OMP(1), id%PERM_L0_OMP(1), id%PTR_LEAFS_L0_OMP(1),
+     &  id%L0_OMP_MAPPING(1),id%LL0_OMP_MAPPING, id%THREAD_LA,
+     &  idintr%LPL0_OMP_FACTORS(1), id%LL0_OMP_FACTORS,
+     &  id%I4_L0_OMP(1,1), size(id%I4_L0_OMP,1), size(id%I4_L0_OMP,2),
+     &  id%I8_L0_OMP(1,1), size(id%I8_L0_OMP,1), size(id%I8_L0_OMP,2)
+#if defined(MPI_TO_K_OMP)
+     &     ,I_AM_HEAD
+#endif
+     &     )
+C       Free temporary arrrowheads
+        DEALLOCATE(LPDBLARR)
+C       Free temporary LPRHS_MUMPS
+        DEALLOCATE(LPRHS_MUMPS)
+C       Extend back RINFO and DKEEP from single to double precision
+        CALL MUMPS_RCOPY_32TO64_64C_IP( RINFO(1),
+     &                                  int(size(RINFO),kind=8) )
+        CALL MUMPS_RCOPY_32TO64_64C_IP( id%DKEEP(1),
+     &                                  int(size(id%DKEEP),kind=8) )
+        id%IS   => LPS_IS_POINTERS%IW; NULLIFY(LPS_IS_POINTERS%IW)
+        id%LPS  => LPS_IS_POINTERS%A ; NULLIFY(LPS_IS_POINTERS%A)
+C       lproota => roota
+C       RHS_CNTR_MASTER_ROOT: allocated in ZMUMPS_FAC_PAR
+        IF (associated(lproota%RHS_CNTR_MASTER_ROOT)) THEN
+#if defined(MUMPS_NOF2003)
+          I8 = int(size(lproota%RHS_CNTR_MASTER_ROOT),8)
+#else
+          I8 = size(lproota%RHS_CNTR_MASTER_ROOT,kind=8)
+#endif
+          IF (I8.EQ.0_8) THEN
+            WRITE(*,*)"Internal error I8=0 in fac_driver.F"
+            CALL MUMPS_ABORT()
+          ENDIF
+          ALLOCATE(idintr%roota%RHS_CNTR_MASTER_ROOT(I8),
+     &             stat=allocok)
+          IF (allocok .GT. 0) THEN
+            id%INFO(1)=-13
+            CALL MUMPS_SET_IERROR(I8, id%INFO(2))
+          ELSE
+C           2 reals for 1 complex
+            I8 = I8 + I8
+            CALL MUMPS_RCOPY_32TO64_64C(
+     &         lproota%RHS_CNTR_MASTER_ROOT(1), I8,
+     &         idintr%roota%RHS_CNTR_MASTER_ROOT(1)
+     &         )
+          ENDIF
+        ENDIF
+C       Free temporary lproota
+        CALL CMUMPS_END_ROOT(lproota)
+      ENDIF
+#endif
 C
 C     ------------------------------
 C     Deallocate temporary workspace
@@ -3133,6 +3881,10 @@ C     Check for errors.
 C     After ZMUMPS_FAC_B every slave is aware of an error. 
 C     The call below informs the master, in case it is not
 C     included in the computations.
+#if defined(SINGLEINDOUBLE)
+C     In case of SINGLEINDOUBLE, an error may also have occurred
+C     when allocating idintr%roota%RHS_CNTR_MASTER_ROOT
+#endif
       CALL MUMPS_PROPINFO( ICNTL(1), id%INFO(1),
      &                    id%COMM, id%MYID )
 C
@@ -3446,6 +4198,21 @@ C
         CALL MPI_REDUCE( MRY_LU_LRGAIN, TMP_MRY_LU_LRGAIN
      &                  , 1, MPI_DOUBLE_PRECISION,
      &                   MPI_SUM, MASTER, id%COMM, IERR)
+C       TMP_MRY_LU_LRGAIN_mixed need be initialized anyway
+        TMP_MRY_LU_LRGAIN_mixed =  ZERO
+        IF (id%KEEP(450).GT.0) THEN
+          CALL MPI_REDUCE( MRY_LU_LRGAIN_mixed,
+     &                   TMP_MRY_LU_LRGAIN_mixed
+     &                  , 1, MPI_DOUBLE_PRECISION,
+     &                   MPI_SUM, MASTER, id%COMM, IERR)
+        ENDIF
+        TMP_MRY_CB_LRGAIN_mixed = ZERO
+        IF (id%KEEP(452).GT.0) THEN
+          CALL MPI_REDUCE( MRY_CB_LRGAIN_mixed,
+     &                       TMP_MRY_CB_LRGAIN_mixed
+     &                      , 1, MPI_DOUBLE_PRECISION,
+     &                       MPI_SUM, MASTER, id%COMM, IERR)
+        ENDIF
         CALL MPI_REDUCE( MRY_LU_FR, TMP_MRY_LU_FR
      &                  , 1, MPI_DOUBLE_PRECISION,
      &                   MPI_SUM, MASTER, id%COMM, IERR)
@@ -3619,6 +4386,8 @@ C rename the stat variable so that COMPUTE_GLOBAL_GAINS can work for any
 C number of procs
             MRY_LU_FR            = TMP_MRY_LU_FR
             MRY_LU_LRGAIN        = TMP_MRY_LU_LRGAIN
+            MRY_LU_LRGAIN_mixed  = TMP_MRY_LU_LRGAIN_mixed
+            MRY_CB_LRGAIN_mixed  = TMP_MRY_CB_LRGAIN_mixed
             MRY_CB_FR            = TMP_MRY_CB_FR
             MRY_CB_LRGAIN        = TMP_MRY_CB_LRGAIN
             FLOP_LRGAIN          = TMP_FLOP_LRGAIN
@@ -3687,10 +4456,11 @@ C         WRITE gains also compute stats stored in DKEEP array
      &                N,  id%ICNTL(36),
      &                KEEP(487), KEEP(488), KEEP(490),
      &                KEEP(491), KEEP(50), KEEP(486), 
+     &                KEEP(450), KEEP(452), NPREC_STOC,
      &                KEEP(249)*max(KEEP(381), 1),
      &                KEEP(472), KEEP(475), KEEP(478), 
      &                KEEP(480), KEEP(481),
-     &                KEEP(483), KEEP(484), 
+     &                KEEP(483), KEEP(484), KEEP(117), 
      &                id%KEEP8(110), id%KEEP8(49),
      &                KEEP(28), id%NPROCS, MPG, PROKG)
 C           flops when BLR activated
@@ -3703,6 +4473,14 @@ C           flops when BLR activated
         ENDIF
         IF (id%MYID .eq. MASTER) THEN
           KEEP(399) = KEEP399_SAVE
+        ENDIF
+        IF (id%MYID .eq. MASTER) THEN
+C         Reset KEEP(451,452,483,484) to value on entry        
+C         (only on master but it will be broadcasted again at nex call)
+          KEEP(451) = KEEP451_SAVE
+          KEEP(452) = KEEP452_SAVE
+          KEEP(483) = KEEP483_SAVE
+          KEEP(484) = KEEP484_SAVE
         ENDIF
       ENDIF
 C     ==============================
@@ -3730,6 +4508,8 @@ C        -- with ICNTL(24) = 1.
 C     set INFOG(28) even in case of error 
       IF (id%MYID.EQ.MASTER) THEN
 C       INFOG(28) deficiency resulting from ICNTL(24) and ICNTL(56)
+C       save in INFOG(51) deficiency found by ICNTL(24)
+        INFOG(51)=KEEP(112)
         INFOG(28)=KEEP(112)
         IF (KEEP(17).GT.0) THEN
           INFOG(28)=KEEP(112)+KEEP(17)
@@ -4009,17 +4789,17 @@ C     -----------------------------
             !number of 2x2 pivots in type 2 nodes
              WRITE(MPG, 99989) KEEP(230)
           ENDIF
+          !Total deficiency
+          IF (KEEP(110).NE.0.OR.KEEP(19).NE.0)
+     &    WRITE(MPG, 99992) KEEP(17)+KEEP(112) ! = INFOG(28)
           !number of zero pivots
           IF (KEEP(110) .NE.0) THEN
-              WRITE(MPG, 99991) KEEP(112)
+              WRITE(MPG, 99991) INFOG(51)  ! KEEP(112)
           ENDIF
           !Deficiency on root
           IF ( KEEP(19) .ne. 0 )
 c         IF ( KEEP(17) .ne. 0 )
-     &    WRITE(MPG, 99983) KEEP(17)
-          !Total deficiency
-          IF (KEEP(110).NE.0.OR.KEEP(19).NE.0)
-     &    WRITE(MPG, 99992) KEEP(17)+KEEP(112) ! = INFOG(28)
+     &      WRITE(MPG, 99983) KEEP(17)
           !Smallest pivot with also null pivots in abs value
           WRITE(MPG, 99995) RINFOG(19)
           !Smallest pivot in abs value
@@ -4084,6 +4864,11 @@ C     after allocating them and before freeing them.
           NULLIFY(idintr%root%RG2L)
         ENDIF
       ENDIF
+#if defined(MPI_TO_K_OMP)
+      IF (allocated(CORES_LIST)) THEN
+        deallocate(CORES_LIST)
+      ENDIF
+#endif
 #if ! defined(NO_FDM_DESCBAND)
       IF (I_AM_SLAVE) THEN
         CALL MUMPS_FDBD_END(id%INFO(1))  ! INFO(1): input only
@@ -4095,7 +4880,7 @@ C     after allocating them and before freeing them.
       ENDIF
 #endif
       IF (I_AM_SLAVE) THEN
-C       Terminate BLR module except if it is still needed for solve
+C{      Terminate BLR module except if it is still needed for solve
         IF ( 
      &       (
      &         (KEEP(486).EQ.2) 
@@ -4104,12 +4889,39 @@ C       Terminate BLR module except if it is still needed for solve
      &     ) THEN
 C         Store pointer to BLR_ARRAY in MUMPS structure
 C         (requires successful factorization otherwise module is freed)
+#if defined(SINGLEINDOUBLE)
+          IF (KEEP(148) .EQ. 0) THEN
+#endif
           CALL ZMUMPS_BLR_MOD_TO_STRUC(id%BLRARRAY_ENCODING)
+#if defined(SINGLEINDOUBLE)
+         ELSE IF(KEEP(148).EQ.2) THEN
+           CALL ZMUMPS_LPid_TO_Cid
+     &             (id, idintr,KEEP(34), id%INFO(1), id%INFO(2))
+           CALL ZMUMPS_BLR_MOD_TO_STRUC(id%BLRARRAY_ENCODING)
+         ELSE
+C          Same id%BLRARRAY_ENCODING for single or double prec BLR
+          CALL CMUMPS_BLR_MOD_TO_STRUC(id%BLRARRAY_ENCODING)
+         ENDIF
+#endif
         ELSE
 C         INFO(1) positive or negative
+#if defined(SINGLEINDOUBLE)
+          IF (KEEP(148) .EQ. 0) THEN
+#endif
           CALL ZMUMPS_BLR_END_MODULE(id%INFO(1), id%KEEP8, id%KEEP(34))
+#if defined(SINGLEINDOUBLE)
+         ELSE IF (KEEP(148).EQ.2) THEN
+          CALL ZMUMPS_BLR_END_MODULE(id%INFO(1), id%KEEP8, id%KEEP(34))
+!          CALL CMUMPS_BLR_END_MODULE(id%INFO(1), id%KEEP8, id%KEEP(34))
+         ELSE
+          CALL CMUMPS_BLR_END_MODULE(id%INFO(1), id%KEEP8, id%KEEP(34))
+         ENDIF
+#endif
         ENDIF
+C}
       ENDIF
+      CALL MUMPS_PROPINFO(ICNTL(1), id%INFO(1),
+     &          id%COMM, id%MYID)
       IF (I_AM_SLAVE) THEN
         CALL MUMPS_FDM_END('A')
 C       Terminate BLR module except if it is still needed for solve
@@ -4164,13 +4976,31 @@ C             from Fortran during solve
               KEEP(430) = 0
             ENDIF
             NULLIFY(id%S)   ! in all cases
+#if defined(SINGLEINDOUBLE)
+            IF (associated(id%LPS)) THEN
+              CALL CMUMPS_DM_FREE_S_WK(id%LPS, KEEP(430))
+            ENDIF
+            NULLIFY(id%LPS)
+#endif
             id%KEEP8(23)=0_8
          ELSE ! in core
+#if defined(SINGLEINDOUBLE)
+            IF (KEEP(148) .EQ.0) THEN
+#endif
               CALL ZMUMPS_TRY_COMPACT_FACTORS(ICNTL49_LOC,
      &        WK_USER_PROVIDED, id%S, id%KEEP, id%KEEP8,
      &        id%INFO, id%MYID, id%ICNTL, PROK, MP,
      &        ZMUMPS_LBUFR_BYTES8, ZMUMPS_LBUF8,
      &        LIWK, LIWK8 )
+#if defined(SINGLEINDOUBLE)
+            ELSE
+              CALL CMUMPS_TRY_COMPACT_FACTORS(ICNTL49_LOC,
+     &        WK_USER_PROVIDED, id%LPS, id%KEEP, id%KEEP8,
+     &        id%INFO, id%MYID, id%ICNTL, PROK, MP,
+     &        ZMUMPS_LBUFR_BYTES8, ZMUMPS_LBUF8, 
+     &        LIWK, LIWK8 )
+            ENDIF
+#endif
          ENDIF
       ELSE  ! host not working
          IF (WK_USER_PROVIDED) THEN
@@ -4179,6 +5009,10 @@ C     at the end of a phase S is always freed when WK_USER provided
          ELSE
             IF (associated(id%S))  DEALLOCATE(id%S)
             NULLIFY(id%S)
+#if defined(SINGLEINDOUBLE)
+            IF (associated(id%LPS)) DEALLOCATE(id%LPS)
+            NULLIFY(id%LPS)
+#endif
             id%KEEP8(23)=0_8
          END IF
       END IF
@@ -4229,6 +5063,38 @@ C     when an error occurred during the scaling.
         DEALLOCATE(PIVNUL_LIST_STRUCT%PIVNUL_LIST)
         NULLIFY(PIVNUL_LIST_STRUCT%PIVNUL_LIST)
       ENDIF
+#if defined(USE_GPU)
+      IF (id%KEEP(417).GT.0) then
+#if defined(SINGLEINDOUBLE)
+        IF (KEEP(148) .EQ. 0) THEN
+#endif
+        CALL ZMUMPS_END_GPU_C(id%KEEP(400),id%KEEP(422)
+     &  , id%RINFO(9), id%RINFO(10)
+     &  )
+#if defined(SINGLEINDOUBLE)
+        ELSE
+        CALL CMUMPS_END_GPU_C(id%KEEP(400),id%KEEP(422)
+     &  , LPRINFO9, LPRINFO10
+     &  )
+        id%RINFO(9) =dble(LPRINFO9)
+        id%RINFO(10)=dble(LPRINFO10)
+        ENDIF
+#endif
+C       Sum of flops returned in RINFOG(22)
+        CALL MPI_REDUCE( id%RINFO(9), id%RINFOG(22), 1,
+     &                 MPI_DOUBLE_PRECISION,
+     &                 MPI_SUM, MASTER, id%COMM, IERR )
+C       Average GPU time returned in RINFOG(23)
+        CALL MPI_REDUCE( id%RINFO(10), id%RINFOG(23), 1,
+     &                 MPI_DOUBLE_PRECISION,
+     &                 MPI_SUM, MASTER, id%COMM, IERR )
+        id%RINFOG(23) = id%RINFOG(23) / id%NSLAVES
+        IF (PROKG) THEN
+          WRITE(MPG,99975) id%RINFOG(22)
+          WRITE(MPG,99976) id%RINFOG(23)
+        ENDIF
+      ENDIF
+#endif
 C
 C     Goto 530 is done when an error occurs before
 C     the calls to GPU_INIT, LOAD_INIT and OOC_INIT_FACTO
@@ -4265,6 +5131,10 @@ C
      &        ' ICNTL(22) Out-of-core option               =',I16/
      &        ' ICNTL(35) BLR activation (eff. choice)     =',I16/
      &        ' ICNTL(37) BLR CB compression (eff. choice) =',I16/
+     &        ' ICNTL(40) Mixed/adaptive precision BLR     =',I16/
+#if defined(SINGLEINDOUBLE)
+     &        ' ICNTL(47) Single prec fact double instance =',I16/
+#endif
      &        ' ICNTL(49) Compact workarray S (end facto.) =',I16/
      &        ' ICNTL(56) Effective value during facto.    =',I16/
      &        ' ICNTL(14) Memory relaxation                =',I16/
@@ -4290,6 +5160,12 @@ C
  189  FORMAT(/' Flops under L0 layer                       =',1PD12.3)
  190  FORMAT(/' Flops under L0 layer  (avg/max across MPI) =',
      &          1PD12.3,1PD12.3)
+#if defined(USE_GPU)
+99975 FORMAT( ' RINFOG(22) Total flops on GPU                      =',
+     &          1PD12.3)
+99976 FORMAT( ' RINFOG(23) Time spent on GPU (avg per MPI)         =',
+     &          F12.4)
+#endif
 99977 FORMAT( ' INFOG(34)  Determinant (base 2 exponent)           =',
      &          I16)
 99978 FORMAT( ' RINFOG(12) Determinant (real part)                 =',
@@ -4304,7 +5180,7 @@ C
      &      I16)
 99983 FORMAT( ' Nb of singularities detected by ICNTL(56)          =',
      &      I16)
-99991 FORMAT( ' Nb of null pivots detected by ICNTL(24)            =',
+99991 FORMAT( ' INFOG (51) Nb of null pivots detected by ICNTL(24) =',
      &      I16)
 99992 FORMAT( ' INFOG (28) Estimated deficiency                    =',
      &      I16)
@@ -4339,7 +5215,513 @@ C
      &          I16)
 99989 FORMAT( ' Number of 2x2 pivots in type 2 nodes               =',
      &          I16)
+C
       END SUBROUTINE ZMUMPS_FAC_DRIVER
+C
+C    
+#if defined(SINGLEINDOUBLE)
+      SUBROUTINE ZMUMPS_LPid_TO_Cid(id, idintr, K34, IFLAG, IERROR)
+      USE ZMUMPS_STRUC_DEF, ONLY: ZMUMPS_STRUC
+      USE ZMUMPS_INTR_TYPES, ONLY: ZMUMPS_INTR_STRUC
+      ! USE CMUMPS_INTR_TYPES, ONLY: CMUMPS_ROOT_STRUC
+      USE CMUMPS_STRUC_DEF, ONLY: CMUMPS_STRUC
+      USE CMUMPS_LR_DATA_M, BLR_ARRAY_LP => BLR_ARRAY
+      USE ZMUMPS_LR_DATA_M,  BLR_ARRAY_C  => BLR_ARRAY
+      USE ZMUMPS_FACSOL_L0OMP_M, ONLY: ZMUMPS_INIT_L0_OMP_FACTORS
+      USE CMUMPS_FACSOL_L0OMP_M, ONLY: CMUMPS_FREE_L0_OMP_FACTORS
+      use iso_c_binding
+      IMPLICIT NONE
+C
+C     Purpose:
+C     =======
+C         Move data from Low Precision (LP) instance to 
+C         higher precision instance that will be used
+C         during the solve phase.
+C     Parameters:
+C     ===========
+          TYPE(ZMUMPS_STRUC), INTENT(INOUT)       :: id
+          TYPE (ZMUMPS_INTR_STRUC), intent(inout) :: idintr
+          INTEGER :: K34
+          INTEGER, intent(inout) :: IFLAG, IERROR
+C
+C     Local variables:
+c     ================
+          INTEGER :: IFLAG_LOC, IERROR_LOC
+          INTEGER :: allocok
+          INTEGER :: I
+          IF (associated(idintr%LPL0_OMP_FACTORS)) THEN
+            allocate(idintr%L0_OMP_FACTORS(
+     &                   size(idintr%lpl0_omp_factors)))
+            CALL ZMUMPS_INIT_L0_OMP_FACTORS(idintr%l0_omp_factors)
+            DO I=1, size(idintr%LPL0_OMP_FACTORS)
+              IF (associated(idintr%LPL0_OMP_FACTORS(I)%A)) THEN
+                idintr%L0_OMP_FACTORS(I)%LA =
+     &                idintr%LPL0_OMP_FACTORS(I)%LA
+                allocate(idintr%L0_OMP_FACTORS(I)%A(
+     &                size(idintr%LPL0_OMP_FACTORS(I)%A) ),
+     &                stat = allocok)
+                IF (allocok .GT. 0) THEN
+                  IFLAG = -13
+                  IERROR = size(idintr%LPL0_OMP_FACTORS(I)%A)
+                  return
+                ENDIF
+                idintr%L0_OMP_FACTORS(I)%A =
+     &                dcmplx(idintr%LPL0_OMP_FACTORS(I)%A)
+              ENDIF
+            ENDDO
+            CALL CMUMPS_FREE_L0_OMP_FACTORS(idintr%lpl0_omp_factors)
+          ENDIF
+          IF (ASSOCIATED(BLR_ARRAY_LP)) THEN
+           IF ( SIZE(BLR_ARRAY_LP) > 0) THEN
+            CALL ZMUMPS_BLR_INIT_MODULE (SIZE(BLR_ARRAY_LP), id%INFO 
+     &      )
+!$OMP       PARALLEL PRIVATE(IFLAG_LOC, IERROR_LOC)
+            IFLAG_LOC = 0
+C
+C
+!$OMP       DO SCHEDULE(DYNAMIC,1)
+            DO I=1,SIZE(BLR_ARRAY_LP)
+              IF (IFLAG_LOC.EQ.0)
+     &        CALL ZMUMPS_blr_struc_t_LP2C (
+     &          BLR_ARRAY_LP(i),BLR_ARRAY_C(i),K34,
+     &          IFLAG_LOC, IERROR_LOC)
+            ENDDO
+!$OMP       END DO 
+!$OMP       CRITICAL
+C           IFLAG > 0 on entry to routine indicates warning. 
+C           It should be changed
+C           only in case of error (IFLAG_LOC > 0)
+C           IFLAG should hold the smallest negative value.
+            IF (IFLAG_LOC.LT.0.AND.IFLAG_LOC.LT.IFLAG) THEN
+                IFLAG = IFLAG_LOC
+                IERROR = IERROR_LOC
+            ENDIF
+!$OMP       END CRITICAL
+!$OMP       END PARALLEL
+            CALL CMUMPS_BLR_END_MODULE(id%INFO(1), id%KEEP8, K34)
+           ENDIF
+          ENDIF
+          CALL ZMUMPS_BLR_MOD_TO_STRUC(id%BLRARRAY_ENCODING)
+          CALL ZMUMPS_BLR_STRUC_TO_MOD(id%BLRARRAY_ENCODING)
+          RETURN
+      END SUBROUTINE ZMUMPS_LPid_TO_Cid
+C
+      SUBROUTINE ZMUMPS_blr_struc_t_LP2C (
+     &          blr_struc1, blr_struc2, K34, IFLAG, IERROR)
+C
+          USE CMUMPS_LR_DATA_M, BLR_STRUC_T1 => BLR_STRUC_T
+          USE ZMUMPS_LR_DATA_M, BLR_STRUC_T2 => BLR_STRUC_T
+          TYPE(BLR_STRUC_T1) :: blr_struc1
+          TYPE(BLR_STRUC_T2) :: blr_struc2
+          INTEGER, intent(in) :: K34
+          INTEGER, intent(inout) :: IFLAG, IERROR
+          INTEGER :: k, i, j
+          INTEGER :: allocok
+          blr_struc2%IsSYM   = blr_struc1%IsSYM
+          blr_struc2%IsT2    = blr_struc1%IsT2
+          blr_struc2%IsSLAVE = blr_struc1%IsSLAVE
+          nullify(blr_struc2%PANELS_L)
+          nullify(blr_struc2%PANELS_U)
+          nullify(blr_struc2%CB_LRB)
+          nullify(blr_struc2%DIAG_BLOCKS)
+          IF (ASSOCIATED(blr_struc1%PANELS_L)) THEN
+           IF (SIZE(blr_struc1%PANELS_L) > 0) THEN
+            ALLOCATE(blr_struc2%PANELS_L(SIZE(blr_struc1%PANELS_L)),
+     &        stat=allocok)
+            IF (allocok .GT. 0) THEN
+              IFLAG = -13
+              IERROR = size(blr_struc1%PANELS_L)
+              return
+            ENDIF
+           ENDIF
+          ENDIF
+          IF (ASSOCIATED(blr_struc1%PANELS_U)) THEN
+           IF (SIZE(blr_struc1%PANELS_U) > 0) THEN
+            ALLOCATE(blr_struc2%PANELS_U(SIZE(blr_struc1%PANELS_U)),
+     &        stat=allocok)
+            IF (allocok .GT. 0) THEN
+              IFLAG = -13
+              IERROR = size(blr_struc1%PANELS_U)
+              return
+            ENDIF
+           ENDIF
+          ENDIF
+          IF (ASSOCIATED(blr_struc1%DIAG_BLOCKS)) THEN
+           IF (SIZE(blr_struc1%DIAG_BLOCKS) > 0) THEN
+            ALLOCATE(blr_struc2%DIAG_BLOCKS(
+     &               SIZE(blr_struc1%DIAG_BLOCKS)),
+     &        stat=allocok)
+            IF (allocok .GT. 0) THEN
+              IFLAG = -13
+              IERROR = size(blr_struc1%DIAG_BLOCKS)
+              return
+            ENDIF
+           ENDIF
+          ENDIF
+          IF (ASSOCIATED(blr_struc1%PANELS_L)) THEN
+           IF (SIZE(blr_struc1%PANELS_L) > 0) THEN
+            DO k=1,SIZE(blr_struc1%PANELS_L)
+              IF (IFLAG.GE.0)
+     &          CALL ZMUMPS_blr_panel_type_cast(
+     &                                 blr_struc1%PANELS_L(k), 
+     &                                 blr_struc2%PANELS_L(k), K34,
+     &                                 IFLAG, IERROR)
+            ENDDO
+           ENDIF
+          ENDIF
+          IF (ASSOCIATED(blr_struc1%PANELS_U)) THEN
+           IF (SIZE(blr_struc1%PANELS_U) > 0) THEN
+            DO k=1,SIZE(blr_struc1%PANELS_U)
+              IF (IFLAG.GE.0)
+     &          CALL ZMUMPS_blr_panel_type_cast(
+     &                                 blr_struc1%PANELS_U(k), 
+     &                                 blr_struc2%PANELS_U(k), K34,
+     &                                 IFLAG, IERROR)
+            ENDDO
+           ENDIF
+          ENDIF
+          IF (ASSOCIATED(blr_struc1%CB_LRB)) THEN 
+            ALLOCATE(blr_struc2%CB_LRB(SIZE(blr_struc1%CB_LRB, DIM=1), 
+     &                                 SIZE(blr_struc1%CB_LRB, DIM=2)),
+     &        stat=allocok)
+            IF (allocok .GT. 0) THEN
+              IFLAG = -13
+              IERROR = SIZE(blr_struc1%CB_LRB, DIM=1) * 
+     &                 SIZE(blr_struc1%CB_LRB, DIM=2)
+              return
+            ENDIF
+            DO i=1,SIZE(blr_struc1%CB_LRB, DIM=1)
+              DO j=1,SIZE(blr_struc1%CB_LRB, DIM=2)
+                IF (IFLAG.GE.0)
+     &            CALL ZMUMPS_lrb_type_cast(
+     &                             blr_struc1%CB_LRB(i,j),
+     &                             blr_struc2%CB_LRB(i,j), K34,
+     &                             IFLAG, IERROR)
+              ENDDO
+            ENDDO
+            DEALLOCATE(blr_struc1%CB_LRB)
+            NULLIFY(blr_struc1%CB_LRB)
+          ENDIF
+          IF (ASSOCIATED(blr_struc1%DIAG_BLOCKS)) THEN
+           IF (SIZE(blr_struc1%DIAG_BLOCKS) > 0) THEN
+            DO k=1,SIZE(blr_struc1%DIAG_BLOCKS)
+              IF (IFLAG.GE.0)
+     &          CALL ZMUMPS_diag_block_type_cast (
+     &                                  blr_struc1%DIAG_BLOCKS(k),
+     &                                  blr_struc2%DIAG_BLOCKS(k), K34,
+     &                                  iflag, ierror)
+            ENDDO
+           ENDIF
+          ENDIF
+          IF (ASSOCIATED(blr_struc1%PANELS_L)) THEN
+           IF (SIZE(blr_struc1%PANELS_L) > 0) THEN
+            DEALLOCATE(blr_struc1%PANELS_L)
+            NULLIFY(blr_struc1%PANELS_L)
+           ENDIF
+          ENDIF
+          IF (ASSOCIATED(blr_struc1%PANELS_U)) THEN
+           IF (SIZE(blr_struc1%PANELS_U) > 0) THEN
+            DEALLOCATE(blr_struc1%PANELS_U)
+            NULLIFY(blr_struc1%PANELS_U)
+           ENDIF
+          ENDIF
+          IF (ASSOCIATED(blr_struc1%DIAG_BLOCKS)) THEN
+           IF (SIZE(blr_struc1%DIAG_BLOCKS) > 0) THEN
+            DEALLOCATE(blr_struc1%DIAG_BLOCKS)
+            NULLIFY(blr_struc1%DIAG_BLOCKS)
+           ENDIF
+          ENDIF
+          blr_struc2%BEGS_BLR_STATIC  => blr_struc1%BEGS_BLR_STATIC
+          blr_struc2%BEGS_BLR_DYNAMIC => blr_struc1%BEGS_BLR_DYNAMIC
+          blr_struc2%BEGS_BLR_L       => blr_struc1%BEGS_BLR_L
+          blr_struc2%BEGS_BLR_COL     => blr_struc1%BEGS_BLR_COL
+          NULLIFY(blr_struc1%BEGS_BLR_STATIC )
+          NULLIFY(blr_struc1%BEGS_BLR_DYNAMIC)
+          NULLIFY(blr_struc1%BEGS_BLR_L      )
+          NULLIFY(blr_struc1%BEGS_BLR_COL    )
+          blr_struc2%NB_ACCESSES_INIT = blr_struc1%NB_ACCESSES_INIT
+          blr_struc2%NB_PANELS        = blr_struc1%NB_PANELS
+          blr_struc2%NFS4FATHER       = blr_struc1%NFS4FATHER
+C
+          IF (ASSOCIATED(blr_struc1%M_ARRAY)) THEN
+           IF ( SIZE(blr_struc1%M_ARRAY) > 0) THEN
+            ALLOCATE(blr_struc2%M_ARRAY(SIZE(blr_struc1%M_ARRAY)),
+     &        stat=allocok)
+            IF (allocok .GT. 0) THEN
+              IFLAG = -13
+              IERROR = SIZE(blr_struc1%M_ARRAY)
+              return
+            ENDIF
+            DO i=1,SIZE(blr_struc1%M_ARRAY)
+                blr_struc2%M_ARRAY(i) = DCMPLX(blr_struc1%M_ARRAY(i))
+            ENDDO
+            !blr_struc2%M_ARRAY = dble(blr_struc1%M_ARRAY, KIND=8)
+            DEALLOCATE(blr_struc1%M_ARRAY)
+            NULLIFY(blr_struc1%M_ARRAY)
+           ENDIF
+          ENDIF
+      END SUBROUTINE ZMUMPS_blr_struc_t_LP2C
+      SUBROUTINE ZMUMPS_diag_block_type_cast(
+     &        diag_block1, diag_block2, K34, IFLAG, IERROR)
+          USE ZMUMPS_LR_TYPE
+          USE CMUMPS_LR_DATA_M, DIAG_BLOCK_TYPE1 => DIAG_BLOCK_TYPE
+          USE ZMUMPS_LR_DATA_M, DIAG_BLOCK_TYPE2 => DIAG_BLOCK_TYPE
+          use iso_c_binding
+          TYPE(DIAG_BLOCK_TYPE1), intent(inout) :: diag_block1
+          TYPE(DIAG_BLOCK_TYPE2), intent(inout) :: diag_block2
+          INTEGER, intent(in):: K34
+          INTEGER, intent(inout):: IFLAG, IERROR
+#if !defined(NOMIXHPC)
+          integer :: int_sz
+#endif
+          INTEGER :: allocok
+          nullify(diag_block2%diag_block)
+#if !defined(NOMIXHPC)
+          nullify(diag_block2%diag_stoc%val)
+          if (associated(diag_block1%diag_stoc%val)) then
+             diag_block2%diag_size = diag_block1%diag_size
+             diag_block2%diag_stoc%val => diag_block1%diag_stoc%val
+             nullify(diag_block1%diag_block)
+          else if (associated(diag_block1%diag_block)) then
+             diag_block2%diag_size = size(diag_block1%diag_block)
+             int_sz=1+(costs_prec(PREC_FAC)*diag_block2%diag_size-1)/K34
+             if (PREC_DIAG_FR.EQ.PREC_FAC) then
+               int_sz = 1 +
+     &           (costs_prec(PREC_DIAG_FR)*diag_block2%diag_size-1)/K34
+               allocate(diag_block2%diag_stoc%val(int_sz), stat=allocok)
+               IF (allocok .GT. 0) THEN
+                 IFLAG = -13
+                 IERROR = int_sz
+                 return
+               ENDIF
+               CALL ZMUMPS_LRMIXED_CAST(
+     &           diag_block1%diag_block(1), 
+     &           diag_block2%diag_stoc%val(1),
+     &           diag_block2%DIAG_SIZE, 1,
+     &           diag_block2%DIAG_SIZE,
+     &           diag_block2%DIAG_SIZE,
+     &           PREC_FAC, PREC_DIAG_FR)
+             else
+               allocate(diag_block2%diag_block(diag_block2%diag_size),
+     &            stat=allocok)
+               IF (allocok .GT. 0) THEN
+                 IFLAG = -13
+                 IERROR = diag_block2%diag_size
+                 return
+               ENDIF
+               CALL ZMUMPS_LRMIXED_CAST(
+     &           diag_block1%diag_block(1), 
+     &           diag_block2%diag_block(1),
+     &           diag_block2%DIAG_SIZE, 1,
+     &           diag_block2%DIAG_SIZE,
+     &           diag_block2%DIAG_SIZE,
+     &           PREC_FAC, PREC_DIAG_FR)
+             endif
+             deallocate(diag_block1%diag_block)
+          endif
+#else
+          ! NOMIXHPC defined
+          if (associated(diag_block1%diag_block)) then
+              allocate(diag_block2%diag_block(
+     &          size(diag_block1%diag_block)), stat=allocok)
+              IF (allocok .GT. 0) THEN
+                IFLAG = -13
+                IERROR = size(diag_block1%diag_block)
+                return
+              ENDIF
+              CALL ZMUMPS_LRMIXED_CAST(
+     &          diag_block1%diag_block(1), 
+     &          diag_block2%diag_block(1),
+     &          size(diag_block1%DIAG_BLOCK), 1,
+     &          size(diag_block1%DIAG_BLOCK),
+     &          size(diag_block2%DIAG_BLOCK),
+     &          PREC_FAC, PREC_DIAG_FR)
+              deallocate(diag_block1%diag_block)
+          endif
+#endif
+      END SUBROUTINE ZMUMPS_diag_block_type_cast
+      SUBROUTINE ZMUMPS_blr_panel_type_cast(
+     &    blr_panel1, blr_panel2, K34,
+     &    IFLAG, IERROR)
+          USE CMUMPS_LR_DATA_M, BLR_PANEL_TYPE1 => BLR_PANEL_TYPE
+          USE ZMUMPS_LR_DATA_M, BLR_PANEL_TYPE2 => BLR_PANEL_TYPE
+          TYPE(BLR_PANEL_TYPE1),intent(inout) :: blr_panel1
+          TYPE(BLR_PANEL_TYPE2),intent(inout) :: blr_panel2
+          INTEGER, intent(in):: K34
+          INTEGER, intent(inout):: IFLAG, IERROR
+          INTEGER :: k, allocok
+          blr_panel2%NB_ACCESSES_LEFT = blr_panel1%NB_ACCESSES_LEFT 
+          nullify(blr_panel2%lrb_panel)
+          IF (ASSOCIATED(blr_panel1%LRB_PANEL)) THEN
+            IF (SIZE(blr_panel1%LRB_PANEL).GE.0) THEN
+              ALLOCATE(blr_panel2%LRB_PANEL(SIZE(blr_panel1%LRB_PANEL)),
+     &           stat= allocok)
+              IF (allocok .GT. 0) THEN
+                IFLAG = -13
+                IERROR = size(blr_panel1%lrb_panel)
+                return
+              ENDIF
+              DO k=1,SIZE(blr_panel1%LRB_PANEL)
+                CALL ZMUMPS_lrb_type_cast(blr_panel1%LRB_PANEL(k), 
+     &                             blr_panel2%LRB_PANEL(k), K34,
+     &                             IFLAG, IERROR)
+              ENDDO
+            ENDIF
+            DEALLOCATE(blr_panel1%LRB_PANEL)
+            NULLIFY(blr_panel1%LRB_PANEL)
+          ENDIF
+      END SUBROUTINE ZMUMPS_blr_panel_type_cast
+      SUBROUTINE ZMUMPS_lrb_type_cast(
+     &                lrb1, lrb2, K34, IFLAG, IERROR)
+          USE CMUMPS_LR_TYPE, LRB_TYPE1 => LRB_TYPE
+          USE ZMUMPS_LR_TYPE, LRB_TYPE2 => LRB_TYPE
+          TYPE(LRB_TYPE1) :: lrb1
+          TYPE(LRB_TYPE2) :: lrb2
+          INTEGER, intent(in):: K34
+          INTEGER, intent(inout):: IFLAG, IERROR
+          INTEGER         :: i
+          INTEGER         :: int_sz, allocok
+          integer         :: m, n
+          lrb2%K    = lrb1%K    
+          lrb2%M    = lrb1%M    
+          lrb2%N    = lrb1%N    
+          lrb2%ISLR = lrb1%ISLR 
+          nullify(lrb2%Q_stoc)
+          nullify(lrb2%R_stoc)
+          nullify(lrb2%K_stoc)
+          nullify(lrb2%Q)
+          nullify(lrb2%R)
+          if (associated(lrb1%Q_stoc).or.
+     &        associated(lrb1%Q)) then
+            allocate(lrb2%Q_stoc(nprec_stoc), stat=allocok)
+            IF (allocok .GT. 0) THEN
+              IFLAG = -13
+              IERROR = nprec_stoc
+              return
+            ENDIF
+            do i = 1, NPREC_STOC
+              nullify(lrb2%Q_stoc(i)%val)
+            end do
+          end if
+          if (associated(lrb1%R_stoc).or.
+     &        associated(lrb1%R)) then
+            allocate(lrb2%R_stoc(nprec_stoc), stat=allocok)
+            IF (allocok .GT. 0) THEN
+              IFLAG = -13
+              IERROR = nprec_stoc
+              return
+            ENDIF
+            do i = 1, NPREC_STOC
+              nullify(lrb2%R_stoc(i)%val)
+            end do
+          end if
+          if (associated(lrb1%Q_stoc)) then
+            do i = 1, NPREC_STOC
+              lrb2%Q_stoc(i)%val => lrb1%Q_stoc(i)%val
+              nullify(lrb1%Q_stoc(i)%val)
+            end do
+            deallocate(lrb1%Q_stoc)
+          end if
+          if (associated(lrb1%R_stoc)) then
+            do i = 1, NPREC_STOC
+              lrb2%R_stoc(i)%val => lrb1%R_stoc(i)%val
+              nullify(lrb1%R_stoc(i)%val)
+            end do
+            deallocate(lrb1%R_stoc)
+          end if
+          ! this seems easily possible to just swap pointers here
+          if (associated(lrb1%k_stoc)) then
+            allocate(lrb2%K_stoc(nprec_stoc), stat=allocok)
+            IF (allocok .GT. 0) THEN
+              IFLAG = -13
+              IERROR = nprec_stoc
+              return
+            ENDIF
+            do i = 1, nprec_stoc
+              lrb2%K_stoc(i) = lrb1%K_stoc(i)
+            end do
+            deallocate(lrb1%K_stoc)
+          endif
+          if (associated(lrb1%Q)) then
+             if (lrb1%islr) then
+                 m = lrb1%m
+                 n = lrb1%k
+             else
+                 m = lrb1%m
+                 n = lrb1%n
+             endif
+             int_sz = 1 + (costs_prec(PREC_SGL)*size(lrb1%Q)-1)/K34
+#if !defined(NOMIXHPC)
+             allocate(lrb2%Q_stoc(prec_sgl)%val(int_sz), stat=allocok)
+             IF (allocok .GT. 0) THEN
+               IFLAG = -13
+               IERROR = int_sz
+               return
+             ENDIF
+             CALL ZMUMPS_LRMIXED_CAST(
+     &         lrb1%Q(1,1), lrb2%Q_stoc(prec_sgl)%val(1),
+     &         m, n,
+     &         lrb1%M, lrb2%M,
+     &         PREC_FAC, PREC_SGL)
+#else
+             if (lrb1%islr) then
+               allocate(lrb2%Q_stoc(prec_sgl)%val(int_sz), stat=allocok)
+               IF (allocok .GT. 0) THEN
+                 IFLAG = -13
+                 IERROR = int_sz
+                 return
+               ENDIF
+               CALL ZMUMPS_LRMIXED_CAST(
+     &           lrb1%Q(1,1), lrb2%Q_stoc(prec_sgl)%val(1),
+     &           m, n,
+     &           lrb1%M, lrb2%M,
+     &           PREC_FAC, PREC_SGL)
+             else
+               allocate(lrb2%Q( size(lrb1%Q, 1), size(lrb1%Q, 2)),
+     &           stat=allocok)
+               IF (allocok .GT. 0) THEN
+                 IFLAG = -13
+                 IERROR = size(lrb1%Q, 1) * size(lrb1%Q, 2)
+                 return
+               ENDIF
+               CALL ZMUMPS_LRMIXED_CAST(
+     &           lrb1%Q(1,1), lrb2%Q(1,1),
+     &           m, n,
+     &           lrb1%M, lrb2%M,
+     &           PREC_FAC, PREC_DBL)
+             endif
+#endif
+             deallocate(lrb1%Q)
+          end if
+          if (associated(lrb1%R)) then
+             int_sz = 1 + (costs_prec(PREC_SGL)*size(lrb1%R)-1)/K34
+             allocate(lrb2%R_stoc(prec_sgl)%val(int_sz), stat=allocok)
+             IF (allocok .GT. 0) THEN
+               IFLAG = -13
+               IERROR = int_sz
+               return
+             ENDIF
+             CALL ZMUMPS_LRMIXED_CAST(
+     &         lrb1%R(1,1), lrb2%R_stoc(prec_sgl)%val(1),
+     &         lrb1%K, lrb1%N,
+     &         lrb1%K, lrb2%K,
+     &         PREC_FAC, PREC_SGL)
+             deallocate(lrb1%R)
+             if (.not.associated(lrb2%k_stoc)) then
+               allocate(lrb2%k_stoc(nprec_stoc), stat=allocok)
+               IF (allocok .GT. 0) THEN
+                 IFLAG = -13
+                 IERROR = nprec_stoc
+                 return
+               ENDIF
+             end if
+             do i = 1, NPREC_STOC
+               lrb2%K_stoc(i) = 0
+             end do
+             lrb2%K_stoc(PREC_SGL) = lrb2%k
+          end if
+      END SUBROUTINE ZMUMPS_lrb_type_cast
+#endif
 C
       SUBROUTINE ZMUMPS_PRINT_ALLOCATED_MEM( PROK, PROKG, PRINT_MAXAVG,
      &       MP, MPG, INFO16, INFOG18, INFOG19, NSLAVES, IRANK, KEEP )
@@ -4554,7 +5936,6 @@ C             been set to negative to flag 2x2 pivots
 C     End of EXTRACT_SCALING, we keep id%ROWSCA_loc and id%COLSCA_loc
 C     but free ROWSCA and COLSCA
       GOTO 110
-      RETURN
  100  CONTINUE
 C     Exit with error, free what was allocated
       IF (associated(id%ROWSCA_loc)) THEN

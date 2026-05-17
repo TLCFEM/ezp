@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -154,6 +154,9 @@ C
       IF (SET_HEADER) THEN
         IW(IXXP)= IWPOSCB + 1
         IW(IWPOSCB+1:IWPOSCB+1+KEEP(IXSZ))=-99999 
+#if defined(USE_GPU)
+        IW(IWPOSCB+1+XXG)=MemNotPinned
+#endif
         IW(IWPOSCB+1+XXI)=LREQ
         CALL MUMPS_STOREI8(LREQCB, IW(IWPOSCB+1+XXR))
         CALL MUMPS_STOREI8(0_8, IW(IWPOSCB+1+XXD))

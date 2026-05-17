@@ -1,14 +1,14 @@
 /*
  *
- *  This file is part of MUMPS 5.8.2, released
- *  on Mon Jan 12 15:17:08 UTC 2026
+ *  This file is part of MUMPS 5.9.0, released
+ *  on Tue Apr 28 13:05:59 UTC 2026
  *
  *
  *  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
  *  Mumps Technologies, University of Bordeaux.
  *
  *  This version of MUMPS is provided to you free of charge. It is
- *  released under the CeCILL-C license
+ *  released under the CeCILL-C license 
  *  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
  *  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
  *
@@ -17,11 +17,11 @@
 #define MUMPS_METIS_INT_H
 #include "mumps_common.h" /* includes mumps_compat.h and mumps_c_types.h */
 #define MUMPS_METIS_IDXSIZE \
-    F_SYMBOL(metis_idxsize, METIS_IDXSIZE)
+  F_SYMBOL(metis_idxsize,METIS_IDXSIZE)
 void MUMPS_CALL
-MUMPS_METIS_IDXSIZE(MUMPS_INT* metis_idx_size);
+MUMPS_METIS_IDXSIZE(MUMPS_INT *metis_idx_size);
 #define MUMPS_METIS_OPTION_NUMBERING \
-    F_SYMBOL(metis_option_numbering, METIS_OPTION_NUMBERING)
+  F_SYMBOL(metis_option_numbering,METIS_OPTION_NUMBERING)
 void MUMPS_CALL
-MUMPS_METIS_OPTION_NUMBERING(MUMPS_INT* i);
+     MUMPS_METIS_OPTION_NUMBERING(MUMPS_INT *i);
 #endif

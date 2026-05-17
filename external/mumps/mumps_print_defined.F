@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -16,12 +16,22 @@ C
       INTEGER, INTENT(IN) :: MPG
       IF (MPG.LE.0) RETURN
       write(MPG,*) "================================================="
+#if defined(MPI_TO_K_OMP)
+#if defined(MTKO_VERBOSE)
+      write(MPG, *) 
+     & "MUMPS compiled with option -DMTKO_VERBOSE"
+#endif
+#endif
 #if defined(AFFINITY_VERBOSE)
       write(MPG, *) "MUMPS compiled with option -DAFFINITY_VERBOSE"
 #endif
 #if defined(AVOID_MPI_IN_PLACE)
       WRITE(MPG,*)
      &  " MUMPS compiled with option -DAVOID_MPI_IN_PLACE"
+#endif
+#if defined(NO_64BIT_ADDRESSES_IN_C)
+      WRITE(MPG,*)
+     &  " MUMPS compiled with option -DNO_64BIT_ADDRESSES_IN_C"
 #endif
 #if defined(LARGEMATRICES)
       write(MPG,*) "MUMPS compiled with option -DLARGEMATRICES"
@@ -38,6 +48,35 @@ C
 #endif
 #if defined(metis4)
       write(MPG,*) "MUMPS compiled with option -Dmetis4"
+#endif
+#if defined(MPI_TO_K_OMP)
+      write(MPG,*) "MUMPS version includes compiled code ",
+     &             "for MPI_TO_K_OMP"
+#  if defined(MTKO_NO_MASK_FUSION)
+      write(MPG, *) "MUMPS compiled with option -DMTKO_NO_MASK_FUSION"
+#  endif
+#  if defined(USE_LIBHWLOC)
+      write(MPG, *) "MUMPS compiled with option -DUSE_LIBHWLOC"
+#  endif
+#  if defined(USE_SCHEDAFFINITY)
+      write(MPG, *) "MUMPS compiled with option -DUSE_SCHEDAFFINITY"
+#  endif
+#  if defined(MTKO_ADVANCED)
+      write(MPG, *) "MUMPS compiled with option -DMTKO_ADVANCED"
+#    if !defined(USE_LIBHWLOC)&&!defined(USE_SCHEDAFFINITY)
+      write(MPG, *) "MUMPS should not be compiled with -DMTKO_ADVANCED",
+     &      " without either -DUSE_LIBHWLOC or -DUSE_SCHEDAFFINITY"
+#    endif
+#  endif
+#  if defined(MTKO_ADVANCED_VERBOSE)
+#  if ! defined(MTKO_ADVANCED)
+      write(MPG, *) "MUMPS should not be compiled with ",
+     &              "-DMTKO_ADVANCED_VERBOSE without -DMTKO_ADVANCED"
+      CALL MUMPS_ABORT()
+#  else
+      write(MPG, *) "MUMPS compiled with option -DMTKO_ADVANCED_VERBOSE"
+#  endif
+#  endif
 #endif
 #if defined(MUMPS_ALLOC_FROM_C)
       WRITE(MPG,*) " MUMPS compiled with option -DMUMPS_ALLOC_FROM_C"
@@ -113,6 +152,19 @@ C
 #if defined(NODYNAMICCB)
       write(MPG,*) "MUMPS compiled with option -DNODYNAMICCB"
 #endif
+#if defined(USE_GPU)
+      write(MPG, *) "MUMPS compiled with option -DUSE_GPU"
+#  if defined(USE_XKBLAS)
+      write(MPG, *) "MUMPS compiled with option -DUSE_XKBLAS"
+#  endif
+#  if defined(USE_XKBLAS_COPYSCALE)
+      write(MPG, *) "MUMPS compiled with option -DUSE_XKBLAS_COPYSCALE"
+#  endif
+#  if defined(GEMMT_AVAILABLE_FOR_GPU)
+      write(MPG, *) "MUMPS compiled with option ",
+     &              "-DGEMMT_AVAILABLE_FOR_GPU"
+#  endif
+#endif
 #if defined(USE_OLD_SCALING)
       write(MPG,*) "MUMPS compiled with option -DUSE_OLD_SCALING"
 #endif
@@ -134,8 +186,19 @@ C
 #if defined(ZERO_TRIANGLE)
       write(MPG,*) "MUMPS compiled with option -DZERO_TRIANGLE"
 #endif
+#if defined(SINGLEINDOUBLE)
+      write(MPG,*) "MUMPS compiled with option -DSINGLEINDOUBLE"
+#endif
 #if defined(BLR_NOOPENMP)
       write(MPG,*) "MUMPS compiled with option -DBLR_NOOPENMP"
+#endif
+      write(MPG,*) 
+     &   "This MUMPS version includes code for mixed precision BLR"
+#if ! defined(NOMIXHPC)
+     &   ," including memory accessors during solve"
+#endif
+#if defined(NOMIXHPC)
+      write(MPG,*) "MUMPS compiled with NOMIXHPC"
 #endif
 #if defined(STAT_ES_SOLVE)
       write(MPG,*) "MUMPS compiled with option -DSTAT_ES_SOLVE"

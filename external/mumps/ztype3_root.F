@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -1254,6 +1254,9 @@ C
           ENDIF
           EARLYT3ROOTINS = KEEP(200) .EQ.0
      &        .OR.  ( KEEP(200) .LT. 0 .AND. KEEP(400) .EQ. 0 )
+#if defined(SINGLEINDOUBLE)
+          EARLYT3ROOTINS =.FALSE.
+#endif
           IF (LOCAL_N > 0 .AND. .NOT. EARLYT3ROOTINS ) THEN
             IF (KEEP(60) .EQ. 0) THEN
               CALL ZMUMPS_SET_TO_ZERO(A(IPTRLU+1_8), LOCAL_M,

@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -671,6 +671,10 @@ C
      &     ,INFO1,INFO2,INFOG1,INFOG2)
       USE DMUMPS_FACSOL_L0OMP_M, ONLY : DMUMPS_SAVE_RESTORE_L0FACARRAY
       USE DMUMPS_LR_DATA_M, ONLY: DMUMPS_SAVE_RESTORE_BLR
+#if defined(SINGLEINDOUBLE)
+      USE SMUMPS_FACSOL_L0OMP_M, ONLY : SMUMPS_SAVE_RESTORE_L0FACARRAY
+      USE SMUMPS_LR_DATA_M, ONLY: SMUMPS_SAVE_RESTORE_BLR
+#endif
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       INTEGER, intent(in) ::unit,NBVARIABLES,NBVARIABLES_ROOTC
@@ -713,15 +717,19 @@ C
       INTEGER :: SIZE_GEST_ROOTA
       INTEGER(8) :: SIZE_VARIABLES_ROOTA
       INTEGER::SIZE_GEST_BLR,SIZE_GEST_FRONT_DATA,SIZE_GEST_L0FAC
+#if defined(SINGLEINDOUBLE)
+      INTEGER(8) :: LPSIZE_VARIABLES_L0FAC
+      INTEGER    :: LPSIZE_GEST_L0FAC
+#endif
       INTEGER :: KEEP410_SAVE, KEEP411_SAVE 
       INTEGER(8) :: KEEP883_SAVE, KEEP884_SAVE 
       INTEGER(4) :: I4
       LOGICAL :: IS_SYMMETRIC
       TYPE (DMUMPS_STRUC) :: id
       TYPE (DMUMPS_INTR_STRUC) :: idintr
-      INTEGER, PARAMETER :: S_ASSOCIATED_OOC_FILES=194
-      INTEGER, PARAMETER :: S_pad16=193
-      INTEGER, PARAMETER :: S_Deficiency=192
+      INTEGER, PARAMETER :: S_pad13=194
+      INTEGER, PARAMETER :: S_ASSOCIATED_OOC_FILES=193
+      INTEGER, PARAMETER :: S_pad12=192
       INTEGER, PARAMETER :: S_NB_SINGULAR_VALUES=191
       INTEGER, PARAMETER :: S_SINGULAR_VALUES=190
       INTEGER, PARAMETER :: S_MTKO_PROCS_MAP=189
@@ -744,18 +752,18 @@ C
       INTEGER, PARAMETER :: S_LPOOL_A_L0_OMP=172
       INTEGER, PARAMETER :: S_BLRARRAY_ENCODING=171
       INTEGER, PARAMETER :: S_FDM_F_ENCODING=170
-      INTEGER, PARAMETER :: S_pad13=169
+      INTEGER, PARAMETER :: S_pad11=169
       INTEGER, PARAMETER :: S_NBGRP=168
       INTEGER, PARAMETER :: S_LRGROUPS=167
       INTEGER, PARAMETER :: S_INTR_ENCODING=166
       INTEGER, PARAMETER :: S_WORKING=165
       INTEGER, PARAMETER :: S_IPTR_WORKING=164
-      INTEGER, PARAMETER :: S_pad14=163
+      INTEGER, PARAMETER :: S_pad10=163
       INTEGER, PARAMETER :: S_SUP_PROC=162
       INTEGER, PARAMETER :: S_PIVNUL_LIST=161
       INTEGER, PARAMETER :: S_OOC_FILE_NAMES=160
       INTEGER, PARAMETER :: S_OOC_FILE_NAME_LENGTH=159
-      INTEGER, PARAMETER :: S_pad12=158
+      INTEGER, PARAMETER :: S_pad9=158
       INTEGER, PARAMETER :: S_OOC_NB_FILE_TYPE=157
       INTEGER, PARAMETER :: S_OOC_NB_FILES=156
       INTEGER, PARAMETER :: S_OOC_TOTAL_NB_NODES=155
@@ -783,7 +791,7 @@ C
       INTEGER, PARAMETER :: S_MEM_SUBTREE=133
       INTEGER, PARAMETER :: S_RHSINTR=132
       INTEGER, PARAMETER :: S_GLOB2LOC_SOL=131
-      INTEGER, PARAMETER :: S_pad11=130
+      INTEGER, PARAMETER :: S_pad8=130
       INTEGER, PARAMETER :: S_GLOB2LOC_SOL_ALLOC=129
       INTEGER, PARAMETER :: S_GLOB2LOC_RHS=128
       INTEGER, PARAMETER :: S_MEM_DIST=127
@@ -957,6 +965,10 @@ C
       SIZE_GEST_FRONT_DATA=0
       SIZE_VARIABLES_L0FAC=0
       SIZE_GEST_L0FAC=0
+#if defined(SINGLEINDOUBLE)
+      LPSIZE_VARIABLES_L0FAC=0
+      LPSIZE_GEST_L0FAC=0
+#endif
       if(mode.EQ.memory_save_mode) then
       elseif(mode.EQ.save_mode) then
          write(unit,iostat=err) "MUMPS"
@@ -2365,9 +2377,6 @@ C
      &              id%COMM, id%MYID )
                IF ( id%INFO(1) .LT. 0 ) GOTO 100
             endif
-         CASE(S_Deficiency)
-           CALL MUMPS_SAVE_INT(id%Deficiency)
-           IF (id%INFO(1) .LT. 0) GOTO 100
          CASE(S_LNA)
            CALL MUMPS_SAVE_INT(id%LNA)
            IF (id%INFO(1) .LT. 0) GOTO 100
@@ -6154,6 +6163,8 @@ C
             NbRecords(i1)     =0   
             SIZE_GEST(i1)     =0   
             SIZE_VARIABLES(i1)=0_8 
+#if defined(SINGLEINDOUBLE)
+#endif
             DO i2=1,NBVARIABLES_ROOTC
             SELECT CASE(i2)
             CASE(R_MBLOCK)
@@ -6759,6 +6770,19 @@ C
             CALL MUMPS_PROPINFO( id%ICNTL(1), id%INFO(1),
      &                 id%COMM, id%MYID )
             IF ( id%INFO(1) .LT. 0 ) GOTO 100
+#if defined(SINGLEINDOUBLE)
+            CALL SMUMPS_SAVE_RESTORE_L0FACARRAY(
+     &                  idintr%LPL0_OMP_FACTORS
+     &                 ,unit,id%MYID,mode
+     &                 ,LPSIZE_GEST_L0FAC,LPSIZE_VARIABLES_L0FAC
+     &                 ,SIZE_INT, SIZE_INT8, SIZE_ARITH_DEP/2
+     &                 ,TOTAL_FILE_SIZE,TOTAL_STRUC_SIZE
+     &                 ,size_read,size_allocated,size_written
+     &                 ,id%INFO(1))
+            CALL MUMPS_PROPINFO( id%ICNTL(1), id%INFO(1),
+     &                 id%COMM, id%MYID )
+            IF ( id%INFO(1) .LT. 0 ) GOTO 100
+#endif
          CASE(S_NBGRP)
            CALL MUMPS_SAVE_INT(id%NBGRP)
            IF (id%INFO(1) .LT. 0) GOTO 100
@@ -6894,6 +6918,9 @@ C
                endif
             endif
             IF (CALL_SAVE_RESTORE_BLR) THEN
+#if defined(SINGLEINDOUBLE)
+               IF (id%KEEP(148).EQ.0) THEN
+#endif
                  CALL DMUMPS_SAVE_RESTORE_BLR(id%BLRARRAY_ENCODING
      &                 ,unit,id%MYID,mode
      &                 ,SIZE_GEST_BLR,SIZE_VARIABLES_BLR
@@ -6901,6 +6928,17 @@ C
      &                 ,TOTAL_FILE_SIZE,TOTAL_STRUC_SIZE
      &                 ,size_read,size_allocated,size_written
      &                 ,id%INFO(1))
+#if defined(SINGLEINDOUBLE)
+               ELSE
+                 CALL SMUMPS_SAVE_RESTORE_BLR(id%BLRARRAY_ENCODING
+     &                 ,unit,id%MYID,mode
+     &                 ,SIZE_GEST_BLR,SIZE_VARIABLES_BLR
+     &                 ,SIZE_INT, SIZE_ARITH_DEP/2, SIZE_LOGICAL
+     &                 ,TOTAL_FILE_SIZE,TOTAL_STRUC_SIZE
+     &                 ,size_read,size_allocated,size_written
+     &                 ,id%INFO(1))
+              ENDIF
+#endif
             ENDIF
             CALL MUMPS_PROPINFO( id%ICNTL(1), id%INFO(1),
      &            id%COMM, id%MYID )
@@ -7861,7 +7899,7 @@ C
                IF ( id%INFO(1) .LT. 0 ) GOTO 100
             endif      
       CASE(S_pad1,S_pad2,S_pad3,S_pad4,S_pad5,S_pad6,S_pad7,
-     &     S_pad11,S_pad12,S_pad13,S_pad14,S_pad16)
+     &     S_pad8,S_pad9,S_pad10,S_pad11,S_pad12,S_pad13)
       CASE DEFAULT
       END SELECT
       if(mode.EQ.memory_save_mode) then
@@ -7894,6 +7932,9 @@ C
      &         sum(SIZE_VARIABLES_ROOTC)+
      &         SIZE_VARIABLES_BLR+SIZE_VARIABLES_FRONT_DATA+
      &         SIZE_VARIABLES_L0FAC+
+#if defined(SINGLEINDOUBLE)
+     &         LPSIZE_VARIABLES_L0FAC+
+#endif
      &         SIZE_VARIABLES_ROOTA
          TOTAL_STRUC_SIZE=WRITTEN_STRUC_SIZE
      &        +sum(DIFF_SIZE_ALLOC_READ)
@@ -7907,6 +7948,9 @@ C
      &        +int(2*SIZE_INT8,kind=8)+int(1,kind=8)
      &        +int(3*SIZE_INT,kind=8)  
      &        +int(SIZE_LOGICAL,kind=8)
+#if defined(SINGLEINDOUBLE)
+     &        +LPSIZE_GEST_L0FAC
+#endif
          IF(associated(id%OOC_FILE_NAME_LENGTH).AND.
      &        associated(id%OOC_FILE_NAMES)) THEN
             gest_size=gest_size+int(SIZE_INT,kind=8)

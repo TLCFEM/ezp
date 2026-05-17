@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -91,7 +91,15 @@ C
          THRESH_MEM = 95
         ENDIF
       ENDIF
+#if defined(MPI_TO_K_OMP)
+      IF ( KEEP(381) .GT. 1 ) THEN
+        SLAVEF_DURING_MAPPING = SLAVEF / KEEP(381)
+      ELSE
+#endif
         SLAVEF_DURING_MAPPING = SLAVEF
+#if defined(MPI_TO_K_OMP)
+      ENDIF
+#endif
       FACTOR_SIZE_PER_MPI = KEEP8(101) / SLAVEF_DURING_MAPPING
       IF ( KEEP(261) .EQ. 0) THEN
           WRITE(*,*)"KEEP(261) MUST BE SET TO 1 IN ORDER TO USE

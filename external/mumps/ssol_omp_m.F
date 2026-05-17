@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -21,6 +21,9 @@ C
      &  BUFR, LBUFR, LBUFR_BYTES,
      &  RHS_ROOT, LRHS_ROOT,             
      &  ISTEP_TO_INIV2, TAB_POS_IN_PERE, 
+#if defined(MPI_TO_K_OMP)
+     &  I_AM_HEAD,                       
+#endif
      &  RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE,
      &  FROM_PP, 
      &  NBROOT_UNDER_L0, LPOOL_B_L0_OMP, IPOOL_B_L0_OMP,
@@ -30,6 +33,7 @@ C
      &  L0_OMP_FACTORS, LL0_OMP_FACTORS,
      &  DO_PRUN, TO_PROCESS )
       USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_L0OMPFAC_T
+      USE MUMPS_L0_OMP_M, ONLY : THREAD_ID
 !$      USE OMP_LIB
       IMPLICIT NONE
       INTEGER, INTENT( in ) :: N, MTYPE, NRHS, SLAVEF, LIW
@@ -74,8 +78,11 @@ C
       LOGICAL, INTENT( in ) :: TO_PROCESS( KEEP(28) )
       TYPE (SMUMPS_L0OMPFAC_T), INTENT(IN) ::
      &                        L0_OMP_FACTORS(LL0_OMP_FACTORS)
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, INTENT( in ) :: I_AM_HEAD
+#endif
       INTEGER :: LASTFSSBTRSTA_P, LASTFSSBTRDYN_P
-      INTEGER :: THREAD_ID, IL0OMPFAC
+      INTEGER :: THREAD_ID_P, IL0OMPFAC
       INTEGER, ALLOCATABLE, DIMENSION(:) :: IPOOL_P
       INTEGER, ALLOCATABLE, DIMENSION(:) :: IWCB_P
       REAL, ALLOCATABLE, DIMENSION(:) :: WCB_P
@@ -98,6 +105,12 @@ C
       NBFIN_DUMMY = huge(NBFIN_DUMMY)
       NBROOT_PROCESSED = 0
       PTRICB = 0
+!$    NOMP_SAVE = omp_get_max_threads()
+!$OMP PARALLEL
+      THREAD_ID = 1
+!$    THREAD_ID = OMP_GET_THREAD_NUM() + 1
+!$OMP BARRIER
+!$OMP END PARALLEL
 !$    NOMP_INNER = 1
 !$    IF (KEEP(369).GT.0) THEN
 !$      NOMP_TOTAL = omp_get_max_threads()
@@ -105,6 +118,9 @@ C
 !$        IF (KEEP(439) .GT. 1) THEN
 !$          NOMP_INNER = KEEP(439)
 !$        ELSE IF ( KEEP(439) .EQ. -1
+#if defined(USE_GPU)
+!$   &      .OR. (KEEP(439) .EQ. -2 .AND. KEEP(417) .GT.0)
+#endif
 !$   &      ) THEN
 !$          NOMP_INNER = NOMP_TOTAL / KEEP(400)
 !$        ENDIF
@@ -123,7 +139,7 @@ C
 !$OMP PARALLEL
 !$OMP& SHARED ( NEXT_TASK_DYN, IPOOL_B_L0_OMP,
 !$OMP&          LPOOL_B_L0_OMP, NBFIN_DUMMY )
-!$OMP& PRIVATE ( THREAD_ID, IL0OMPFAC, VIRTUAL_TASK, PHYSICAL_TASK,
+!$OMP& PRIVATE ( THREAD_ID_P, IL0OMPFAC, VIRTUAL_TASK, PHYSICAL_TASK,
 !$OMP&           IPOOL_P, LPOOL_P, LEAF_P,
 !$OMP&           LIWCB_P, LWCB_P, IWCB_P, WCB_P,
 !$OMP&           PLEFTWCB_P, POSWCB_P, POSIWCB_P,
@@ -132,10 +148,7 @@ C
 !$OMP&           IS_INODE_PROCESSED_P,
 !$OMP&           INFO_P, ERROR_WAS_BROADCASTED_P, NOMP_SAVE, allocok )
 !$OMP& REDUCTION( + : NBROOT_PROCESSED )
-!$    NOMP_SAVE = omp_get_max_threads()
-      THREAD_ID = 1
-!$    THREAD_ID = OMP_GET_THREAD_NUM() + 1
-!$OMP BARRIER
+      THREAD_ID_P = THREAD_ID
 #if defined(WORKAROUNDINTELILP64OPENMPLIMITATION)
 !$    CALL omp_set_num_threads(int(NOMP_INNER,4))
 #else
@@ -163,7 +176,7 @@ C
       IF (INFO(1) .LT. 0) THEN
         GOTO 50
       ENDIF
-      VIRTUAL_TASK = THREAD_ID
+      VIRTUAL_TASK = THREAD_ID_P
  600  CONTINUE
       IF (VIRTUAL_TASK .LT. L_VIRT_L0_OMP) THEN
         DO PHYSICAL_TASK = VIRT_L0_OMP( VIRTUAL_TASK ),
@@ -198,7 +211,7 @@ C
             INODE = IPOOL_P(LEAF_P)
             IFATH = DAD(STEP(INODE) )
             IL0OMPFAC = L0_OMP_MAPPING(STEP(INODE))
-            IF (IL0OMPFAC .NE. THREAD_ID) THEN
+            IF (IL0OMPFAC .NE. THREAD_ID_P) THEN
             ENDIF
             IF (DO_PRUN) THEN
               IS_INODE_PROCESSED_P = TO_PROCESS(STEP(INODE))
@@ -221,6 +234,9 @@ C
      &        RHSINTR, LRHSINTR, POSINRHSINTR_FWD,
      &        ISTEP_TO_INIV2, TAB_POS_IN_PERE, 
      &        RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE, FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &        , I_AM_HEAD
+#endif
      &        , ERROR_WAS_BROADCASTED_P )
               IF (INFO_P(1) .LT. 0) THEN
 !$OMP CRITICAL(critical_info)
@@ -299,6 +315,9 @@ C
      &  KEEP, KEEP8, DKEEP, PROCNODE_STEPS, SLAVEF,
      &  COMM, MYID, BUFR, LBUFR, LBUFR_BYTES, RHS_ROOT, LRHS_ROOT, 
      &  ISTEP_TO_INIV2, TAB_POS_IN_PERE, PANEL_POS, LPANEL_POS,
+#if defined(MPI_TO_K_OMP)
+     &  I_AM_HEAD,
+#endif
      &  PRUN_BELOW_BWD, TO_PROCESS, SIZE_TO_PROCESS,
      &  RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE, FROM_PP, LPOOL_B_L0_OMP,
      &  L_VIRT_L0_OMP, VIRT_L0_OMP, L_PHYS_L0_OMP, PHYS_L0_OMP,
@@ -306,6 +325,7 @@ C
      &  L0_OMP_FACTORS, LL0_OMP_FACTORS )
       USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_L0OMPFAC_T
       USE OMP_LIB
+      USE MUMPS_L0_OMP_M, ONLY : THREAD_ID
       IMPLICIT NONE
       INTEGER, INTENT( in ) :: N, MTYPE, NRHS, SLAVEF, LIW
       INTEGER, INTENT( in ) :: IW(LIW)
@@ -349,7 +369,10 @@ C
       INTEGER, INTENT( in ) :: LL0_OMP_FACTORS
       TYPE (SMUMPS_L0OMPFAC_T), INTENT(IN) ::
      &                        L0_OMP_FACTORS(LL0_OMP_FACTORS)
-      INTEGER :: THREAD_ID, IL0OMPFAC
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, INTENT( in ) :: I_AM_HEAD
+#endif
+      INTEGER :: THREAD_ID_P, IL0OMPFAC
       INTEGER, ALLOCATABLE, DIMENSION(:) :: IPOOL_P
       INTEGER, ALLOCATABLE, DIMENSION(:) :: IWCB_P
       REAL, ALLOCATABLE, DIMENSION(:) :: WCB_P
@@ -370,6 +393,8 @@ C
       INTEGER :: NBFIN_DUMMY
       LOGICAL, ALLOCATABLE, DIMENSION(:) :: DEJA_SEND_DUMMY
 !$    INTEGER :: NOMP_TOTAL
+!$    INTEGER :: NOMP_INNER
+!$    LOGICAL :: SAVE_NESTED
       NBFIN_DUMMY = huge(NBFIN_DUMMY)
       ALLOCATE(DEJA_SEND_DUMMY( 0:SLAVEF-1 ), stat=allocok)
       if(allocok.ne.0) then
@@ -379,12 +404,34 @@ C
          INFO(2)=SLAVEF
          GOTO 100
       endif
+!$OMP PARALLEL
+!$    NOMP_SAVE = omp_get_max_threads()
+      THREAD_ID = 1
+!$    THREAD_ID = OMP_GET_THREAD_NUM() + 1
+!$OMP BARRIER
+!$OMP END PARALLEL
+!$    NOMP_INNER = 1
 !$    IF (KEEP(369).GT.0) THEN
-!$        NOMP_TOTAL = omp_get_max_threads()
+!$      NOMP_TOTAL = omp_get_max_threads()
+!$      IF (NOMP_TOTAL .NE. KEEP(400)) THEN
+!$        IF (KEEP(439) .GT. 1) THEN
+!$          NOMP_INNER = KEEP(439)
+!$        ELSE IF ( KEEP(439) .EQ. -1
+#if defined(USE_GPU)
+!$   &      .OR. (KEEP(439) .EQ. -2 .AND. KEEP(417) .GT.0)
+#endif
+!$   &      ) THEN
+!$          NOMP_INNER = NOMP_TOTAL / KEEP(400)
+!$        ENDIF
+!$      ENDIF
+!$      IF (NOMP_INNER .GT. 1) THEN
+!$        SAVE_NESTED = omp_get_nested()
+!$        CALL OMP_SET_NESTED(.TRUE.)
+!$      ENDIF
 #if defined(WORKAROUNDINTELILP64OPENMPLIMITATION)
-!$        CALL omp_set_num_threads(int(KEEP(400),4))
+!$      CALL omp_set_num_threads(int(KEEP(400),4))
 #else
-!$        CALL omp_set_num_threads(KEEP(400))
+!$      CALL omp_set_num_threads(KEEP(400))
 #endif
 !$    ENDIF
       PTRICB = 0
@@ -392,7 +439,7 @@ C
 !$OMP PARALLEL
 !$OMP& SHARED ( NEXT_TASK_DYN, LPOOL_B_L0_OMP,
 !$OMP&          NBFIN_DUMMY, DEJA_SEND_DUMMY )
-!$OMP& PRIVATE ( THREAD_ID, IL0OMPFAC, VIRTUAL_TASK, PHYSICAL_TASK,
+!$OMP& PRIVATE ( THREAD_ID_P, IL0OMPFAC, VIRTUAL_TASK, PHYSICAL_TASK,
 !$OMP&           IPOOL_P, LPOOL_P, IIPOOL_P, MYLEAF_LEFT_HUGE_P,
 !$OMP&           LIWCB_P, LWCB_P, IWCB_P, WCB_P, W2_P, LPANEL_POS_P,
 !$OMP&           PANEL_POS_P,
@@ -400,11 +447,12 @@ C
 !$OMP&           INODE,
 !$OMP&           INFO_P, DO_MCAST2_TERMBWD_P,
 !$OMP&           ERROR_WAS_BROADCASTED_P, NOMP_SAVE, allocok )
-!$    NOMP_SAVE = omp_get_max_threads()
-      THREAD_ID = 1
-!$    THREAD_ID = OMP_GET_THREAD_NUM() + 1
-!$OMP BARRIER
-!$    CALL omp_set_num_threads(1)
+      THREAD_ID_P = THREAD_ID
+#if defined(WORKAROUNDINTELILP64OPENMPLIMITATION)
+!$    CALL omp_set_num_threads(int(NOMP_INNER,4))
+#else
+!$    CALL omp_set_num_threads(NOMP_INNER)
+#endif
       LPOOL_P = LPOOL_B_L0_OMP
       INFO_P(1:2) = 0
       LWCB_P  = int(KEEP(133),8)*int(NRHS,8)
@@ -433,7 +481,7 @@ C
       IF (INFO(1) .LT. 0) THEN
         GOTO 50
       ENDIF
-      VIRTUAL_TASK = THREAD_ID
+      VIRTUAL_TASK = THREAD_ID_P
  600  CONTINUE
       IF (VIRTUAL_TASK .LT. L_VIRT_L0_OMP) THEN
         DO PHYSICAL_TASK = VIRT_L0_OMP( VIRTUAL_TASK ),
@@ -451,7 +499,7 @@ C
             IIPOOL_P = IIPOOL_P - 1
             INODE = IPOOL_P(IIPOOL_P)
             IL0OMPFAC = L0_OMP_MAPPING(STEP(INODE))
-            IF (IL0OMPFAC .NE. THREAD_ID) THEN
+            IF (IL0OMPFAC .NE. THREAD_ID_P) THEN
             ENDIF
             CALL SMUMPS_SOLVE_NODE_BWD( INODE, N, IPOOL_P, LPOOL_P,
      &      IIPOOL_P,  NBFIN_DUMMY, L0_OMP_FACTORS(IL0OMPFAC)%A(1),
@@ -467,6 +515,9 @@ C
      &      ISTEP_TO_INIV2, TAB_POS_IN_PERE, PANEL_POS_P, LPANEL_POS_P,
      &      PRUN_BELOW_BWD, TO_PROCESS, SIZE_TO_PROCESS,
      &      RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE, FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &          , I_AM_HEAD
+#endif
      &          , ERROR_WAS_BROADCASTED_P
      &          , DO_MCAST2_TERMBWD_P
      &    )
@@ -507,10 +558,13 @@ C
 !$OMP END PARALLEL
 !$    IF (KEEP(369).GT.0) THEN
 #if defined(WORKAROUNDINTELILP64OPENMPLIMITATION)
-!$        CALL omp_set_num_threads(int(NOMP_TOTAL,4))
+!$       CALL omp_set_num_threads(int(NOMP_TOTAL,4))
 #else
-!$        CALL omp_set_num_threads(NOMP_TOTAL)
+!$       CALL omp_set_num_threads(NOMP_TOTAL)
 #endif
+!$       IF (NOMP_INNER .GT. 1) THEN
+!$         CALL OMP_SET_NESTED(SAVE_NESTED)
+!$       ENDIF
 !$    ENDIF
  100  CONTINUE
       IF (allocated(DEJA_SEND_DUMMY)) DEALLOCATE(DEJA_SEND_DUMMY)

@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -13,6 +13,8 @@ C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       MODULE SMUMPS_INTR_TYPES
       USE MUMPS_INTR_TYPES, ONLY: MUMPS_ROOT_STRUC
+#if defined(SINGLEINDOUBLE)
+#endif
       PRIVATE
       PUBLIC :: SMUMPS_ROOT_STRUC,
      &          SMUMPS_L0OMPFAC_T,
@@ -21,21 +23,23 @@ C
      &          SMUMPS_FREE_INTR_ENCODING,
      &          SMUMPS_ENCODE_INTR,
      &          SMUMPS_DECODE_INTR
+#if defined(SINGLEINDOUBLE)
+#endif
 C     SMUMPS_ROOT_STRUC no longer contains INTEGERS
       TYPE SMUMPS_ROOT_STRUC
 !       Centralized master of root
         REAL, DIMENSION(:), POINTER :: RHS_CNTR_MASTER_ROOT
 !       Used to access Schur easily from root structure
         REAL, DIMENSION(:), POINTER :: SCHUR_POINTER
-!       for try_null_space preprocessing constant only:
+!       for null_space preprocessing only:
         REAL, DIMENSION(:), POINTER :: QR_TAU
 !       Fwd in facto: 
 !           case of scalapack root: to store RHS in 2D block cyclic
 !           format compatible with root distribution
         REAL, DIMENSION(:,:), POINTER :: RHS_ROOT
-!       for SVD on root (#define try_null_space)
+!       for SVD on root (null_space)
         REAL, DIMENSION(:,:), POINTER :: SVD_U, SVD_VT
-!       for RR on root (#define try_null_space)
+!       for RR on root (null_space)
         REAL, DIMENSION(:), POINTER :: SINGULAR_VALUES
 !
       END TYPE SMUMPS_ROOT_STRUC
@@ -51,6 +55,8 @@ C     All MUMPS internal datatypes are in an internal structure:
          TYPE (SMUMPS_ROOT_STRUC) :: roota
          TYPE (SMUMPS_L0OMPFAC_T), DIMENSION(:), POINTER ::
      &                             L0_OMP_FACTORS
+#if defined(SINGLEINDOUBLE)
+#endif
       END TYPE SMUMPS_INTR_STRUC
 C     =================================================================
       CONTAINS

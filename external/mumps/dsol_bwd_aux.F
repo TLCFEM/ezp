@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -26,6 +26,9 @@ C
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE, PANEL_POS, LPANEL_POS,
      &    PRUN_BELOW, TO_PROCESS, SIZE_TO_PROCESS
      &    , RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE, FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &    , I_AM_HEAD
+#endif
      &    , ERROR_WAS_BROADCASTED
      &    , DO_MCAST2_TERMBWD
      &    )
@@ -73,6 +76,9 @@ C
       INTEGER, INTENT(IN) :: LRHS_BOUNDS
       INTEGER, INTENT(IN) :: RHS_BOUNDS(LRHS_BOUNDS)
       LOGICAL, INTENT(IN) :: FROM_PP
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, INTENT( IN  ) :: I_AM_HEAD
+#endif
       LOGICAL, INTENT( OUT ) :: ERROR_WAS_BROADCASTED
       LOGICAL, INTENT( OUT ) :: DO_MCAST2_TERMBWD
       INCLUDE 'mpif.h'
@@ -229,6 +235,9 @@ C
      &                  RHSINTR, LRHSINTR, POSINRHSINTR_BWD,
      &                  PRUN_BELOW, TO_PROCESS, SIZE_TO_PROCESS
      &                  , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &                  , I_AM_HEAD
+#endif
      &                  )
                   IF ( INFO( 1 ) .LT. 0 ) THEN
                     ERROR_WAS_BROADCASTED = .TRUE.
@@ -395,6 +404,9 @@ C
      &              RHSINTR, LRHSINTR, POSINRHSINTR_BWD,
      &              PRUN_BELOW , TO_PROCESS, SIZE_TO_PROCESS
      &               , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &               , I_AM_HEAD
+#endif
      &               )
                IF ( INFO( 1 ) .LT. 0 ) THEN
                  ERROR_WAS_BROADCASTED = .TRUE.
@@ -893,6 +905,9 @@ C
      &          RHSINTR, LRHSINTR, POSINRHSINTR_BWD,
      &          PRUN_BELOW, TO_PROCESS, SIZE_TO_PROCESS
      &            , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &            , I_AM_HEAD
+#endif
      &            )
                 IF ( INFO( 1 ) .LT. 0 ) THEN
                   ERROR_WAS_BROADCASTED = .TRUE.
@@ -961,6 +976,9 @@ C
      &     RHSINTR, LRHSINTR, POSINRHSINTR_BWD,
      &     PRUN_BELOW, TO_PROCESS, SIZE_TO_PROCESS
      &     , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &     , I_AM_HEAD
+#endif
      &    )
       IMPLICIT NONE
       LOGICAL BLOQ, FLAG
@@ -996,6 +1014,9 @@ C
       INTEGER SIZE_TO_PROCESS
       LOGICAL TO_PROCESS(SIZE_TO_PROCESS)
       LOGICAL, intent(in) :: FROM_PP
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, intent( in ) :: I_AM_HEAD
+#endif
       INCLUDE 'mpif.h'
       INCLUDE 'mumps_tags.h'
       INTEGER MSGSOU, MSGTAG, MSGLEN
@@ -1003,8 +1024,20 @@ C
       INTEGER :: IERR
       FLAG = .FALSE.
       IF ( BLOQ ) THEN
+#if defined(MPI_TO_K_OMP)
+         IF (.not. I_AM_HEAD) THEN
+           DO WHILE (.not. FLAG)
+             CALL MPI_IPROBE( MPI_ANY_SOURCE, MPI_ANY_TAG, COMM,
+     &             FLAG, STATUS, IERR )
+             CALL MUMPS_USLEEP(1000)
+           END DO
+         ELSE
+#endif
            CALL MPI_PROBE( MPI_ANY_SOURCE, MPI_ANY_TAG,
      &                     COMM, STATUS, IERR )
+#if defined(MPI_TO_K_OMP)
+         END IF
+#endif
         FLAG = .TRUE.
       ELSE
         CALL MPI_IPROBE( MPI_ANY_SOURCE, MPI_ANY_TAG, COMM,
@@ -1038,6 +1071,9 @@ C
      &                RHSINTR, LRHSINTR, POSINRHSINTR_BWD,
      &               PRUN_BELOW, TO_PROCESS, SIZE_TO_PROCESS
      &               , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &               , I_AM_HEAD
+#endif
      &          )
          END IF
       END IF
@@ -1058,6 +1094,9 @@ C
      &                RHSINTR, LRHSINTR, POSINRHSINTR_BWD,
      &                PRUN_BELOW, TO_PROCESS, SIZE_TO_PROCESS
      &               , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &               , I_AM_HEAD
+#endif
      &           )
       USE DMUMPS_OOC
       USE DMUMPS_SOL_LR, ONLY: DMUMPS_SOL_SLAVE_LR_U,
@@ -1097,6 +1136,9 @@ C
       INTEGER  SIZE_TO_PROCESS
       LOGICAL TO_PROCESS(SIZE_TO_PROCESS), NO_CHILDREN
       LOGICAL, intent(in) :: FROM_PP
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, intent(in) :: I_AM_HEAD
+#endif
       INCLUDE 'mpif.h'
       INCLUDE 'mumps_tags.h'
       INTEGER POSITION, IF, INODE, IERR, LONG, DUMMY(1)
@@ -1344,6 +1386,9 @@ C
      &     RHSINTR, LRHSINTR, POSINRHSINTR_BWD,
      &     PRUN_BELOW, TO_PROCESS, SIZE_TO_PROCESS
      &      , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &      , I_AM_HEAD
+#endif
      &      )
           IF ( INFO( 1 ) .LT. 0 ) GOTO 270
           GOTO 100
@@ -1748,6 +1793,9 @@ C
      &          RHSINTR, LRHSINTR, POSINRHSINTR_BWD,
      &          PRUN_BELOW, TO_PROCESS, SIZE_TO_PROCESS
      &            , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &            , I_AM_HEAD
+#endif
      &            )
                 IF ( INFO( 1 ) .LT. 0 ) THEN
                   GOTO 270

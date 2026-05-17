@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -24,6 +24,9 @@ C
      & MUMPS_TPS_ARR, CMUMPS_TPS_ARR, LTPS_ARR,
      & RINFO, POSFAC ,IWPOS, LRLU, IPTRLU, LRLUS, LEAF, NBROOT, NBRTOT,
      & NBROOT_UNDER_L0, 
+#if defined(MPI_TO_K_OMP)
+     & I_AM_HEAD,
+#endif
      & UU, ICNTL, PTLUST, PTRFAC, INFO, KEEP,KEEP8, PROCNODE_STEPS,
      & SLAVEF,MYID, COMM_NODES, MYID_NODES, BUFR, LBUFR, LBUFR_BYTES,
      & INTARR, DBLARR, root, roota, PERM, NELT, FRTPTR, FRTELT, LPTRAR,
@@ -113,6 +116,9 @@ C
       TYPE (CMUMPS_TPS_T), TARGET :: CMUMPS_TPS_ARR( LTPS_ARR )
       INTEGER, INTENT( IN ) :: LL0_OMP_MAPPING
       INTEGER, INTENT( IN ) :: L0_OMP_MAPPING( LL0_OMP_MAPPING )
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, INTENT( IN ) :: I_AM_HEAD
+#endif
       INCLUDE 'mpif.h'
       INCLUDE 'mumps_tags.h'
       INTEGER :: STATUS(MPI_STATUS_SIZE)
@@ -175,6 +181,9 @@ C
       INCLUDE 'mumps_headers.h'
       INTEGER MPA
       DOUBLE PRECISION  OPLAST_PRINTED
+#if defined(MPI_TO_K_OMP)
+      INTEGER:: MTKO_ERROR
+#endif
       DOUBLE PRECISION :: ROOTTIME
       INTEGER:: ITH
       DOUBLE PRECISION :: DUMMY_FLOP_ESTIM_ACC
@@ -324,6 +333,11 @@ C
             GOTO 30
           ELSE
             CALL MUMPS_BUF_TEST()
+#if defined(MPI_TO_K_OMP)
+            IF (.not.I_AM_HEAD) THEN
+              CALL MUMPS_USLEEP(100000)
+            ENDIF
+#endif
           ENDIF
       ENDIF
       GO TO 20
@@ -589,7 +603,7 @@ C
      &               DET_EXP, DET_MANT, DET_SIGN,
      &               KEEP,KEEP8,
      &               STEP, PROCNODE_STEPS, MYID_NODES, SLAVEF,
-     &               SEUIL, AVOID_DELAYED, ETATASS,
+     &               SEUIL, AVOID_DELAYED, 
      &              DKEEP(1), PIVNUL_LIST_STRUCT, IWPOS 
      &           , LRGROUPS
      &           , PERM
@@ -755,6 +769,9 @@ C
      &  STEP, PTRAST, PAMASTER, PROCNODE_STEPS, DAD,
      &  .FALSE. ) 
         IF ( KEEP(400) .GT. 0
+#if defined(MPI_TO_K_OMP)
+     &       .AND. I_AM_HEAD
+#endif
      &     ) THEN
 !$OMP PARALLEL DO SCHEDULE(STATIC,1)
             DO ITH = 1, KEEP(400)
@@ -809,6 +826,11 @@ C
                CALL MUMPS_PROPINFO( ICNTL, INFO,
      &              COMM_NODES, MYID_NODES )
                IF (INFO(1).GE.0) THEN
+#if defined(MPI_TO_K_OMP)
+                 IF (I_AM_HEAD .and. KEEP(381).GT.1) THEN
+                   CALL mumps_mtko_deactivate(KEEP(249))
+                 ENDIF
+#endif
                  CALL CMUMPS_FACTO_ROOT( 
      &               MPA, MYID_NODES, MASTER_ROOT,
      &               root, roota, N, KEEP(38),
@@ -818,6 +840,12 @@ C
      &               BUFRX(1), LBUFRX, KEEP,KEEP8, DKEEP,
      &               OPELI, DET_EXP, DET_MANT, DET_SIGN )
                  CALL CMUMPS_UPDATE_PROGRESS( OPELI, KEEP8 )
+#if defined(MPI_TO_K_OMP)
+                 IF (I_AM_HEAD .and. KEEP(381).GT.1) THEN
+                   CALL mumps_mtko_reactivate(KEEP(381)*KEEP(249),
+     &                     MTKO_ERROR)
+                 ENDIF
+#endif
                  IF (IS_BUFRX_ALLOCATED) DEALLOCATE ( BUFRX )
                  NULLIFY(BUFRX)
                  IS_BUFRX_ALLOCATED = .FALSE.
@@ -1039,7 +1067,7 @@ C
      &               DET_EXP_ROOT, DET_MANT_ROOT, DET_SIGN_ROOT,
      &               KEEP_SAVE,KEEP8_SAVE,
      &               STEP, PROCNODE_STEPS, MYID_NODES, SLAVEF,
-     &               SEUIL, AVOID_DELAYED, ETATASS,
+     &               SEUIL, AVOID_DELAYED, 
      &               DKEEP_SAVE(1), PIVNUL_LIST_STRUCT, IWPOS 
      &               , LRGROUPS
      &               , PERM

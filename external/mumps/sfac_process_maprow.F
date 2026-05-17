@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -679,6 +679,7 @@ C
       USE MUMPS_LR_STATS
       USE SMUMPS_FAC_FRONT_AUX_M, ONLY : SMUMPS_GET_SIZE_SCHUR_IN_FRONT
       USE SMUMPS_LR_DATA_M
+      USE SMUMPS_LR_CORE, ONLY : SMUMPS_DECONVERT_LRB
       USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
       USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       USE SMUMPS_DYNAMIC_MEMORY_M, ONLY : SMUMPS_DM_SET_DYNPTR
@@ -984,6 +985,11 @@ C
             ENDDO
             LRB => CB_LRB(PANEL2DECOMPRESS-NB_BLR_SHIFT,IBLOCK)
             IF (LRB%ISLR .AND. LRB%K.EQ.0) CYCLE
+            IF (KEEP(452).GT.0) THEN
+              CALL SMUMPS_DECONVERT_LRB(LRB,
+     &                     IFLAG, IERROR, KEEP8)
+              IF (IFLAG.LT.0) CYCLE
+            ENDIF
             IROW_BEG = PANEL_BEG_OFFSET+1
             IROW_END = PANEL_BEG_OFFSET+NROWS_TO_STACK_LOC
             IF (LRB%ISLR) THEN
@@ -997,6 +1003,9 @@ C
                 A_TEMP( 1+(II-IROW_BEG)*LRB%N : (II-IROW_BEG+1)*LRB%N ) 
      &            = LRB%Q(II,1:LRB%N)
               ENDDO
+            ENDIF
+            IF (KEEP(452).GT.0.AND.LRB%ISLR) THEN
+              CALL DEALLOC_LRB(LRB, KEEP8, KEEP(34), .FALSE., .TRUE.)
             ENDIF
             CALL SMUMPS_DM_SET_DYNPTR(
      &                   IW(PTRIST(STEP(ISON))+XXS), 
@@ -1347,6 +1356,7 @@ C
       USE SMUMPS_LR_TYPE
       USE MUMPS_LR_STATS
       USE SMUMPS_LR_DATA_M
+      USE SMUMPS_LR_CORE, ONLY : SMUMPS_DECONVERT_LRB
       USE MUMPS_LOAD, ONLY : MUMPS_LOAD_POOL_UPD_NEW_POOL
       USE SMUMPS_DYNAMIC_MEMORY_M, ONLY : SMUMPS_DM_SET_DYNPTR
      &                 , SMUMPS_DM_SET_PTR, SMUMPS_DM_FREE_BLOCK
@@ -1620,6 +1630,11 @@ C
                 ENDDO
                 LRB => CB_LRB(PANEL2DECOMPRESS-NB_ROW_SHIFT,IBLOCK)
                 IF (LRB%ISLR .AND. LRB%K.EQ.0) CYCLE
+                IF (KEEP(452).GT.0) THEN
+                  CALL SMUMPS_DECONVERT_LRB(LRB,
+     &                           IFLAG, IERROR, KEEP8)
+                  IF (IFLAG.LT.0) CYCLE
+                ENDIF
                 IROW_BEG = PANEL_BEG_OFFSET+1
                 IROW_END = PANEL_BEG_OFFSET+NROWS_TO_STACK_LOC
                 IF (LRB%ISLR) THEN
@@ -1633,6 +1648,9 @@ C
                     A_TEMP( 1+(II-IROW_BEG)*LRB%N : 
      &                      (II-IROW_BEG+1)*LRB%N ) = LRB%Q(II,1:LRB%N)
                   ENDDO
+                ENDIF
+                IF (KEEP(452).GT.0.AND.LRB%ISLR) THEN
+                  CALL DEALLOC_LRB(LRB, KEEP8, KEEP(34), .FALSE.,.TRUE.)
                 ENDIF
                 DO II = NROWS_ALREADY_STACKED+1,
      &                  NROWS_ALREADY_STACKED+NROWS_TO_STACK_LOC

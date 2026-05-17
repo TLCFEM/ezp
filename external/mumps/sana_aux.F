@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -2757,9 +2757,11 @@ C
       RETURN
       END SUBROUTINE SMUMPS_ANA_R
       SUBROUTINE SMUMPS_DIAG_ANA
-     &( MYID, COMM, KEEP,KEEP8, INFO, INFOG, RINFO, RINFOG, ICNTL,
+     &( idN, NBLK, 
+     &  MYID, COMM, KEEP,KEEP8, INFO, INFOG, RINFO, RINFOG, ICNTL,
      &  SIZE_SCHUR )
       IMPLICIT NONE
+      INTEGER, INTENT(IN)    :: idN, NBLK
       INTEGER, INTENT(IN)    :: COMM, MYID, KEEP(500), INFO(80), 
      &                          ICNTL(60), INFOG(80), SIZE_SCHUR
       INTEGER(8), INTENT(IN) :: KEEP8(150)
@@ -2773,6 +2775,8 @@ C
        ITMP = KEEP(13)
        IF (ICNTL(15).EQ.0) THEN
           ITMP = 0
+       ELSE IF (ICNTL(15).EQ.2.AND.idN.EQ.NBLK) THEN
+          ITMP = 0
        ENDIF
        IF (KEEP(400).GT.0) THEN 
           ICNTL48_EFF=1
@@ -2784,7 +2788,13 @@ C
      &  INFOG(5), KEEP(28), INFOG(32), INFOG(7), KEEP(23), 
      &  ICNTL(7), KEEP(95), ICNTL(13), KEEP(12), 
      &  ITMP,
+#if defined(MPI_TO_K_OMP)
+     &  KEEP(381),
+#endif
      &  ICNTL(18), KEEP(252), KEEP(494),
+#if defined(SINGLEINDOUBLE)
+     &  KEEP(148),
+#endif
      &  ICNTL48_EFF,
      &  KEEP(106),
      &  KEEP(56), KEEP(61), RINFOG(1)
@@ -2812,9 +2822,15 @@ C
      &       ' ICNTL(13) Parallelism/splitting of root node   =',I16/
      &       ' ICNTL(14) Percentage of memory relaxation      =',I16/
      &       ' ICNTL(15) Analysis by block effectively used   =',I16/
+#if defined(MPI_TO_K_OMP)
+     &       ' ICNTL(17) Effective value of grouping factor   =',I16/
+#endif
      &       ' ICNTL(18) Distributed input matrix (on if >0)  =',I16/
      &       ' ICNTL(32) Forward elimination during facto.    =',I16/
      &       ' ICNTL(35) BLR activation                       =',I16/
+#if defined(SINGLEINDOUBLE)
+     &       ' ICNTL(47) Single prec facto in double instance =',I16/
+#endif
      &       ' ICNTL(48) Tree based multithreading (effective)=',I16/
      &       ' ICNTL(58) Symbolic factorization option        =',I16/
      &       ' Number of level 2 nodes                        =',I16/
@@ -4190,7 +4206,7 @@ C
       IF (K38.GT.0) K38 =  BLKVAR(BLKPTR(K38))
       NBLEAF = NA(1)
       NBROOT = NA(2)
-      IF (NBLK.GT.1) THEN
+      IF (NBLK.GE.1) THEN
        DO I= 3, 3+NBLEAF+NBROOT-1
          IBNB  = NA(I)
          INB   = BLKVAR(BLKPTR(IBNB))
@@ -4305,3 +4321,29 @@ C
       ENDDO
       RETURN
       END SUBROUTINE SMUMPS_SET_PROCNODE
+#if defined(MPI_TO_K_OMP)
+      SUBROUTINE SMUMPS_REENCODE_PROCNODE(N, NSLAVES, NWORKERS, FILS,
+     &                NEW_LIST, FRERE, PROCNODE, KEEP)
+      INTEGER, INTENT(in)   :: N, NSLAVES, NWORKERS
+      INTEGER, INTENT(in)   :: FILS(N)
+      INTEGER, INTENT(in)   :: FRERE(N)
+      INTEGER, INTENT(in)   :: NEW_LIST(0:NSLAVES-1)
+      INTEGER, INTENT(in)   :: KEEP(500)
+      INTEGER, INTENT(inout):: PROCNODE(N)
+      INTEGER, EXTERNAL :: MUMPS_TYPENODE_ROUGH
+      INTEGER, EXTERNAL :: MUMPS_PROCNODE
+      INTEGER, EXTERNAL :: MUMPS_ENCODE_TPN_IPROC
+      INTEGER:: I
+      INTEGER:: TPN, ID
+      DO I = 1, N
+          TPN = MUMPS_TYPENODE_ROUGH(PROCNODE(I),KEEP(199))
+          ID = MUMPS_PROCNODE(PROCNODE(I),KEEP(199))
+          IF (ID .lt. 0) THEN
+            ID = -ID
+          ENDIF
+          PROCNODE(I) = MUMPS_ENCODE_TPN_IPROC( TPN, NEW_LIST(ID),
+     &                                          KEEP(199))
+      END DO
+      RETURN
+      END SUBROUTINE SMUMPS_REENCODE_PROCNODE
+#endif

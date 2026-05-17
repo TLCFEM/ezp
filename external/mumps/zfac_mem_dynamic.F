@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -15,6 +15,10 @@ C
       CONTAINS
       SUBROUTINE ZMUMPS_DM_ALLOC_S_WK(S, MAXS, allocok,
      &           KEEP430, KEEP35 )
+#if defined(USE_GPU)
+#if defined(USE_XKBLAS)
+#endif
+#endif
       IMPLICIT NONE
       COMPLEX(kind=8), DIMENSION(:), POINTER :: S
       INTEGER(8) :: MAXS
@@ -27,6 +31,13 @@ C
       ELSE
         IF (KEEP430.EQ.1) THEN
           CALL MUMPS_MALLOC_C( TMP_ADDRESS8, max(MAXS,1_8) * KEEP35 )
+#if defined(USE_GPU)
+#if defined(USE_XKBLAS)
+        ELSE IF (KEEP430.EQ.2) THEN
+          CALL ZMUMPS_GPU_MALLOC_C( TMP_ADDRESS8,
+     &                              max(MAXS,1_8) * KEEP35 )
+#endif
+#endif
         ELSE
           WRITE(*,*) "KEEP430: wrong value", KEEP430
           CALL MUMPS_ABORT()
@@ -49,6 +60,10 @@ C
       ELSE IF ( KEEP430 .EQ. 1 ) THEN
         CALL MUMPS_FREE_C(S(1))
 #if defined(USE_XKBLAS)
+#if defined(USE_GPU)
+      ELSE IF ( KEEP430 .EQ. 2 ) THEN
+        CALL ZMUMPS_GPU_FREE_C(S(1))
+#endif
 #endif
       ELSE
         WRITE(*,*) "KEEP430: wrong value", KEEP430
@@ -475,12 +490,29 @@ C
      &                                 ATOMIC_UPDATES, KEEP8 )
       IMPLICIT NONE
       INCLUDE 'mumps_headers.h'
+#if defined(USE_GPU)
+#endif
       INTEGER :: XXG_STATUS
       COMPLEX(kind=8), POINTER, DIMENSION(:) :: DYNPTR
       INTEGER(8) :: SIZFR8
       LOGICAL, INTENT(IN) :: ATOMIC_UPDATES
       INTEGER(8) :: KEEP8(150)
       INTEGER IDUMMY
+#if defined(USE_GPU)
+      SELECT CASE (XXG_STATUS)
+        CASE ( MemNotPinned );
+        CASE ( UnPinningOnTheWay );
+            CALL ZMUMPS_GPU_WAIT_ENDOFPINNING_C()
+            XXG_STATUS = MemNotPinned
+        CASE ( MemPinned );
+            CALL ZMUMPS_GPU_UNPIN_MEMORY_C( DYNPTR(1), SIZFR8 )
+            XXG_STATUS = MemNotPinned
+        CASE ( PinningOnTheWay );
+            CALL ZMUMPS_GPU_ASYNC_UNPIN_MEMORY_C( DYNPTR(1), SIZFR8 )
+            CALL ZMUMPS_GPU_WAIT_ENDOFPINNING_C()
+            XXG_STATUS = MemNotPinned
+      END SELECT
+#endif
 #if defined(MUMPS_ALLOC_FROM_C) || defined(_CRAYFTN)
       CALL MUMPS_FREE_C(DYNPTR(1))
 #else

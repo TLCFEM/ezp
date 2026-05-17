@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -19,9 +19,9 @@ C
      &     BLKPTR, BLKPTRhere, BLKVAR, BLKVARhere, PERM_IN, PERM_INhere,
      &     ROWIND, ROWINDhere, COLIND, COLINDhere, PIVOTS, PIVOTShere,
      &     RHS, RHShere, REDRHS, REDRHShere,
-     &     INFO, RINFO, INFOG, RINFOG, DEFICIENCY, LWK_USER,
-     &     SIZE_SCHUR, LISTVAR_SCHUR, LISTVAR_SCHURhere, SCHUR,
-     &     SCHURhere, WK_USER, WK_USERhere, COLSCA, COLSCAhere,
+     &     INFO, RINFO, INFOG, RINFOG, NB_SINGULAR_VALUES, 
+     &     LWK_USER, SIZE_SCHUR, LISTVAR_SCHUR, LISTVAR_SCHURhere, 
+     &     SCHUR, SCHURhere, WK_USER, WK_USERhere, COLSCA, COLSCAhere,
      &     ROWSCA, ROWSCAhere, INSTANCE_NUMBER, NRHS, LRHS, LREDRHS,    
      &     RHS_SPARSE, RHS_SPARSEhere, SOL_loc, SOL_lochere,
      &     RHS_loc, RHS_lochere,
@@ -51,7 +51,8 @@ C
       INTEGER, PARAMETER :: SAVE_PREFIX_MAX_LENGTH = 255
 #endif
       INTEGER JOB, SYM, PAR, COMM_F77, N, NBLK, NZ, NZ_loc, NELT,
-     &        DEFICIENCY, LWK_USER, SIZE_SCHUR, INSTANCE_NUMBER,
+     &        NB_SINGULAR_VALUES, LWK_USER, SIZE_SCHUR, 
+     &        INSTANCE_NUMBER,
      &        NRHS, LRHS,
      &        NZ_RHS, LSOL_loc,Nloc_RHS, LRHS_loc, NSOL_loc, LREDRHS
       INTEGER(8) :: NNZ, NNZ_loc
@@ -367,7 +368,7 @@ C
       SIZE_SCHUR = mumps_par%SIZE_SCHUR
       LWK_USER   = mumps_par%LWK_USER
       NELT       = mumps_par%NELT
-      DEFICIENCY = mumps_par%Deficiency
+      NB_SINGULAR_VALUES = mumps_par%NB_SINGULAR_VALUES
       SCHUR_MLOC = mumps_par%SCHUR_MLOC
       SCHUR_NLOC = mumps_par%SCHUR_NLOC
       SCHUR_LLD  = mumps_par%SCHUR_LLD
