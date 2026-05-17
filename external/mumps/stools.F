@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -851,6 +851,8 @@ C
      &           , I8_L0_OMP, NBSTATS_I8, NBCOLS_I8
      &           )
       IMPLICIT NONE
+#if defined(SINGLEINDOUBLE)
+#endif
       LOGICAL, INTENT(IN)    :: EFF, PERLU_ON, UNDER_L0_OMP
       INTEGER, INTENT(IN)    :: OOC_STRAT, BLR_STRAT
       INTEGER, INTENT(IN)    :: KEEP(500)
@@ -1149,6 +1151,8 @@ C
       TEMP =  NB_BYTES + (NB_INT + TEMPI) * int(KEEP(34),8)
      &        + NB_REAL * int(KEEP(35),8)
      &        + (TEMPR+KEEP8(26)) * int(KEEP(149),8)
+#if defined(SINGLEINDOUBLE)
+#endif
       NB_REAL = NB_REAL + KEEP8(26)
       IF ( I_AM_SLAVE ) THEN
         IF (BLR_STRAT.NE.0) THEN
@@ -2052,7 +2056,11 @@ C
       IF (associated(idintr%roota%SINGULAR_VALUES))
      &     NB_REAL=NB_REAL+size(idintr%roota%SINGULAR_VALUES)
       IF (associated(id%RHSINTR)) NB_CMPLX = NB_CMPLX + id%KEEP8(25)
+#if defined(SINGLEINDOUBLE)
+#endif
       IF (associated(id%S))       NB_CMPLX=NB_CMPLX+id%KEEP8(23)
+#if defined(SINGLEINDOUBLE)
+#endif
       IF (associated(id%COLSCA).AND.(id%KEEP(52).NE.-1))
      &     NB_REAL=NB_REAL+size(id%COLSCA)
       IF (associated(id%ROWSCA).AND.(id%KEEP(52).NE.-1))
@@ -2072,6 +2080,11 @@ C
       NB_CHAR=NB_CHAR+len(id%SAVE_DIR)
       NB_CHAR=NB_CHAR+len(id%SAVE_PREFIX)
       NB_CMPLX = NB_CMPLX + NB_REAL
+#if defined(SINGLEINDOUBLE)
+#endif
+      NB_CMPLX = NB_CMPLX + id%KEEP8(71) + id%KEEP8(64)
+#if defined(SINGLEINDOUBLE)
+#endif
       RETURN
       END SUBROUTINE SMUMPS_SIZE_IN_STRUCT 
       SUBROUTINE SMUMPS_COPYI8SIZE(N8,SRC,DEST)
@@ -2260,6 +2273,7 @@ C
      &        MAXI_CLUSTER, NELIM, 
      &        LBANDSLAVE, NPIV, ISHIFT, NIV, KPERCENT, 
      &        KEEP8, 
+     &        LRMIXED_ACTIVATED, K453, MIXED_ADMISSIBILITY,
      &        OMP_NUM 
      &        )
       USE SMUMPS_LR_TYPE, ONLY : LRB_TYPE
@@ -2286,15 +2300,21 @@ C
       INTEGER                      :: LWORK, NELIM
       REAL,intent(in)              :: TOLEPS
       CHARACTER(len=1) :: DIR
+      LOGICAL, intent(in)          :: LRMIXED_ACTIVATED
+      LOGICAL, intent(in)          :: MIXED_ADMISSIBILITY
+      INTEGER, intent(in)          :: K453
+      INTEGER :: K473_LOC
+      IF (K473.EQ.3) K473_LOC = 1
       CALL SMUMPS_COMPRESS_PANEL(
      &        A, LA, POSELT, IFLAG, IERROR, NFRONT,
-     &        BEGS_BLR, NB_BLR, TOLEPS, TOL_OPT, K458, K473, BLR_PANEL,
-     &        CURRENT_BLR,
+     &        BEGS_BLR, NB_BLR, TOLEPS, TOL_OPT, K458, K473_LOC, 
+     &        BLR_PANEL, CURRENT_BLR,
      &        DIR, WORK, TAU, JPVT, 
      &        LWORK, RWORK, BLOCK,
      &        MAXI_CLUSTER, NELIM, 
      &        LBANDSLAVE, NPIV, ISHIFT, NIV, KPERCENT, 
      &        KEEP8
+     &        , LRMIXED_ACTIVATED, K453, MIXED_ADMISSIBILITY
      &        )
       RETURN
       END SUBROUTINE SMUMPS_COMPRESS_PANEL_I_NOOPT
@@ -2413,6 +2433,190 @@ C
       INTEGER(8) :: KEEP8( 150 )
       REAL :: OPELIR
       OPELIR = real(OPELI)
+#if ! defined(NO_64BIT_ADDRESSES_IN_C) 
       CALL MUMPS_SETRVAL_ADDR_C(OPELIR, KEEP8(84))
+#endif
       RETURN
       END SUBROUTINE SMUMPS_UPDATE_PROGRESS
+#if defined(USE_GPU)
+      SUBROUTINE SMUMPS_RUNONGPU_BLOCKSIZEST1( 
+     &            NFRONT, NASS, KEEP, PIVOT_OPTION,
+     &            run_on_gpu_sq, run_on_gpu_cb,
+     &           SIZE_OUTER, SIZE_INNER )
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)    :: NFRONT, NASS, KEEP(500), PIVOT_OPTION
+      INTEGER, INTENT(INOUT) :: SIZE_INNER
+      INTEGER, INTENT(OUT)   :: SIZE_OUTER
+      LOGICAL, INTENT(out)   :: run_on_gpu_sq, run_on_gpu_cb
+      INTEGER           :: SIZE_INNER_ORIG
+      INTEGER           :: LAST_ROW, LAST_COL
+#if !defined(GEMMT_AVAILABLE_FOR_GPU) && !defined(USE_XKBLAS)
+      INTEGER           :: BLSIZETMP
+#endif
+      INTEGER, EXTERNAL :: SMUMPS_TRSM_ON_GPU_C,
+     &                     SMUMPS_GEMM_ON_GPU_C,
+     &                     SMUMPS_GEMMT_ON_GPU_C, 
+     &                     SMUMPS_SYMSCHUR_ON_GPU_C
+      INTEGER :: MAX_OUTER_T1
+      INTEGER, PARAMETER :: NB = 4
+      IF (KEEP(405).EQ.0) THEN
+        MAX_OUTER_T1 = KEEP(433) 
+      ELSE
+        MAX_OUTER_T1 = KEEP(434) 
+      ENDIF
+      SIZE_OUTER  = KEEP(420)
+      SIZE_INNER_ORIG = SIZE_INNER
+      IF (KEEP(198).NE.0) THEN
+        SIZE_OUTER  = min((NASS+NB-1)/NB, MAX_OUTER_T1)
+      ENDIF
+      run_on_gpu_sq    = .FALSE.
+      run_on_gpu_cb    = .FALSE.
+      IF (KEEP(50).EQ.0) THEN 
+         IF (PIVOT_OPTION.EQ.4) THEN
+            LAST_ROW = NFRONT
+          ELSE
+            LAST_ROW = NASS
+          ENDIF
+          IF (PIVOT_OPTION.GE.3) THEN
+            LAST_COL = NFRONT
+          ELSE
+            LAST_COL = NASS
+          ENDIF
+          run_on_gpu_sq= SMUMPS_GEMM_ON_GPU_C( KEEP(417),
+     &     LAST_ROW-SIZE_OUTER , 
+     &     LAST_COL-SIZE_OUTER,
+     &     SIZE_OUTER  )  .GE. 1
+          run_on_gpu_sq= run_on_gpu_sq .OR.
+     &    ( SMUMPS_TRSM_ON_GPU_C( KEEP(417),
+     &    SIZE_OUTER, LAST_ROW-SIZE_OUTER, 'L') .GE. 1)
+          IF (LAST_ROW.EQ.NASS) THEN
+          run_on_gpu_cb= run_on_gpu_cb .OR.
+     &    ( SMUMPS_TRSM_ON_GPU_C( KEEP(417),
+     &    NASS, NFRONT-NASS, 'L') .GE. 1)
+          ENDIF
+          run_on_gpu_cb= run_on_gpu_cb .OR.
+     &     SMUMPS_GEMM_ON_GPU_C( KEEP(417),
+     &     NFRONT-NASS,
+     &     NFRONT-NASS,
+     &     NASS  )  .GE. 1
+      ELSE
+          LAST_COL = NASS
+#if defined(GEMMT_AVAILABLE_FOR_GPU) || defined(USE_XKBLAS)
+        run_on_gpu_sq =  run_on_gpu_sq .OR.
+     &                ( SMUMPS_GEMMT_ON_GPU_C(KEEP(417),
+     &     LAST_COL-SIZE_OUTER, 
+     &     SIZE_OUTER  )  .GE. 1  )
+#endif
+        IF (PIVOT_OPTION.LE.1) THEN
+         run_on_gpu_sq= run_on_gpu_sq .OR.
+     &    ( SMUMPS_TRSM_ON_GPU_C( KEEP(417),
+     &    SIZE_OUTER, NASS-SIZE_OUTER, 'L') .GE. 1)
+        ENDIF
+#if defined(GEMMT_AVAILABLE_FOR_GPU) || defined(USE_XKBLAS)
+          run_on_gpu_cb = run_on_gpu_cb.OR.
+     &     ( SMUMPS_GEMMT_ON_GPU_C( KEEP(417), NFRONT-NASS,
+     &                                NASS) .GE.1 )
+#else
+          BLSIZETMP = KEEP(57) 
+          run_on_gpu_cb = run_on_gpu_cb .OR.
+     &     ( SMUMPS_SYMSCHUR_ON_GPU_C( KEEP(417), NFRONT-NASS,
+     &                    NASS, BLSIZETMP ) .GE.1 )
+#endif
+      ENDIF
+      IF (.NOT.(run_on_gpu_sq.OR.run_on_gpu_cb)) THEN
+        SIZE_OUTER  = KEEP(420)
+      ELSE IF (SIZE_INNER_ORIG.NE.0) THEN
+       SIZE_INNER = max(SIZE_OUTER /40, SIZE_INNER)
+       SIZE_INNER = min(SIZE_INNER, 2*SIZE_INNER_ORIG)
+      ENDIF
+      RETURN
+      END SUBROUTINE SMUMPS_RUNONGPU_BLOCKSIZEST1
+      SUBROUTINE SMUMPS_RUNONGPU_BLOCKSIZEST2 (
+     &      NFRONT, NASS, NSLAVES, KEEP, 
+     &      run_on_gpu_slave, run_on_gpu_master,
+     &      SIZE_OUTER, SIZE_INNER )
+      USE MUMPS_BUF_COMMON, ONLY : MUMPS_BUF_MAX_OUTER_T2
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)    :: NFRONT, NASS, NSLAVES, KEEP(500)
+      INTEGER, INTENT(INOUT) :: SIZE_INNER
+      INTEGER, INTENT(OUT)   :: SIZE_OUTER
+      LOGICAL, INTENT(OUT)   :: run_on_gpu_slave, run_on_gpu_master
+      INTEGER           :: NB, SIZE_INNER_ORIG
+      INTEGER, EXTERNAL :: SMUMPS_TRSM_ON_GPU_C,
+     &                     SMUMPS_GEMM_ON_GPU_C,
+     &                     SMUMPS_GEMMT_ON_GPU_C, 
+     &                     SMUMPS_SYMSCHUR_ON_GPU_C
+      INTEGER :: MAX_OUTER_T2
+#if !defined(GEMMT_AVAILABLE_FOR_GPU) && !defined(USE_XKBLAS)
+      INTEGER :: BLSIZETMP
+#endif
+      INTEGER, PARAMETER :: NBSMB = 3
+      run_on_gpu_slave = .FALSE.
+      MAX_OUTER_T2 = KEEP(435)
+      SIZE_OUTER  = KEEP(420)
+      SIZE_INNER_ORIG = SIZE_INNER
+      IF (KEEP(198).NE.0) THEN
+           CALL MUMPS_BUF_MAX_OUTER_T2( MAX_OUTER_T2, NBSMB,
+     &          NFRONT, NASS, NSLAVES, KEEP, NB )
+           NB          = max(NB, 4)
+           SIZE_OUTER  = min((NASS+NB-1)/NB, MAX_OUTER_T2)
+           SIZE_OUTER = max(SIZE_OUTER,KEEP(420)) 
+      ENDIF
+      IF (KEEP(50).EQ.0) THEN
+        run_on_gpu_slave =  ( SMUMPS_GEMM_ON_GPU_C(KEEP(417),
+     &     NFRONT-SIZE_OUTER , 
+     &     (NFRONT-NASS)/NSLAVES, 
+     &     SIZE_OUTER  )  .GE. 1  )
+      ELSE
+        run_on_gpu_slave =  ( SMUMPS_GEMM_ON_GPU_C(KEEP(417),
+     &     NASS-SIZE_OUTER , 
+     &     (NFRONT-NASS)/NSLAVES, 
+     &     SIZE_OUTER  )  .GE. 1  )
+        run_on_gpu_slave =  run_on_gpu_slave .OR.
+     &     ( SMUMPS_GEMM_ON_GPU_C(KEEP(417),
+     &     (NFRONT-NASS)/NSLAVES,
+     &     (NFRONT-NASS)/NSLAVES, 
+     &     SIZE_OUTER  )  .GE. 1  )
+        run_on_gpu_slave =  run_on_gpu_slave .OR.
+     &                ( SMUMPS_GEMMT_ON_GPU_C(KEEP(417),
+     &     (NFRONT-NASS)/NSLAVES, 
+     &     SIZE_OUTER  )  .GE. 1  )
+      ENDIF
+      run_on_gpu_slave = ( run_on_gpu_slave .OR. 
+     &    (SMUMPS_TRSM_ON_GPU_C(KEEP(417), 
+     &      SIZE_OUTER , (NFRONT-NASS)/NSLAVES,'L').GE.1)
+     &             )
+      IF (.NOT.run_on_gpu_slave) THEN
+        SIZE_OUTER  = KEEP(420)
+      ELSE IF (SIZE_INNER_ORIG.NE.0) THEN
+       SIZE_INNER = max(SIZE_OUTER /40, SIZE_INNER)
+       SIZE_INNER = min(SIZE_INNER, 2*SIZE_INNER_ORIG)
+      ENDIF
+      run_on_gpu_master=.FALSE.
+      IF (KEEP(50).EQ.0) THEN 
+          run_on_gpu_master= SMUMPS_GEMM_ON_GPU_C( KEEP(417),
+     &     NASS-SIZE_OUTER , 
+     &     NFRONT-SIZE_OUTER,
+     &     SIZE_OUTER  )  .GE. 1
+          run_on_gpu_master= run_on_gpu_master .OR.
+     &    ( SMUMPS_TRSM_ON_GPU_C( KEEP(417),
+     &    SIZE_OUTER, NASS-SIZE_OUTER, 'L') .GE. 1)
+      ELSE
+#if defined(GEMMT_AVAILABLE_FOR_GPU) || defined(USE_XKBLAS)
+        run_on_gpu_master =  run_on_gpu_master .OR.
+     &                ( SMUMPS_GEMMT_ON_GPU_C(KEEP(417),
+     &     NASS-SIZE_OUTER, 
+     &     SIZE_OUTER  )  .GE. 1  )
+#else
+        BLSIZETMP = KEEP(57) 
+        run_on_gpu_master =  run_on_gpu_master .OR.
+     &     ( SMUMPS_SYMSCHUR_ON_GPU_C( KEEP(417), NASS-SIZE_OUTER,
+     &                    SIZE_OUTER, BLSIZETMP ) .GE.1 )
+#endif
+          run_on_gpu_master= run_on_gpu_master .OR.
+     &    ( SMUMPS_TRSM_ON_GPU_C( KEEP(417),
+     &    SIZE_OUTER, NASS-SIZE_OUTER, 'L') .GE. 1)
+      ENDIF
+      RETURN
+      END SUBROUTINE SMUMPS_RUNONGPU_BLOCKSIZEST2
+#endif

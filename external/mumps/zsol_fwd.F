@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -26,6 +26,9 @@ C
      &
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE
      &    , RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE, FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &    , I_AM_HEAD
+#endif
      &    , L0_OMP_MAPPING, LL0_OMP_MAPPING,
      &    L0_OMP_FACTORS, LL0_OMP_FACTORS
      &    )
@@ -62,6 +65,9 @@ C
       INTEGER, intent(in) ::  POSINRHSINTR_FWD(N), LRHSINTR 
       COMPLEX(kind=8), intent(inout) :: RHSINTR(LRHSINTR,NRHS)
       LOGICAL, intent(in) :: FROM_PP
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, intent( in ) :: I_AM_HEAD
+#endif
       INTEGER, INTENT( in ) :: LL0_OMP_MAPPING, LL0_OMP_FACTORS
       INTEGER, INTENT( in ) :: L0_OMP_MAPPING( LL0_OMP_MAPPING )
       TYPE (ZMUMPS_L0OMPFAC_T), INTENT(IN) ::
@@ -125,6 +131,9 @@ C
      &       PROCNODE_STEPS,
      &       RHSINTR, LRHSINTR, POSINRHSINTR_FWD
      &       , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &      , I_AM_HEAD
+#endif
      &      )
       ENDIF
       IF ( INFO( 1 ) .LT. 0 .OR. NBFIN .EQ. 0 ) GOTO 260
@@ -166,6 +175,9 @@ C
      &        ISTEP_TO_INIV2, TAB_POS_IN_PERE
      &        , RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE 
      &        , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &        , I_AM_HEAD
+#endif
      &        , ERROR_WAS_BROADCASTED
      & )
       IF ( INFO(1) .LT. 0 ) THEN

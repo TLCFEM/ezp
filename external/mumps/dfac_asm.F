@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -807,10 +807,16 @@ C
       INTEGER :: NCB
       LOGICAL, EXTERNAL :: DMUMPS_IS_TRSM_LARGE_ENOUGH, 
      &                     DMUMPS_IS_GEMM_LARGE_ENOUGH
+#if defined(USE_GPU)
+      LOGICAL           :: run_on_gpu
+      INTEGER, EXTERNAL :: DMUMPS_TRSM_ON_GPU_C
+#endif
       PARPIV_T1 = KEEP(269)
+#if !defined(USE_GPU)
       IF (PARPIV_T1.EQ.-3) THEN
         PARPIV_T1 = 0
       ENDIF
+#endif
       IF (PARPIV_T1.EQ.77) THEN
        PARPIV_T1 = 0
       ENDIF
@@ -837,6 +843,16 @@ C
             PARPIV_T1 = 0
          ENDIF
       ENDIF
+#if defined(USE_GPU)
+      IF ((PARPIV_T1.EQ.-2).OR.(PARPIV_T1.EQ.-3)) THEN
+          run_on_gpu =
+     &    ( DMUMPS_TRSM_ON_GPU_C(KEEP(417), NASS1, 
+     &      NFRONT-NASS1, 'L').GE.1 )
+          IF ( run_on_gpu ) THEN
+            PARPIV_T1 = 1
+          ENDIF
+      ENDIF
+#endif         
       RETURN
       END SUBROUTINE DMUMPS_SET_PARPIVT1 
       LOGICAL FUNCTION DMUMPS_IS_TRSM_LARGE_ENOUGH 

@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -446,10 +446,25 @@ C                - If BLKVAR is not provided then BLKVAR is
 C                  treated as the identity 
 C                  (contiguous variables in blocks)
 C                - Distributed format if on MASTER N_LOC#N
+#if ! defined(NOANA_BLKAUTO)
+#endif
 C
 C  ICNTL(16) : number of OpenMP threads asked by the user.
 C
+#if defined(MPI_TO_K_OMP)
+C  ICNTL(17) Reserved for MPI_TO_K_OMP - K factor
+C            the number of OMP threads MUMPS should work on is multiplied
+C            by K. The number of MPI heads is id%NSLAVES / K
+C            = 0 or 1 => feature not activated
+C            = -nbth => K is chosen so that there are no more than
+C                       nbth threads per "MPI head". nbth could, for
+C                       example, correspond to the number of threads
+C                       in a socket.
+C            = -1 => automatic value of K is chosen by MUMPS (currently
+C                    similar to -16)
+#else
 C  ICNTL(17) not used in this version
+#endif
 C
 C  ICNTL(18) has default value 0 and is only accessed by the host during
 C      the analysis phase if the matrix is assembled (ICNTL(5))= 0).
@@ -704,13 +719,14 @@ C      with elemental matrices (ICNTL(5) = 1) and with
 C      forward elimination during factorization (ICNTL(32) = 1)
 C
 C    ICNTL(36) : Block Low-Rank variant choice
-C             Default value is 0
+C             Default value is 1
 C             0: UFSC variant, no recompression: Compress step is
 C             performed after the Solve; the low-rank updates are not
 C             recompressed
 C             1: UFCS variant, no recompression: Factor (with pivoting) on full-rank blocks,
 C             then Compress and finally Solve on low-rank blocks (those where pivoting is not needed, 
 C             which depends on the context)
+C             other values are treated as 0
 C      
 C    ICNTL(37) : Compress CB strategy need be set before factorization
 C             0 = DONT compress CB (default)
@@ -732,6 +748,36 @@ C                Between 0 and 1000; other values ares treated as 0;
 C                corresponds to an estimated compression rate of
 C                ICNTL(39)/1000%.
 C                Default value: 500 (50.0% compression rate).
+C                
+C                Temporary use during facto 
+C                     for postprocessing BLR and GPU:  
+C                postprocess BLR: When KEEP(117) is treated as 1:
+C                it enables to control the 
+C                temporary increase of the 
+C                arithmitic intensity on a BLR node to 
+C                decide whether BLR front will exploit GPU
+C                and in which case we activate BLR_Postprocess
+C                
+C     ICNTL(40) : Mixed precision BLR feature,
+C                 must be set before factorization
+C                 copied to KEEP(450)
+C                 0: off (default)
+C                 1: on
+C 
+#if defined(SINGLEINDOUBLE)
+C    ICNTL(47) : 
+C      controls the possibility to perform a single precision 
+C      factorization in a double precision MUMPS instance.
+C      Accessed by the host during the analysis and factorization 
+C      phases; only meaningful for
+C      double precision MUMPS instances (DMUMPS or ZMUMPS).
+C         0: nothing done;
+C            factorization and solves are performed 
+C            in the working precision
+C         1: perform single precision factorization and
+C            single precision solve.
+C         Out of range values are treated as 0.
+#endif
 C   ICNTL(48) :  Controls L0_OMP feature. It must be set on the host
 C               before the analysis phase to prepare datastructures 
 C               for factorization. 
@@ -781,6 +827,37 @@ C           ICNTL(23) feature does not apply to this process
 C       Other values are treated as 0.
 C      Default value: 0
 C 
+C  ICNTL(50) Stop on user request 
+C     Phase: accessed by working MPI processes during the 
+C            factorization and solve phases
+C     Possible values :
+C     0 : nothing is done, MUMPS performs its computations normally.
+C     1 : user wants to cancel the MUMPS execution. When a process 
+C         detects that ICNTL(50)
+C         has been set to 1, it informs the other processes and the 
+C         computations are cancelled
+C         even if the factorization (JOB=2) or the solve (JOB=3) 
+C         are not finished. The error code returned is INFO(1)=-80 
+C         if MUMPS was cancelled during the factorization phase, and
+C         INFO(1)=-81 if MUMPS was cancelled during the solve phase. 
+C         INFO(2) holds the rank
+C         of the MPI process on which ICNTL(50) was set to 1.
+C     Other values are treated as 0.
+C     Default value: 0
+C       
+#if defined(USE_GPU)
+C     ICNTL(51): GPU activation 
+C     Phase: accessed during analysis and factorization phases 
+C     (copied in KEEP(417) at each phase)
+C     Possible values:
+C       - before analysis (in case of multi-MPI):
+C          <= 0: nothing done
+C          > 0: tuned for MPI+GPU usage during factorization
+C               applying KEEP(66)=1 if KEEP(66) not set to 2
+C       - before factorization:
+C          > 0 number of GPUs per MPI process (≤ 0 NO GPU)
+C               (former KEEP(417))
+#endif
 C
 C  ICNTL(56) has default value 0 and is only accessed by the host.
 C      During the analysis phase, a positive value prepares the data for
@@ -1187,10 +1264,16 @@ C     analysis strategy: 0=auto, 1=sequential, 2=parallel
 C     tool used for parallel ordering computation :
 C     0 = auto, 1 = PT-SCOTCH, 2 = ParMETIS
       ICNTL(29) = 0
+C     UCFS variant with low-rank updates accumulation (LUA)
+      ICNTL(36) = 1
 C     Default BLR compression rate of factors (60%)
       ICNTL(38) = 600
-C     Default BLR compression rate of factors (50%)
+C     Default BLR compression rate of CB (50%)
       ICNTL(39) = 500
+#if defined(SINGLEINDOUBLE)
+C     Single in double deactivated by default
+      ICNTL(47) = 0
+#endif
 C     L0-thread feature
 #if defined(_OPENMP)
 C     Activate L0OMP
@@ -1242,18 +1325,20 @@ C===================================
       KEEP(35)=KEEP(149)
       KEEP(16)=KEEP(150)
       KEEP(151)=KEEP(35)
+#if defined(SINGLEINDOUBLE)
+#endif
       KEEP(51) = 70
       KEEP(37) = max(800, int(sqrt(real(NSLAVES+1))*real(KEEP(51))))
       IF ( NSLAVES > 256 ) THEN
-        KEEP(39) = 10000
-      ELSEIF ( NSLAVES > 128 ) THEN
         KEEP(39) = 20000
-      ELSEIF ( NSLAVES > 64 ) THEN
+      ELSEIF ( NSLAVES > 128 ) THEN
         KEEP(39) = 40000
-      ELSEIF ( NSLAVES > 16 ) THEN
+      ELSEIF ( NSLAVES > 64 ) THEN
         KEEP(39) = 80000
-      ELSE
+      ELSEIF ( NSLAVES > 16 ) THEN
         KEEP(39) = 160000
+      ELSE
+        KEEP(39) = 320000
       END IF
       KEEP(40) = -1 - 456789
       KEEP(45) = 0
@@ -1290,6 +1375,7 @@ C     Forcing proportional is ok with strategy 5
       KEEP(99)=4  ! new OOC -> asynchronous + buffer
 #endif
       KEEP(100)=0
+      KEEP(117) = -1   ! automatic setting
       KEEP(114) = 1
 C     Threshold value for null pîvot detection during
 C     LU factorization on root in case of RR
@@ -1311,6 +1397,8 @@ C     ... buffer size reduction factor with respect to worst case
         KEEP(172)= 3
       ENDIF
       KEEP(173)= 0  ! 0 = normal
+#if defined(USE_GPU)         
+#endif
       IF (SYM.EQ.0) THEN
        KEEP(178)= 2   
       ELSE
@@ -1445,7 +1533,62 @@ C     0.9 equilibration
       KEEP(421) = 1000 ! GEMMT only on large-enough matrices
 #endif
 #endif
-#if defined(ANA_BLKAUTO)
+#if defined(USE_GPU)
+C{
+C     Arith threshold under L0 OMP
+      KEEP(415)=1200
+#if defined(USE_XKBLAS)
+C     KEEP(415) might be reset MUMPS_GPU_SET_KEEP
+C     during analysis except if user has set it to >0
+      KEEP(415)=-KEEP(415)
+#endif
+C     Arith. threshold to be tuned, 
+C     set reasonnable default values
+#if defined(USE_XKBLAS)
+      IF (KEEP(249).GE.18) THEN
+       KEEP(418)=700
+      ELSEIF (KEEP(249).GE.8) THEN
+       KEEP(418)=500
+      ELSE
+       KEEP(418)=300
+      ENDIF
+C     KEEP(418) might be reset MUMPS_GPU_SET_KEEP
+C     during analysis except if user has set it to >0
+      KEEP(418)=-KEEP(418)
+      KEEP(427)=-1
+#else
+C     cublasXt default setting
+      IF (KEEP(249).GE.18) THEN
+       KEEP(418)=2000
+      ELSEIF (KEEP(249).GE.8) THEN
+       KEEP(418)=1000
+      ELSE
+       KEEP(418)=600
+      ENDIF
+      KEEP(427)=0
+#endif
+C     Tile size:
+      KEEP(419) = 2048
+C     Memory pinning:
+      KEEP(422) = 2
+      KEEP(423) = 1
+C     Maximum number of simultaneous activities on GPU
+      KEEP(426) = 3
+#if defined(USE_XKBLAS)
+C     GPU properties CMUMPS_GET_DEVICE_PROPERTIES_C
+C     will be computed during analysis and adjustment
+C     of KEEP entries MUMPS_GPU_SET_KEEP done at that point
+#endif
+C     omp nested threads underL0: 0 deactivated 
+      KEEP(439) = 0
+C     Max outer panel sizes to increase
+C     GPU arithmetic intensity
+      KEEP(433) = 1024       ! MAX_OUTER for Type 1 nodes above L0
+      KEEP(434) = KEEP(433)  ! MAX_OUTER for Type 1 nodes under L0
+      KEEP(435) = 2048 ! MAX_OUTER for Type 2 nodes
+C}
+#endif
+#if ! defined(NOANA_BLKAUTO)
 C     automatic graph compression effective
 C     only if reduction of the number of nodes
 C     in graph smaller than 75%
@@ -1461,6 +1604,15 @@ C     At each new block of size KEEP(424), there is
 C     probably a cache miss on the pivot.
       KEEP(424) = 250
       KEEP(448) = 0
+#if defined(NOMIXHPC)
+#endif
+      KEEP(451) = -1
+      KEEP(452) = -1
+      KEEP(453) = 100
+      KEEP(454) = 1
+      KEEP(455) = 2
+      KEEP(456) = 0
+      KEEP(457) = 4
       KEEP(458)=0
 #if defined(__ve__)
       KEEP(458)=1
@@ -1497,6 +1649,13 @@ C     probably a cache miss on the pivot.
       KEEP(496) = 1
       KEEP(495) = -1
       KEEP(497) = -1
+#if defined(USE_GPU)
+#if defined(USE_XKBLAS)
+C     adjust parameters (MUMPS_GPU_SET_KEEP) for GPU to take 
+C     into account architecture will be done during analysis
+C     once CMUMPS_GET_DEVICE_PROPERTIES_C is called 
+#endif
+#endif
 C
       RETURN
       END SUBROUTINE CMUMPSID

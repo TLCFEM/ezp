@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -137,6 +137,9 @@ C
       INTEGER(8) :: IPTR
       EARLYT3ROOTINS = KEEP(200) .EQ. 0
      & .OR. (KEEP(200) .LT. 0 .AND. KEEP(400) .EQ. 0)
+#if defined(SINGLEINDOUBLE)
+      EARLYT3ROOTINS =.FALSE.
+#endif
       TYPE_PARALL = KEEP(46)
       I_AM_SLAVE = (KEEP(46).EQ.1 .OR. MYID.NE.0)
       NBARR_LOCAL=0
@@ -322,6 +325,9 @@ C
       ARROW_ROOT = 0
       EARLYT3ROOTINS = KEEP(200) .EQ. 0
      & .OR. (KEEP(200) .LT. 0 .AND. KEEP(400) .EQ. 0)
+#if defined(SINGLEINDOUBLE)
+      EARLYT3ROOTINS = .FALSE.
+#endif
       I_AM_SLAVE=(MYID.NE.0.OR.KEEP(46).EQ.1)
       IF ( KEEP(46) .eq. 0 ) THEN
         NBUFS = SLAVEF
@@ -875,6 +881,9 @@ C
       ARROW_ROOT=0
       EARLYT3ROOTINS = KEEP(200) .EQ. 0
      & .OR. (KEEP(200) .LT. 0 .AND. KEEP(400) .EQ. 0)
+#if defined(SINGLEINDOUBLE)
+      EARLYT3ROOTINS = .FALSE.
+#endif
       ALLOCATE( BUFI( NBRECORDS * 2 + 1 ), stat = allocok )
       IF ( allocok .GT. 0 ) THEN
         INFO(1) = -13

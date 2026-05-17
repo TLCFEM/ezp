@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -294,6 +294,9 @@ C
       ENDDO
       EARLYT3ROOTINS = KEEP(200) .EQ.0
      &        .OR.  ( KEEP(200) .LT. 0 .AND. KEEP(400) .EQ. 0 )
+#if defined(SINGLEINDOUBLE)
+      EARLYT3ROOTINS =.FALSE.
+#endif
       IF ( KEEP(38) .NE. 0 .AND. EARLYT3ROOTINS ) THEN
         CALL SMUMPS_GET_ROOT_INFO(root,LOCAL_M, LOCAL_N, PTR_ROOT, LA)
         CALL SMUMPS_SET_ROOT_TO_ZERO(root, roota, KEEP, A, LA)
@@ -776,6 +779,9 @@ C
       REAL VAL
       EARLYT3ROOTINS = KEEP(200) .EQ.0
      &        .OR.  ( KEEP(200) .LT. 0 .AND. KEEP(400) .EQ. 0 )
+#if defined(SINGLEINDOUBLE)
+      EARLYT3ROOTINS =.FALSE.
+#endif
       NB_REC = BUFI( 1 )
       IF ( NB_REC .LE. 0 ) THEN
         END_MSG_2_RECV = END_MSG_2_RECV - 1

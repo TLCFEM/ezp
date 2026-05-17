@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -23,6 +23,9 @@ C
 #endif
      &     IFLAG, IERROR )
       USE MUMPS_LOAD
+      USE MUMPS_TOOLS_COMMON_M, ONLY : MUMPS_LR_COMPRESS_CB,
+     &                                 MUMPS_LR_COMPRESS_PANEL,
+     &                                 MUMPS_LR_FORCE_BFR
       USE DMUMPS_LR_DATA_M, ONLY: DMUMPS_BLR_INIT_FRONT,
      &                            DMUMPS_BLR_SAVE_NFS4FATHER
 #if ! defined(NO_FDM_DESCBAND)
@@ -53,7 +56,7 @@ C
 #endif
       INTEGER COMP, IFLAG, IERROR
       INTEGER INODE, NBPROCFILS, NCOL, NROW, NASS, NSLAVES
-      INTEGER NSLAVES_HDR, NFRONT
+      INTEGER NSLAVES_HDR, NFRONT, XXG_MASTER
       INTEGER LREQ
       INTEGER :: IBUFR
       INTEGER(8) :: LREQCB
@@ -66,10 +69,16 @@ C
       INTEGER :: INFO_TMP(2)
 #else
 #endif
-      INTEGER :: LRSTATUS
+      INTEGER :: LRSTATUS, LRSTATUS_BLOCFACTO
       INTEGER :: ESTIM_NFS4FATHER_ATSON
       LOGICAL :: LR_ACTIVATED, COMPRESS_CB
+#if defined(USE_GPU)
+      LOGICAL :: run_on_gpu_slave, run_on_gpu_master
+      INTEGER :: SIZE_OUTER, SIZE_INNER
+#endif
+#if ! defined(MUMPS_ALLOC_FROM_C) && ! defined(_CRAYFTN)
       DOUBLE PRECISION, POINTER, DIMENSION(:) :: DYNAMIC_CB
+#endif
       INTEGER(8) :: TMP_ADDRESS
       INTEGER :: allocok
       INODE = BUFR( 2 )
@@ -80,9 +89,16 @@ C
       NFRONT      = BUFR( 7 )
       NSLAVES_HDR = BUFR( 8 )
       NSLAVES     = BUFR( 9 )
-      LRSTATUS    = BUFR(10 )
+      LRSTATUS               = BUFR(10)
       ESTIM_NFS4FATHER_ATSON = BUFR(11)
-      IBUFR    = 12
+      LRSTATUS_BLOCFACTO     = LRSTATUS
+      XXG_MASTER             = BUFR(12)
+      IF ( 
+     &     (KEEP(117).EQ.1.and. XXG_MASTER.NE.NotCandidateGPU) 
+     &   ) THEN  
+           LRSTATUS_BLOCFACTO = 0
+      ENDIF
+      IBUFR    = 13
 #if ! defined(NO_FDM_DESCBAND)
       IWHANDLER_LOC = IWHANDLER_IN
       IF ((IWHANDLER_IN .LE. 0) .AND.
@@ -200,11 +216,30 @@ C
      &      IWPOSCB + 6+XTRA_SLAVES_SYM+KEEP(IXSZ)+NSLAVES_HDR ) =
      &       BUFR( IBUFR: IBUFR - 1 + NSLAVES_HDR )
       END IF
-      IW(IWPOSCB+1+XXNBPR)=NBPROCFILS
-      IW(IWPOSCB+1+XXLR)=LRSTATUS
-      COMPRESS_CB    = ((LRSTATUS.EQ.1).OR.
-     &                  (LRSTATUS.EQ.3))
-      LR_ACTIVATED   = (LRSTATUS.GT.0)
+      IW(IWPOSCB+1+XXNBPR)= NBPROCFILS
+      IW(IWPOSCB+1+XXLR)  = LRSTATUS
+      COMPRESS_CB         = MUMPS_LR_COMPRESS_CB(LRSTATUS)
+      LR_ACTIVATED        = (LRSTATUS.GT.0)
+      IW(IWPOSCB+1+XXG)   = XXG_MASTER
+#if defined(USE_GPU)
+      IF (IW(IWPOSCB+1+XXG).NE.NotCandidateGPU) THEN
+      IF ( LRSTATUS_BLOCFACTO .EQ. 0 ) THEN
+        IF ( KEEP(422) .EQ. 2 ) THEN
+          CALL DMUMPS_SET_INNERBLOCKSIZE( SIZE_INNER, 
+     &    NASS, KEEP )
+          CALL DMUMPS_RUNONGPU_BLOCKSIZEST2(
+     &    NFRONT, NASS, NSLAVES, KEEP,
+     &    run_on_gpu_slave, run_on_gpu_master, SIZE_OUTER, 
+     &    SIZE_INNER)             
+          IF ( run_on_gpu_slave ) THEN
+            CALL DMUMPS_GPU_ASYNC_PIN_MEMORY_C(
+     &           A(IPTRLU+1_8), LREQCB )
+            IW(IWPOSCB+1+XXG) = PinningOnTheWay
+          ENDIF
+        ENDIF
+      ENDIF
+      ENDIF
+#endif
       IF (LR_ACTIVATED.AND.
      &       (KEEP(480).NE.0
      &       .OR.

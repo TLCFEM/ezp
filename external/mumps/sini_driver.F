@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -275,6 +275,8 @@ C
       NULLIFY(id%PTR_LEAFS_L0_OMP)
       NULLIFY(id%L0_OMP_MAPPING)
       NULLIFY(idintr%L0_OMP_FACTORS)
+#if defined(SINGLEINDOUBLE)
+#endif
       NULLIFY(id%I4_L0_OMP)
       NULLIFY(id%I8_L0_OMP)
       id%LPOOL_B_L0_OMP = 0
@@ -296,7 +298,7 @@ C     Architecture data
 C     Must be nullified because of routine
 C     SMUMPS_SIZE_IN_STRUCT
       NULLIFY(id%SUP_PROC)
-      id%Deficiency = 0
+      id%NB_SINGULAR_VALUES = 0
       idintr%root%LPIV = -1
       idintr%root%yes  = .FALSE.
       idintr%root%gridinit_done  = .FALSE.
@@ -313,6 +315,15 @@ C     ----------------------------------------
      &     id%MYID .ne. MASTER ) THEN
           CALL MPI_COMM_RANK
      &         (id%COMM_NODES, id%MYID_NODES, IERR )
+#if defined(MPI_TO_K_OMP)
+C     ------------------------------------------
+C     Get the number of MPI processes per node.
+C     Each MPI process keeps the number of
+C     processes with the same name in KEEP(414).
+C     ------------------------------------------
+          CALL MUMPS_GET_PROC_PER_NODE(id%KEEP(414), id%MYID_NODES,
+     &         id%NSLAVES, id%COMM_NODES)
+#endif
       ELSE
           id%MYID_NODES = -464646
       ENDIF

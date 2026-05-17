@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -2469,7 +2469,7 @@ C
                SIZE=J8
             ENDIF
             I=CUR_POS_SEQUENCE-NB_NODES_LOC+1
-            DO WHILE (I.LE.CUR_POS_SEQUENCE)
+            DO WHILE ((I.LE.CUR_POS_SEQUENCE).AND.(I.GT.0))
                IF(SIZE_OF_BLOCK(STEP_OOC(
      &              OOC_INODE_SEQUENCE(I,OOC_FCT_TYPE)),
      &              OOC_FCT_TYPE).NE.0_8)THEN

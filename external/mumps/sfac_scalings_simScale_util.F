@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -359,11 +359,10 @@ C     LOCAL VARS
       SMUMPS_ERRSCALOC = ERRMAX
       RETURN
       END FUNCTION SMUMPS_ERRSCALOC
-      REAL FUNCTION SMUMPS_ERRSCA1(D, TMPD, DSZ, NOMP_MAX)
+      REAL FUNCTION SMUMPS_ERRSCA1(TMPD, DSZ, NOMP_MAX)
 !$    USE OMP_LIB
       IMPLICIT NONE 
       INTEGER, INTENT(IN):: DSZ, NOMP_MAX
-      REAL D(DSZ)
       REAL TMPD(DSZ)
 C     LOCAL VARS
       REAL RONE

@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -31,6 +31,7 @@ C
       USE SMUMPS_BUF
       USE SMUMPS_LR_TYPE
       USE MUMPS_LR_STATS
+      USE SMUMPS_LR_CORE, ONLY : SMUMPS_DECONVERT_LRB
       USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
       USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_ROOT_STRUC
       USE SMUMPS_DYNAMIC_MEMORY_M, ONLY : SMUMPS_DM_SET_DYNPTR,
@@ -288,6 +289,7 @@ C
             CALL SMUMPS_MPI_UNPACK_LRB(BUFR, LBUFR, 
      &           LBUFR_BYTES, POSITION, LRB, KEEP8, 
      &           COMM, IFLAG, IERROR
+     &         , (KEEP(452).GT.0), KEEP(34)
      &         )
             NB_BLOCKS_UNPACKED = NB_BLOCKS_UNPACKED + 1 
             ICOL_BEG = ICOL_SHARED
@@ -300,6 +302,14 @@ C
 #endif
           IF (.NOT.BLOCKS_LEFT_2_UNPACK) CYCLE
           IF (LRB%ISLR .AND. LRB%K.EQ.0) CYCLE
+          IF (KEEP(452).GT.0) THEN
+            CALL SMUMPS_DECONVERT_LRB(LRB, IFLAG, IERROR, KEEP8)
+            IF (IFLAG.LT.0) THEN
+              CALL SMUMPS_BDC_ERROR( MYID, SLAVEF, COMM, KEEP )
+            ENDIF
+            CALL DEALLOC_LRB(LRB, KEEP8, KEEP(34), 
+     &                           .TRUE., .FALSE.)
+          ENDIF
           IF (LRB%ISLR) THEN
             CALL sgemm('T','T', LRB%N, NBROWS_PACKET, LRB%K, ONE,
      &                LRB%R(1,1), LRB%K, LRB%Q(IROW_BEG,1), LRB%M,

@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -121,6 +121,8 @@ C
       IMPLICIT NONE
       INTEGER, INTENT(in)      :: N, LIW, XSIZE
       INTEGER, INTENT(in)      :: KEEP(500)
+#if defined(USE_GPU)
+#endif
       INTEGER(8), INTENT(in)   :: LA
       INTEGER(8), INTENT(inout):: LRLU, IPTRLU, LRLUS
       INTEGER, INTENT(inout)   :: IWPOSCB
@@ -196,6 +198,25 @@ C
      &            PAMASTER(STEP(INODE))+RSIZE2SHIFT
                 ENDIF
               ENDIF
+#if defined(USE_GPU)
+              IF ( RSIZE2SHIFT .NE. 0_8 ) THEN
+                IF ( IW(ICURRENT+XXG) .EQ. PinningOnTheWay .OR.
+     &               IW(ICURRENT+XXG) .EQ. MemPinned ) THEN
+                  IF ( KEEP(422) .EQ. 2 ) THEN
+                    CALL ZMUMPS_GPU_ASYNC_UNPIN_MEMORY_C( A(RCURRENT), 
+     &                   RCURRENT_SIZE)
+                    CALL ZMUMPS_GPU_ASYNC_PIN_MEMORY_C(
+     &                   A(RCURRENT+RSIZE2SHIFT), RCURRENT_SIZE )
+                    IW(ICURRENT+XXG) = PinningOnTheWay
+                  ELSE IF  ( KEEP(422) .EQ. 1 ) THEN
+                    CALL ZMUMPS_GPU_UNPIN_MEMORY_C( A(RCURRENT), 
+     &                   RCURRENT_SIZE)
+                    CALL ZMUMPS_GPU_PIN_MEMORY_C(
+     &                   A(RCURRENT+RSIZE2SHIFT), RCURRENT_SIZE )
+                  ENDIF
+                ENDIF
+              ENDIF
+#endif
             ENDIF
             IF (ISIZE2SHIFT .NE. 0) THEN
                 IF (PTRIST(STEP(INODE)).EQ.ICURRENT)

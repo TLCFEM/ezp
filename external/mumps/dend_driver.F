@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -435,11 +435,15 @@ C     =================================================
       RETURN
       END SUBROUTINE DMUMPS_FREE_DATA_REDO_ANA
       SUBROUTINE DMUMPS_FREE_ID_DATA_MODULES(id_FDM_F_ENCODING,
-     &  id_BLRARRAY_ENCODING, KEEP8, K34)
+     &  id_BLRARRAY_ENCODING, KEEP8, K34, K148)
       USE MUMPS_FRONT_DATA_MGT_M, only : MUMPS_FDM_STRUC_TO_MOD,
      &                                   MUMPS_FDM_END
       USE DMUMPS_LR_DATA_M, only : DMUMPS_BLR_STRUC_TO_MOD,
      &                             DMUMPS_BLR_END_MODULE
+#if defined(SINGLEINDOUBLE)
+      USE SMUMPS_LR_DATA_M, only: SMUMPS_BLR_STRUC_TO_MOD,
+     &                             SMUMPS_BLR_END_MODULE
+#endif
       IMPLICIT NONE
 C
 C     Purpose:
@@ -466,7 +470,7 @@ C
      &                                            id_FDM_F_ENCODING
 #     endif
       INTEGER(8), intent(inout) :: KEEP8(150)
-      INTEGER, intent(in) :: K34
+      INTEGER, intent(in) :: K34, K148
 C
       IF (associated(id_FDM_F_ENCODING)) THEN
 C       Allow access to FDM_F data for BLR_END_MODULE
@@ -474,9 +478,20 @@ C       Allow access to FDM_F data for BLR_END_MODULE
         IF (associated(id_BLRARRAY_ENCODING)) THEN
 C         Pass id_BLRARRAY_ENCODING control to module
 C         and terminate BLR module of current instance
+#if defined(SINGLEINDOUBLE)
+          IF (K148 .NE. 1) THEN
+C         to cover both cases KEEP(148)=0, 2
+#endif
           CALL DMUMPS_BLR_STRUC_TO_MOD(id_BLRARRAY_ENCODING)
           CALL DMUMPS_BLR_END_MODULE(0, KEEP8, K34,
      &                               LRSOLVE_ACT_OPT=.TRUE.)
+#if defined(SINGLEINDOUBLE)
+          ELSE
+            CALL SMUMPS_BLR_STRUC_TO_MOD(id_BLRARRAY_ENCODING)
+            CALL SMUMPS_BLR_END_MODULE(0, KEEP8, K34, 
+     &                               LRSOLVE_ACT_OPT=.TRUE.)
+          ENDIF
+#endif
         ENDIF
 C       ---------------------------------------
 C       FDM data structures are still allocated
@@ -504,7 +519,13 @@ C     ----------------
       USE DMUMPS_STRUC_DEF, ONLY: DMUMPS_STRUC
       USE DMUMPS_INTR_TYPES, ONLY: DMUMPS_INTR_STRUC
       USE DMUMPS_FACSOL_L0OMP_M, ONLY : DMUMPS_FREE_L0_OMP_FACTORS
+#if defined(SINGLEINDOUBLE)
+      USE SMUMPS_FACSOL_L0OMP_M, ONLY : SMUMPS_FREE_L0_OMP_FACTORS
+#endif
       USE DMUMPS_DYNAMIC_MEMORY_M, ONLY : DMUMPS_DM_FREE_S_WK
+#if defined(SINGLEINDOUBLE)
+      USE SMUMPS_DYNAMIC_MEMORY_M, ONLY : SMUMPS_DM_FREE_S_WK
+#endif
       USE MUMPS_BUF_COMMON, ONLY : 
      &    MUMPS_BUF_DEALL_CB,
      &    MUMPS_BUF_DEALL_SMALL_BUF
@@ -530,7 +551,7 @@ C     ----------------
       INTERFACE
 C     (explicit needed because of pointer arguments)
       SUBROUTINE DMUMPS_FREE_ID_DATA_MODULES(id_FDM_F_ENCODING,
-     &  id_BLRARRAY_ENCODING, KEEP8, K34)
+     &  id_BLRARRAY_ENCODING, KEEP8, K34, K148)
 #     if defined(MUMPS_NOF2003)
       CHARACTER, DIMENSION(:), POINTER :: id_BLRARRAY_ENCODING
       CHARACTER, DIMENSION(:), POINTER :: id_FDM_F_ENCODING
@@ -541,7 +562,7 @@ C     (explicit needed because of pointer arguments)
      &                                            id_FDM_F_ENCODING
 #     endif
       INTEGER(8), intent(inout) :: KEEP8(150)
-      INTEGER, intent(in) :: K34
+      INTEGER, intent(in) :: K34, K148
       END SUBROUTINE DMUMPS_FREE_ID_DATA_MODULES
       END INTERFACE
 C
@@ -598,7 +619,7 @@ C     Keep it outside DMUMPS_RR_FREE_POINTERS
       ENDIF
 C     Free module data from factorization:
       CALL DMUMPS_FREE_ID_DATA_MODULES(id%FDM_F_ENCODING, ! done
-     &  id%BLRARRAY_ENCODING, id%KEEP8(1), id%KEEP(34))
+     &  id%BLRARRAY_ENCODING, id%KEEP8(1), id%KEEP(34), id%KEEP(148))
 C     ---------------------------
 C     Deallocate main workarray S 
 C     ---------------------------
@@ -607,6 +628,12 @@ C       -- deallocate only when not provided/allocated by the user
         IF (associated(id%S)) THEN
           CALL DMUMPS_DM_FREE_S_WK(id%S, id%KEEP(430))
         ENDIF
+#if defined(SINGLEINDOUBLE)
+        IF (associated(id%LPS)) THEN
+          CALL SMUMPS_DM_FREE_S_WK(id%LPS, id%KEEP(430))
+          NULLIFY(id%LPS)
+        ENDIF
+#endif
 C       Reset KEEP(430)=0 since S is free
 C       KEEP(430) will be redefined during facto
         id%KEEP(430) = 0
@@ -634,6 +661,9 @@ C
       IF (associated(idintr%L0_OMP_FACTORS)) THEN
         CALL DMUMPS_FREE_L0_OMP_FACTORS(idintr%L0_OMP_FACTORS)
       END IF
+#if defined(SINGLEINDOUBLE)
+        CALL SMUMPS_FREE_L0_OMP_FACTORS(idintr%LPL0_OMP_FACTORS)
+#endif
 C
 C     Data allocated during solve
 C     ---------------------------

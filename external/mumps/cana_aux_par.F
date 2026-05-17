@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -141,6 +141,9 @@ C
       CALL CMUMPS_SET_PAR_ORD(id, COMM_PARASYMB, MYID, NPROCS, 
      &     ord, COMM_PARAORD, NPROCS_PARAORD,
      &     RKinSYMB_PROC0ORD)
+      CALL MUMPS_PROPINFO( id%ICNTL(1), id%INFO(1),
+     &     COMM_PARASYMB, MYID )
+       IF ( id%INFO(1) .LT. 0 ) RETURN
       IF ( LWORK1 .LT. 3_8 *int(N,8) ) THEN
          WRITE(LP,*)
      &      'Insufficient workspace in CMUMPS_ANA_F_PAR' 
@@ -181,7 +184,15 @@ C
       ENDIF
       CALL MUMPS_PROPINFO( id%ICNTL(1), id%INFO(1),
      &     ord%COMM, ord%MYID )
-      IF ( id%INFO(1) .LT. 0 ) RETURN
+      IF ( id%INFO(1) .LT. 0 ) THEN
+         IF(id%KEEP(54) .NE. 3) THEN
+            IF(ord%MYID.EQ.0) THEN
+               id%IRN_loc => SAVEIRN
+               id%JCN_loc => SAVEJCN
+            END IF
+         END IF
+         RETURN
+      ENDIF
       IF(ord%MYID .EQ. 0) THEN
          CALL MUMPS_REALLOC(IPE, N, id%INFO, LP, FORCE=.FALSE.,
      &        COPY=.FALSE., STRING='', 
@@ -487,7 +498,16 @@ C
      &         , MEMCNT
      &      )
         IF(MEMCNT .GT. MAXMEM) MAXMEM=MEMCNT
+        IF (GCOMP_DIST%NZG .EQ.0) THEN
+          write(LP,*) ORD%MYID, 
+     &      " Internal error empty subgraph", 
+     &      " when calling distributed memory parallel ordering"
+          id%INFO(1) = -9980
+        ENDIF
       ENDIF
+      CALL MUMPS_PROPINFO( id%ICNTL(1), id%INFO(1),
+     &     ord%COMM, ord%MYID )
+      IF ( id%INFO(1) .LT. 0 ) GOTO 500
       IF (ord%ORDTOOL .EQ. 1) THEN
 #if defined(ptscotch)
         IF (id%KEEP(339).NE.0) THEN
@@ -522,6 +542,7 @@ C
          CALL MUMPS_ABORT()
 #endif
       END IF
+  500 CONTINUE
       IF (id%KEEP(339).NE.0) THEN
              CALL MUMPS_AB_FREE_GCOMP(GCOMP_DIST, MEMCNT)
       ENDIF
@@ -3352,11 +3373,12 @@ C
          id%INFO(1) = -51
          CALL MUMPS_SET_IERROR(
      &    VERTLOCTAB(VERTLOCNBR+1), id%INFO(2))
-         RETURN
       END IF
       nullify(VERTLOCTAB_I4)
       CALL MUMPS_REALLOC(VERTLOCTAB_I4, VERTLOCNBR+1, id%INFO,
      &     id%ICNTL(1), MEMCNT=MEMCNT, ERRCODE=-7)
+      CALL MUMPS_PROPINFO( id%ICNTL(1), id%INFO(1),
+     &     COMM, MYID )
       CALL MUMPS_PROPINFO( id%ICNTL(1), id%INFO(1),
      &     COMM, MYID )
       IF ( id%INFO(1) .LT. 0 ) RETURN

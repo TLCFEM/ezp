@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -12,12 +12,27 @@ C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       SUBROUTINE DMUMPS_SOLVE_DRIVER(id,idintr)
+      USE ISO_C_BINDING
       USE DMUMPS_STRUC_DEF
       USE DMUMPS_INTR_TYPES, ONLY: DMUMPS_INTR_STRUC
       USE DMUMPS_SOL_ES
+      USE DMUMPS_LR_TYPE, ONLY :  DMUMPS_INIT_LRMIXED_PRECISIONS
+#if defined(SINGLEINDOUBLE)
+      USE SMUMPS_LR_TYPE, ONLY : SMUMPS_INIT_LRMIXED_PRECISIONS
+#endif
+#if defined(SINGLEINDOUBLE)
+      USE SMUMPS_INTR_TYPES, ONLY: SMUMPS_ROOT_STRUC
+#endif
 C     Lock Initialization (_LI) and Desruction (_LD)
       USE MUMPS_SOL_L0OMP_M, ONLY: MUMPS_SOL_L0OMP_LI,
      &                             MUMPS_SOL_L0OMP_LD
+      USE DMUMPS_FACSOL_L0OMP_M, ONLY: DMUMPS_FREE_L0_OMP_FACTORS,
+     &  DMUMPS_INIT_L0_OMP_FACTORS
+#if defined(SINGLEINDOUBLE)
+      USE SMUMPS_INTR_TYPES, ONLY: SMUMPS_ROOT_STRUC
+      USE SMUMPS_FACSOL_L0OMP_M, ONLY: SMUMPS_FREE_L0_OMP_FACTORS,
+     &  SMUMPS_INIT_L0_OMP_FACTORS
+#endif
 C
 C  Purpose
 C  =======
@@ -36,10 +51,17 @@ C
       USE MUMPS_MEMORY_MOD
       USE DMUMPS_LR_DATA_M, only : DMUMPS_BLR_STRUC_TO_MOD
      &                           , DMUMPS_BLR_MOD_TO_STRUC
+#if defined(SINGLEINDOUBLE)
+      USE SMUMPS_LR_DATA_M, only : SMUMPS_BLR_STRUC_TO_MOD
+     &                            , SMUMPS_BLR_MOD_TO_STRUC
+#endif
       USE MUMPS_FRONT_DATA_MGT_M, only : MUMPS_FDM_STRUC_TO_MOD,
      &                                   MUMPS_FDM_MOD_TO_STRUC
 #if ! defined(NO_SAVE_RESTORE)
       USE DMUMPS_SAVE_RESTORE
+#endif
+#if defined(MPI_TO_K_OMP)
+      USE MUMPS_MPITOOMP_M
 #endif
 !$    USE OMP_LIB
       IMPLICIT NONE
@@ -120,7 +142,7 @@ C     true if DMUMPS_SOL_C called during postprocessing
       LOGICAL ALLOCATE_S
 C
 C     TIMINGS
-      DOUBLE PRECISION TIMEIT, TIMEEA, TIMEEA1, TIMELCOND
+      DOUBLE PRECISION TIMEIT, TIMEEA, TIMEEA1, TIMELCOND, TIMEAX
       DOUBLE PRECISION TIME3
       DOUBLE PRECISION TIMEC1,TIMEC2
       DOUBLE PRECISION TIMEGATHER1,TIMEGATHER2
@@ -179,6 +201,16 @@ C         PERM_RHS(k) = i means that i is the kth column to be processed
 C         Note that PERM_RHS will be used also in case of interleaving
 C     ------------------------------------
       INTEGER :: NOMP
+#if defined(MPI_TO_K_OMP)
+C     to pass PROCS_MAP pointer to SOL_C:
+      TYPE (PROCS_MAP_STRUC_T) :: PROCS_MAP_STRUC 
+      INTEGER, DIMENSION(:), allocatable:: CORES_LIST
+      INTEGER:: NCORES
+      LOGICAL:: NCORES_RECOMPUTED
+      INTEGER:: ERROR
+      INTEGER:: MY_WORKING_ID
+      LOGICAL:: I_AM_HEAD
+#endif
       DOUBLE PRECISION ONE
       DOUBLE PRECISION ZERO
       PARAMETER( ONE = 1.0D0 )
@@ -193,6 +225,14 @@ C     is dense), or is a workarray allocated inside this routine
 C     of size N.
       DOUBLE PRECISION, DIMENSION(:), POINTER :: RHS_IR
       DOUBLE PRECISION, DIMENSION(:), POINTER :: WORK_WCB
+#if defined(SINGLEINDOUBLE)
+C     Workspace for SOL_C
+      REAL(kind(0.E0)), DIMENSION(:), POINTER :: LPWORK_WCB
+      REAL(kind(0.E0)), DIMENSION(:), ALLOCATABLE :: LPSRW3
+      TYPE(SMUMPS_ROOT_STRUC) :: lproota 
+C     For call to SMUMPS_INIT_LRMIXED_PRECISIONS
+      REAL(kind(0.E0)) :: LPDK8
+#endif
       DOUBLE PRECISION, DIMENSION(:), POINTER :: PTR_RHS_ROOT
       INTEGER(8) :: LPTR_RHS_ROOT
 C
@@ -381,6 +421,8 @@ C    NSOL_loc will be equal to KEEP(89) in case ICNTL(21)=1
       INTEGER :: NB_FS_RHSINTR_F_ARG, NB_FS_RHSINTR_TOT_ARG
       INTEGER MUMPS_PROCNODE
       EXTERNAL MUMPS_PROCNODE
+       INTEGER :: KEEP451_SAVE
+       LOGICAL :: ARENA_ALLOCATED
 C
 C  First executable statement
 C
@@ -400,6 +442,9 @@ C     the master can have the role of a slave
       I_AM_SLAVE = ( id%MYID .ne. MASTER  .OR.
      &             ( id%MYID .eq. MASTER .AND.
      &               id%KEEP(46) .eq. 1 ) )
+#if defined(MPI_TO_K_OMP)
+      NCORES_RECOMPUTED = .FALSE.
+#endif
 C     -- The following pointers xxCOPY might be allocated but then
 C     -- the associated xxCOPY_ALLOCATED will be set to
 C     -- enable deallocation
@@ -425,6 +470,10 @@ C     It is then tested to free S befgore returning
       ALLOCATE_S = .FALSE.
       NULLIFY(RHS_IR)
       NULLIFY(WORK_WCB)
+#if defined(SINGLEINDOUBLE)
+      NULLIFY(LPWORK_WCB)
+      CDUMMY_TARGET(1)=ZERO !  initialize in case of conversion
+#endif
 #if defined(USE_OLD_SCALING)
       NULLIFY(scaling_data_dr%SCALING)
       NULLIFY(scaling_data_dr%SCALING_LOC)
@@ -468,6 +517,7 @@ C     It is then tested to free S befgore returning
       K16_8    = int(KEEP(16), 8)
       K149_8   = int(KEEP(149),8) ! complex in instance
       K151_8   = int(KEEP(151),8) ! complex in instance
+      ARENA_ALLOCATED = .FALSE.
 C     RR 
       KEEP20_SAVE = KEEP(20)
       IF (KEEP(19).EQ.0.AND.KEEP(53).NE.0) THEN 
@@ -525,6 +575,8 @@ C     BEGIN CHECK KEEP ENTRIES AND INTERFACE
 C     ======================================
       IF (id%MYID .EQ. MASTER) THEN
 C     {
+          KEEP451_SAVE = KEEP(451)
+C         KEEP(451) may be modified later
 C         Set ICNTL(26) -> KEEP(221)  (called at facto and solve)
 C         (might be called at facto in case of fwd in facto 
 C          with Schur+reduced RHS requested)
@@ -817,6 +869,7 @@ C     phase DKEEP will hold on each proc the accumulated time
       id%DKEEP(126)=0.0D0 
       id%DKEEP(127)=0.0D0 
       id%DKEEP(128:134)=0.0D0
+      id%DKEEP(135)=0.0D0
       id%DKEEP(140:153)=0.0D0
 C
       CALL MUMPS_SECDEB(TIME3)
@@ -1569,11 +1622,17 @@ C       Furthermore this quantity has to be multiplied by the
 C       blocking size in case of multiple RHS.
         IF ( KEEP( 38 ) .NE. 0 .OR. KEEP( 20 ) .NE. 0 ) THEN
           IF ( MASTER_ROOT .eq. id%MYID_NODES ) THEN
+#if defined(SINGLEINDOUBLE)
+            IF ( KEEP(148) .EQ. 0 ) THEN
+#endif
               IF (
      &          .NOT. associated(idintr%roota%RHS_CNTR_MASTER_ROOT)
      &          ) THEN
                 NB_K133 = NB_K133 + 1
               ENDIF
+#if defined(SINGLEINDOUBLE)
+            END IF
+#endif
           END IF
         ENDIF
 C       --------------------------------------
@@ -1624,6 +1683,73 @@ C         -- error when reusing space allocated
       IF (.NOT. I_AM_SLAVE) KEEP8(124)=SUM_ITMP8
 C     all procs: KEEP8(24) holds the size of WK_USER provided by user.
 C     master only: KEEP8(124) indicates if WK_USER provided on some proc
+#if defined(SINGLEINDOUBLE)
+C     Set id%KEEP(151), the size of a complex for SOL_C.
+C     Currently always equal to KEEP(35)
+C     Also check compatibility with WK_USER, using KEEP8(124),
+C     that has been computed just before.
+      CALL MUMPS_ICNTL47_SETTINGS( 3, id%ICNTL, id%KEEP,
+     &id%KEEP8, id%SIZE_SCHUR, id%MYID, id%COMM, id%INFO, LP, LPOK )
+      IF (id%INFO(1).LT.0) GOTO 90
+#endif
+      IF (id%MYID.EQ.MASTER) THEN
+C       KEEP451_SAVE=KEEP(451) !done earlier to ensure it's always done
+        IF (KEEP(451).EQ.-1) THEN
+C         Use all storage precisions by default
+          KEEP(451) = 1
+#if defined(NOMIXHPC)
+#if defined(SINGLEINDOUBLE)
+C         KEEP(148)=0 means that we are really in double
+C         (in case of single computations, do not reset)
+          IF (KEEP(148).EQ.0) THEN
+#endif
+C           ... except in double for LRMIXED_CALC 
+C           (use only double and single)
+            IF (KEEP(448).GT.0) THEN
+              KEEP(451) = 0
+            ENDIF
+#if defined(SINGLEINDOUBLE)
+          ENDIF
+#endif
+#endif
+        ENDIF
+      ENDIF
+      CALL MPI_BCAST( id%KEEP(451), 1, MPI_INTEGER, MASTER, id%COMM,
+     &                  IERR )
+#if defined(SINGLEINDOUBLE)
+      IF (KEEP(148).EQ.0) THEN
+#endif
+C     Re-initialize precisions exactly as it was done for the
+C     factorization.
+      CALL DMUMPS_INIT_LRMIXED_PRECISIONS(0, id%KEEP(451),
+     &      id%KEEP(456), id%KEEP(457), id%DKEEP(8))
+#if defined(SINGLEINDOUBLE)
+      ELSE
+C       id%DKEEP(8): casted to single precision explicitely
+        LPDK8 = id%DKEEP(8)
+        CALL SMUMPS_INIT_LRMIXED_PRECISIONS(id%KEEP(148), id%KEEP(451),
+     &      id%KEEP(456), id%KEEP(457), LPDK8)
+      ENDIF
+#endif
+#if !defined(NOMIXHPC)
+      IF (KEEP(450).EQ.1.OR.KEEP(148).EQ.2) THEN
+        call mumps_sol_omp_mem_manager_init_workspaces(KEEP(365),
+     &         KEEP(249)*max(1,KEEP(381)), IERR)
+        NB_BYTES_LOC = KEEP(365) * KEEP(249) * max(1, KEEP(381))
+        IF ( IERR .NE. 0 ) THEN
+          INFO(1) = -13
+          INFO(2) = NB_BYTES_LOC
+        ELSE
+          ARENA_ALLOCATED = .TRUE.
+          NB_BYTES        = NB_BYTES + NB_BYTES_LOC
+          NB_BYTES_MAX = max(NB_BYTES_MAX,NB_BYTES)
+        END IF
+        CALL MUMPS_PROPINFO( id%ICNTL(1),
+     &                       id%INFO(1),
+     &                       id%COMM, id%MYID )
+        IF ( id%INFO(1) .LT. 0 ) GO TO 90
+      END IF
+#endif
       MAXS = 0_8
       IF (I_AM_SLAVE) THEN
         IF (WK_USER_PROVIDED) THEN
@@ -1672,7 +1798,15 @@ C
 C           --- end of OOC case
         ENDIF
         IF ( ALLOCATE_S ) THEN 
+#if defined(SINGLEINDOUBLE)
+          IF (KEEP(148).EQ.0.OR.KEEP(148).EQ.2) THEN
+#endif
             ALLOCATE (id%S(MAXS), stat = allocok)
+#if defined(SINGLEINDOUBLE)
+          ELSE
+            ALLOCATE (id%LPS(MAXS), stat = allocok)
+          ENDIF
+#endif
           IF ( allocok .GT. 0 ) THEN
             IF (LPOK) THEN
                WRITE(LP,*) id%MYID,': problem allocation of S ',
@@ -1712,13 +1846,24 @@ C       We need to allocate a workspace of size LWCB8 for the solve phase.
 C       Either it is available at the end of MAXS, or we perform a
 C       dynamic allocation.
         IF ( MAXS-LA .GT. LWCB8_MIN
+#if defined(SINGLEINDOUBLE)
+     &       .AND. KEEP(148) .EQ. 0
+#endif
      &     ) THEN
            LWCB8 = MAXS - LA
            WORK_WCB => id%S(LA+1_8:LA+LWCB8)
            WORK_WCB_ALLOCATED=.FALSE.
         ELSE
            LWCB8 = LWCB8_MIN
+#if defined(SINGLEINDOUBLE)
+           IF (KEEP(148).EQ.0.OR.KEEP(148).EQ.2) THEN
+#endif
              ALLOCATE(WORK_WCB(LWCB8), stat=allocok)
+#if defined(SINGLEINDOUBLE)
+           ELSE
+             ALLOCATE(LPWORK_WCB(LWCB8), stat=allocok)
+           ENDIF
+#endif
            IF (allocok < 0 ) THEN
              INFO(1)=-13
              CALL MUMPS_SET_IERROR(LWCB8,INFO(2))
@@ -1745,6 +1890,9 @@ C           during the factorization phase.
      &      size(idintr%roota%RHS_CNTR_MASTER_ROOT,kind=8)
 #           endif
           ELSE
+#if defined(SINGLEINDOUBLE)
+            IF (KEEP(148).EQ.0.OR.KEEP(148).EQ.2) THEN
+#endif
 C             In this case, the space for RHS_CNTR_MASTER_ROOT
 C             is always part of WORKWCB, which can itself be
 C             part of id%S or not.
@@ -1752,6 +1900,21 @@ C             part of id%S or not.
               PTR_RHS_ROOT => WORK_WCB(LWCB8-LPTR_RHS_ROOT+1_8:LWCB8)
 C             Reduce size of WORK_WCB
               LWCB8=LWCB8-LPTR_RHS_ROOT
+#if defined(SINGLEINDOUBLE)
+            ELSE
+C             Otherwise, allocate workspace
+              LPTR_RHS_ROOT = NRHS_COLS_SOL_C * int(SIZE_ROOT,8)
+              ALLOCATE(PTR_RHS_ROOT(LPTR_RHS_ROOT), stat=allocok)
+              IF (allocok .GT. 0) THEN
+                INFO(1)=-13
+                CALL MUMPS_SET_IERROR(LPTR_RHS_ROOT,INFO(2))
+              ELSE
+                PTR_RHS_ROOT_ALLOCATED = .TRUE.
+                NB_BYTES = NB_BYTES + LPTR_RHS_ROOT*K151_8
+                NB_BYTES_MAX = max(NB_BYTES_MAX,NB_BYTES)
+              ENDIF
+            ENDIF
+#endif
           ENDIF
         ELSE
           LPTR_RHS_ROOT = 1_8
@@ -1759,7 +1922,6 @@ C             Reduce size of WORK_WCB
         ENDIF
       ENDIF ! I_AM_SLAVE
 C -----------------------------------
-  99  CONTINUE
       CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
      &                   id%COMM,id%MYID)
       IF (INFO(1) < 0) GOTO 90
@@ -1796,7 +1958,15 @@ C
           ENDIF
 C         Access to OOC data in module during solve
           CALL MUMPS_FDM_STRUC_TO_MOD('F',id%FDM_F_ENCODING)
+#if defined(SINGLEINDOUBLE)
+          IF (KEEP(148).EQ.0.OR.KEEP(148).EQ.2) THEN
+#endif
             CALL DMUMPS_BLR_STRUC_TO_MOD(id%BLRARRAY_ENCODING)
+#if defined(SINGLEINDOUBLE)
+          ELSE
+            CALL SMUMPS_BLR_STRUC_TO_MOD(id%BLRARRAY_ENCODING)
+          ENDIF
+#endif
           IS_LR_MOD_TO_STRUC_DONE = .TRUE.
         ENDIF
       ENDIF
@@ -2330,7 +2500,15 @@ C       -----------
 C       Define a work array of size maximum global frontal
 C       size (KEEP(133)) for the call to DMUMPS_SOL_C
 C       This used to be of size id%N.
+#if defined(SINGLEINDOUBLE)
+        IF (KEEP(148) .EQ.0.OR.KEEP(148).EQ.2) THEN
+#endif
           ALLOCATE(SRW3(KEEP(133)), stat = allocok )
+#if defined(SINGLEINDOUBLE)
+        ELSE
+          ALLOCATE(LPSRW3(KEEP(133)), stat = allocok )
+        ENDIF
+#endif
         IF ( allocok .GT. 0 ) THEN
           INFO(1)=-13
           INFO(2)=KEEP(133)
@@ -2887,6 +3065,89 @@ C          to permute the null column pivot list)
      &            MPI_INTEGER,
      &            MASTER, id%COMM,IERR)
       ENDIF
+#if defined(MPI_TO_K_OMP)
+          IF ( I_AM_SLAVE ) THEN
+            I_AM_HEAD = .TRUE.
+C           will be retset to false on non-working slaves
+          ELSE
+C           false on non-working master
+            I_AM_HEAD = .FALSE.
+            NCORES    = 1 ! (not used on non working master)
+          ENDIF
+          IF (id%KEEP(381).gt.1 .and. id%KEEP(382).eq.0) THEN
+C{
+            IF (I_AM_SLAVE) THEN
+              NCORES_RECOMPUTED=.TRUE.
+              CALL MPI_COMM_RANK(id%COMM_NODES, MY_WORKING_ID, IERR)
+              CALL MUMPS_MPITOOMP_PRE_WORK_MAPS(id%KEEP(381),
+     &            id%NSLAVES,
+     &            NCORES,
+     &            ERROR)
+              IF (ERROR.ne.0) THEN
+                id%INFO(1) = -62
+                id%INFO(2) = id%MYID
+              ELSE
+                allocok = 0
+                allocate(CORES_LIST(0:NCORES-1), STAT=allocok)
+                IF (allocok .ne. 0) THEN
+                  id%INFO(1) = -62
+                  id%INFO(2) = id%MYID
+                ENDIF
+              ENDIF
+            ENDIF
+C           error check
+            CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
+     &                   id%COMM,id%MYID)
+            IF ( id%INFO(1) .LT. 0 ) GO TO 90
+            IF (I_AM_SLAVE) THEN
+              CALL MUMPS_MPITOOMP_GET_WORK_MAPS(id%COMM_NODES,
+     &            id%KEEP(381), id%NSLAVES, NCORES,
+     &            id%MTKO_PROCS_MAP, CORES_LIST, ERROR)
+              IF (ERROR.ne.0) THEN
+                id%INFO(1) = -62
+                id%INFO(2) = id%MYID
+              ENDIF
+            ENDIF
+C           error check
+            CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
+     &                   id%COMM,id%MYID)
+            IF ( id%INFO(1) .LT. 0 ) GO TO 90
+            IF (I_AM_SLAVE) THEN
+              IF (MY_WORKING_ID .EQ.
+     &            id%MTKO_PROCS_MAP(MY_WORKING_ID)) THEN
+                CALL MUMPS_MPITOOMP_SET_MASK(NCORES, id%KEEP(249),
+     &                    CORES_LIST, .true., ERROR)
+                IF (ERROR.ne.0) THEN
+                  id%INFO(1) = -61
+                  id%INFO(2) = id%MYID
+                ENDIF
+              ENDIF
+            ENDIF
+C           error check
+            CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
+     &                   id%COMM,id%MYID)
+            IF ( id%INFO(1) .LT. 0 ) GO TO 90
+C           The masks have been successfully set on the workers.
+            IF (I_AM_SLAVE) THEN
+              IF (MY_WORKING_ID .EQ.
+     &          id%MTKO_PROCS_MAP(MY_WORKING_ID)) THEN
+                id%KEEP(382) = 1
+              ELSE
+                id%KEEP(382) = -1
+              ENDIF
+            ELSE
+              id%KEEP(382) = -1
+            ENDIF
+C}
+          ENDIF
+C         The non workers should sleep.
+          IF (I_AM_SLAVE .AND. id%KEEP(381).gt.1) THEN
+            IF (id%KEEP(382).eq.-1) THEN
+              I_AM_HEAD = .FALSE.
+            ENDIF
+          ENDIF
+          PROCS_MAP_STRUC%PROCS_MAP => id%MTKO_PROCS_MAP
+#endif
 C   L0-threads to be activated iff KEEP(401)=1 and KEEP(400)>0
           IF (KEEP(401) .EQ. 1) THEN
 C          L0-threads was requested for solve phase
@@ -2905,6 +3166,13 @@ C           and KEEP(400) cannot be check here in this way
 C 
             NOMP = 1
 !$          NOMP=omp_get_max_threads()
+#if defined(MPI_TO_K_OMP)
+C           NOMP takes K_OMP factor into account
+C           (#threads was changed on MPI_TO_K_OMP masters)
+C           but test should then only be performed on
+C           MPI_TO_K_OMP masters!
+            IF (I_AM_HEAD) THEN
+#endif
               IF (KEEP(400).NE.NOMP) THEN
 C               NOMP should be the one from analysis
                 id%INFO(1) = -58
@@ -2914,6 +3182,9 @@ C               NOMP should be the one from analysis
      &" tree parallelism changed from",KEEP(400)," at analysis to", 
      &  NOMP
               ENDIF
+#if defined(MPI_TO_K_OMP)
+            ENDIF
+#endif
 C}
            ENDIF
 C          error check
@@ -4007,6 +4278,14 @@ C             this phase: thus we need to allocate id%NRHS columns too.
                  id%KEEP8(25)=0_8
                  GOTO 41
               END IF
+#if defined(SINGLEINDOUBLE)
+              IF (KEEP(148).NE.0) THEN
+C               Initialization necessary for conversion
+                IF (NBENT_RHSINTR .EQ. 0) THEN
+                  id%RHSINTR=ZERO
+                ENDIF
+              ENDIF
+#endif
               NB_BYTES = NB_BYTES + id%KEEP8(25)*K35_8
               NB_BYTES_MAX = max(NB_BYTES_MAX,NB_BYTES)
             ENDIF
@@ -4045,6 +4324,14 @@ C             block, check if we can reuse it.
                CALL MUMPS_SET_IERROR(id%KEEP8(25),INFO(2))
                GOTO 41
               END IF
+#if defined(SINGLEINDOUBLE)
+              IF (KEEP(148).NE.0) THEN
+C               Initialization necessary for conversion
+                IF (NBENT_RHSINTR .EQ. 0) THEN
+                  id%RHSINTR=ZERO
+                ENDIF
+              ENDIF
+#endif
               NB_BYTES = NB_BYTES + id%KEEP8(25)*K35_8
               NB_BYTES_MAX = max(NB_BYTES_MAX,NB_BYTES)
             ENDIF
@@ -4321,6 +4608,19 @@ C
      &          id%STEP(1),
      &          id%ICNTL(1),id%INFO(1))
               ENDIF
+#if defined(MPI_TO_K_OMP)
+C             Some MPI processes may return quickly,
+C             make them wait without consuming CPU resources
+C             We use COMM_LOAD for all messages related to SLEEPSYNC
+C             (not critical here but useful at end of bwd to avoid
+C              interactions with COMM_NODES)
+              IF ( KEEP(381) .GT. 1 ) THEN
+                CALL MUMPS_MPITOOMP_SLEEPSYNC( id%KEEP,
+     &           id%MTKO_PROCS_MAP,
+     &           id%MYID_NODES, id%COMM_LOAD, id%NSLAVES,
+     &           I_AM_SLAVE )
+              ENDIF
+#endif
               CALL MUMPS_PROPINFO( ICNTL(1), INFO(1),
      &                   id%COMM,id%MYID)
               IF (INFO(1).LT.0) GOTO 90
@@ -4779,6 +5079,9 @@ C         -----------------------------------------
             ENDIF
 #endif
           ENDIF
+#if defined(SINGLEINDOUBLE)
+          IF (KEEP(148) .EQ. 0.OR.KEEP(148).EQ.2) THEN
+#endif
             CALL DMUMPS_SOL_C(idintr%root,idintr%roota,id%N,id%S(1),
      &LA_PASSED,IS(1),LIW_PASSED,WORK_WCB(1),LWCB8,IWCB,LIWCB,
      &NBRHS_EFF,id%NA(1),id%LNA,id%NE_STEPS(1),SRW3, MTYPE, ICNTL(1),
@@ -4799,12 +5102,57 @@ C         -----------------------------------------
 #if defined(STAT_ES_SOLVE)
      &,idIPTR_WORKING(1),SIZE_IPTR_WORKING,idWORKING(1),SIZE_WORKING
 #endif
+#if defined(MPI_TO_K_OMP)
+     & , I_AM_HEAD, PROCS_MAP_STRUC, id%COMM_LOAD
+#endif
      & , id%IPOOL_B_L0_OMP(1), id%LPOOL_B_L0_OMP, id%IPOOL_A_L0_OMP(1),
      & id%LPOOL_A_L0_OMP, id%L_VIRT_L0_OMP, id%VIRT_L0_OMP(1),
      & id%L_PHYS_L0_OMP, id%PHYS_L0_OMP(1), id%PERM_L0_OMP(1),
      & id%PTR_LEAFS_L0_OMP(1), id%L0_OMP_MAPPING(1), id%LL0_OMP_MAPPING,
      & idintr%L0_OMP_FACTORS(1), id%LL0_OMP_FACTORS
      &    )
+#if defined(SINGLEINDOUBLE)
+          ELSE
+            CALL MUMPS_SOL_C_64TO32( id%DKEEP,id%RHSINTR(IBEG_RHSINTR),
+     &int(id%LD_RHSINTR,8)*int(NBRHS_EFF,8)*KEEP(35)/KEEP(16),
+     &KEEP(252).NE.0, ! skip RHSINTR conversion in case of fwd in facto
+     &PTR_RHS_ROOT_ALLOCATED, ! skip if allocated (=workspace)
+     &PTR_RHS_ROOT(1), LPTR_RHS_ROOT*KEEP(35)/KEEP(16) )
+            CALL SMUMPS_INI_ROOT(lproota)
+            CALL SMUMPS_SOL_C(idintr%root,lproota,id%N,id%LPS(1),
+     &LA_PASSED,IS(1),LIW_PASSED,LPWORK_WCB(1),LWCB8,IWCB,LIWCB,
+     &NBRHS_EFF,id%NA(1),id%LNA,id%NE_STEPS(1),LPSRW3, MTYPE, ICNTL(1),
+     &FROM_PP,id%STEP(1),id%FRERE_STEPS(1),id%DAD_STEPS(1),id%FILS(1),
+     &id%PTLUST_S(1),id%PTRFAC(1),IWK_SOLVE,LIWK_SOLVE,PTRACB,
+     &LIWK_PTRACB,id%PROCNODE_STEPS(1),id%NSLAVES,INFO(1),KEEP(1),
+     &KEEP8(1),id%DKEEP(1),id%COMM_NODES,id%MYID,id%MYID_NODES,BUFR(1),
+     &LBUFR,LBUFR_BYTES,id%ISTEP_TO_INIV2(1),id%TAB_POS_IN_PERE(1,1),
+     &IBEG_ROOT_DEF,IEND_ROOT_DEF,IROOT_DEF_RHS_COL1, PTR_RHS_ROOT(1),
+     &LPTR_RHS_ROOT,SIZE_ROOT,MASTER_ROOT,id%RHSINTR(IBEG_RHSINTR),
+     &id%LD_RHSINTR,id%GLOB2LOC_RHS(1),id%GLOB2LOC_SOL(1),
+     &Lnodes_FWD, Lnodes_BWD, nodes_FWD_PTR(1), nodes_BWD_PTR(1),
+     &NZ_THIS_BLOCK_ARG, NBCOL_INBLOC_ARG, JBEG_RHS, Step2node_ARG(1),
+     &LStep2node_ARG, IRHS_SPARSE_COPY_ARG(1), IRHS_PTR_COPY_ARG(1),
+     &size(PERM_RHS), PERM_RHS, size(UNS_PERM_INV), UNS_PERM_INV,
+     &NB_FS_RHSINTR_F, NB_FS_RHSINTR_TOT, NBSPARSE_LOC,
+     &PTR_RHS_BOUNDS(1), LPTR_RHS_BOUNDS
+#if defined(STAT_ES_SOLVE)
+     &,idIPTR_WORKING(1),SIZE_IPTR_WORKING,idWORKING(1),SIZE_WORKING
+#endif
+#if defined(MPI_TO_K_OMP)
+     & , I_AM_HEAD, PROCS_MAP_STRUC, id%COMM_LOAD
+#endif
+     & , id%IPOOL_B_L0_OMP(1), id%LPOOL_B_L0_OMP, id%IPOOL_A_L0_OMP(1),
+     & id%LPOOL_A_L0_OMP, id%L_VIRT_L0_OMP, id%VIRT_L0_OMP(1),
+     & id%L_PHYS_L0_OMP, id%PHYS_L0_OMP(1), id%PERM_L0_OMP(1),
+     & id%PTR_LEAFS_L0_OMP(1), id%L0_OMP_MAPPING(1), id%LL0_OMP_MAPPING,
+     & idintr%LPL0_OMP_FACTORS(1), id%LL0_OMP_FACTORS
+     &    )
+            CALL MUMPS_SOL_C_32TO64( id%DKEEP,id%RHSINTR(IBEG_RHSINTR),
+     &int(id%LD_RHSINTR,8)*int(NBRHS_EFF,8)*KEEP(35)/KEEP(16),
+     &PTR_RHS_ROOT(1), LPTR_RHS_ROOT*KEEP(35)/KEEP(16) )
+          ENDIF
+#endif
 C
 C      ================================================================
 C
@@ -5264,6 +5612,8 @@ C  =========================================================
 C    Computation of the infinity norm of A
 C  =========================================================
           IF ((ICNTL11.GT.0).OR.(ICNTL10.GT.0)) THEN
+C{
+            CALL MUMPS_SECDEB(TIMEAX)
 C           We don't get through these lines if ICNTL10<=0 AND ICNTL11<=0
             IF ( KEEP(54) .eq. 0 ) THEN
 C             ------------------
@@ -5341,7 +5691,10 @@ C             R_W is available on the master process only
                 RINFOG(4) = max(R_W( id%N +I), RINFOG(4))
               ENDDO
             ENDIF
-C           end ICNTL11 =/0  v ICNTL10>0
+            CALL MUMPS_SECFIN(TIMEAX)
+C           update DKEEP(135)
+            id%DKEEP(135)=TIMEAX+id%DKEEP(135)
+C}          end ICNTL11 =/0  v ICNTL10>0
           ENDIF
 C  =========================================================
 C    END norm of A
@@ -5382,6 +5735,7 @@ C  =========================================================
 C  ===========================================
 C   Computation of the RESIDUAL and of |A||x|
 C  ===========================================
+            CALL MUMPS_SECDEB(TIMEAX)
             IF ( KEEP(54) .eq. 0 ) THEN
               IF ( id%MYID .eq. MASTER ) THEN
                 IF (KEEP(55).NE.0) THEN
@@ -5464,6 +5818,9 @@ C             --------------------------------------
      &          MPI_SUM, MASTER, id%COMM, IERR)
               ENDIF
             ENDIF
+            CALL MUMPS_SECFIN(TIMEAX)
+C           update DKEEP(135)
+            id%DKEEP(135)=TIMEAX+id%DKEEP(135)
 C  =====================================
 C   END computation RESIDUAL and |A||x|
 C  =====================================
@@ -6146,7 +6503,15 @@ C     -- related to exploit sparsity
       IF (KEEP(485) .EQ. 1) THEN
         KEEP(350) = KEEP350_SAVE
         IF (IS_LR_MOD_TO_STRUC_DONE) THEN
+#if defined(SINGLEINDOUBLE)
+          IF (KEEP(148).EQ.0.OR.KEEP(148).EQ.2) THEN
+#endif
             CALL DMUMPS_BLR_MOD_TO_STRUC(id%BLRARRAY_ENCODING)
+#if defined(SINGLEINDOUBLE)
+          ELSE 
+            CALL SMUMPS_BLR_MOD_TO_STRUC(id%BLRARRAY_ENCODING)
+          ENDIF
+#endif
           CALL MUMPS_FDM_MOD_TO_STRUC('F',id%FDM_F_ENCODING,
      &             id%INFO(1))
         ENDIF
@@ -6212,6 +6577,11 @@ C       Free space and reset pointers if needed
            NULLIFY   (scaling_data_dr%SCALING_LOC)
          ENDIF
        ENDIF
+#endif
+#if defined(MPI_TO_K_OMP)
+      IF (allocated(CORES_LIST)) THEN
+        deallocate(CORES_LIST)
+      ENDIF
 #endif
       IF (allocated(PERM_RHS)) THEN
         NB_BYTES = NB_BYTES - int(size(PERM_RHS),8)*K34_8
@@ -6280,10 +6650,21 @@ C       --------------------
       END IF
       IF (I_AM_SLAVE) THEN
 C       Deallocate temporary workspace SRW3
+#if defined(SINGLEINDOUBLE)
+        IF (KEEP(148).EQ.0) THEN
+#endif
           IF (allocated(SRW3)) THEN
             NB_BYTES = NB_BYTES - int(size(SRW3),8)*K151_8
             DEALLOCATE(SRW3)
           ENDIF
+#if defined(SINGLEINDOUBLE)
+        ELSE
+          IF (allocated(LPSRW3)) THEN
+            NB_BYTES = NB_BYTES - int(size(LPSRW3),8)*K151_8
+            DEALLOCATE(LPSRW3)
+          ENDIF
+        ENDIF
+#endif
 #if defined(USE_OLD_SCALING)
 C       Free local scaling arrays
         IF (LSCAL .AND. ICNTL21 .NE. 0) THEN
@@ -6309,8 +6690,17 @@ C         (see error -41)
 C         S was allocated, free it
           NB_BYTES = NB_BYTES - KEEP8(23)*K35_8
           id%KEEP8(23)=0_8
+#if defined(SINGLEINDOUBLE)
+          IF (KEEP(148).EQ.0.OR.KEEP(148).EQ.2) THEN
+#endif
             DEALLOCATE(id%S)
             NULLIFY(id%S)
+#if defined(SINGLEINDOUBLE)
+          ELSE
+             DEALLOCATE(id%LPS)
+             NULLIFY(id%LPS)
+          ENDIF
+#endif
           NB_BYTES  = NB_BYTES - KEEP8(23) * K35_8
           KEEP8(23) = 0_8
         ENDIF
@@ -6341,13 +6731,26 @@ C       -- to be used for future expansion
          ENDIF
         ENDIF
         IF ( WORK_WCB_ALLOCATED ) THEN
+#if defined(SINGLEINDOUBLE)
+          IF (KEEP(148).EQ.0.OR.KEEP(148).EQ.2) THEN
+#endif
             NB_BYTES = NB_BYTES - int(size(WORK_WCB),8)*K151_8
             DEALLOCATE( WORK_WCB )
             NULLIFY   ( WORK_WCB )
+#if defined(SINGLEINDOUBLE)
+          ELSE
+            NB_BYTES = NB_BYTES - int(size(LPWORK_WCB),8)*K151_8
+            DEALLOCATE( LPWORK_WCB )
+            NULLIFY   ( LPWORK_WCB )
+          ENDIF
+#endif
         ELSE
 C         Otherwise, WORK_WCB may point to some
 C         position inside id%S, nullify it
           NULLIFY( WORK_WCB )
+#if defined(SINGLEINDOUBLE)
+          NULLIFY( LPWORK_WCB )
+#endif
         ENDIF
         IF ( PTR_RHS_ROOT_ALLOCATED ) THEN
           DEALLOCATE(PTR_RHS_ROOT)
@@ -6373,6 +6776,16 @@ C       set RINFOG(24), RINFOG(25), RINFOG(26)
       END IF
 #endif
  500  CONTINUE
+      IF (id%MYID .eq. MASTER) THEN
+        KEEP(451) = KEEP451_SAVE
+      ENDIF
+#if !defined(NOMIXHPC)
+      IF (ARENA_ALLOCATED) THEN
+        call mumps_sol_omp_mem_manager_release_workspaces()
+        NB_BYTES_LOC = KEEP(365) * KEEP(249) * max(1, KEEP(381))
+        NB_BYTES = NB_BYTES - NB_BYTES_LOC
+      ENDIF
+#endif
       RETURN
  55   FORMAT (//' ERROR ANALYSIS BEFORE ITERATIVE REFINEMENT')
  100  FORMAT(//' ****** SOLVE & CHECK STEP ********'/)
@@ -6634,6 +7047,9 @@ C
           ENDIF
           FROM_PP=.TRUE.
           NBSPARSE_LOC = .FALSE.
+#if defined(SINGLEINDOUBLE)
+          IF (KEEP(148).EQ.0.OR.KEEP(148).EQ.2) THEN
+#endif
           CALL DMUMPS_SOL_C(idintr%root,idintr%roota,
      & id%N,id%S(1),LA_PASSED,id%IS(1),
      & LIW_PASSED,WORK_WCB(1),LWCB8,IWCB,LIWCB,NBRHS_EFF,id%NA(1),
@@ -6654,12 +7070,56 @@ C      Next 3 arguments are not used in this call
 #if defined(STAT_ES_SOLVE)
      & , IDUMMY, 1, JDUMMY, 1
 #endif
+#if defined(MPI_TO_K_OMP)
+     & , I_AM_HEAD, PROCS_MAP_STRUC, id%COMM_LOAD
+#endif
      & , id%IPOOL_B_L0_OMP(1), id%LPOOL_B_L0_OMP, id%IPOOL_A_L0_OMP(1),
      & id%LPOOL_A_L0_OMP, id%L_VIRT_L0_OMP, id%VIRT_L0_OMP(1),
      & id%L_PHYS_L0_OMP, id%PHYS_L0_OMP(1), id%PERM_L0_OMP(1),
      & id%PTR_LEAFS_L0_OMP(1), id%L0_OMP_MAPPING(1), id%LL0_OMP_MAPPING,
      & idintr%L0_OMP_FACTORS(1), id%LL0_OMP_FACTORS
      &    )
+#if defined(SINGLEINDOUBLE)
+          ELSE
+            CALL MUMPS_SOL_C_64TO32( id%DKEEP,id%RHSINTR(IBEG_RHSINTR),
+     &int(id%LD_RHSINTR,8)*int(NBRHS_EFF)*KEEP(35)/KEEP(16),
+     &.FALSE., ! do not skip RHSINTR for IR/error analysis
+     &.TRUE., ! but skip PTR_RHS_ROOT for IR/error analysis
+     &PTR_RHS_ROOT(1), LPTR_RHS_ROOT*KEEP(35)/KEEP(16) )
+          CALL SMUMPS_SOL_C(idintr%root,lproota,
+     & id%N,id%LPS(1),LA_PASSED,id%IS(1),
+     & LIW_PASSED,LPWORK_WCB(1),LWCB8,IWCB,LIWCB,NBRHS_EFF,id%NA(1),
+     & id%LNA,id%NE_STEPS(1),LPSRW3,SOLVET,ICNTL(1),FROM_PP,id%STEP(1),
+     & id%FRERE_STEPS(1),id%DAD_STEPS(1),id%FILS(1),id%PTLUST_S(1),
+     & id%PTRFAC(1), IWK_SOLVE(1), LIWK_SOLVE, PTRACB, LIWK_PTRACB,
+     & id%PROCNODE_STEPS(1), id%NSLAVES, INFO(1), KEEP(1), KEEP8(1),
+     & id%DKEEP(1),id%COMM_NODES,id%MYID,id%MYID_NODES, BUFR(1), LBUFR,
+     & LBUFR_BYTES, id%ISTEP_TO_INIV2(1), id%TAB_POS_IN_PERE(1,1),
+C      Next 3 arguments are not used in this call
+     & IBEG_ROOT_DEF,IEND_ROOT_DEF,IROOT_DEF_RHS_COL1, PTR_RHS_ROOT(1),
+     & LPTR_RHS_ROOT, SIZE_ROOT, MASTER_ROOT, id%RHSINTR(IBEG_RHSINTR),
+     & id%LD_RHSINTR,PTR_POSINRHSINTR_FWD(1),PTR_POSINRHSINTR_BWD(1),
+     & -1, -1,
+     & IDUMMY(1), IDUMMY(1),
+     & 1,1,1, IDUMMY, 1, JDUMMY, KDUMMY, 1, LDUMMY, 1, MDUMMY, 1,1,
+     & NBSPARSE_LOC, PTR_RHS_BOUNDS(1), LPTR_RHS_BOUNDS
+#if defined(STAT_ES_SOLVE)
+     & , IDUMMY, 1, JDUMMY, 1
+#endif
+#if defined(MPI_TO_K_OMP)
+     & , I_AM_HEAD, PROCS_MAP_STRUC, id%COMM_LOAD
+#endif
+     & , id%IPOOL_B_L0_OMP(1), id%LPOOL_B_L0_OMP, id%IPOOL_A_L0_OMP(1),
+     & id%LPOOL_A_L0_OMP, id%L_VIRT_L0_OMP, id%VIRT_L0_OMP(1),
+     & id%L_PHYS_L0_OMP, id%PHYS_L0_OMP(1), id%PERM_L0_OMP(1),
+     & id%PTR_LEAFS_L0_OMP(1), id%L0_OMP_MAPPING(1), id%LL0_OMP_MAPPING,
+     & idintr%LPL0_OMP_FACTORS(1), id%LL0_OMP_FACTORS
+     &    )
+            CALL MUMPS_SOL_C_32TO64( id%DKEEP,id%RHSINTR(IBEG_RHSINTR),
+     &int(id%LD_RHSINTR,8)*int(NBRHS_EFF)*KEEP(35)/KEEP(16),
+     &PTR_RHS_ROOT(1), LPTR_RHS_ROOT*KEEP(35)/KEEP(16) )
+          ENDIF
+#endif
         END IF
 C       ------------------
 C       Change error codes

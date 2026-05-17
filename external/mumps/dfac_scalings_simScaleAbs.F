@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -673,10 +673,10 @@ C     SINGLE PROCESSOR CASE: INF-NORM ERROR COMPUTATION
      &                 (ITER.EQ.NB1).OR.
      &                 ((ITER.EQ.NB1+NB2+NB3).AND.
      &                 (NB1+NB3.GT.0))) THEN
-                     INFERRROW = DMUMPS_ERRSCA1(ROWSCA, 
+                     INFERRROW = DMUMPS_ERRSCA1(
      &                    WRKRC(ITDRPTR), M, NOMP_MAX)
 C     find error for the cols
-                     INFERRCOL = DMUMPS_ERRSCA1(COLSCA,  
+                     INFERRCOL = DMUMPS_ERRSCA1(
      &                    WRKRC(ITDCPTR), N, NOMP_MAX)
 C     get max of those two errors
                      INFERRL = INFERRCOL
@@ -850,10 +850,10 @@ C     SINGLE-PROCESSOR CASE: ONE-NORM ERROR COMPUTATION
                   IF((EPS .GT. RZERO) .OR. 
      &                 ((ITER.EQ.NB1+NB2).AND.
      &                 (NB2.GT.0))) THEN
-                     ONEERRROW = DMUMPS_ERRSCA1(ROWSCA, 
+                     ONEERRROW = DMUMPS_ERRSCA1(
      &                    WRKRC(ITDRPTR), M, NOMP_MAX)
 C     find error for the cols
-                     ONEERRCOL = DMUMPS_ERRSCA1(COLSCA,  
+                     ONEERRCOL = DMUMPS_ERRSCA1(
      &                    WRKRC(ITDCPTR), N, NOMP_MAX)
 C     get max of those two errors
                      ONEERRL = ONEERRCOL
@@ -1381,7 +1381,7 @@ C{             SINGLE PROCESSOR CASE: INF-NORM ERROR COMPUTATION
      &                 (ITER.EQ.NB1).OR.
      &                 ((ITER.EQ.NB1+NB2+NB3).AND.
      &                 (NB1+NB3.GT.0))) THEN
-                     INFERRL = DMUMPS_ERRSCA1(SCA, 
+                     INFERRL = DMUMPS_ERRSCA1(
      &                    WRKRC(ITDRPTR), N, NOMP_MAX)
                      INFERRG = INFERRL
                      IF(INFERRG.LE.EPS) THEN
@@ -1524,7 +1524,7 @@ C{             SINGLE-PROCESSOR CASE: ONE-NORM ERROR COMPUTATION
                   IF((EPS .GT. RZERO) .OR. 
      &                 ((ITER.EQ.NB1+NB2).AND.
      &                 (NB2.GT.0))) THEN
-                     ONEERRL = DMUMPS_ERRSCA1(SCA, 
+                     ONEERRL = DMUMPS_ERRSCA1(
      &                    WRKRC(ITDRPTR), N, NOMP_MAX)
                      ONEERRG = ONEERRL
                      IF(ONEERRG.LE.EPS) THEN

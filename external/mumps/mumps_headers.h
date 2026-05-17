@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -21,13 +21,18 @@ C     XXN    ->  node number
 C     XXP    ->  pointer to previous record
 C     XXA    ->  active fronts data management
 C     XXF    ->  blr data passed from factorization to solve
-C     XXLR   ->  Low rank status of a node (0=FR, 
-C                                           1=LowRank CB only
-C                                           2=LowRank factors/panels only
-C                                           3=LowRank CB+factor/panel)
+C     XXLR   ->  Low rank status of a node 
+C                (0=FR, 
+C                 1=LowRank CB only
+C                 2=LowRank factors/panels only
+C                 3=LowRank CB+factor/panel
+C                 4=FR nodes: FR facto with tiled panels (BFR/tiled FR)
+C                 5=FR nodes: FR facto with tiled panels + compress CB
+C                 values 1, 5 not used 
 C     XXEBF  ->  End of Blocfacto (0=not yet, 1=finished)  
 C     XXD    ->  dynamic data size
-C     XXG    ->  GPU information (currently number of pinned rows NFRONT-NBROWS_CPU
+C     XXG    ->  GPU information (currently number of pinned rows 
+C                NFRONT-NBROWS_CPU
 C                for type 1 nodes, pinning status for type 2 strips)
 C REMARK: .h file could be replaced by a module with functions to get node status
 C          added in the module.
@@ -79,6 +84,9 @@ C     -------------------------------------------------------
      &  S_ROOTBAND_INIT
          PARAMETER(S_ROOT2SON_CALLED=-341,S_REC_CONTSTATIC=1,
      &             S_ROOTBAND_INIT=0)
+C         Node not canidate for GPU
+          INTEGER, PARAMETER :: NotCandidateGPU = 99999
+C         Node candidate to use GPUs, pinning status:
           INTEGER, PARAMETER :: MemNotPinned = -1
           INTEGER, PARAMETER :: MemPinned = -2
           INTEGER, PARAMETER :: PinningOnTheWay = -3

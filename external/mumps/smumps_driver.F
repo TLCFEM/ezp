@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -23,6 +23,10 @@ C
 #if ! defined(NO_SAVE_RESTORE)
       USE SMUMPS_SAVE_RESTORE
 #endif
+#if defined(MPI_TO_K_OMP)
+      USE MUMPS_MPITOOMP_M
+#endif
+      USE SMUMPS_CONFIG_FILE
       USE SMUMPS_INTR_TYPES, ONLY : SMUMPS_INTR_STRUC,
      &    SMUMPS_ENCODE_INTR,
      &    SMUMPS_DECODE_INTR,
@@ -421,11 +425,12 @@ C
 C      .. Local variables ..
 C
       INTEGER JOBMIN, JOBMAX, OLDJOB
-!$    INTEGER NOMP, NOMPMIN, NOMPMAX
+      INTEGER NOMP, NOMP_C
+!$    INTEGER NOMPMIN, NOMPMAX
       INTEGER I, J, MP, LP, MPG, KEEP235SAVE, KEEP242SAVE,
      &        KEEP243SAVE, KEEP495SAVE, KEEP497SAVE,
      &        KEEP77SAVE, KEEP78SAVE, KEEP83SAVE, KEEP91SAVE,
-     &        KEEP172SAVE, KEEP178SAVE
+     &        KEEP172SAVE, KEEP178SAVE, KEEP117SAVE
       INTEGER(8) :: I8
       LOGICAL LANA, LFACTO, LSOLVE, PROK, LPOK, FLAG, PROKG
       LOGICAL NOERRORBEFOREPERM
@@ -442,6 +447,14 @@ C     TIMINGS
       DOUBLE PRECISION TIMEG, TIMETOTAL
 #if ! defined(NO_SAVE_RESTORE)
       INTEGER(8) :: FILE_SIZE,STRUC_SIZE
+#endif
+#if defined(MPI_TO_K_OMP)
+      INTEGER:: NCORES
+      INTEGER, DIMENSION(:), ALLOCATABLE:: AFFINITY_MASK
+      INTEGER:: ERROR
+#if defined(USE_LIBHWLOC)
+      LOGICAL :: hwloc_init_done
+#endif
 #endif
       INTEGER:: ICNTL16_LOC
 !$    INTEGER:: PREVIOUS_OMP_THREADS_NUM
@@ -496,6 +509,13 @@ C     Default setting for printing, before ICNTL(1:4) are initialized
       LPOK  = .TRUE.
       PROK  = .FALSE.
       PROKG = .FALSE.
+#if defined(MPI_TO_K_OMP)
+#if defined(USE_LIBHWLOC)
+C     Initialized before any possible jump to 499 or 500,
+C     where it will be tested.
+      hwloc_init_done = .FALSE.
+#endif
+#endif
 C     -----------------------------------
 C     Check that MPI has been initialized
 C     -----------------------------------
@@ -574,6 +594,20 @@ C     are -2 or -3
          END IF
       ENDIF
 #endif
+C     CONFIG_FILE should not be read for JOB=-1
+      IF (JOB.NE.-1
+     &    .AND. JOB.NE. -4
+#if ! defined(NO_SAVE_RESTORE)
+C      Do not read config file in case of save/restore/clean instance
+     &    .AND. JOB .NE. -3
+     &    .AND. JOB .NE. 7
+     &    .AND. JOB .NE. 8
+#endif
+     &   ) THEN
+C       READ THE CONFIGURATION FILE BEFORE A JOB
+        CALL SMUMPS_CONFIG_FROM_FILE( id )
+        IF ( id%INFO(1) .LT. 0 ) GOTO 499
+      ENDIF
 C     ----------------------------------
 C     Initialize, LANA, LFACTO, LSOLVE
 C     LANA indicates if analysis must be performed
@@ -587,10 +621,33 @@ C     ----------------------------------
       IF ((JOB.EQ.3).OR.(JOB.EQ.5).OR.
      &    (JOB.EQ.6))               LSOLVE = .TRUE.
       IF ( LANA .OR. LFACTO ) THEN 
-       id%KEEP(417) = id%ICNTL(51) 
+C{
+       KEEP117SAVE = id%KEEP(117)
+#if defined(USE_GPU)
+       IF (id%MYID .eq. MASTER) THEN
+         id%KEEP(417) = id%ICNTL(51) 
+       ENDIF
        CALL MPI_BCAST( id%KEEP(417 ), 1, MPI_INTEGER,
-     &                MASTER, id%C OMM, IERR )
-      ENDIF                        
+     &                MASTER, id%COMM, IERR )
+       IF (id%MYID .eq. MASTER) THEN
+         IF ( id%KEEP(117).EQ.-1 ) THEN
+C           automatic setting
+            IF (id%KEEP(417).GT.0) THEN
+C             on if GPU activated
+              id%KEEP(117)=1
+            ELSE
+              id%KEEP(117)=0
+            ENDIF
+         ENDIF
+       ENDIF                        
+       CALL MPI_BCAST( id%KEEP(117), 1, MPI_INTEGER,
+     &                MASTER, id%COMM, IERR )
+#else
+      id%KEEP(417) = 0 
+#endif
+      IF (id%KEEP(117).LT.0) id%KEEP(117)=0
+C}
+      ENDIF
       IF ( LANA .OR. LFACTO .OR. LSOLVE) THEN
         IF (id%KEEP(50).NE.0) id%KEEP(202)=0
 C       Set some specific experimental KEEP entries,
@@ -605,6 +662,19 @@ C       Value defined on MASTER is the reference
            KEEP172SAVE =  id%KEEP(172)
            KEEP178SAVE =  id%KEEP(178)
            id%KEEP(198) = 0
+#if defined(USE_GPU)
+           IF (id%KEEP(417).GT.0) THEN
+            IF (id%KEEP(66).NE.2) THEN 
+              id%KEEP(198) = 1
+            ELSE
+              id%KEEP(198) = id%KEEP(66)
+            ENDIF
+           ELSE
+            id%KEEP(375)=1  
+            id%KEEP(376)=0
+           ENDIF
+           IF (id%KEEP(198).GT.2.OR.id%KEEP(198).LT.0) id%KEEP(198)=0
+#endif
            CALL MPI_BCAST( id%KEEP(198), 1, MPI_INTEGER, MASTER, 
      &          id%COMM, IERR )
           IF (id%KEEP(370) .EQ. 0) THEN     
@@ -659,6 +729,12 @@ C       and factorization:
      &                               id%KEEP8(29))
       ENDIF
 C
+#if defined(MPI_TO_K_OMP)
+      IF (LFACTO .or. LSOLVE) THEN
+C       affinity mask not yet changed
+        id%KEEP(382)= 0
+      ENDIF
+#endif
       IF (JOB.EQ.-2.OR.JOB.EQ.1.OR.JOB.EQ.2.OR.JOB.EQ.3.OR.
      &    JOB.EQ.4.OR.JOB.EQ.5.OR.JOB.EQ.6.OR.JOB.EQ.-4
 #if ! defined(NO_SAVE_RESTORE)
@@ -666,7 +742,7 @@ C
 #endif
      &     .OR. JOB.EQ.9 
      &     ) THEN
-C       Value of JOB is correct and different from -1
+C{      Value of JOB is correct and different from -1
 C       ICNTL should have been initialized and can be used
         LP      = id%ICNTL(1)
         MP      = id%ICNTL(2)
@@ -698,11 +774,33 @@ C       -----------------------------
 !$        CALL omp_set_num_threads(ICNTL16_LOC)
 #endif
 !$      ENDIF
+        NOMP = 0
+!$      NOMP = OMP_GET_MAX_THREADS()
+        IF (JOB.EQ.1) THEN
+C       OMP_GET_MAX_THREADS should be identical in Fortran and C
+C       We also want to check that C and Fortran files were both 
+C       compile with the same OpenMP option
+          CALL MUMPS_CHECK_OMP_C(NOMP_C)
+          IF (NOMP.NE.NOMP_C) THEN
+           id%INFO(1) = -106
+           id%INFO(2) = max(NOMP, NOMP_C)
+           IF (PROKG) THEN
+            WRITE(MPG,'(/A,A,/A)')
+     &     " ERROR omp_get_max_threads returned by Fortran",
+     &     " and C routines is different",
+     &     " check consistency of OPTC and OPTF when compiling MUMPS"
+           ENDIF
+          ENDIF
+          CALL MUMPS_PROPINFO( id%ICNTL(1), id%INFO(1),
+     &               id%COMM, id%MYID)
+          IF ( id%INFO( 1 ) .LT. 0) THEN
+           GOTO 499
+          ENDIF
+        ENDIF
 C       -----------------------------
 C       Check if number of threads is
 C       the same on all processes
 C       -----------------------------
-!$      NOMP = OMP_GET_MAX_THREADS()
 !$      CALL MPI_ALLREDUCE(NOMP,NOMPMIN,1,MPI_INTEGER,MPI_MIN,
 !$   &                     id%COMM,IERR)
 !$      CALL MPI_ALLREDUCE(NOMP,NOMPMAX,1,MPI_INTEGER,MPI_MAX,
@@ -710,7 +808,7 @@ C       -----------------------------
         id%KEEP(249) = 1
 !$      id%KEEP(249) = OMP_GET_MAX_THREADS()
         IF (PROKG) THEN
-C          Print basic information on MUMPS call
+C{         Print basic information on MUMPS call
            IF (JOB .EQ. -2
 #            if ! defined(NO_SAVE_RESTORE)
      &       .OR. JOB .EQ. 8
@@ -763,16 +861,56 @@ C          MPI and OpenMP information
      &                 id%NPROCS, ', without OMP'
 !$         ENDIF
           IF (JOB.GE.1 .AND. JOB.LE.6) THEN
-            IF ( id%KEEP(370).EQ.1.OR.id%KEEP(371).EQ.1) THEN
+            IF ( id%KEEP(370).EQ.0.OR.id%KEEP(371).EQ.1) THEN
               WRITE(MPG, 99996) id%KEEP(370), id%KEEP(371)
             ENDIF
 99996       FORMAT(/'Advanced settings:'/
      &       '   KEEP(370) Static mapping              =',I10/
      &       '   KEEP(371) Advanced optimizations      =',I10)
+#if defined(USE_GPU)
+            IF (id%KEEP(417).GT.0 ) THEN
+             WRITE(MPG, 99998) id%KEEP(417)
+99998        FORMAT('GPUs settings:'/
+     &       '   ICNTL(51) Offload activities on GPUs         =',I4)
+            ENDIF
+#else
+            IF (id%ICNTL(51).GT.0.AND.LANA) THEN
+             WRITE(MPG, '(/A,/A)') 
+     &       "   WARNING: using GPUs (ICNTL(51)>0) requires compiling",
+     &       "   MUMPS with -DUSE_GPU added to OPTF and OPTC"
+            ENDIF
+#endif            
             WRITE(MPG, '(A)')
           ENDIF
+C       }
         ENDIF
+C     }
       END IF
+#if defined(MPI_TO_K_OMP)
+      IF (LANA) THEN
+        id%KEEP(381) = id%ICNTL(17)
+        CALL MPI_BCAST( id%KEEP(381), 1, MPI_INTEGER, MASTER, id%COMM,
+     &       IERR )
+      ENDIF
+#if defined(USE_LIBHWLOC)
+      hwloc_init_done = .FALSE.
+      IF ((LANA.or.LFACTO.or.LSOLVE).and.
+     &   (id%KEEP(381).gt.1 .or. id%KEEP(381) .LT. 0) ) THEN
+C       Warming: KEEP(381) may change value during analysis
+        CALL mumps_hwloc_init(ERROR)
+        hwloc_init_done = .TRUE.
+        IF (ERROR.lt.0) THEN
+          id%INFO(1) = -62
+          id%INFO(2) = id%MYID
+        ENDIF
+      ENDIF
+      CALL MUMPS_PROPINFO( id%ICNTL(1), id%INFO(1),
+     &             id%COMM, id%MYID)
+      IF ( id%INFO( 1 ) .LT. 0) THEN
+        GOTO 499
+      ENDIF
+#endif
+#endif
 C
 C----------------------------------------------------------------
 C
@@ -812,6 +950,14 @@ C       leading to an uninitialized access here.
         IF ( id%INFO(1) .LT. 0 ) THEN
            GOTO 499
         ENDIF
+      ENDIF
+C
+C     TIMINGS: for JOB values different from -1 and -2, -4,
+C     measure TIMETOTAL:
+C
+      IF (id%MYID.EQ.MASTER) THEN
+        id%DKEEP(70)=0.0E0
+        CALL MUMPS_SECDEB(TIMETOTAL)
       ENDIF
 C     -----------------------------------------------------------------
 C
@@ -927,14 +1073,6 @@ C       to update save-restore statistics to small values)
 #endif
         GOTO 500
       END IF
-C
-C     TIMINGS: for JOB values different from -1 and -2, -4,
-C     measure TIMETOTAL:
-C
-      IF (id%MYID.EQ.MASTER) THEN
-        id%DKEEP(70)=0.0E0
-        CALL MUMPS_SECDEB(TIMETOTAL)
-      ENDIF
 #if ! defined(NO_SAVE_RESTORE)
 C----------------------------------------------------------------
 C
@@ -1297,8 +1435,11 @@ C        Out-of-range values => automatic choice
      &       .OR. id%KEEP(52) .EQ. 6 )
      &       id%KEEP(52) = 77
          IF ((id%KEEP(52).EQ.77).AND.(id%KEEP(50).EQ.1)) THEN
-          ! for SPD matrices default is no scaling
+          IF (id%ICNTL(35).EQ.0) THEN
+C          for FR facto of SPD matrices the default is "no scaling"
+C          (for BLR facto scaling in needed)
            id%KEEP(52) = 0
+          ENDIF
          ENDIF
          IF ( id%KEEP(52).EQ.77 .OR. id%KEEP(52).LE.-2) THEN 
 C          -- suppress scaling computed during analysis 
@@ -1415,6 +1556,58 @@ C     -----------------------
         id%KEEP(40) = 1 -456789
       END IF
 C
+#if defined(MPI_TO_K_OMP)
+      IF (LFACTO .or. LSOLVE) THEN
+C     {
+        NCORES = 0
+        IF (id%KEEP(381).gt.1) THEN
+C         {
+          CALL MUMPS_GET_CPU_COUNT(NCORES)
+          IF (NCORES .gt. 0) THEN
+            allocate(AFFINITY_MASK(0:NCORES-1), STAT=IERR)
+            IF (IERR .ne. 0) THEN
+              NCORES = 0
+            ENDIF
+          ENDIF
+          IF (NCORES .gt. 0) THEN
+            CALL MUMPS_GET_CPU_SET(NCORES, AFFINITY_MASK, ERROR)
+            IF (ERROR.lt.0) THEN
+            WRITE(MPG, '(A)') 'Issue with structure allocation to save',
+     &                 ' current affinity mask.'
+            ENDIF
+          ENDIF
+          IF (PROKG) THEN
+            WRITE(MPG, '(A,I4)')
+     &           'MUMPS running with an OpenMP reuse factor of ',
+     &           id%KEEP(381)
+            write(MPG, '(A,I6,A,I6,A)') '     (executing #MPI = ',
+     &           id%NSLAVES/id%KEEP(381), ' worker(s) with #OMP = ',
+     &           id%KEEP(249)*id%KEEP(381), ')'
+          ENDIF
+#if defined(MTKO_VERBOSE)
+C         Print original affinity mask of all MPI procs
+C         NCORES == 0 when not compiled with either -DUSE_LIBHWLOC
+C         or -DUSE_SCHEDAFFINITY. 
+C         Loop + MPI barrier avoids mixing outputs from different procs
+          IF (PROK) THEN
+           DO I=0, id%NPROCS-1
+            IF (id%MYID.EQ.I) THEN
+              IF (NCORES.GT.0) THEN
+                WRITE(MP, '(/A/, A, I5, /A,10I5/,(25X, 10I5))')
+     &     " MPI TO K OMP (original AFFINITY_MASK):",
+     &     "       MPI process id  = ", id%MYID, 
+     &     "       AFFINITY_MASK   = ", AFFINITY_MASK
+              ENDIF
+            ENDIF
+            CALL MPI_BARRIER(id%COMM,IERR)
+           ENDDO
+          ENDIF
+#endif
+C       }
+        ENDIF
+C     }
+      ENDIF
+#endif
 C-------------------------------------------------------
 C-
 C      
@@ -1469,8 +1662,13 @@ C              into id%SCHUR.
      &                      ' SCHUR not associated'
               id%INFO(1)=-22
               id%INFO(2)=9
+#if defined(MUMPS_NOF2003)
              ELSE IF ( size(id%SCHUR) .LT.
-     &                id%SIZE_SCHUR * id%SIZE_SCHUR ) THEN
+     &         int(id%SIZE_SCHUR,8) * int(id%SIZE_SCHUR,8) ) THEN
+#else
+             ELSE IF ( size(id%SCHUR,KIND=8) .LT.
+     &         int(id%SIZE_SCHUR,8) * int(id%SIZE_SCHUR,8) ) THEN
+#endif
                 IF (LP.GT.0) 
      &          write(LP,'(A)') 
      &                ' SCHUR allocated but too small' 
@@ -1582,8 +1780,9 @@ C           choice of scaling then we do not recompute scaling
      &        .OR. id%KEEP(52) .EQ. 6 )
      &        id%KEEP(52) = 77
           IF (id%KEEP(52).EQ.77) THEN
-            IF (id%KEEP(50).EQ.1) THEN
-              ! for SPD matrices the default is "no scaling"
+            IF ((id%KEEP(50).EQ.1).AND.(id%ICNTL(35).EQ.0)) THEN
+C             for FR facto of SPD matrices the default is "no scaling"
+C             (for BLR facto scaling in needed)
               id%KEEP(52) = 0
             ELSE
               ! SYM .ne. 1  the default is cheap SIMSCA
@@ -2017,6 +2216,52 @@ C
       IF (LPOK) WRITE (LP,99994) id%INFO(2)
 *
 500   CONTINUE
+C     This call frees BLKPTR/BLKVAR if they were
+C     allocated through the configuration file
+      CALL SMUMPS_config_exit(id)
+#if defined(MPI_TO_K_OMP)
+      IF (LANA) THEN
+        IF (id%KEEP(381).gt.1 .AND. id%INFO(1).GE.0) THEN
+          IF (PROKG) THEN
+            WRITE(MPG, '(A,I4)')
+     &        'MUMPS configured to run with an OpenMP reuse factor of ',
+     &        id%KEEP(381)
+            WRITE(MPG, '(A,I6,A)') '     (will use #MPI = ',
+     &        id%NSLAVES/id%KEEP(381), ' worker(s))'
+          ENDIF
+        ENDIF
+      ENDIF
+      IF (LFACTO .or. LSOLVE) THEN
+        if (id%KEEP(382).eq.1) THEN
+          if (NCORES.gt.0 .and. allocated(AFFINITY_MASK)) THEN
+            CALL MUMPS_MPITOOMP_SET_MASK(NCORES, id%KEEP(249),
+     &                AFFINITY_MASK, .false., ERROR)
+            IF (ERROR.lt.0) THEN
+              IF (LPOK)
+     &        WRITE(LP,'(A)')'Issue with old affinity mask restoration'
+            ELSE
+            ENDIF
+            DEALLOCATE(AFFINITY_MASK)
+          ELSE
+#if defined(WORKAROUNDINTELILP64OPENMPLIMITATION)
+!$          CALL omp_set_num_threads(int(id%KEEP(249),4))
+#else
+!$          CALL omp_set_num_threads(id%KEEP(249))
+#endif
+          ENDIF
+          id%KEEP(382) = 0
+        else
+          if (id%KEEP(382).eq.-1) THEN
+            id%KEEP(382) = 0
+          endif
+        endif
+      ENDIF
+#if defined(USE_LIBHWLOC)
+      IF ( hwloc_init_done ) THEN
+        CALL mumps_hwloc_terminate()
+      ENDIF
+#endif
+#endif
 #if ! defined(LARGEMATRICES)
 C     ---------------------------------
 C     Permute JCN on output to SMUMPS if
@@ -2101,6 +2346,9 @@ C        restore statistics have not changed.
 *===============
 * ERRORG section
 *===============
+      IF ( (id%MYID.EQ.MASTER).AND.(LANA .OR. LFACTO) ) THEN
+           id%KEEP(117) = KEEP117SAVE
+      ENDIF
       IF (id%MYID.EQ.MASTER.and.MPG.GT.0.and.
      & id%INFOG(1).lt.0) THEN
         WRITE(MPG,'(A,I16)') ' On return from SMUMPS, INFOG(1)=',
@@ -2347,7 +2595,7 @@ C--------------------------------------------------------------------
      &     'ICNTL(13)  Parallel root (0=on, 1=off)             =',I10/
      &     'ICNTL(15)  Analysis by block                       =',I10/
      &     'ICNTL(18)  Distributed matrix                      =',I10/
-     &     'ICNTL(19)  Schur option ( keep(60) 0=off,else=on ) =',I10/
+     &     'ICNTL(19)  Schur option ( 0=off,else=on )          =',I10/
      &     'ICNTL(22)  Out-of-core option (1=on, off otherwise)=',I10/
      &     'ICNTL(48)  Tree based multithreading               =',I10/
      &     'ICNTL(58)  Symbolic factorization option           =',I10)

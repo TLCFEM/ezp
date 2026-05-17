@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -308,6 +308,9 @@ C
      &  CAND_OF_NODE,
      &  MEM_DISTRIB, NCB, NFRONT, NSLAVES_NODE,
      &  TAB_POS, SLAVES_LIST, SIZE_SLAVES_LIST,INODE
+#if defined(USE_GPU)
+     &  , LDLTRegular_NIV2
+#endif
      &)
        IMPLICIT NONE
       INTEGER, intent(in) :: KEEP(500),SIZE_SLAVES_LIST
@@ -321,6 +324,9 @@ C
       INTEGER, intent(out):: SLAVES_LIST(SIZE_SLAVES_LIST)
       INTEGER, intent(out):: TAB_POS(SLAVEF+2)
       INTEGER, intent(out):: NSLAVES_NODE
+#if defined(USE_GPU)
+      LOGICAL, intent(in), optional :: LDLTRegular_NIV2 
+#endif
       INTEGER i
       INTEGER LP,MP
       INTEGER(8) DUMMY1
@@ -381,6 +387,9 @@ C
      &        MEM_DISTRIB, NCB, NFRONT, NSLAVES_NODE,
      &        TAB_POS, SLAVES_LIST, SIZE_SLAVES_LIST,MYID,INODE,
      &        TAB_MAXS,TMP_ARRAY,DUMMY1,DUMMY2
+#if defined(USE_GPU)
+     &        , LDLTRegular_NIV2 
+#endif
      &        )
       ELSE
         WRITE(*,*) "Strategy 6 not implemented"

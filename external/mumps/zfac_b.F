@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -27,6 +27,9 @@ C
      & PTR_LEAFS_L0_OMP, L0_OMP_MAPPING, LL0_OMP_MAPPING, THREAD_LA,
      & L0_OMP_FACTORS, LL0_OMP_FACTORS, I4_L0_OMP, NBSTATS_I4,
      & NBCOLS_I4, I8_L0_OMP, NBSTATS_I8, NBCOLS_I8
+#if defined(MPI_TO_K_OMP)
+     &  ,I_AM_HEAD
+#endif
      &     )
       USE MUMPS_LOAD 
       USE MUMPS_BUF_COMMON, ONLY : MUMPS_BUF_ALLOC_CB,
@@ -110,6 +113,9 @@ C
       INTEGER, INTENT (IN) :: I4_L0_OMP(NBSTATS_I4, NBCOLS_I4)
       INTEGER(8), INTENT (IN) :: I8_L0_OMP(NBSTATS_I8, NBCOLS_I8)
       INTEGER(8), INTENT ( IN ) :: THREAD_LA
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, INTENT (IN) :: I_AM_HEAD
+#endif
        INTEGER, EXTERNAL :: MUMPS_PROCNODE
       INTEGER allocok
       DOUBLE PRECISION UULOC
@@ -199,6 +205,9 @@ C
      &                     KEEP, STEP,
      &                     PROCNODE_STEPS)
       IF (KEEP(400) .GT. 0
+#if defined(MPI_TO_K_OMP)
+     &   .AND. I_AM_HEAD
+#endif
      &   ) THEN
          IF (LPOOL .NE. LPOOL_A_L0_OMP) THEN
           WRITE(*,*) "Check LPOOL vs. LPOOL_A_L0_OMP",
@@ -234,10 +243,21 @@ C
       IW2(PTRAST:PTRAST+KEEP(28)-1)=0_8
       IW1(PIMASTER:PIMASTER+KEEP(28)-1)=-99999_8
       KEEP(405) = 0
+#if defined(USE_GPU)
+      IF (KEEP(400) .EQ. 0) THEN
+        CALL ZMUMPS_GPU_SET_UNDER_L0_STATUS_C(KEEP(405))
+      ENDIF
+#endif
       NBROOT_UNDER_L0 = 0
       IF (KEEP(400).GT.0
+#if defined(MPI_TO_K_OMP)
+     &   .AND. I_AM_HEAD
+#endif
      &   ) THEN
         KEEP(405)=1
+#if defined(USE_GPU)
+        CALL ZMUMPS_GPU_SET_UNDER_L0_STATUS_C(KEEP(405))
+#endif
         ALLOCATE( MUMPS_TPS_ARR( KEEP(400) ), stat=allocok )
         IF (allocok .GT. 0) THEN
           IF (LPOK) THEN
@@ -271,6 +291,9 @@ C
      &  I4_L0_OMP, NBSTATS_I4, NBCOLS_I4,
      &  I8_L0_OMP, NBSTATS_I8, NBCOLS_I8 )
         KEEP(405)=0
+#if defined(USE_GPU)
+        CALL ZMUMPS_GPU_SET_UNDER_L0_STATUS_C(KEEP(405))
+#endif
         DKEEP(16) = OPELI
         KEEP8(75)=KEEP8(76)
         KEEP8(63)=KEEP8(74)
@@ -352,6 +375,9 @@ C
         ENDIF
       ENDIF
       IF ( KEEP(400) .EQ. 0
+#if defined(MPI_TO_K_OMP)
+     &    .OR. .NOT. I_AM_HEAD
+#endif
      &   ) THEN
          LTPS_ARR = 1
          ALLOCATE( MUMPS_TPS_ARR(1))
@@ -402,6 +428,9 @@ C
      & MUMPS_TPS_ARR, ZMUMPS_TPS_ARR, LTPS_ARR,
      & RINFO, POSFAC, IWPOS, LRLU, IPTRLU, LRLUS, LEAF, NROOT, NBROOT,
      & NBROOT_UNDER_L0,
+#if defined(MPI_TO_K_OMP)
+     & I_AM_HEAD,
+#endif
      & UULOC, ICNTL, PTLUST_S, PTRFAC, INFO, KEEP, KEEP8,
      & PROCNODE_STEPS,SLAVEF,MYID,COMM_NODES, MYID_NODES, BUFR, LBUFR,
      & LBUFR_BYTES, INTARR, DBLARR, root, roota, SYM_PERM, NELT, FRTPTR,
@@ -436,6 +465,9 @@ C
         CALL ZMUMPS_UPDATEDETER( DET_MANT, DKEEP(6), KEEP(259) )
       ENDIF
       IF (KEEP(400) .GT. 0
+#if defined(MPI_TO_K_OMP)
+     &  .AND. I_AM_HEAD
+#endif
      &  ) THEN
         IF (LL0_OMP_FACTORS.NE.KEEP(400)) THEN
           WRITE(*,*) "Internal error in ZMUMPS_FAC_B, KEEP(400), L..=",
@@ -550,6 +582,9 @@ C
      & MUMPS_TPS_ARR, ZMUMPS_TPS_ARR, LTPS_ARR,
      & RINFO, POSFAC ,IWPOS, LRLU, IPTRLU, LRLUS, LEAF, NBROOT, NBRTOT,
      & NBROOT_UNDER_L0, 
+#if defined(MPI_TO_K_OMP)
+     & I_AM_HEAD,
+#endif
      & UU, ICNTL, PTLUST, PTRFAC, INFO, KEEP, KEEP8,
      & PROCNODE_STEPS, SLAVEF, MYID, COMM_NODES, MYID_NODES,
      & BUFR, LBUFR, LBUFR_BYTES, INTARR, DBLARR, root, roota,
@@ -620,6 +655,9 @@ C
       TYPE (MUMPS_TPS_T)  ::  MUMPS_TPS_ARR(LTPS_ARR)
       TYPE (ZMUMPS_TPS_T) :: ZMUMPS_TPS_ARR(LTPS_ARR)
       INTEGER, INTENT( IN ) :: L0_OMP_MAPPING( LL0_OMP_MAPPING )
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, INTENT( IN ) :: I_AM_HEAD
+#endif
       CALL ZMUMPS_FAC_PAR( N, IW, LIW, A, LA, NSTK_STEPS,
      & ND,FILS,STEP, FRERE, DAD, CAND, ISTEP_TO_INIV2, TAB_POS_IN_PERE,
      & NSTEPSDONE, OPASS, OPELI, NELVA, COMP, MAXFRT, NMAXNPIV, NTOTPV,
@@ -630,6 +668,9 @@ C
      & MUMPS_TPS_ARR, ZMUMPS_TPS_ARR, LTPS_ARR,
      & RINFO, POSFAC ,IWPOS, LRLU, IPTRLU, LRLUS, LEAF, NBROOT, NBRTOT,
      & NBROOT_UNDER_L0, 
+#if defined(MPI_TO_K_OMP)
+     & I_AM_HEAD,
+#endif
      & UU, ICNTL, PTLUST, PTRFAC, INFO, KEEP,KEEP8,
      & PROCNODE_STEPS,SLAVEF,MYID, COMM_NODES, MYID_NODES,
      & BUFR,LBUFR,LBUFR_BYTES,INTARR,DBLARR,root,roota,PERM, NELT,

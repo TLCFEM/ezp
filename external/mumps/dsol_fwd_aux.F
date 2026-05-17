@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -23,10 +23,15 @@ C
      &     INFO, KEEP, KEEP8, DKEEP, STEP, PROCNODE_STEPS, 
      &     RHSINTR, LRHSINTR, POSINRHSINTR_FWD
      &     , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &     , I_AM_HEAD
+#endif
      &    )
       USE DMUMPS_OOC 
       USE DMUMPS_SOL_LR, ONLY: DMUMPS_SOL_SLAVE_LR_U
       USE DMUMPS_BUF 
+      USE MUMPS_TOOLS_COMMON_M, ONLY: MUMPS_LR_COMPRESS_PANEL,
+     &                                MUMPS_LR_FORCE_BFR
       IMPLICIT NONE
       INTEGER LBUFR, LBUFR_BYTES
       INTEGER MSGTAG, MSGSOU, MYID, SLAVEF, COMM
@@ -50,6 +55,9 @@ C
       DOUBLE PRECISION RHSINTR( LRHSINTR, NRHS )
       INTEGER, intent(in) :: POSINRHSINTR_FWD(N)
       LOGICAL, intent(in) :: FROM_PP
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, intent(in) :: I_AM_HEAD
+#endif
       INCLUDE 'mpif.h'
       INCLUDE 'mumps_tags.h'
       INTEGER(8) :: PTRX, PTRY, IFR8
@@ -65,7 +73,7 @@ C
       LOGICAL :: OMP_FLAG
       EXTERNAL MUMPS_PROCNODE
       INTEGER  MUMPS_PROCNODE
-      LOGICAL COMPRESS_PANEL, LR_ACTIVATED
+      LOGICAL COMPRESS_PANEL, LR_ACTIVATED, FORCE_BFR
       LOGICAL OOCWRITE_COMPATIBLE_WITH_BLR 
       DOUBLE PRECISION ALPHA, ONE
       PARAMETER (ONE = 1.0D0, ALPHA=-1.0D0)
@@ -179,7 +187,11 @@ C
              END DO
           END IF
           LR_ACTIVATED = (IW(PTRIST(STEP(FINODE))+XXLR).GT.0)
-          COMPRESS_PANEL = (IW(PTRIST(STEP(FINODE))+XXLR).GE.2)
+          FORCE_BFR      = MUMPS_LR_FORCE_BFR(
+     &      IW(PTRIST(STEP(FINODE))+XXLR))
+          COMPRESS_PANEL = MUMPS_LR_COMPRESS_PANEL(
+     &      IW(PTRIST(STEP(FINODE))+XXLR))
+          COMPRESS_PANEL = FORCE_BFR.OR.COMPRESS_PANEL
           OOCWRITE_COMPATIBLE_WITH_BLR =
      &     (.NOT.LR_ACTIVATED.OR.(.NOT.COMPRESS_PANEL).OR.
      &            (KEEP(485).EQ.0) 
@@ -311,6 +323,9 @@ C
      &              PROCNODE_STEPS, 
      &              RHSINTR, LRHSINTR, POSINRHSINTR_FWD
      &              , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &              , I_AM_HEAD
+#endif
      &              )
               IF ( INFO( 1 )  .LT. 0 )  GOTO 270
               GOTO 210
@@ -360,11 +375,16 @@ C
      &     
      &     ISTEP_TO_INIV2, TAB_POS_IN_PERE
      &    , RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE, FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &     , I_AM_HEAD
+#endif
      &     , ERROR_WAS_BROADCASTED
      &    )
       USE DMUMPS_SOL_LR 
 !$    USE MUMPS_SOL_L0OMP_M, ONLY: LOCK_FOR_SCATTER
       USE MUMPS_SOL_L0OMP_M, ONLY: NB_LOCK_MAX
+      USE MUMPS_TOOLS_COMMON_M, ONLY: MUMPS_LR_COMPRESS_PANEL,
+     &                                MUMPS_LR_FORCE_BFR
       USE DMUMPS_OOC
       USE DMUMPS_BUF
       IMPLICIT NONE
@@ -399,6 +419,9 @@ C
       INTEGER, intent(in) :: LRHS_BOUNDS
       INTEGER, intent(in) :: RHS_BOUNDS(LRHS_BOUNDS)
       LOGICAL, intent(in) :: FROM_PP
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, intent(in) :: I_AM_HEAD
+#endif
       LOGICAL, intent(out) :: ERROR_WAS_BROADCASTED
       EXTERNAL dgemv, dtrsv, dgemm, dtrsm, MUMPS_PROCNODE
       INTEGER MUMPS_PROCNODE
@@ -427,7 +450,7 @@ C
       LOGICAL :: CBINITZERO  
       INTEGER LDAJ, LDAJ_FIRST_PANEL
       INTEGER LDAtemp
-      LOGICAL COMPRESS_PANEL, LR_ACTIVATED
+      LOGICAL COMPRESS_PANEL, LR_ACTIVATED, FORCE_BFR
       LOGICAL OOCWRITE_COMPATIBLE_WITH_BLR 
       INTEGER TMP_NBPANELS,
      &     I_PIVRPTR, I_PIVR, IPANEL
@@ -437,7 +460,11 @@ C
       INCLUDE 'mumps_tags.h'
       ERROR_WAS_BROADCASTED = .FALSE.
       LR_ACTIVATED   = (IW(PTRIST(STEP(INODE))+XXLR).GT.0)
-      COMPRESS_PANEL = (IW(PTRIST(STEP(INODE))+XXLR).GE.2)
+      FORCE_BFR      = MUMPS_LR_FORCE_BFR(
+     &  IW(PTRIST(STEP(INODE))+XXLR))
+      COMPRESS_PANEL = MUMPS_LR_COMPRESS_PANEL(
+     &  IW(PTRIST(STEP(INODE))+XXLR))
+      COMPRESS_PANEL = FORCE_BFR.OR.COMPRESS_PANEL
       OOCWRITE_COMPATIBLE_WITH_BLR =
      &     (.NOT.LR_ACTIVATED.OR.(.NOT.COMPRESS_PANEL).OR.
      &            (KEEP(485).EQ.0) 
@@ -916,6 +943,9 @@ C
      &            PROCNODE_STEPS,
      &            RHSINTR, LRHSINTR, POSINRHSINTR_FWD
      &            , FROM_PP
+#                 if defined(MPI_TO_K_OMP)
+     &             , I_AM_HEAD
+#                 endif
      &            )
             IF ( INFO( 1 )  .LT. 0 )  THEN
               ERROR_WAS_BROADCASTED = .TRUE.
@@ -967,6 +997,9 @@ C
      &              PROCNODE_STEPS,
      &              RHSINTR, LRHSINTR, POSINRHSINTR_FWD
      &              , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &              , I_AM_HEAD
+#endif
      &              )
                IF ( INFO( 1 )  .LT. 0 ) THEN
                  ERROR_WAS_BROADCASTED = .TRUE.
@@ -1003,6 +1036,9 @@ C
      &           PTRICB, INFO, KEEP,KEEP8, DKEEP, STEP, PROCNODE_STEPS,
      &           RHSINTR, LRHSINTR, POSINRHSINTR_FWD
      &            , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &            , I_AM_HEAD
+#endif
      &            )
       IMPLICIT NONE
       LOGICAL BLOQ
@@ -1029,6 +1065,9 @@ C
       INTEGER LRHSINTR, POSINRHSINTR_FWD(N)
       DOUBLE PRECISION RHSINTR(LRHSINTR,NRHS)
       LOGICAL, intent(in) :: FROM_PP
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, intent(in) :: I_AM_HEAD
+#endif
       INCLUDE 'mpif.h'
       INCLUDE 'mumps_tags.h'
       INTEGER :: IERR
@@ -1037,8 +1076,20 @@ C
       FLAG = .FALSE.
       IF ( BLOQ ) THEN
          FLAG = .FALSE.
+#if defined(MPI_TO_K_OMP)
+         IF (.not. I_AM_HEAD) THEN
+           DO WHILE (.not. FLAG)
+             CALL MPI_IPROBE( MPI_ANY_SOURCE, MPI_ANY_TAG, COMM,
+     &             FLAG, STATUS, IERR )
+             CALL MUMPS_USLEEP(1000)
+           END DO
+         ELSE
+#endif
            CALL MPI_PROBE( MPI_ANY_SOURCE, MPI_ANY_TAG,
      &                     COMM, STATUS, IERR )
+#if defined(MPI_TO_K_OMP)
+         END IF
+#endif
         FLAG = .TRUE.
       ELSE
         CALL MPI_IPROBE( MPI_ANY_SOURCE, MPI_ANY_TAG, COMM,
@@ -1067,6 +1118,9 @@ C
      &          PROCNODE_STEPS, 
      &          RHSINTR, LRHSINTR, POSINRHSINTR_FWD
      &          , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &          , I_AM_HEAD
+#endif
      &          )
          END IF
       END IF

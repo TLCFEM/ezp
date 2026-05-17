@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -23,6 +23,9 @@ C (see header of the routine).
 !$    USE OMP_LIB
       IMPLICIT NONE
       CONTAINS
+C *******************************!
+C ALLOCATION!
+C *******************************!
       SUBROUTINE INIT_LRB(LRB_OUT,K,M,N,ISLR)
 C This routine simply initializes a LR block but does NOT allocate it
 C (allocation occurs somewhere else)
@@ -33,62 +36,109 @@ C (allocation occurs somewhere else)
         LRB_OUT%N = N
         LRB_OUT%K = K
         LRB_OUT%ISLR = ISLR
+        LRB_OUT%KW_STOC = 0
         NULLIFY(LRB_OUT%Q)
         NULLIFY(LRB_OUT%R)
       END SUBROUTINE INIT_LRB
+      SUBROUTINE FRB_GET_PREC(LRB, PREC, LRMIXED_ACTIVATED)
+        IMPLICIT NONE
+        TYPE(LRB_TYPE), intent(in) :: LRB
+        INTEGER, intent(out) :: PREC
+        LOGICAL, intent(in) :: LRMIXED_ACTIVATED
+        PREC = PREC_FAC
+#if !defined(NOMIXHPC)
+#else
+        RETURN
+#endif
+        IF (LRB%M*LRB%N.LE.0) RETURN
+        IF (.not.LRMIXED_ACTIVATED) THEN
+          PREC = PREC_FAC
+        ELSE IF (.not.QUANTIZE) THEN
+          PREC = PREC_FR
+        ELSE IF (ASSOCIATED(LRB%Q_STOC)) THEN
+          DO PREC=1,NPREC_STOC
+            IF (associated(LRB%q_STOC(PREC)%val)) EXIT
+          ENDDO  
+          IF (PREC.EQ.NPREC_STOC+1) PREC = PREC_FAC
+        ENDIF
+      END SUBROUTINE FRB_GET_PREC
 C
 C
       SUBROUTINE IS_FRONT_BLR_CANDIDATE(INODE, NIV, NFRONT, NASS, 
-     &                    BLRON, K489,
+     &                    BLRON, K473, 
+     &                    K489,
      &                    K490, K491, K492, K20, K60, IDAD, K38,
      &                    K123, LRSTATUS, K280, LRGROUPS)
         INTEGER,INTENT(IN) :: INODE, NFRONT, NASS, BLRON, K123,
+     &                        K473, 
      &                        K489, K490,
      &                        K491, K492, NIV, K20, K60, IDAD, K38
         INTEGER,INTENT(OUT):: LRSTATUS 
         INTEGER, INTENT(IN):: K280
         INTEGER, INTENT(IN), OPTIONAL :: LRGROUPS(K280)
+C       LRSTATUS : see description in mumps_header.h
+C         0=FR, 
+C         1=LowRank CB only
+C         2=LowRank factors/panels only
+C         3=LowRank CB+factor/panel
+C         4=FR factor/panel
+C         5=FR CB+factor/panel
 C
 C     Local variables
-        LOGICAL :: COMPRESS_PANEL, COMPRESS_CB
+        LOGICAL :: COMPRESS_PANEL, COMPRESS_CB, COULD_COMPRESS_CB
         LRSTATUS = 0
 C       Type 3 node is not BLR
-        IF (NIV.EQ.3) RETURN
+        IF (NIV.EQ.3) THEN
+         goto 100
+        ENDIF
         COMPRESS_PANEL = .FALSE.
-        IF ((BLRON.NE.0).and.( 
-     &        ((K492.LT.0).and.INODE.EQ.abs(K492))
-     &        .or.
-     &        ( (K492.GT.0).and.(K491.LE.NFRONT)
-     &        .and.(K490.LE.NASS)))) THEN
-          COMPRESS_PANEL = .TRUE.
-C         Compression for NASS =1 is useless
-          IF (NASS.LE.1) THEN
-            COMPRESS_PANEL =.FALSE. 
-          ENDIF
-          IF (present(LRGROUPS)) THEN
-           IF (LRGROUPS (INODE) .LT. 0) COMPRESS_PANEL = .FALSE.
-          ENDIF
-        ENDIF
         COMPRESS_CB = .FALSE.
-        IF ((BLRON.NE.0).and.
-     &        (K489.GT.0.AND.(K489.NE.2.OR.NIV.EQ.2))
-     &        .and.( 
-     &        ((K492.LT.0).and.INODE.EQ.abs(K492))
-     &        .or.
-     &      ((K492.GT.0).AND.(NFRONT-NASS.GT.K491)))) 
-     &     THEN
-          COMPRESS_CB = .TRUE.
+        IF (BLRON.NE.0) THEN
+            IF ( (K492.LT.0.and.INODE.EQ.abs(K492))
+     &           .or.
+     &           (K492.GT.0.and.K491.LE.NFRONT.and.K490.LE.NASS)) THEN
+              COMPRESS_PANEL = .TRUE.
+C             Compression for NASS =1 is useless
+              IF (NASS.LE.1) THEN
+                COMPRESS_PANEL =.FALSE. 
+              ENDIF
+              IF (present(LRGROUPS)) THEN
+C              If the lr-group of node INODE is negative, then the current
+C              front was supposed to have a small separator; even if it is
+C              bigger than expected (e.g., because of some delayed pivots), 
+C              it probably is more robust NOT to treat this front as LR
+C              (but some tests could be done on this matter)            
+C              Also note that if the front was selected with KEEP(492) but
+C              its separator is too small, it is NOT treated as LR          
+               IF (LRGROUPS (INODE) .LT. 0) COMPRESS_PANEL = .FALSE.
+              ENDIF
+            ENDIF
+            IF (  (K489.GT.0.AND.(K489.NE.2.OR.NIV.EQ.2))
+     &            .and. 
+     &            (  (K492.LT.0.and.INODE.EQ.abs(K492))
+     &               .or.
+     &               (K492.GT.0.AND.NFRONT-NASS.GT.K491)
+     &            ) ) 
+     &         THEN
+C             We want to select nodes that have a large CB
+              COMPRESS_CB = .TRUE.
+            ENDIF
         ENDIF
+        COULD_COMPRESS_CB = COMPRESS_CB
         IF (.NOT.COMPRESS_PANEL) COMPRESS_CB=.FALSE.
         IF (COMPRESS_PANEL.OR.COMPRESS_CB) THEN
           IF (COMPRESS_CB.AND.(.NOT.COMPRESS_PANEL)) THEN
+C           Full rank panel factorization and CB compressed
             LRSTATUS = 1 
           ELSE IF (COMPRESS_PANEL.AND.(.NOT.COMPRESS_CB)) THEN
+C           Low rank panel factorization and CB not compressed
             LRSTATUS = 2 
           ELSE
+C           Low rank panel factorization and CB compressed
             LRSTATUS = 3 
           ENDIF
-        ELSE 
+        ELSE
+C        Full rank factorization and CB not compressed
          LRSTATUS = 0
         ENDIF
 C
@@ -101,12 +151,28 @@ C
 C       Do not compress CB of children of root
 C
         IF ( IDAD .EQ. K38 .AND. K38 .NE.0 ) THEN
-         COMPRESS_CB = .FALSE.
-         IF (LRSTATUS.GE.2) THEN
-            LRSTATUS = 2
-         ELSE
-            LRSTATUS = 0
-         ENDIF
+            COMPRESS_CB = .FALSE.
+            IF (LRSTATUS.EQ.3) THEN
+               LRSTATUS = 2
+            ELSE IF (LRSTATUS.EQ.1) THEN
+               LRSTATUS = 0
+            ! no other cases
+            ENDIF
+        ENDIF
+100     continue
+        ! K473=2 : all full-rank becomes BFR, BLR stays BLR
+        IF (K473.EQ.2) THEN
+            IF (LRSTATUS.EQ.0) LRSTATUS = 4
+            IF (LRSTATUS.EQ.1) LRSTATUS = 5
+        ! K473=3 : all fronts are BFR
+        ELSE IF (K473.EQ.3) THEN
+            IF (LRSTATUS.EQ.0.OR.LRSTATUS.EQ.2) LRSTATUS = 4
+            IF (LRSTATUS.EQ.1.OR.LRSTATUS.EQ.3) LRSTATUS = 5
+        ENDIF
+C    
+C       Adjust LRSTATUS:
+        IF (LRSTATUS.EQ.5) THEN 
+          LRSTATUS = 4
         ENDIF
       RETURN
       END SUBROUTINE IS_FRONT_BLR_CANDIDATE
@@ -119,10 +185,16 @@ C
         INTEGER :: MEM, allocok
         REAL :: ZERO
         PARAMETER (ZERO = 0.0D0)
+C this routine takes care of both
+C   - the initialization of the LR block structure/pointers        
+C   - the allocation of the LR block        
         LRB_OUT%M = M
         LRB_OUT%N = N
         LRB_OUT%K = K
         LRB_OUT%ISLR = ISLR
+#if !defined(NOMIXHPC)
+        LRB_OUT%kw_stoc = 0
+#endif
         IF ((M.EQ.0).OR.(N.EQ.0)) THEN 
          nullify(LRB_OUT%Q)
          nullify(LRB_OUT%R)
@@ -149,23 +221,33 @@ C
             RETURN
           ENDIF
         ENDIF
+C       Update memory consumption
         IF (ISLR) THEN
           MEM = M*K + N*K
         ELSE
           MEM = M*N
         ENDIF
+C       ATOMIC needed even above L0-threads because several
+C       threads may call ALLOC_LRB simultaneously on a front
         CALL MUMPS_DM_FAC_UPD_DYN_MEMCNTS(int(MEM,8),
      &        .TRUE., KEEP8, IFLAG, IERROR, .TRUE., .TRUE.)
       RETURN
       END SUBROUTINE ALLOC_LRB
       SUBROUTINE ALLOC_LRB_FROM_ACC(ACC_LRB, LRB_OUT, K, M, N, LorU,
      &                          IFLAG, IERROR, KEEP8)
+C       This routine allocates a LRB block, initializing it with the
+C       TRANSPOSE of the accumulator ACC_LRB. 
+C       (We transpose it because the accumulator is a LR representation
+C       of A^T, not A)        
+C       Is called in the context of KEEP(480)>=5 LUA strategy.
         TYPE(LRB_TYPE), INTENT(IN) :: ACC_LRB
         TYPE(LRB_TYPE), INTENT(OUT) :: LRB_OUT
         INTEGER,INTENT(IN) :: K, M, N, LorU
         INTEGER,INTENT(INOUT) :: IFLAG, IERROR
         INTEGER(8) :: KEEP8(150)
         INTEGER :: I
+C       We want to compress U^T, therefore no need to tranpose the
+C       accumulator, as it is already a LR representation of U^T        
         IF (LorU.EQ.1) THEN
           CALL ALLOC_LRB(LRB_OUT,K,M,N,.TRUE.,IFLAG,IERROR,KEEP8)
           IF (IFLAG.LT.0) RETURN
@@ -185,6 +267,19 @@ C
       SUBROUTINE REGROUPING2(CUT, NPARTSASS, NASS,
      &                   NPARTSCB, NCB, IBCKSZ, ONLYCB, K472, 
      &                   NFRONT, KEEP)
+C
+C Because the grouping is done during analysis, we observe small groups
+C in the CB of the fronts, which not very good for low-rank and not good
+C at all for performance. We thus want to regroup those small groups in
+C order to always have an acceptable group size.
+C
+C this is a basic strategy where we merge neighbors group together until
+C the resulting group is large enough.
+C
+C  Note that NCB might be 0 to indicate that only NASS entries are 
+C  considered for regrouping and thus 
+C  NFRONT might be different from NCB + NASS !
+C  NFRONT only needed for COMPUTE_BLR_VCS
         INTEGER, INTENT(IN) :: IBCKSZ, NASS, NCB, NFRONT, KEEP(500)
         INTEGER, INTENT(INOUT) :: NPARTSCB, NPARTSASS
         INTEGER, POINTER, DIMENSION(:) :: CUT
@@ -209,6 +304,10 @@ C
            NEW_CUT(1) = 1
            INEW = 2
            I = 2
+C          Large enough (>MINSIZE) groups are 
+C          preserved. 
+C          Small groups are regrouped 
+C          until reaching a large enough group. 
            DO WHILE (I .LE. NPARTSASS + 1)
               NEW_CUT(INEW) = CUT(I)
               TRACE = .FALSE.
@@ -221,6 +320,8 @@ C
            IF (TRACE) THEN
               INEW = INEW - 1 
            ELSE
+C             If last group is small and is not unique
+C             then regroup it with previous group
               IF (INEW .NE. 2) THEN
                  NEW_CUT(INEW-1) = NEW_CUT(INEW)
                  INEW = INEW - 1
@@ -271,25 +372,53 @@ C
         DEALLOCATE(NEW_CUT)
       END SUBROUTINE REGROUPING2
       SUBROUTINE UPD_MRY_LU_LRGAIN( BLR_PANEL, NBBLOCKS
+     &           , LRMIXED_ACTIVATED
      &           )
 C Updates the memory gain associated with a given BLR panel
         INTEGER,INTENT(IN) :: NBBLOCKS
         TYPE(LRB_TYPE),  INTENT(IN) :: BLR_PANEL(:)
+        LOGICAL, INTENT(IN) :: LRMIXED_ACTIVATED
+        DOUBLE PRECISION :: MRY_mixed
+        INTEGER :: PREC, PREC_FRB
+        DOUBLE PRECISION :: PREC_ENTRIES
         DOUBLE PRECISION :: MRY
         INTEGER :: I
 C
         MRY    = 0.0D0
+        MRY_mixed = 0.0D0
         DO I = 1, NBBLOCKS
           IF (BLR_PANEL(I)%ISLR) THEN
             MRY = MRY + dble(BLR_PANEL(I)%M*BLR_PANEL(I)%N 
      &            - BLR_PANEL(I)%K*(BLR_PANEL(I)%M + BLR_PANEL(I)%N)) 
+            IF (LRMIXED_ACTIVATED) THEN
+              MRY_mixed=MRY_mixed + dble(BLR_PANEL(I)%M*BLR_PANEL(I)%N)
+              DO PREC=1,NPREC_STOC
+                MRY_mixed=MRY_mixed - dble(BLR_PANEL(I)%K_STOC(PREC))
+     &          *dble(COSTS_PREC(PREC))/dble(COSTS_PREC(1))
+     &          *dble(BLR_PANEL(I)%M + BLR_PANEL(I)%N)
+              END DO
+            ENDIF
           ELSE ! islr
             MRY = MRY + 0.0d0
+            IF (LRMIXED_ACTIVATED) THEN
+                CALL FRB_GET_PREC(BLR_PANEL(I), PREC_FRB, 
+     &              LRMIXED_ACTIVATED)
+                PREC_ENTRIES = dble(BLR_PANEL(I)%M*BLR_PANEL(I)%N)
+                MRY_mixed=MRY_mixed + PREC_ENTRIES
+                MRY_mixed=MRY_mixed
+     &             - dble(COSTS_PREC(PREC_FRB))/dble(COSTS_PREC(1))
+     &             * PREC_ENTRIES
+            ENDIF
           ENDIF ! islr
         ENDDO
 !$OMP   ATOMIC UPDATE
         MRY_LU_LRGAIN  = MRY_LU_LRGAIN  + MRY
 !$OMP   END ATOMIC
+        IF (LRMIXED_ACTIVATED) THEN
+!$OMP     ATOMIC UPDATE
+          MRY_LU_LRGAIN_mixed  = MRY_LU_LRGAIN_mixed  + MRY_mixed
+!$OMP     END ATOMIC
+        ENDIF
       RETURN
       END SUBROUTINE UPD_MRY_LU_LRGAIN
       SUBROUTINE SMUMPS_LRTRSM(A, LA, POSELT_LOCAL, NFRONT, LDA, LRB, 
@@ -389,7 +518,11 @@ C computing the LR product (done in SMUMPS_LRGEMM4)
         INTEGER,INTENT(IN) :: LD_DIAG, NFRONT, IW2(*)
         INTEGER(8), INTENT(IN) :: POSELTT
         REAL, INTENT(IN), OPTIONAL :: DIAG(*)
+C       POSELTT = position of first entry in block to update with
+C       gemm
         INTEGER, INTENT(IN) :: MAXI_CLUSTER
+C       used as a workspace
+C       Only column 1 of BLOCK is used as temporary space in routine
         REAL, intent(inout)  :: BLOCK(MAXI_CLUSTER)
         INTEGER :: J, NROWS
         REAL :: PIV1, PIV2, OFFDIAG
@@ -400,6 +533,7 @@ C computing the LR product (done in SMUMPS_LRGEMM4)
         ENDIF
         J = 1
         DO WHILE (J <= LRB%N)
+C           1x1 pivot              
             IF (IW2(J) > 0) THEN
                 SCALED(1:NROWS,J) = DIAG(1+LD_DIAG*(J-1)+J-1) 
      &           * SCALED(1:NROWS,J)
@@ -407,7 +541,10 @@ C computing the LR product (done in SMUMPS_LRGEMM4)
             ELSE !2x2 pivot
                 PIV1    = DIAG(1+LD_DIAG*(J-1)+J-1)
                 PIV2    = DIAG(1+LD_DIAG*J+J)
+C               off diagonal value of 2by2 pivot is stored 
+C               in upper part                
                 OFFDIAG = DIAG(1+LD_DIAG*(J-1)+J)
+C               save J-th column of the block, before scaling
                 BLOCK(1:NROWS)    = SCALED(1:NROWS,J)
                 SCALED(1:NROWS,J) = PIV1 * SCALED(1:NROWS,J)
      &            + OFFDIAG * SCALED(1:NROWS,J+1)
@@ -431,22 +568,47 @@ C Start of OPTIONAL arguments
      &           DIAG, LD_DIAG, IW2, BLOCK
      &           )
 C
-CC
+C
+C Objective:
+C ========= 
+C    Compute product update of trailing matrix A, with 
+C    LRB1 and LRB2 two blocks of LRB_TYPE structure:
+C      A = BETA*A + ALPHA*LRB1*LRB2^T 
+C
+C 
         TYPE(LRB_TYPE),INTENT(IN) :: LRB1,LRB2
         INTEGER(8), intent(in)  :: LA
         REAL, intent(inout)  :: A(LA)
         INTEGER,INTENT(IN) :: NFRONT, SYM, TOL_OPT
         INTEGER,INTENT(INOUT) :: IFLAG, IERROR
+C       MAXI_CLUSTER, MAXI_RANK: dimensions of the LRB3 allocated space
+C       LRB3%Q is of size MAXI_CLUSTER x MAXI_RANK        
+C       LRB3%R is of size MAXI_RANK x MAXI_CLUSTER        
+C       The first LRB3%K columns of LRB3%Q/rows of LRB3%R are taken by
+C       the accumulator. The rest are available for the new LRB.        
         INTEGER(8), INTENT(IN) :: POSELTT
         REAL, INTENT(IN), OPTIONAL :: DIAG(*)
         INTEGER,INTENT(IN), OPTIONAL :: LD_DIAG, IW2(*)
+C       POSELTT = position of first entry in block to update with the
+C       gemm
+C       MIDBLK_COMPRESS = whether to compress the middle product
+C       Y1*X2 in A = A + X1*(Y1*X2)*Y2 (strategy suggested by CA)
         INTEGER,intent(in) :: MIDBLK_COMPRESS, KPERCENT
+C       Threshold used for RRQR if MIDBLK_COMPRESS >= 1 
         REAL, intent(in) :: TOLEPS
         REAL :: ALPHA,BETA
         LOGICAL, INTENT(OUT) :: BUILDQ
+C       used as a workspace
+C       Only column 1 of BLOCK is used as temporary
+C       space in this routine + we declare BLOCK as
+C       a contiguous array.
+C       BLOCK could be declared of size MAXI_CLUSTER
         REAL, intent(inout), OPTIONAL  :: BLOCK(*)
         INTEGER, INTENT(IN), OPTIONAL :: LorU
         LOGICAL, INTENT(IN) :: LUA_ACTIVATED
+C       MAXI_CLUSTER is an optional parameter required either for LUA
+C       (to describe dimension of LRB array) or in the symmetric case
+C       (to describe dimension of BLOCK array)
         INTEGER, INTENT(IN), OPTIONAL :: MAXI_CLUSTER
         INTEGER, INTENT(IN), OPTIONAL :: MAXI_RANK
         TYPE(LRB_TYPE), INTENT(INOUT), OPTIONAL :: LRB3
@@ -461,6 +623,10 @@ CC
         REAL, ALLOCATABLE :: WORK_RRQR(:), TAU_RRQR(:), 
      &                          Y_RRQR(:,:)
         INTEGER, ALLOCATABLE :: JPVT_RRQR(:)
+        LOGICAL, PARAMETER :: LRMIXED_ACTIVATED = .FALSE.
+        INTEGER :: K_STOC(NPREC_STOC)
+        INTEGER :: K453
+        LOGICAL, PARAMETER :: MIXED_ADMISSIBILITY = .FALSE.
         INTEGER :: allocok, MREQ
         REAL :: ONE, MONE, ZERO
         PARAMETER (ONE = 1.0E0, MONE=-1.0E0)
@@ -486,6 +652,7 @@ CC
             IF (SYM .EQ. 0) THEN
                 Y1  => LRB1%R
             ELSE
+C               Symmetric case: column scaling of R1 is done
                 allocate(Y1(LRB1%K,LRB1%N),stat=allocok)
                 IF (allocok > 0) THEN
                   MREQ = LRB1%K*LRB1%N
@@ -507,7 +674,9 @@ CC
              CALL sgemm('N', 'T', LRB1%K, LRB2%K, K_Y, ONE,
      &            Y1(1,1), LDY1, Y2(1,1), LDY2, ZERO, Y(1,1), LRB1%K )
             IF (MIDBLK_COMPRESS.GE.1) THEN 
+C               Compress middle product Y
                 LWORK = LRB2%K*(LRB2%K+1)
+C               WORK_RRQR(1:LWORK) used for RRQR and sorgqr
                 allocate(Y_RRQR(LRB1%K,LRB2%K),
      &               WORK_RRQR(LWORK), RWORK_RRQR(2*LRB2%K), 
      &               TAU_RRQR(MIN(LRB1%K,LRB2%K)),
@@ -529,6 +698,8 @@ CC
      &               LRB1%K, JPVT_RRQR, TAU_RRQR, WORK_RRQR,
      &               LRB2%K, RWORK_RRQR, TOLEPS, TOL_OPT, RANK, 
      &               MAXRANK, INFO,
+     &               K_STOC, LRMIXED_ACTIVATED, K453, 
+     &               MIXED_ADMISSIBILITY,
      &               BUILDQ)
                 IF (RANK.GT.MAXRANK) THEN 
                     deallocate(Y_RRQR, WORK_RRQR, RWORK_RRQR, TAU_RRQR,
@@ -538,6 +709,7 @@ CC
                     BUILDQ = .TRUE.
                 ENDIF
                 IF (BUILDQ) THEN
+C                 Successfully compressed middle block
                   IF (RANK.EQ.0) THEN
                     deallocate(Y_RRQR, WORK_RRQR, RWORK_RRQR, TAU_RRQR, 
      &                         JPVT_RRQR) 
@@ -563,6 +735,8 @@ C                   in that case. So we free Y1 now if it was allocated.
                     END DO
 C                   LWORK=LRB2%K*(LRB2%K+1), with LRB2%K>RANK
 C                   large enough for sorgqr
+C                   sorgqr+sgemm is faster than sormqr (less flops and
+C                   according to quick test, less time)                    
                     CALL sorgqr 
      &                  (LRB1%K, RANK, RANK, Y_RRQR(1,1),
      &                  LRB1%K, TAU_RRQR(1),  
@@ -586,10 +760,14 @@ C                   large enough for sorgqr
                 ENDIF
             ENDIF
             IF (.NOT.BUILDQ) THEN 
+C               Did not try or succeed to compress middle product Y
                   LDY    = LRB1%K
                 K_XY   = LRB1%K
                 K_YZ   = LRB2%K
                 TRANSY = 'N'
+C  FIXME Actually the formula to decide which side to multiply to is a
+C  bit more complex, although tests suggest it doesn't make a big
+C  difference (see thesis for true formula)
                 IF (LRB1%K .GE. LRB2%K) THEN
                     SIDE = 'L'
                 ELSE 
@@ -610,6 +788,7 @@ C                   large enough for sorgqr
             IF (SYM .EQ. 0) THEN
               Y   => LRB1%R
             ELSE
+C             Symmetric case: column scaling of R1 is done
               allocate(Y(LRB1%K,LRB1%N),stat=allocok)
               IF (allocok > 0) THEN
                 MREQ = LRB1%K*LRB1%N
@@ -638,6 +817,7 @@ C                   large enough for sorgqr
             IF (SYM .EQ. 0) THEN
                 Y  => LRB2%R
             ELSE
+C               Symmetric case: column scaling of R2 is done
                 allocate(Y(LRB2%K,LRB2%N),stat=allocok)
                 IF (allocok > 0) THEN
                   MREQ = LRB2%K*LRB2%N
@@ -659,11 +839,13 @@ C                   large enough for sorgqr
             IF (SYM .EQ. 0) THEN
                 X => LRB1%Q
             ELSE
+C               Symmetric case: column scaling of Q1 done
                 allocate(X(LRB1%M,LRB1%N),stat=allocok)
                 IF (allocok > 0) THEN
                   MREQ = LRB1%M*LRB1%N
                   GOTO 1570
                 ENDIF
+C               X = LRB1%Q segfaults  
                 DO J=1,LRB1%N
                     DO I=1,LRB1%M
                         X(I,J) = LRB1%Q(I,J)
@@ -687,6 +869,7 @@ C                   large enough for sorgqr
         ENDIF
         IF (SIDE == 'L') THEN ! LEFT: XY_YZ = X*Y; A = XY_YZ*Z
             IF (.NOT.LUA_ACTIVATED) THEN
+C             No LUA: regular LRGEMM
               allocate(XY_YZ(LRB1%M,K_YZ),stat=allocok)
               IF (allocok > 0) THEN
                 MREQ = LRB1%M*K_YZ
@@ -694,6 +877,7 @@ C                   large enough for sorgqr
               ENDIF
               LDXY_YZ = LRB1%M
             ELSE
+C             LUA activated: result kept as LR block LRB3
                IF (SAVE_K+K_YZ.GT.MAXI_RANK) THEN
                 write(*,*) 'Internal error in SMUMPS_LRGEMM4 1a',
      &           'K_ACC+K_CUR>K_MAX:',SAVE_K,K_YZ,MAXI_RANK
@@ -706,6 +890,7 @@ C                   large enough for sorgqr
               ENDIF
               XY_YZ => LRB3%Q(1:LRB1%M,SAVE_K+1:SAVE_K+K_YZ)
               LDXY_YZ = MAXI_CLUSTER
+C             Copy Z in LRB3%R 
               DO I=1,K_YZ
                 LRB3%R(SAVE_K+I,1:LRB2%M) = Z(1:LRB2%M,I)
               ENDDO
@@ -721,6 +906,7 @@ C                   large enough for sorgqr
             ENDIF
         ELSEIF (SIDE == 'R') THEN ! RIGHT: XY_YZ = Y*Z; A = X*XY_YZ
             IF (.NOT.LUA_ACTIVATED) THEN
+C             No LUA: regular LRGEMM
               allocate(XY_YZ(K_XY,LRB2%M),stat=allocok)
               IF (allocok > 0) THEN
                 MREQ = K_XY*LRB2%M
@@ -728,6 +914,7 @@ C                   large enough for sorgqr
               ENDIF
               LDXY_YZ = K_XY
             ELSE
+C             LUA activated: result kept as LR block LRB3
                IF (SAVE_K+K_XY.GT.MAXI_RANK) THEN
                 write(*,*) 'Internal error in SMUMPS_LRGEMM4 2a',
      &           'K_ACC+K_CUR>K_MAX:',SAVE_K,K_XY,MAXI_RANK
@@ -740,6 +927,7 @@ C                   large enough for sorgqr
               ENDIF
               XY_YZ => LRB3%R(SAVE_K+1:SAVE_K+K_XY,1:LRB2%M)
               LDXY_YZ = MAXI_RANK
+C             Copy X in LRB3%Q 
               DO I=1,K_XY
                 LRB3%Q(1:LRB1%M,SAVE_K+I) = X(1:LRB1%M,I)
               ENDDO
@@ -786,12 +974,26 @@ C       Alloc ok!!
       SUBROUTINE SMUMPS_DECOMPRESS_ACC(ACC_LRB, MAXI_CLUSTER, 
      &           MAXI_RANK, A, LA, POSELTT, NFRONT, NIV, LorU, 
      &           COUNT_FLOPS)
+C
+C LUA related routine
+C This subroutine decompresses the LR accumulator and sums it to A
+C 
         TYPE(LRB_TYPE),INTENT(INOUT) :: ACC_LRB
         INTEGER(8), intent(in)  :: LA
         REAL, intent(inout)  :: A(LA)
         INTEGER,INTENT(IN) :: NFRONT, NIV
+C       MAXI_CLUSTER, MAXI_RANK are the dimensions of the ACC_LRB
+C       allocated space.     
+C       ACC_LRB%Q is of size MAXI_CLUSTER x MAXI_RANK        
+C       ACC_LRB%R is of size MAXI_RANK x MAXI_CLUSTER        
+C       The first ACC_LRB%K columns of ACC_LRB%Q/rows of ACC_LRB%R are
+C       taken by the accumulator. The rest are available for the new
+C       LRB.        
         INTEGER,INTENT(IN) :: MAXI_CLUSTER, MAXI_RANK
+C       POSELTT = position of first entry in block to update with the
+C       gemm
         INTEGER(8), INTENT(IN) :: POSELTT
+C       Whether to count the flops in the total
         LOGICAL, OPTIONAL :: COUNT_FLOPS
         LOGICAL  :: COUNT_FLOPS_LOC
         INTEGER  :: LorU
@@ -811,18 +1013,35 @@ C       Alloc ok!!
       SUBROUTINE SMUMPS_COMPRESS_FR_UPDATES(ACC_LRB, MAXI_CLUSTER, 
      &          MAXI_RANK, A, LA, POSELTT, NFRONT, NIV,
      &          TOLEPS, TOL_OPT, KPERCENT, BUILDQ, LorU, CB_COMPRESS)
+C 
+C  LUA related routine
+C  
         TYPE(LRB_TYPE),INTENT(INOUT) :: ACC_LRB
         INTEGER(8), intent(in)  :: LA
         REAL, intent(inout)  :: A(LA)
         INTEGER,INTENT(IN) :: NFRONT, NIV, LorU, TOL_OPT
+C       MAXI_CLUSTER, MAXI_RANK are the dimensions of the ACC_LRB
+C       allocated space.     
+C       ACC_LRB%Q is of size MAXI_CLUSTER x MAXI_RANK        
+C       ACC_LRB%R is of size MAXI_RANK x MAXI_CLUSTER        
+C       The first ACC_LRB%K columns of ACC_LRB%Q/rows of ACC_LRB%R are
+C       taken by the accumulator. 
         INTEGER,INTENT(IN) :: MAXI_CLUSTER, MAXI_RANK, KPERCENT
         INTEGER(8), INTENT(IN) :: POSELTT
+C       POSELTT = position of first entry in block to update with the
+C       gemm
+C       Threshold used for RRQR
         REAL, intent(in) :: TOLEPS
+C       BUILDQ = whether we successfully compressed the FR updates        
         LOGICAL, INTENT(OUT) :: BUILDQ
         LOGICAL, INTENT(IN) :: CB_COMPRESS
         REAL,    ALLOCATABLE :: RWORK_RRQR(:)
         REAL, ALLOCATABLE :: WORK_RRQR(:), TAU_RRQR(:)
         INTEGER, ALLOCATABLE :: JPVT_RRQR(:)
+        LOGICAL, PARAMETER :: LRMIXED_ACTIVATED = .FALSE.
+        INTEGER :: K_STOC(NPREC_STOC)
+        INTEGER :: K453
+        LOGICAL, PARAMETER :: MIXED_ADMISSIBILITY = .FALSE.
         INTEGER :: INFO, RANK, MAXRANK, LWORK
         INTEGER :: I, J, M, N
         INTEGER :: allocok, MREQ
@@ -841,6 +1060,12 @@ C       Alloc ok!!
                 MREQ = LWORK +4 *N
                 GOTO 100
               ENDIF
+C             Note the minus sign (because we actually subtract to A in
+C             DECOMPRESS_ACC)              
+C             Also note we compress A^T as the accumulator is a LR
+C             representation of A^T. Cf ALLOC_LRB_FROM_ACC where we
+C             retranspose the accumulator to have a LR representation of
+C             A to keep
                 DO I=1,N
                   ACC_LRB%Q(1:M,I)= 
      &            - A(POSELTT+int(I-1,8)*int(NFRONT,8) :
@@ -852,8 +1077,11 @@ C       Alloc ok!!
      &               WORK_RRQR(1),
      &               N, RWORK_RRQR(1), TOLEPS, TOL_OPT, 
      &               RANK, MAXRANK, INFO,
+     &               K_STOC, LRMIXED_ACTIVATED, K453, 
+     &               MIXED_ADMISSIBILITY,
      &               BUILDQ)
               IF (BUILDQ) THEN
+C               Successfully compressed ACC_LRB%Q
                 DO J=1, N
                    ACC_LRB%R(1:MIN(RANK,J),JPVT_RRQR(J)) =
      &               ACC_LRB%Q(1:MIN(RANK,J),J)
@@ -864,6 +1092,7 @@ C       Alloc ok!!
      &              (M, RANK, RANK, ACC_LRB%Q(1,1),
      &              MAXI_CLUSTER, TAU_RRQR(1),  
      &              WORK_RRQR(1), LWORK, INFO )
+C               Set FR array to zero since it is now in the LR array                
                 DO I=1,N
                   A( POSELTT+int(I-1,8)*int(NFRONT,8) :
      &              POSELTT+int(I-1,8)*int(NFRONT,8)+int(M-1,8) ) = ZERO
@@ -872,6 +1101,7 @@ C       Alloc ok!!
                 CALL UPD_FLOP_COMPRESS(ACC_LRB%M, ACC_LRB%N, ACC_LRB%K, 
      &                       ACC_LRB%ISLR, CB_COMPRESS=CB_COMPRESS)
               ELSE
+C               Just to count flops
                 ACC_LRB%K = RANK
                 ACC_LRB%ISLR = .FALSE.
                 CALL UPD_FLOP_COMPRESS(ACC_LRB%M, ACC_LRB%N, ACC_LRB%K, 
@@ -893,15 +1123,35 @@ C     Alloc NOT ok!!
      &          MAXI_RANK, A, LA, POSELTT, NFRONT, NIV,
      &          MIDBLK_COMPRESS, TOLEPS, TOL_OPT, KPERCENT_RMB, 
      &          KPERCENT_LUA, NEW_ACC_RANK)
+C 
+C  LUA related routine
+C  This subroutine recompresses the LR accumulator ACC_LRB
+C   1) compute Q1,R1,Q2,R2 such that LRB%Q = Q1*R1 and (LRB%R)^T = Q2*R2        
+C   2) perform LRB product Q1*(R1*R2^T)*Q2^T and store result in ACC_LRB        
+C  
         TYPE(LRB_TYPE),INTENT(INOUT) :: ACC_LRB
         INTEGER(8), intent(in)  :: LA
         REAL, intent(inout)  :: A(LA)
         INTEGER,INTENT(IN) :: NFRONT, NIV, TOL_OPT
         INTEGER :: IFLAG, IERROR
+C       MAXI_CLUSTER, MAXI_RANK are the dimensions of the ACC_LRB
+C       allocated space.     
+C       ACC_LRB%Q is of size MAXI_CLUSTER x MAXI_RANK        
+C       ACC_LRB%R is of size MAXI_RANK x MAXI_CLUSTER        
+C       The first ACC_LRB%K columns of ACC_LRB%Q/rows of ACC_LRB%R are
+C       taken by the accumulator. 
         INTEGER,INTENT(IN) :: MAXI_CLUSTER, MAXI_RANK, KPERCENT_LUA
+C       NEW_ACC_RANK is the size of the non-compressed part of the
+C       accumulator. One needs to orthogonalize this part against
+C       the rest of the accumulator. 
         INTEGER,INTENT(INOUT) :: NEW_ACC_RANK
         INTEGER(8), INTENT(IN) :: POSELTT
+C       POSELTT = position of first entry in block to update with the
+C       gemm
+C       MIDBLK_COMPRESS = whether to compress the middle product
+C       Y1*X2 in A = A + X1*(Y1*X2)*Y2 (strategy suggested by CA)
         INTEGER,intent(in) :: MIDBLK_COMPRESS, KPERCENT_RMB
+C       Threshold used for RRQR if MIDBLK_COMPRESS >= 2 
         REAL, intent(in) :: TOLEPS
         REAL,    ALLOCATABLE:: RWORK_RRQR(:)
         REAL, ALLOCATABLE:: WORK_RRQR(:), TAU_RRQR(:)
@@ -911,6 +1161,10 @@ C     Alloc NOT ok!!
         TYPE(LRB_TYPE)       :: LRB1, LRB2
         INTEGER :: INFO, RANK1, RANK2, RANK, MAXRANK, LWORK
         LOGICAL :: BUILDQ, BUILDQ1, BUILDQ2, SKIP1, SKIP2
+        LOGICAL, PARAMETER :: LRMIXED_ACTIVATED = .FALSE.
+        INTEGER :: K_STOC(NPREC_STOC)
+        INTEGER :: K453
+        LOGICAL, PARAMETER :: MIXED_ADMISSIBILITY = .FALSE.
         INTEGER :: I, J, M, N, K
         INTEGER :: allocok, MREQ
         REAL :: ONE, MONE, ZERO
@@ -962,9 +1216,12 @@ C     Alloc NOT ok!!
      &               M, JPVT_RRQR(1), TAU_RRQR(1), WORK_RRQR(1),
      &               K, RWORK_RRQR(1), TOLEPS, TOL_OPT, RANK1, 
      &               MAXRANK, INFO,
+     &               K_STOC, LRMIXED_ACTIVATED, K453, 
+     &               MIXED_ADMISSIBILITY,
      &               BUILDQ1)
               ENDIF
               IF (BUILDQ1) THEN
+C                 Successfully compressed Q1
                   allocate(R1(RANK1,K), stat=allocok)
                   IF (allocok > 0) THEN
                      MREQ = RANK1*K
@@ -994,9 +1251,12 @@ C     Alloc NOT ok!!
      &               N, JPVT_RRQR(1), TAU_RRQR(1), WORK_RRQR(1),
      &               K, RWORK_RRQR(1), TOLEPS, TOL_OPT, 
      &               RANK2, MAXRANK, INFO,
+     &               K_STOC, LRMIXED_ACTIVATED, K453, 
+     &               MIXED_ADMISSIBILITY,
      &               BUILDQ2)
               ENDIF
               IF (BUILDQ2) THEN
+C                 Successfully compressed Q2
                   allocate(R2(RANK2,K), stat=allocok)
                   IF (allocok > 0) THEN
                      MREQ = RANK2*K
@@ -1081,16 +1341,32 @@ C     Alloc NOT ok!!
      &          KPERCENT_RMB,
      &          KPERCENT_LUA, K478, RANK_LIST, POS_LIST, NB_NODES,
      &          LEVEL, ACC_TMP)
+C 
+C  LUA related routine
+C  This subroutine recompresses the LR accumulator ACC_LRB using a n-ary
+C  tree as recompression graph
         TYPE(LRB_TYPE),TARGET,INTENT(INOUT) :: ACC_LRB
         TYPE(LRB_TYPE),TARGET,INTENT(INOUT),OPTIONAL :: ACC_TMP
         INTEGER(8), intent(in)  :: LA
         REAL, intent(inout)  :: A(LA)
         INTEGER,INTENT(IN) :: NFRONT, NIV, TOL_OPT
+C       MAXI_CLUSTER, MAXI_RANK are the dimensions of the ACC_LRB
+C       allocated space.     
+C       ACC_LRB%Q is of size MAXI_CLUSTER x MAXI_RANK        
+C       ACC_LRB%R is of size MAXI_RANK x MAXI_CLUSTER        
+C       The first ACC_LRB%K columns of ACC_LRB%Q/rows of ACC_LRB%R are
+C       taken by the accumulator. 
         INTEGER,INTENT(IN) :: MAXI_CLUSTER, MAXI_RANK, KPERCENT_LUA
+C       POSELTT = position of first entry in block to update with the
+C       gemm
         INTEGER(8), INTENT(IN) :: POSELTT
         INTEGER(8) :: KEEP8(150)
+C       MIDBLK_COMPRESS = whether to compress the middle product
+C       Y1*X2 in A = A + X1*(Y1*X2)*Y2 (strategy suggested by CA)
         INTEGER,intent(in) :: MIDBLK_COMPRESS, KPERCENT_RMB
+C       Threshold used for RRQR if MIDBLK_COMPRESS >= 2 
         REAL, intent(in) :: TOLEPS
+C       KEEP(478)=-n => use a n-ary tree 
         INTEGER,INTENT(IN) :: K478, NB_NODES, LEVEL
         INTEGER,INTENT(INOUT) :: RANK_LIST(NB_NODES), POS_LIST(NB_NODES)
         TYPE(LRB_TYPE)       :: LRB, ACC_NEW
@@ -1108,10 +1384,12 @@ C     Alloc NOT ok!!
         N = ACC_LRB%N
         NARY = -K478
         IOFF = 0
+C       Number of nodes on the next level of the tree        
         NB_NODES_NEW = NB_NODES/NARY
         IF (NB_NODES_NEW*NARY.NE.NB_NODES) THEN
           NB_NODES_NEW = NB_NODES_NEW + 1
         ENDIF
+C       Ranks and positions of the nodes on the next level of the tree       
         ALLOCATE(RANK_LIST_NEW(NB_NODES_NEW),POS_LIST_NEW(NB_NODES_NEW),
      &       stat=allocok)
         IF (allocok > 0) THEN
@@ -1120,12 +1398,17 @@ C     Alloc NOT ok!!
            call MUMPS_ABORT()
         ENDIF
         DO J=1,NB_NODES_NEW
+C         For each node of the next level, we first merge its children
+C         (i.e., make sure they are in adjacent memory area) and then
+C         recompress them with SMUMPS_RECOMPRESS_ACC.       
           NODE_RANK = RANK_LIST(IOFF+1)
           CURPOS = POS_LIST(IOFF+1)
           IMAX = MIN(NARY,NB_NODES-IOFF)
           IF (IMAX.GE.2) THEN
+C           More than one child, we merge and recompress them            
             DO I=2,IMAX
               IF (POS_LIST(IOFF+I).NE.CURPOS+NODE_RANK) THEN
+C               Merge (memory copy necessary)
                 DO L=0,RANK_LIST(IOFF+I)-1
                   ACC_LRB%Q(1:M,CURPOS+NODE_RANK+L) = 
      &               ACC_LRB%Q(1:M,POS_LIST(IOFF+I)+L)
@@ -1154,6 +1437,8 @@ C     Alloc NOT ok!!
             RANK_LIST_NEW(J) = LRB%K
             POS_LIST_NEW(J) = CURPOS
           ELSE
+C           Only one child (the last of the current level), we leave it
+C           alone            
             RANK_LIST_NEW(J) = NODE_RANK
             POS_LIST_NEW(J) = CURPOS
           ENDIF
@@ -1161,6 +1446,7 @@ C     Alloc NOT ok!!
         ENDDO
         IF (NB_NODES_NEW.GT.1) THEN
           IF (RESORT) THEN
+C           Allocate new accumulator to sort            
             KTOT = SUM(RANK_LIST_NEW)
             CALL INIT_LRB(ACC_NEW,KTOT,M,N,.TRUE.)
             ALLOCATE(ACC_NEW%Q(MAXI_CLUSTER,MAXI_RANK),
@@ -1170,8 +1456,10 @@ C     Alloc NOT ok!!
      &              'in SMUMPS_RECOMPRESS_ACC_NARYTREE'
                call MUMPS_ABORT()
             ENDIF
+C           Sort each node by rank
             CALL MUMPS_SORT_INT(NB_NODES_NEW, RANK_LIST_NEW,
      &                                         POS_LIST_NEW)
+C           Copy to new accumulator
             CURPOS = 1
             IF (LEVEL.EQ.0) THEN
               LRB_PTR => ACC_LRB
@@ -1191,6 +1479,7 @@ C     Alloc NOT ok!!
             IF (LEVEL.GT.0) THEN
               CALL DEALLOC_LRB(ACC_TMP, KEEP8, 4)
             ENDIF
+C           Recusive call          
             CALL SMUMPS_RECOMPRESS_ACC_NARYTREE(ACC_LRB,
      &               MAXI_CLUSTER, MAXI_RANK, A, LA, POSELTT, KEEP8,
      &               NFRONT, NIV, MIDBLK_COMPRESS, TOLEPS, TOL_OPT,
@@ -1198,6 +1487,7 @@ C     Alloc NOT ok!!
      &               RANK_LIST_NEW, POS_LIST_NEW, NB_NODES_NEW,
      &               LEVEL+1, ACC_NEW)
           ELSE
+C           Recusive call          
             CALL SMUMPS_RECOMPRESS_ACC_NARYTREE(ACC_LRB,
      &               MAXI_CLUSTER, MAXI_RANK, A, LA, POSELTT, KEEP8,
      &               NFRONT, NIV, MIDBLK_COMPRESS, TOLEPS, TOL_OPT,
@@ -1228,14 +1518,37 @@ C     Alloc NOT ok!!
      &          MAXI_RANK, A, LA, POSELTT, NFRONT, NIV,
      &          MIDBLK_COMPRESS, TOLEPS, TOL_OPT, KPERCENT_RMB, 
      &          KPERCENT_LUA, NEW_ACC_RANK)
+C 
+C  LUA related routine
+C  This subroutine recompresses the LR accumulator ACC_LRB
+C  In this version (_V2) we take advantage of the fact part of ACC_LRB%Q
+C  is already orthogonal: it's of the form [Q1,Q2]*[R1;R2], where Q2 has
+C  NEW_ACC_RANK colums.
+C   1) Gram-Schmidt:     orthogonalize Q2 w.r.t. Q1       
+C   2) Truncated RRQR:   recompress Q2: Q2 = Q2b*R2b       
+C   3) Update ACC_LRB%R: ACC_LRB%R = [R1+(Q1^T*Q2)*R2;R2b*R2] 
         TYPE(LRB_TYPE),INTENT(INOUT) :: ACC_LRB
         INTEGER(8), intent(in)  :: LA
         REAL, intent(inout)  :: A(LA)
         INTEGER,INTENT(IN) :: NFRONT, NIV, TOL_OPT
+C       MAXI_CLUSTER, MAXI_RANK are the dimensions of the ACC_LRB
+C       allocated space.     
+C       ACC_LRB%Q is of size MAXI_CLUSTER x MAXI_RANK        
+C       ACC_LRB%R is of size MAXI_RANK x MAXI_CLUSTER        
+C       The first ACC_LRB%K columns of ACC_LRB%Q/rows of ACC_LRB%R are
+C       taken by the accumulator. 
         INTEGER,INTENT(IN) :: MAXI_CLUSTER, MAXI_RANK, KPERCENT_LUA
+C       NEW_ACC_RANK is the size of the non-compressed part of the
+C       accumulator. One needs to orthogonalize this part against
+C       the rest of the accumulator. 
         INTEGER,INTENT(INOUT) :: NEW_ACC_RANK
         INTEGER(8), INTENT(IN) :: POSELTT
+C       POSELTT = position of first entry in block to update with the
+C       gemm
+C       MIDBLK_COMPRESS = whether to compress the middle product
+C       Y1*X2 in A = A + X1*(Y1*X2)*Y2 (strategy suggested by CA)
         INTEGER,intent(in) :: MIDBLK_COMPRESS, KPERCENT_RMB
+C       Threshold used for RRQR if MIDBLK_COMPRESS >= 2 
         REAL, intent(in) :: TOLEPS
         REAL,    ALLOCATABLE :: RWORK_RRQR(:)
         REAL, ALLOCATABLE :: WORK_RRQR(:), TAU_RRQR(:)
@@ -1244,6 +1557,10 @@ C     Alloc NOT ok!!
         INTEGER, ALLOCATABLE :: JPVT_RRQR(:)
         INTEGER :: INFO, RANK1, MAXRANK, LWORK
         LOGICAL :: BUILDQ1
+        LOGICAL, PARAMETER :: LRMIXED_ACTIVATED = .FALSE.
+        INTEGER :: K_STOC(NPREC_STOC)
+        INTEGER :: K453
+        LOGICAL, PARAMETER :: MIXED_ADMISSIBILITY = .FALSE.
         INTEGER :: I, J, M, N, K, K1
         INTEGER :: allocok, MREQ
         REAL :: ONE, MONE, ZERO
@@ -1269,17 +1586,23 @@ C     Alloc NOT ok!!
                       Q1(I,J) = ACC_LRB%Q(I,J+K1)
                   ENDDO
               ENDDO
+C             1/ Orthogonalize Q1 (new columns) w.r.t the rest of the
+C             accumulator              
               CALL sgemm('T', 'N', K1, K, M, ONE, ACC_LRB%Q(1,1), 
      &                  MAXI_CLUSTER, Q1(1,1), M, ZERO, PROJ(1,1), K1)
               CALL sgemm('N', 'N', M, K, K1, MONE, ACC_LRB%Q(1,1),
      &                  MAXI_CLUSTER, PROJ(1,1), K1, ONE, Q1(1,1), M)
+C             2/ Recompress Q1 
               JPVT_RRQR = 0
               CALL SMUMPS_TRUNCATED_RRQR(M, K, Q1(1,1),
      &               M, JPVT_RRQR(1), TAU_RRQR(1), WORK_RRQR(1),
      &               K, RWORK_RRQR(1), TOLEPS, TOL_OPT, 
      &               RANK1, MAXRANK, INFO,
+     &               K_STOC, LRMIXED_ACTIVATED, K453, 
+     &               MIXED_ADMISSIBILITY,
      &               BUILDQ1)
               IF (BUILDQ1) THEN
+C               Successfully compressed Q1
                 allocate(Q2(N,K), stat=allocok)
                 IF (allocok > 0) THEN
                    MREQ = N*K
@@ -1346,6 +1669,15 @@ C     Alloc NOT ok!!
       SUBROUTINE SMUMPS_GET_LUA_ORDER(NB_BLOCKS, ORDER, RANK, IWHANDLER,
      &                       SYM, FS_OR_CB, I, J, FRFR_UPDATES, 
      &                       LBANDSLAVE_IN, K474, BLR_U_COL)
+C       This subroutines computes the order in which the BLR updates of
+C       a given block A(X,Y) will be accumulated.
+C       If called from FS update routine (FS_OR_CB = 0), then
+C         - if J = 0 (L panel), then X = I and Y = NB_BLOCKS+1
+C         - if J = 1 (U panel), then X = NB_BLOCKS+1 and Y = I
+C       If called from CB update routine (FS_OR_CB = 1), then 
+C         X = I and Y = J.
+C       Currently it orders the ranks in increasing order (exact or
+C       estimate if KEEP(481) = 1).
 C     -----------
 C     Parameters
 C     -----------
@@ -1367,13 +1699,17 @@ C     -----------
           LBANDSLAVE = .FALSE.
         ENDIF
         IF ((SYM.NE.0).AND.(FS_OR_CB.EQ.0).AND.(J.NE.0)) THEN
-          write(6,*) 'Internal error in SMUMPS_GET_LUA_ORDER',
+C         In LDLT, the FS panel should always be L
+         write(6,*)
+     &     "Internal error in SMUMPS_GET_LUA_ORDER",
      &     'SYM, FS_OR_CB, J = ',SYM,FS_OR_CB,J
           CALL MUMPS_ABORT()
         ENDIF
         FRFR_UPDATES = 0
         DO K = 1, NB_BLOCKS
+C         Initialize ORDER array
           ORDER(K) = K
+C         Compute IND_L and IND_U (i.e., X and Y shifted by NB_BLOCKS)                
           IF (FS_OR_CB.EQ.0) THEN ! FS
             IF (J.EQ.0) THEN ! L panel
               IND_L = NB_BLOCKS+I-K
@@ -1392,6 +1728,7 @@ C     -----------
               IND_U = K
             ENDIF
           ENDIF
+C         Retrieve L and U panels (make BLR_U point to BLR_L if LDLT) 
           CALL SMUMPS_BLR_RETRIEVE_PANEL_LORU(
      &         IWHANDLER,
      &         0, ! L Panel
@@ -1408,6 +1745,7 @@ C     -----------
           ELSE
             BLR_U => BLR_L
           ENDIF
+C         Extract rank of each product (exact or estimate if KEEP(481)=1)          
           IF (BLR_L(IND_L)%ISLR) THEN
             IF (BLR_U(IND_U)%ISLR) THEN
               RANK(K) = min(BLR_L(IND_L)%K, BLR_U(IND_U)%K)
@@ -1418,11 +1756,13 @@ C     -----------
             IF (BLR_U(IND_U)%ISLR) THEN
               RANK(K) = BLR_U(IND_U)%K
             ELSE
+C              RANK(K) = BLR_U(IND_U)%M
               RANK(K) = -1
               FRFR_UPDATES = FRFR_UPDATES + 1
             ENDIF
           ENDIF
         ENDDO
+C       Sort the ranks in increasing order          
         CALL MUMPS_SORT_INT(NB_BLOCKS, RANK, ORDER)
       END SUBROUTINE SMUMPS_GET_LUA_ORDER
       SUBROUTINE SMUMPS_BLR_ASM_NIV1 (A, LA, POSEL1, NFRONT, NASS1, 
@@ -1455,6 +1795,7 @@ C
         REAL, ALLOCATABLE :: SON_A(:)
         INTEGER(8) :: APOS, SON_APOS, IACHK, JJ2, NFRONT8
         INTEGER :: KK, KK1, allocok, SON_LA
+        INTEGER :: IFLAG, IERROR
         TYPE(LRB_TYPE), POINTER :: CB_LRB(:,:), LRB
         INTEGER, POINTER, DIMENSION(:) :: BEGS_BLR_DYNAMIC
         INTEGER :: NB_INCB, NB_INASM, NB_BLR, I, J, M, N, II, NPIV,
@@ -1464,6 +1805,8 @@ C
         REAL :: ONE, ZERO
         PARAMETER (ONE = 1.0E0)
         PARAMETER (ZERO = 0.0D0)
+        IFLAG  = 0
+        IERROR = 0
         CALL SMUMPS_BLR_RETRIEVE_BEGSBLR_DYN(IWHANDLER,
      &                       BEGS_BLR_DYNAMIC)
         CALL SMUMPS_BLR_RETRIEVE_CB_LRB(IWHANDLER, CB_LRB)
@@ -1494,6 +1837,7 @@ C         Determining I,J from IBIS
           ENDIF
           I = I+NB_INASM
           J = J+NB_INASM
+C  TMJY:  -NPIV-NELIM
           IF (I.EQ.NB_INASM+1) THEN
 C           first CB block, add NELIM because FIRST_ROW starts at NELIM+1
             FIRST_ROW = BEGS_BLR_DYNAMIC(I)-NPIV+NELIM
@@ -1523,6 +1867,14 @@ C           No need to perform extend-add
           ENDIF
 C         decompress block        
           IF (LRB%ISLR) THEN
+            IF (KEEP(452).GT.0) THEN
+                CALL SMUMPS_DECONVERT_LRB(LRB, IFLAG, IERROR, KEEP8)
+                IF (IFLAG.LT.0) THEN
+                    write(*,*) 'Not enough memory in ',
+     &              "SMUMPS_BLR_ASM_NIV1, Memory requested = ", IERROR
+                    CALL MUMPS_ABORT()
+                ENDIF
+            ENDIF
             CALL sgemm('T', 'T', N, M, LRB%K, ONE, LRB%R(1,1), LRB%K,
      &                 LRB%Q(1,1), M, ZERO, SON_A(SON_APOS), SON_LDA)
             PROMOTE_COST = 2.0D0*M*N*LRB%K
@@ -1634,10 +1986,405 @@ C        Not reachable in case of error: set INFO1 to 0
      &                             MTK405=KEEP(405))
         ENDIF
       END SUBROUTINE SMUMPS_BLR_ASM_NIV1
+C{
+      SUBROUTINE SMUMPS_LRMIXED_CONVERT_PANEL(BLR_PANEL, NB_BLR, IP,
+     &    K34, KEEP8, IFLAG, IERROR)
+C
+C Parameters
+C ==========
+C
+        TYPE(LRB_TYPE), POINTER :: BLR_PANEL(:)
+        INTEGER :: NB_BLR, IP, K34
+        INTEGER(8) KEEP8(150)
+        INTEGER :: IFLAG, IERROR
+C
+C Local variables
+C ===============
+C
+        INTEGER :: I
+#if ! defined(BLR_NOOPENMP)
+!$OMP DO SCHEDULE(DYNAMIC)
+#endif
+        DO I = 1, NB_BLR-IP
+          CALL SMUMPS_LRMIXED_CONVERT_LRB(BLR_PANEL(I), K34, KEEP8, 
+     &                                    IFLAG, IERROR)
+        ENDDO
+#if ! defined(BLR_NOOPENMP)
+!$OMP END DO NOWAIT
+#endif
+      END SUBROUTINE SMUMPS_LRMIXED_CONVERT_PANEL
+      SUBROUTINE SMUMPS_LRMIXED_CONVERT_LRB(LRB, K34, KEEP8, IFLAG,
+     &                                      IERROR)
+C       this routine assumes LRB is stored in uniform PREC_FAC precision
+C       this is always true as of writing this comment, but MAY NOT BE !
+C       especially if mixed compression is introduced before schur
+C       complement update to speed it up
+C
+C Parameters
+C ==========
+C
+        TYPE(LRB_TYPE) :: LRB
+        INTEGER  :: K34 
+        INTEGER(8) KEEP8(150)
+        INTEGER :: IFLAG, IERROR
+C
+C Local variables
+C ===============
+C       K34 is the size of an "INTEGER", in bytes (KEEP(34))
+C       COSTS_PREC(i) is the number of bytes required for storing a 
+C       coefficient in precision i
+        INTEGER :: PREC, NB_INT_Q, NB_INT_R, N, M, K, Kprec, K_CUMUL
+        INTEGER :: MEM, allocok
+#if !defined(NOMIXHPC)
+        INTEGER :: PREC_FRB
+#endif
+        MEM = 0
+        M = LRB%M
+        N = LRB%N
+        IF (LRB%ISLR) THEN
+          if (lrb%K.le.0) return
+          allocate(LRB%Q_STOC(NPREC_STOC),
+     &             LRB%R_STOC(NPREC_STOC), stat=allocok)
+          IF (allocok.GT.0) THEN
+C           IFLAG/IERROR are shared (it would make
+C           sense to have them private and copy them
+C           to the shared versions of IFLAG/IERROR
+C           before the end of the // region.
+!$OMP ATOMIC WRITE
+            IFLAG = -13
+!$OMP ATOMIC WRITE
+            IERROR = 2*NPREC_STOC
+            GOTO 100
+          ENDIF
+          DO PREC=1,NPREC_STOC
+            NULLIFY(LRB%Q_STOC(PREC)%VAL)
+            NULLIFY(LRB%R_STOC(PREC)%VAL)
+          ENDDO
+          K = LRB%K
+          K_CUMUL = 1
+          DO PREC=1,NPREC_STOC
+            Kprec = LRB%K_STOC(PREC)
+C           Skip empty blocks
+            IF (KPREC.EQ.0) THEN
+              nullify(LRB%Q_STOC(PREC)%val)
+              nullify(LRB%R_STOC(PREC)%val)
+            ELSE
+C             keep(34) is the size of an "INTEGER", in bytes
+C             allocate n coefs dans %val: allocate(Q_STOC(i)%val((n*cost+K34-1)/K34))
+              NB_INT_Q = (M*Kprec*COSTS_PREC(PREC) + K34-1) / K34
+C             ou bien, équivalent à:
+C             NB_INT=CEILING( FLOAT(M*K*COSTS_PREC(PREC))/FLOAT(K34) )
+              NB_INT_R = (N*Kprec*COSTS_PREC(PREC) + K34-1) / K34
+              allocate(LRB%Q_STOC(PREC)%val(NB_INT_Q),
+     &                 LRB%R_STOC(PREC)%val(NB_INT_R),
+     &                 stat=allocok)
+              IF (allocok .GT. 0) THEN
+!$OMP ATOMIC WRITE
+                IFLAG = -13
+!$OMP ATOMIC WRITE
+                IERROR = NB_INT_Q+NB_INT_R
+                GOTO 100
+              ENDIF
+              CALL SMUMPS_LRMIXED_CAST(LRB%Q(1,K_CUMUL),
+     &          LRB%Q_STOC(PREC)%val(1), M, Kprec, M, M, 
+     &          PREC_FAC, PREC)
+              CALL SMUMPS_LRMIXED_CAST(LRB%R(K_CUMUL,1),
+     &          LRB%R_STOC(PREC)%val(1), Kprec, N, K, Kprec, 
+     &          PREC_FAC, PREC)
+C             Update memory consumption
+              MEM = MEM 
+     &            + 1 + (NB_INT_R*K34 -1) / COSTS_PREC(PREC_FAC)
+     &            + 1 + (NB_INT_Q*K34 -1) / COSTS_PREC(PREC_FAC)
+            ENDIF
+            K_CUMUL = K_CUMUL + Kprec
+          ENDDO
+#if !defined(NOMIXHPC)
+          LRB%KW_STOC = DOT_PRODUCT(
+     &        LRB%K_STOC(2:NPREC_STOC),
+     &        COSTS_PREC(2:NPREC_STOC))
+#endif
+C         Deallocate UNIFORM part and keep MIXED 
+          CALL DEALLOC_LRB(LRB, KEEP8, K34, .FALSE., .TRUE.)
+#if !defined(NOMIXHPC)
+       ELSE 
+         ! LRMIXED_ACTIVATED could be passed but testing association 
+         ! simply works here
+         CALL FRB_GET_PREC(LRB, PREC_FRB, associated(LRB%K_STOC))
+         IF (PREC_FRB.eq.PREC_FAC.and.PREC_FAC.eq.1) RETURN
+         allocate(LRB%Q_STOC(NPREC_STOC), stat=allocok)
+         IF (allocok.GT.0) THEN
+!$OMP ATOMIC WRITE
+           IFLAG = -13
+!$OMP ATOMIC WRITE
+           IERROR = NPREC_STOC
+           GOTO 100
+         ENDIF
+         DO PREC=1,NPREC_STOC
+           NULLIFY(LRB%Q_STOC(PREC)%VAL)
+         ENDDO
+         PREC = PREC_FRB
+         NB_INT_Q = (M*N*COSTS_PREC(PREC) + K34-1) / K34
+         allocate(LRB%Q_STOC(PREC)%val(NB_INT_Q), stat=allocok)
+         IF (allocok.GT.0) THEN
+!$OMP ATOMIC WRITE
+           IFLAG = -13
+!$OMP ATOMIC WRITE
+           IERROR = -NB_INT_Q
+           GOTO 100
+         ENDIF
+         MEM = 1 + ( NB_INT_Q*K34 - 1 )/COSTS_PREC(PREC_FAC)
+         CALL SMUMPS_LRMIXED_CAST(LRB%Q(1,1),
+     &     LRB%Q_stoc(PREC)%VAL(1),       M, N, M, M, PREC_FAC, PREC)
+#endif
+C        Deallocate UNIFORM part and keep MIXED 
+         CALL DEALLOC_LRB(LRB, KEEP8, K34, .FALSE., .TRUE.)
+        ENDIF
+        CALL MUMPS_DM_FAC_UPD_DYN_MEMCNTS(int(MEM,8),
+     &        .TRUE., KEEP8, IFLAG, IERROR, .TRUE., .TRUE.)
+C       Normal return
+        RETURN
+ 100  CONTINUE
+C     Return with error: not enough memory to perform
+C     conversion from UNIFORM to MIXED precision.
+C     Deallocate what was allocated in MIXED and keep UNIFORM
+      CALL DEALLOC_LRB(LRB, KEEP8, K34, .TRUE., .FALSE.)
+      RETURN
+      END SUBROUTINE SMUMPS_LRMIXED_CONVERT_LRB
+      SUBROUTINE SMUMPS_DECONVERT_LRB(LRB, IFLAG, IERROR, KEEP8)
+C Parameters
+C ==========
+        TYPE(LRB_TYPE) :: LRB
+        INTEGER(8) KEEP8(150)
+        INTEGER, INTENT(INOUT) :: IFLAG, IERROR
+C Local variables
+C ===============
+        INTEGER :: PREC, Kprec, K_CUMUL
+        TYPE(LRB_TYPE) :: LRB2
+        IF (LRB%ISLR .AND. LRB%K.GT.0) THEN
+          CALL ALLOC_LRB(LRB2,LRB%K,LRB%M,LRB%N,.true.,IFLAG,
+     &     IERROR,KEEP8)
+          LRB%Q=>LRB2%Q
+          LRB%R=>LRB2%R
+          K_CUMUL=1
+          DO PREC=1,NPREC_STOC
+            Kprec = LRB%K_STOC(PREC)
+            IF (KPREC.NE.0) THEN
+              CALL SMUMPS_LRMIXED_CAST(LRB%Q_STOC(PREC)%val(1),
+     &            LRB%Q(1,K_CUMUL), LRB%M, Kprec, LRB%M, LRB%M, 
+     &               PREC, PREC_FAC)
+              CALL SMUMPS_LRMIXED_CAST(LRB%R_STOC(PREC)%val(1),
+     &            LRB%R(K_CUMUL,1), Kprec, LRB%N, Kprec, LRB%K, 
+     &               PREC, PREC_FAC)
+            ENDIF
+            K_CUMUL = K_CUMUL + Kprec
+          END DO
+        ELSE
+          IF (associated(LRB%Q_STOC)) THEN
+            CALL ALLOC_LRB(LRB2,LRB%K,LRB%M,LRB%N,.true.,IFLAG,
+     &       IERROR,KEEP8)
+            LRB%Q=>LRB2%Q
+            DO PREC=1,NPREC_STOC
+              IF(ASSOCIATED(LRB%Q_STOC(prec)%VAL)) THEN
+                CALL SMUMPS_LRMIXED_CAST(LRB%Q_STOC(PREC)%val(1),
+     &              LRB%Q(1,1),LRB%M, LRB%N, LRB%M, LRB%M,
+     &                 PREC, PREC_FAC)
+                EXIT
+              END IF
+            END DO
+          ENDIF
+        END IF
+      END SUBROUTINE SMUMPS_DECONVERT_LRB
+#if !defined(NOMIXHPC)
+C{
+      SUBROUTINE SMUMPS_DECONVERT_LRB_R_W(LRB, R_WORKSPACE, LD, N, 
+     &         START_PREC, END_PREC,
+     &         START_PREC_K, END_PREC_K,
+     &         IFLAG, IERROR, KEEP8)
+        use iso_c_binding
+C Parameters
+C ==========
+        TYPE(LRB_TYPE), intent(in) :: LRB
+        INTEGER(8) KEEP8(150)
+        INTEGER, INTENT(IN) :: LD, N
+        INTEGER, INTENT(IN) :: START_PREC, END_PREC
+        INTEGER, INTENT(IN) :: START_PREC_K, END_PREC_K
+        INTEGER, INTENT(INOUT) :: IFLAG, IERROR
+        REAL, INTENT(INOUT) :: R_WORKSPACE(:,:) !LD,N
+C Local variables
+C ===============
+        INTEGER :: PREC, Kprec, K_CUMUL, Kbeg
+        INTEGER :: Krem
+        integer(kind=1), pointer, dimension(:) :: stoc_ptr
+        integer :: ptr_shape(1)
+        IF (LRB%ISLR .AND. LRB%K.GT.0) THEN
+          K_CUMUL=1
+          DO PREC=START_PREC,END_PREC
+            Kprec = LRB%K_STOC(PREC)
+            IF (KPREC.eq.0) cycle
+            Kbeg = 1
+            Krem = Kprec
+            if (prec.eq.start_prec) then
+              Kbeg = start_prec_k
+              Krem = krem - start_prec_k + 1
+            end if
+            if (prec.eq.end_prec) then
+              Krem = krem - (kprec - end_prec_k)
+            end if
+            ! FIXME GCC flags stop_ptr as creating temporary arrays
+            ptr_shape(1) = costs_prec(prec)*Kprec*LRB%N
+            call c_f_pointer(c_loc(LRB%R_stoc(prec)%val),
+     &         stoc_ptr, ptr_shape)
+            CALL SMUMPS_LRMIXED_CAST(
+     &          stoc_ptr((kbeg-1)*costs_prec(prec)+1),
+     &          R_WORKSPACE(K_CUMUL,1), Krem, LRB%N, Kprec, LD, 
+     &             PREC, 1)
+            K_CUMUL = K_CUMUL + Krem
+          END DO
+        END IF
+      END SUBROUTINE SMUMPS_DECONVERT_LRB_R_W
+      SUBROUTINE SMUMPS_DECONVERT_LRB_Q_W(LRB, Q_WORKSPACE, LD, N,
+     &         START_PREC, END_PREC,
+     &         START_PREC_K, END_PREC_K,
+     &         IFLAG, IERROR, KEEP8)
+        use iso_c_binding
+C Parameters
+C ==========
+        TYPE(LRB_TYPE), intent(in) :: LRB
+        INTEGER(8) KEEP8(150)
+        INTEGER, INTENT(IN) :: LD, N
+        INTEGER, INTENT(IN) :: START_PREC, END_PREC
+        ! FIXME unused
+        INTEGER, INTENT(IN) :: START_PREC_K, END_PREC_K
+        INTEGER, INTENT(INOUT) :: IFLAG, IERROR
+        REAL, INTENT(INOUT) :: Q_WORKSPACE(:,:) !LD,N)
+C Local variables
+C ===============
+        INTEGER :: PREC, Kprec, K_CUMUL
+        integer :: krem, kbeg
+        integer(kind=1), pointer, dimension(:) :: stoc_ptr
+        integer :: ptr_shape(1)
+        IF (LRB%ISLR .AND. LRB%K.GT.0) THEN
+          K_CUMUL=1
+          DO PREC=start_prec,end_prec
+            Kprec = LRB%K_STOC(PREC)
+            if (kprec.eq.0) cycle
+            Kbeg = 1
+            Krem = Kprec
+            if (prec.eq.start_prec) then
+              Kbeg = start_prec_k
+              Krem = krem - start_prec_k + 1
+            end if
+            if (prec.eq.end_prec) then
+              Krem = krem - (kprec - end_prec_k)
+            end if
+            ptr_shape(1) = costs_prec(prec)*Kprec*LRB%M
+            call c_f_pointer(c_loc(LRB%q_stoc(prec)%val),
+     &         stoc_ptr, ptr_shape)
+            CALL SMUMPS_LRMIXED_CAST(
+     &          stoc_ptr(LRB%M*(kbeg-1)*costs_prec(prec)+1),
+     &          Q_WORKSPACE(1,K_CUMUL), LRB%M, Krem, LRB%M, LD, 
+     &             PREC, 1)
+            K_CUMUL = K_CUMUL + Krem
+          END DO
+        END IF
+      END SUBROUTINE SMUMPS_DECONVERT_LRB_Q_W
+C} MIXHPC
+#endif
+C} LRMIXED
       END MODULE SMUMPS_LR_CORE
 C --------------------------------------------------------------------
+      SUBROUTINE SMUMPS_LRMIXED_CAST(A, B, nrows, ncols, ldA, ldB,
+     &                               precA, precB)
+        USE SMUMPS_LR_TYPE
+C       This routine casts a generic integer matrix A of precision precA 
+C       into generic integer matrix B of precision precB   
+        INTEGER :: nrows, ncols, ldA, ldB, precA, precB
+        INTEGER :: A(*), B(*) 
+        IF (precA.EQ.prec_dbl .AND. precB.EQ.prec_dbl) THEN
+          CALL MUMPS_LRMIXED_CAST_DD(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_dbl .AND. precB.EQ.prec_sgl) THEN
+          CALL MUMPS_LRMIXED_CAST_DS(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_sgl .AND. precB.EQ.prec_dbl) THEN
+          CALL MUMPS_LRMIXED_CAST_SD(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_sgl .AND. precB.EQ.prec_sgl) THEN
+          CALL MUMPS_LRMIXED_CAST_SS(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_sgl .AND. precB.EQ.prec_16) THEN
+          CALL MUMPS_LRMIXED_CAST_S16(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_16 .AND. precB.EQ.prec_sgl) THEN
+          CALL MUMPS_LRMIXED_CAST_16S(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_dbl .AND. precB.EQ.prec_16) THEN
+          CALL MUMPS_LRMIXED_CAST_D16(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_16 .AND. precB.EQ.prec_dbl) THEN
+          CALL MUMPS_LRMIXED_CAST_16D(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_dbl .AND. precB.EQ.prec_24) THEN
+          CALL MUMPS_LRMIXED_CAST_D24(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_24 .AND. precB.EQ.prec_dbl) THEN
+          CALL MUMPS_LRMIXED_CAST_24D(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_sgl .AND. precB.EQ.prec_24) THEN
+          CALL MUMPS_LRMIXED_CAST_S24(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_24 .AND. precB.EQ.prec_sgl) THEN
+          CALL MUMPS_LRMIXED_CAST_24S(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_dbl .AND. precB.EQ.prec_40) THEN
+          CALL MUMPS_LRMIXED_CAST_D40(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_40 .AND. precB.EQ.prec_dbl) THEN
+          CALL MUMPS_LRMIXED_CAST_40D(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_dbl .AND. precB.EQ.prec_48) THEN
+          CALL MUMPS_LRMIXED_CAST_D48(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_48 .AND. precB.EQ.prec_dbl) THEN
+          CALL MUMPS_LRMIXED_CAST_48D(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+C Binary56:
+        ELSEIF (precA.EQ.prec_dbl .AND. precB.EQ.prec_56) THEN
+          CALL MUMPS_LRMIXED_CAST_D56(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSEIF (precA.EQ.prec_56 .AND. precB.EQ.prec_dbl) THEN
+          CALL MUMPS_LRMIXED_CAST_56D(A(1), B(1), nrows, ncols,
+     &              ldA, ldB)
+        ELSE 
+          write(*,*) 'conversion impossible: format non pris en charge'
+          write(*,*) 'precA', precA, 'precB', precB
+          CALL MUMPS_ABORT()
+        ENDIF
+      END SUBROUTINE SMUMPS_LRMIXED_CAST
+      SUBROUTINE SMUMPS_LRMIXED_PLUS(X, Y, nrows, ncols, ldX, ldY,  
+     &       precX, precY)
+        USE SMUMPS_LR_TYPE
+C       This routine performs Y <- X+Y where X and Y are generic
+C       integer matrices in precision precX and precY, respectively
+        INTEGER :: nrows, ncols, ldX, ldY, precX, precY
+        INTEGER :: X(*), Y(*)
+        IF (precX .EQ. prec_dbl .AND. precY .EQ. prec_dbl) THEN
+          CALL MUMPS_LRMIXED_PLUS_DD(X, Y, nrows, ncols, ldX, ldY)
+        ELSEIF (precX .EQ. prec_dbl .AND. precY .EQ. prec_sgl) THEN
+          CALL MUMPS_LRMIXED_PLUS_DS(X, Y, nrows, ncols, ldX, ldY)
+        ELSEIF (precX .EQ. prec_sgl .AND. precY .EQ. prec_dbl) THEN
+          CALL MUMPS_LRMIXED_PLUS_SD(X, Y, nrows, ncols, ldX, ldY)
+        ELSEIF (precX .EQ. prec_sgl .AND. precY .EQ. prec_sgl) THEN
+          CALL MUMPS_LRMIXED_PLUS_SS(X, Y, nrows, ncols, ldX, ldY)
+        ELSE 
+          write(*,*) 'conversion impossible: format non pris en charge'
+          write(*,*) 'precX', precX, 'precY', precY
+          CALL MUMPS_ABORT()
+        ENDIF
+      END SUBROUTINE SMUMPS_LRMIXED_PLUS
       SUBROUTINE SMUMPS_TRUNCATED_RRQR( M, N, A, LDA, JPVT, TAU, WORK,
      &     LDW, RWORK, TOLEPS, TOL_OPT, RANK, MAXRANK, INFO,
+     &     K_STOC, LRMIXED_ACTIVATED, K453, MIXED_ADMISSIBILITY,
      &     ISLR)
 C     This routine computes a Rank-Revealing QR factorization of a dense
 C     matrix A. The factorization is truncated when the absolute value of
@@ -1694,6 +2441,7 @@ C      THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C      (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C
+      USE SMUMPS_LR_TYPE
       IMPLICIT NONE
 C
       INTEGER            ::  INFO, LDA, LDW, M, N, RANK, MAXRANK
@@ -1723,6 +2471,16 @@ C        ||B_{I(k+1:end),J{k+1:end}}||_X <= TOLEPS*sqrt(||B_{I,I}||_2*||B_{J,J}|
       REAL               :: TEMP, TEMP2, TOL3Z
       REAL            :: AKK
       LOGICAL INADMISSIBLE
+      INTEGER           :: K_STOC(NPREC_STOC)
+      LOGICAL           :: LRMIXED_ACTIVATED
+      INTEGER           :: K453
+      LOGICAL           :: MIXED_ADMISSIBILITY
+      INTEGER PREC
+      INTEGER CURRENT_PREC
+#if !defined(NOMIXHPC)
+      INTEGER MIN_CURRENT_PREC
+#endif
+      INTEGER COST_RK ! =sum(K_STOC*COSTS_PREC)
       REAL, PARAMETER    :: RZERO=0.0E+0, RONE=1.0E+0
       REAL :: ZERO
       REAL :: ONE
@@ -1759,6 +2517,13 @@ C        ||B_{I(k+1:end),J{k+1:end}}||_X <= TOLEPS*sqrt(||B_{I,I}||_2*||B_{J,J}|
          RETURN
       END IF
       NB = ilaenv( INB, 'CGEQRF', ' ', M, N, -1, -1 )
+      IF (LRMIXED_ACTIVATED) THEN
+        CURRENT_PREC=PREC_FAC !#1
+        DO PREC=1,NPREC_STOC
+          K_STOC(PREC)=0
+        ENDDO
+        COST_RK=0
+      ENDIF
       SELECT CASE(abs(TOL_OPT))
       CASE(1)
         TOLEPS_EFF = TOLEPS
@@ -1795,6 +2560,9 @@ C       TRUNC_ERR = snrm2( N, VN1( 1 ), 1 )
       ENDIF
       OFFSET = 0
       TOL3Z  = SQRT(slamch('Epsilon'))
+#if !defined(NOMIXHPC)
+      MIN_CURRENT_PREC = NPREC_STOC
+#endif
       DO 
          JB     = MIN(NB,MINMN-OFFSET)
          LSTICC = 0
@@ -1820,7 +2588,35 @@ C             TRUNC_ERR has been already computed at previous step
               ISLR = .TRUE.  
               RETURN
             ENDIF
+            IF (LRMIXED_ACTIVATED) THEN
+              DO WHILE(TRUNC_ERR.LT.
+     &               TOLEPS_EFF/PRECISIONS(CURRENT_PREC+1)/K453)
+                CURRENT_PREC = CURRENT_PREC+1
+              ENDDO
+#if !defined(NOMIXHPC)
+              MIN_CURRENT_PREC = MIN(MIN_CURRENT_PREC, CURRENT_PREC)
+#endif
+              K_STOC(CURRENT_PREC) = K_STOC(CURRENT_PREC) + 1
+              COST_RK = COST_RK + COSTS_PREC(CURRENT_PREC)
+C             CURRENT_PREC is now the right precision format for the current column, 
+C             because
+C             TOLEPS_EFF/u(CURRENT_PREC+1) <= TRUNC_ERR < TOLEPS_EFF/u(CURRENT_PREC)
+            ENDIF
+            IF (.NOT.LRMIXED_ACTIVATED.OR..NOT.MIXED_ADMISSIBILITY) THEN
               INADMISSIBLE = (RK.GT.MAXRANK)
+            ELSE
+#if !defined(NOMIXHPC)
+              INADMISSIBLE = 
+     &           (COST_RK.GT.MAXRANK*COSTS_PREC(PREC_FAC))
+              IF (QUANTIZE) THEN
+                INADMISSIBLE = INADMISSIBLE.OR. 
+     &             ((M+N)*COST_RK.GT.M*N*COSTS_PREC(MIN_CURRENT_PREC))
+              ENDIF
+#else
+                INADMISSIBLE = 
+     &             (COST_RK.GT.MAXRANK*COSTS_PREC(PREC_FAC))
+#endif
+            ENDIF
             IF (INADMISSIBLE) THEN
                RANK = RK
                INFO = RK
@@ -1957,8 +2753,591 @@ C          TRUNC_ERR = snrm2( N-RK, VN1( RK+1 ), 1 )
          ENDIF
       END DO
       RANK = RK
+      IF (.NOT.LRMIXED_ACTIVATED.OR..NOT.MIXED_ADMISSIBILITY) THEN
         ISLR = .NOT.(RK.GT.MAXRANK)
+      ELSE
+#if !defined(NOMIXHPC)
+        ISLR = .NOT.(COST_RK.GT.MAXRANK*COSTS_PREC(CLOSE_PREC))
+#else
+        ISLR = .NOT.(COST_RK.GT.MAXRANK*COSTS_PREC(PREC_FAC))
+#endif
+      ENDIF
       RETURN
  999  FORMAT ('On entry to SMUMPS_TRUNCATED_RRQR, parameter number',
      &            I2,' had an illegal value')
       END SUBROUTINE SMUMPS_TRUNCATED_RRQR
+       SUBROUTINE SMUMPS_LRMIXED_STOC2CALC_LRB(LRB, K34, K451, KEEP8,
+     &    KEEP_stoc)
+        USE SMUMPS_LR_TYPE
+C
+C Parameters
+C ==========
+C
+        TYPE(LRB_TYPE) :: LRB
+        INTEGER  :: K34 
+        INTEGER(8) KEEP8(150)
+        INTEGER :: K451
+        LOGICAL :: KEEP_stoc
+C Local variables
+C ===============
+        INTEGER :: N, M, K, Kprec_calc, Kprec_stoc
+        INTEGER :: offset_Q_calc, NB_INT_Q_calc, offset_R_calc, 
+     &  NB_INT_R_calc, new_ints_Qcalc, new_ints_Rcalc
+        INTEGER :: Pcalc, Pstoc, Pcalc_stoc, PREC, cost_pcalc
+        IF (LRB%ISLR .AND. LRB%K.GT.0) THEN
+          IF(associated(LRB%Q_calc))THEN
+            write(*,*) 'SMUMPS_LRMIXED_STOC2CALC_LRB: It seems that the 
+     & conversion has already been done previously'
+            CALL MUMPS_ABORT()
+          ELSEIF (K451.EQ.0) THEN
+C           KEEP 451 0 => precision formats for storage and 
+C           computations are identical: no need to allocate anything
+            ALLOCATE(LRB%Q_CALC(NPREC_CALC,NPREC_CALC))
+            ALLOCATE(LRB%R_CALC(NPREC_CALC,NPREC_CALC))
+            DO PREC=1,NPREC_CALC
+              LRB%Q_CALC(PREC,PREC)%VAL=>LRB%Q_STOC(PREC)%VAL
+              LRB%R_CALC(PREC,PREC)%VAL=>LRB%R_STOC(PREC)%VAL
+            ENDDO
+            LRB%K_CALC=>LRB%K_STOC
+          ELSE  ! All cases of K451.NE.0 !
+            IF (.NOT.ASSOCIATED(LRB%Q_STOC)) THEN
+              write(*,*) 'Internal error in LRMIXED_STOC2CALC_LRB'
+              CALL MUMPS_ABORT()
+            ENDIF
+C           KEEP 451 1 => precision formats for storage and computations
+C           are different: effective conversions and copies needed
+            ALLOCATE(LRB%Q_CALC(NPREC_CALC,NPREC_CALC))
+            ALLOCATE(LRB%R_CALC(NPREC_CALC,NPREC_CALC))
+            ALLOCATE(LRB%K_CALC(NPREC_CALC))
+            M = LRB%M
+            N = LRB%N
+            K = LRB%K 
+            DO PCALC=1,NPREC_CALC
+              KPREC_CALC=SUM(
+     &          LRB%K_STOC(CALC2STOC(PCALC):CALC2STOC(PCALC+1)-1))
+              LRB%K_CALC(PCALC)=KPREC_CALC
+              PCALC_STOC=CALC2STOC(PCALC)
+              COST_PCALC=COSTS_PREC(PCALC_STOC)
+              OFFSET_Q_CALC=0
+              OFFSET_R_CALC=0
+              NEW_INTS_QCALC=0
+              NEW_INTS_RCALC=0
+              IF(KPREC_CALC.GT.0) THEN
+                NB_INT_Q_CALC = (M*KPREC_CALC
+     &             *COST_PCALC + K34-1) / K34
+                NB_INT_R_CALC = (N*KPREC_CALC
+     &             *COST_PCALC + K34-1) / K34
+                ALLOCATE(LRB%Q_CALC(PCALC,PCALC)%VAL(NB_INT_Q_CALC))
+                ALLOCATE(LRB%R_CALC(PCALC,PCALC)%VAL(NB_INT_R_CALC))
+                DO PSTOC=PCALC_STOC, CALC2STOC(PCALC+1)-1
+                  KPREC_STOC = LRB%K_STOC(PSTOC)
+                  IF(KPREC_STOC.LE.0) THEN
+                    NEW_INTS_QCALC=0
+                    NEW_INTS_RCALC=0
+                  ELSE
+                    NEW_INTS_QCALC=(M*KPREC_STOC*COSTS_PREC(PCALC_STOC) 
+     &                 + K34-1) / K34
+                    NEW_INTS_RCALC=KPREC_STOC*COSTS_PREC(PCALC_STOC)/K34
+                    CALL SMUMPS_LRMIXED_CAST(LRB%Q_STOC(PSTOC)%VAL(1),
+     &                LRB%Q_CALC(PCALC,PCALC)%VAL(1+OFFSET_Q_CALC), 
+     &                M, KPREC_STOC, M, M, PSTOC, PCALC_STOC)
+                    CALL SMUMPS_LRMIXED_CAST(LRB%R_STOC(PSTOC)%VAL(1),
+     &                LRB%R_CALC(PCALC,PCALC)%VAL(1+OFFSET_R_CALC), 
+     &                KPREC_STOC, N, KPREC_STOC, KPREC_CALC, 
+     &                PSTOC, PCALC_STOC)
+                  ENDIF
+                  OFFSET_Q_CALC=OFFSET_Q_CALC+NEW_INTS_QCALC
+                  OFFSET_R_CALC=OFFSET_R_CALC+NEW_INTS_RCALC
+                ENDDO
+            ENDIF
+          ENDDO
+          ENDIF
+        ENDIF
+      END SUBROUTINE SMUMPS_LRMIXED_STOC2CALC_LRB
+#if defined(NOMIXHPC)
+      SUBROUTINE SMUMPS_LRMIXED_LRxFR(LorU, LRB, B, LDB, C, LDC, NCOLS,
+     &                   ALPHA, K34, K451, KEEP8, RHS, RB, QRB)
+        USE SMUMPS_LR_TYPE
+C       This routine performs C <- alpha*LRB*B + C, where LRB is a
+C       mixed precision LR block
+        TYPE(LRB_TYPE) :: LRB
+        INTEGER ::  B(*), C(*)
+        INTEGER ::  NCOLS, LDB, LDC
+        DOUBLE PRECISION :: ALPHA
+        INTEGER  :: K34, K451
+        INTEGER(8) KEEP8(150)
+C        INTEGER :: IFLAG, IERROR
+C        LOGICAL :: KEEP_STOC
+C       arrays of pointers:
+C       RHS(p)%val is the copy of B in precision p
+C       QRB(p)%val is the temporary array used to store LRB%Q_calc(p)*LRB%R_calc(p)*B
+        type(LRMIXED_TYPE) :: RHS(*), QRB(*)
+C       RB is the temporary array used to store LRB%R_calc(p)*B
+        INTEGER :: RB(*)
+C       LorU: 0 = L, 1 = U        
+        INTEGER :: LorU
+C       Local variables
+        DOUBLE PRECISION :: GAMMA
+        INTEGER :: M, N, K, KP, PREC, PCALC, PCALC_NEXT, I
+        INTEGER :: PRECS_NONEMPTY(NPREC_CALC), NB_NONEMPTY
+C       MorN = M if LorU=L, N if LorU=U (it is the size of QRB)
+        INTEGER :: MorN
+        M = LRB%M
+        N = LRB%N
+        K = LRB%K
+        IF (M.EQ.0 .OR. N.EQ.0 .OR. K.EQ.0) THEN
+          RETURN
+        ENDIF
+C       If needed, switch from STOC to CALC representation
+        CALL SMUMPS_LRMIXED_STOC2CALC_LRB(LRB, K34, K451, KEEP8, .TRUE.)
+C       We need to perform the operation 
+C           C <- alpha*Q*(R*B) + C       if forward
+C           C <- alpha*R^T*(Q^T*B) + C   if backward
+C       Example: if forward and NPREC_CALC=3, we need to perform these operations:
+C         QRB{3} <- alpha*Q{3} * (R{3}*B{3})
+C         QRB{2} <- cast(QRB{3}, prec=2)
+C         QRB{2} <- QRB{2} + alpha*Q{2} * (R{2}*B{2})
+C         C <- C + cast(QRB{2}, prec=1)
+C         C <- C + alpha*Q{1} * (R{1}*B{1})
+C       Actually some of these steps may be skipped if precision format 1, 2 or 3 is empty.
+C       We select all 'non-empty' precisions (except the working 
+C       precision, which is a special case). We store them in the array 
+C       PRECS_NONEMPTY of size NB_NONEMPTY:
+        NB_NONEMPTY = 0
+        DO I = 2, NPREC_CALC
+          IF (LRB%K_CALC(I) .GT. 0) THEN
+            NB_NONEMPTY = NB_NONEMPTY + 1
+            PRECS_NONEMPTY(NB_NONEMPTY) = I
+          ENDIF
+        ENDDO
+C       Loop on precisions >=2, in descending order. We can skip all 
+C       empty blocks thanks to the array PRECS_NONEMPTY
+C       Note that if NPREC_CALC=2, this loop has only 1 iteration, 
+C       or even 0 iterations if LRB%Q_CALC(2) is empty
+        DO I = NB_NONEMPTY, 1, -1
+            Pcalc = PRECS_NONEMPTY(I)
+            KP = LRB%K_CALC(Pcalc)
+            PREC = CALC2STOC(Pcalc)
+            IF(I.EQ.NB_NONEMPTY) THEN
+C               For the first product QRB is empty -> gamma=0
+                GAMMA=0.0D0
+            ELSE 
+                GAMMA=1.0D0
+            ENDIF
+            IF (LorU .EQ. 0) THEN
+C             RB=R{p}*B{p}
+C             QRB{P}=ALPHA*Q{P}*RB + GAMMA*QRB{P}:
+              MorN = M
+              CALL SMUMPS_LRMIXED_GEMM('N', 'N', KP, NCOLS, N, 1.0D0,
+     &            LRB%R_CALC(PCALC,PCALC)%VAL(1), KP,
+     &            RHS(PCALC)%VAL(1), N, 0.0D0,
+     &            RB, KP, PREC)
+              CALL SMUMPS_LRMIXED_GEMM('N', 'N', M, NCOLS, KP,
+     &            ALPHA, LRB%Q_CALC(PCALC,PCALC)%VAL(1), M, 
+     &            RB, KP, GAMMA,
+     &            QRB(PCALC)%VAL(1), M, PREC)
+            ELSE
+C             RB=QT{p}*B{p}
+C             QRB{P}=ALPHA*RT{P}*RB + GAMMA*QRB{P}:
+              MorN = N
+              CALL SMUMPS_LRMIXED_GEMM('T', 'N', KP, NCOLS, M, 1.0D0,
+     &            LRB%Q_CALC(PCALC,PCALC)%VAL(1), M,
+     &            RHS(PCALC)%VAL(1), M, 0.0D0,
+     &            RB, KP, PREC)
+              CALL SMUMPS_LRMIXED_GEMM('T', 'N', N, NCOLS, KP,
+     &            ALPHA, LRB%R_CALC(PCALC,PCALC)%VAL(1), KP, 
+     &            RB, KP, GAMMA,
+     &            QRB(PCALC)%VAL(1), N, PREC)
+            ENDIF
+C           C=beta*C+cast(QRB{2}, prec=1) if this is the last precision (p=2, or more generally i=1),
+C           or QRB{p-1}=cast(QRB{p}, prec=p-1) if p>2
+            IF(I .EQ. 1) THEN
+C             This is the last precision of the loop: we add the result to C
+              CALL SMUMPS_LRMIXED_PLUS(QRB(PCALC)%VAL(1), 
+     &            C, MorN, NCOLS, MorN, LDC, CALC2STOC(PCALC), 
+     &            CALC2STOC(1))
+            ELSE
+C             Not the last precision: cast current QRB to next precision
+              PCALC_NEXT = PRECS_NONEMPTY(I-1)
+              CALL SMUMPS_LRMIXED_CAST(QRB(PCALC)%VAL(1), 
+     &          QRB(PCALC_NEXT)%VAL(1), MorN, NCOLS, 
+     &          MorN, MorN, CALC2STOC(PCALC), CALC2STOC(PCALC_NEXT))
+            ENDIF
+        ENDDO
+C       PCALC=1, the working precision, is a special case and is handled
+C       separately:  RB=R{1}*B{1}; C=alpha*Q{1}*RB+C
+        PCALC = 1
+        PREC  = CALC2STOC(PCALC)
+        KP    = LRB%K_CALC(PCALC)
+        IF(KP.GT.0) THEN
+            IF (LorU .EQ. 0) THEN
+              CALL SMUMPS_LRMIXED_GEMM('N', 'N', KP, NCOLS, N, 1.0D0,
+     &          LRB%R_CALC(PCALC,PCALC)%VAL(1), KP,
+     &          B, LDB, 0.0D0, RB(1), KP, PREC)
+              CALL SMUMPS_LRMIXED_GEMM('N', 'N', M, NCOLS, KP,
+     &          ALPHA, LRB%Q_CALC(PCALC,PCALC)%VAL(1), M, 
+     &          RB(1), KP, 1.0D0, C, LDC, PREC)
+            ELSE
+              CALL SMUMPS_LRMIXED_GEMM('T', 'N', KP, NCOLS, M, 1.0D0,
+     &          LRB%Q_CALC(PCALC,PCALC)%VAL(1), M,
+     &          B, LDB, 0.0D0, RB(1), KP, PREC)
+              CALL SMUMPS_LRMIXED_GEMM('T', 'N', N, NCOLS, KP,
+     &          ALPHA, LRB%R_CALC(PCALC,PCALC)%VAL(1), KP, 
+     &          RB(1), KP, 1.0D0, C, LDC, PREC)
+            ENDIF
+        ENDIF
+C       In case of STOC representation, deallocate CALC now
+C       TODO Other strategies are possible, for example keep CALC after
+C       1st time and deallocate STOC        
+C       AJ such a strategy is useful in a compute-bound context where
+C       a low compte precision can be leveraged
+        IF(LRB%ISLR .AND. K451.NE.0 ) THEN
+          DO PCALC=1,NPREC_CALC
+            IF(LRB%K_CALC(PCALC).GT.0) THEN
+              DEALLOCATE(LRB%Q_CALC(PCALC,PCALC)%VAL)
+              DEALLOCATE(LRB%R_CALC(PCALC,PCALC)%VAL)
+              NULLIFY(LRB%Q_CALC(PCALC,PCALC)%VAL)
+              NULLIFY(LRB%R_CALC(PCALC,PCALC)%VAL)
+            ENDIF
+          END DO
+          DEALLOCATE(LRB%K_CALC)
+          NULLIFY(LRB%K_CALC)
+        ENDIF
+        DEALLOCATE(LRB%Q_CALC)
+        DEALLOCATE(LRB%R_CALC)
+        NULLIFY(LRB%Q_CALC)
+        NULLIFY(LRB%R_CALC)
+        RETURN
+      END SUBROUTINE SMUMPS_LRMIXED_LRxFR
+C ^^ .not.MIXHPC
+#else 
+C vv MIXHPC
+      SUBROUTINE SMUMPS_LRMIXED_LRxFR(LorU,  
+     &                  LRB, B, LDB, C, LDC, NCOLS,
+     &                  ALPHA, K34, K451, KEEP8, RHS, RB, QRB,
+     &                  thread_workspace, tws_size) 
+        use iso_c_binding
+        USE SMUMPS_LR_TYPE
+C       This routine performs C <- alpha*LRB*B + C, where LRB is a
+C       mixed precision LR block
+        implicit none
+C       LorU: 0 = L, 1 = U        
+        INTEGER, intent(in):: LorU
+        TYPE(LRB_TYPE), intent(inout) :: LRB
+        INTEGER, target, intent(inout) ::  B(*)
+        INTEGER, target, intent(inout) :: C(*)
+        INTEGER, intent(in) ::  NCOLS, LDB, LDC
+        DOUBLE PRECISION, intent(in) :: ALPHA
+        INTEGER, intent(in) :: K34, K451
+        INTEGER(8), intent(in) :: KEEP8(150)
+C        INTEGER :: IFLAG, IERROR
+C        LOGICAL :: KEEP_STOC
+C       arrays of pointers:
+C       RHS(p)%val is the copy of B in precision p
+C       QRB(p)%val is the temporary array used to store LRB%Q_calc(p)*LRB%R_calc(p)*B
+        type(LRMIXED_TYPE), intent(inout) :: RHS(*), QRB(*)
+C       RB is the temporary array used to store LRB%R_calc(p)*B
+        INTEGER, intent(inout) :: RB(*)
+C       the caller should allocate this array which is supposed enough to store
+C       any Q_stoc/R_stoc from its precision to the next working precision
+        integer, intent(in) :: tws_size
+        REAL, target, intent(inout) :: 
+     &          thread_workspace(tws_size)
+!        type(c_ptr), intent(inout) :: 
+!     &    thread_ptr
+C       Local variables
+        DOUBLE PRECISION :: GAMMA
+        INTEGER :: M, N, K, PREC, PCALC
+        integer :: pcalc_stoc, kprec_stoc, pstoc
+C       MorN = M if LorU=L, N if LorU=U (it is the size of QRB)
+        INTEGER :: MorN
+        INTEGER(kind=1), pointer :: R_ptr(:,:)
+        INTEGER(kind=1), pointer :: Q_ptr(:,:)
+        INTEGER(kind=1), pointer :: Bptr(:), Cptr(:)
+        INTEGER :: LD_B, LD_C
+        logical :: gamma_touched
+        integer :: last_prec_stoc, last_prec_calc
+        integer :: ptr1_shape(1), ptr2_shape(2)
+        M = LRB%M
+        N = LRB%N
+        K = LRB%K
+        IF (M.EQ.0 .OR. N.EQ.0 .OR. K.EQ.0) THEN
+          RETURN
+        ENDIF
+!        call c_f_pointer(thread_ptr, thread_workspace, (/ tws_size /))
+C       If needed, switch from STOC to CALC representation
+!        CALL SMUMPS_LRMIXED_STOC2CALC_LRB(LRB, K34, K451, KEEP8, .TRUE.)
+C       We need to perform the operation 
+C           C <- alpha*Q*(R*B) + C       if forward
+C           C <- alpha*R^T*(Q^T*B) + C   if backward
+C       Example: if forward and NPREC_CALC=3, we need to perform these operations:
+C         QRB{3} <- alpha*Q{3} * (R{3}*B{3})
+C         QRB{2} <- cast(QRB{3}, prec=2)
+C         QRB{2} <- QRB{2} + alpha*Q{2} * (R{2}*B{2})
+C         C <- C + cast(QRB{2}, prec=1)
+C         C <- C + alpha*Q{1} * (R{1}*B{1})
+C       Actually some of these steps may be skipped if precision format 1, 2 or 3 is empty.
+        gamma_touched = .false. 
+        IF (LorU .EQ. 0) THEN
+          MorN = M
+        else
+          MorN = N
+        end if
+        last_prec_stoc = -1
+        last_prec_calc = -1
+        do PSTOC=NPREC_STOC,1,-1
+          KPREC_STOC = LRB%K_STOC(PSTOC)
+          if (kprec_stoc.eq.0) cycle
+          pcalc = -1
+          pcalc_stoc = -1
+          do prec=NPREC_CALC,1,-1
+            if (calc2stoc(prec).le.pstoc) then
+              pcalc = prec
+              exit 
+            end if
+          end do
+          pcalc_stoc = calc2stoc(pcalc)
+          if (pcalc_stoc.ne.1.and..not.gamma_touched) then
+            gamma_touched = .true.
+            gamma = 0.0D0
+          else 
+            GAMMA = 1.0D0
+          end if
+          if (pcalc_stoc.eq.1) then
+             LD_B = LDB
+             ptr1_shape(1) = LD_B*NCOLS*COSTS_PREC(1)
+             call c_f_pointer(c_loc(B),Bptr,ptr1_shape)
+             LD_C = LDC
+             ptr1_shape(1) = LD_C*NCOLS*COSTS_PREC(1)
+             call c_f_pointer(c_loc(C),Cptr,ptr1_shape)
+             ! the last prec. used is less accurate than the working one
+             if (last_prec_stoc.gt.pcalc_stoc) then
+               CALL SMUMPS_LRMIXED_PLUS(QRB(last_prec_calc)%VAL(1), 
+     &             Cptr(1), MorN, NCOLS, MorN, LD_C, last_prec_stoc, 1)
+             end if
+          else
+             if (LorU.eq.0) then
+              LD_B = N
+             else
+              LD_B = M
+             endif
+             ptr1_shape(1) = LD_B*NCOLS*COSTS_PREC(PCALC_STOC)
+             call c_f_pointer(c_loc(RHS(pcalc)%val),Bptr,ptr1_shape)
+             LD_C = MorN
+             ptr1_shape(1) = LD_C*NCOLS*COSTS_PREC(PCALC_STOC)
+             call c_f_pointer(c_loc(QRB(pcalc)%val),Cptr,ptr1_shape)
+             ! the last precision used is less accurate than the one
+             ! we are about to use
+             if (last_prec_stoc.gt.pcalc_stoc) then
+C              cast previousQRB to current precision
+               CALL SMUMPS_LRMIXED_CAST(QRB(last_prec_calc)%VAL(1), 
+     &           Cptr(1), MorN, NCOLS, 
+     &           LD_C, LD_C, last_prec_stoc, pcalc_stoc)
+             end if
+          endif
+          !TODO factorize
+          IF (LorU .EQ. 0) THEN
+            ptr2_shape(1) = Kprec_stoc*COSTS_PREC(PCALC_STOC)
+            ptr2_shape(2) = N
+            if (K451.eq.0.or.pstoc.eq.pcalc_stoc) then
+              call c_f_pointer(c_loc(lrb%R_stoc(PSTOC)%val),
+     &                         R_ptr, ptr2_shape)
+            else
+              call c_f_pointer(c_loc(thread_workspace),
+     &                         R_ptr, ptr2_shape)
+              CALL SMUMPS_LRMIXED_CAST(LRB%R_STOC(PSTOC)%VAL(1),
+     &       R_ptr(1,1), !LRB%R_CALC(PCALC,PCALC)%VAL(1+OFFSET_R_CALC), 
+     &       KPREC_STOC, N, KPREC_STOC, KPREC_STOC, 
+     &          PSTOC, PCALC_STOC)
+            end if
+C           RB=R{p}*B{p}
+            CALL SMUMPS_LRMIXED_GEMM('N', 'N', KPREC_STOC, NCOLS, N, 
+     &          1.0D0, R_ptr(1,1), KPREC_STOC,
+     &          Bptr(1), LD_B, 0.0D0,
+     &          RB, KPREC_STOC, PCALC_STOC)
+            ptr2_shape(1) = M*COSTS_PREC(PCALC_STOC)
+            ptr2_shape(2) = Kprec_stoc
+            if (K451.eq.0.or.pstoc.eq.pcalc_stoc) then
+              call c_f_pointer(c_loc(lrb%Q_stoc(PSTOC)%val),
+     &                          Q_ptr, ptr2_shape)
+            else
+              call c_f_pointer(c_loc(thread_workspace),
+     &                         Q_ptr, ptr2_shape)
+              CALL SMUMPS_LRMIXED_CAST(LRB%Q_STOC(PSTOC)%VAL(1),
+     &       q_ptr(1,1), !LRB%Q_CALC(PCALC,PCALC)%VAL(1+OFFSET_Q_CALC), 
+     &       M, KPREC_STOC, M, M, PSTOC, PCALC_STOC)
+            end if
+C           QRB{P}=ALPHA*Q{P}*RB + GAMMA*QRB{P}:
+            CALL SMUMPS_LRMIXED_GEMM('N', 'N', M, NCOLS, KPREC_STOC,
+     &          ALPHA, q_ptr(1,1), M,
+     &          RB, KPREC_STOC, GAMMA,
+     &          Cptr(1), LD_C, PCALC_STOC)
+          ELSE
+            ptr2_shape(1) = M*COSTS_PREC(PCALC_STOC)
+            ptr2_shape(2) = Kprec_stoc
+            if (K451.eq.0.or.pstoc.eq.pcalc_stoc) then
+              call c_f_pointer(c_loc(lrb%Q_stoc(PSTOC)%val),
+     &                          Q_ptr, ptr2_shape)
+            else
+              call c_f_pointer(c_loc(thread_workspace),
+     &                          Q_ptr, ptr2_shape)
+              CALL SMUMPS_LRMIXED_CAST(LRB%Q_STOC(PSTOC)%VAL(1),
+     &      q_ptr(1,1), !LRB%Q_CALC(PCALC,PCALC)%VAL(1+OFFSET_Q_CALC), 
+     &      M, KPREC_STOC, M, M, PSTOC, PCALC_STOC)
+            end if
+C           RB=QT{p}*B{p}
+            CALL SMUMPS_LRMIXED_GEMM('T', 'N', KPREC_STOC, NCOLS, M, 
+     &          1.0D0, Q_ptr(1,1), M, Bptr(1), LD_B, 
+     &          0.0D0, RB, KPREC_STOC, PCALC_STOC)
+            ptr2_shape(1) = Kprec_stoc*COSTS_PREC(PCALC_STOC)
+            ptr2_shape(2) = N
+            if (K451.eq.0.or.pstoc.eq.pcalc_stoc) then
+              call c_f_pointer(c_loc(lrb%R_stoc(PSTOC)%val(1)),
+     &                         R_ptr, ptr2_shape)
+            else
+              call c_f_pointer(c_loc(thread_workspace),
+     &                         R_ptr, ptr2_shape)
+              CALL SMUMPS_LRMIXED_CAST(LRB%R_STOC(PSTOC)%VAL(1),
+     &       R_ptr(1,1), !LRB%R_CALC(PCALC,PCALC)%VAL(1+OFFSET_R_CALC), 
+     &       KPREC_STOC, N, KPREC_STOC, KPREC_STOC, 
+     &       PSTOC, PCALC_STOC)
+            end if
+C           QRB{P}=ALPHA*RT{P}*RB + GAMMA*QRB{P}:
+            CALL SMUMPS_LRMIXED_GEMM('T', 'N', N, NCOLS, KPREC_STOC,
+     &          ALPHA, R_ptr(1,1), KPREC_STOC, RB, KPREC_STOC, 
+     &          GAMMA, Cptr(1), LD_C, PCALC_STOC)
+          ENDIF
+          last_prec_calc = pcalc
+          last_prec_stoc = pcalc_stoc
+        end do
+        if (last_prec_stoc.gt.1) then
+           ptr1_shape(1) = LDC*NCOLS*COSTS_PREC(1)
+           call c_f_pointer(c_loc(C),Cptr,ptr1_shape)
+           CALL SMUMPS_LRMIXED_PLUS(QRB(last_prec_calc)%VAL(1), 
+     &         Cptr(1), MorN, NCOLS, MorN, LDC, last_prec_stoc,
+     &         CALC2STOC(1))
+         end if
+      END SUBROUTINE SMUMPS_LRMIXED_LRxFR
+      SUBROUTINE SMUMPS_LRMIXED_FRxFR(TRANSA, TRANSB,  
+     &                  M, N, K, ALPHA, 
+     &                  FRB, iA, jA, LDA, 
+     &                  B, LDB, C, LDC,
+     &                  RHS, QB, thread_workspace, tws_size)
+        use iso_c_binding
+        USE SMUMPS_LR_TYPE ! for lrb_type, lrmixed_type
+        USE SMUMPS_LR_CORE ! for frb_get_prec
+C       This routine performs 
+C       C <- alpha*FRB(iA:,jA:)*B(ja:,1:) + C, where FRB is a
+C       uniform some-precision FR block
+C       B and C are assumed to be working precision blocks
+        implicit none
+C       LorU: 0 = L, 1 = U        
+        CHARACTER, intent(in):: TRANSA, TRANSB
+        INTEGER, intent(in) :: M, N, K
+        REAL, intent(in) :: ALPHA
+        TYPE(LRB_TYPE), intent(inout) :: FRB
+        INTEGER, intent(in) :: iA, jA, LDA
+        INTEGER, target, intent(inout) ::  B(*)
+        INTEGER, target, intent(inout) :: C(*)
+        INTEGER, intent(in) ::  LDB, LDC
+C       arrays of pointers:
+C       RHS(p)%val is the copy of B in precision p
+C       QB(p)%val is the temporary array used to store FRB%Q_calc(p)*B
+        type(LRMIXED_TYPE), intent(inout) :: RHS(*)
+        INTEGER, TARGET, INTENT(IN) :: QB(*)
+C       the caller should allocate this array which 
+C       is supposed enough to store
+C       any Q_stoc/R_stoc from its precision to the next working 
+C       precision
+        integer, intent(in) :: tws_size
+        REAL, target, intent(inout) :: 
+     &          thread_workspace(tws_size)
+!        type(c_ptr), intent(inout) :: 
+!     &    thread_ptr
+C       Local variables
+        INTEGER :: PREC, PREC_CALC, PCALC_STOC
+        INTEGER(kind=1), pointer :: Aptr(:), Bptr(:)
+        REAL, pointer :: Cptr(:)
+        integer :: i, j, ld_c, ld_b
+C       mixed blas are not "blas specification"-compliant so the
+C       declaration of DALPHA is needed
+        DOUBLE PRECISION :: DALPHA 
+        DOUBLE PRECISION :: gamma
+        integer :: ptr_shape(1)
+        IF (M.EQ.0 .OR. N.EQ.0 .OR. K.EQ.0) THEN
+          RETURN
+        ENDIF
+        DALPHA = DBLE(ALPHA)
+        CALL FRB_GET_PREC(FRB, PREC, .true.)
+        do prec_calc=NPREC_CALC,1,-1
+          if (calc2stoc(prec_calc).le.prec) then
+            exit 
+          end if
+        end do
+        prec_calc = min(nprec_calc, prec_calc)
+        pcalc_stoc = calc2stoc(prec_calc)
+        ptr_shape(1) = COSTS_PREC(PREC)*FRB%M*FRB%N
+        if (prec.le.1) then
+          call c_f_pointer(c_loc(FRB%Q), Aptr, ptr_shape)
+        else if (calc2stoc(prec_calc).eq.prec) then
+          call c_f_pointer(c_loc(FRB%Q_stoc(prec)%val),
+     &                     Aptr, ptr_shape)
+        else
+          ! TODO casting A(1:i,:) is unnecessary
+          ptr_shape(1) = COSTS_PREC(1)*FRB%M*FRB%N
+          call c_f_pointer(c_loc(thread_workspace),
+     &      Aptr, ptr_shape)
+          CALL SMUMPS_LRMIXED_CAST(
+     &      FRB%Q_stoc(PREC)%VAL(1),
+     &      Aptr(1), FRB%M, FRB%N,
+     &      LDA, LDA,
+     &      PREC, pcalc_stoc)
+        ENDIF
+        if (prec_calc.le.1) then
+          LD_B = LDB
+          ptr_shape(1) = LD_B*COSTS_PREC(PREC)*N
+          call c_f_pointer(c_loc(B), Bptr, ptr_shape)
+          LD_C = LDC
+          ptr_shape(1) = LD_C*COSTS_PREC(PREC)*N
+          call c_f_pointer(c_loc(C), Cptr, ptr_shape)
+          gamma = 1.0d0
+        else
+          LD_B = K
+          ptr_shape(1) = LD_B*COSTS_PREC(PCALC_STOC) * N
+          call c_f_pointer(c_loc(RHS(prec_calc)%val), Bptr, ptr_shape)
+          LD_C = M
+          ptr_shape(1) = LD_C*COSTS_PREC(PCALC_STOC) * N
+          call c_f_pointer(c_loc(QB), Cptr, ptr_shape)
+          gamma = 0.0d0
+        ENDIF
+        i = (ia-1) * costs_prec(pcalc_stoc) + 1
+        j = (ja-1) * costs_prec(pcalc_stoc) + 1
+        CALL SMUMPS_LRMIXED_GEMM(TRANSA, TRANSB,
+     &      M, N, K,
+     &      DALPHA, Aptr(i-1+LDA*COSTS_PREC(PCALC_STOC)*(j-1)+1), LDA, 
+     &             Bptr(1), LD_B, 
+     &      GAMMA, Cptr(1), LD_C, PCALC_STOC)
+        if (PCALC_STOC.GT.1) then
+           CALL SMUMPS_LRMIXED_PLUS(
+     &         Cptr(1), C, M, N, LD_C, LDC, pcalc_stoc, CALC2STOC(1))
+        endif 
+      END SUBROUTINE SMUMPS_LRMIXED_FRxFR
+#endif
+      SUBROUTINE SMUMPS_LRMIXED_GEMM(TRANSA, TRANSB, M, N, K, ALPHA,
+     &                   A, LDA, B, LDB, BETA, C, LDC, prec)
+        USE SMUMPS_LR_TYPE
+        INTEGER :: A(*), B(*), C(*)
+        INTEGER :: M, N, K, LDA, LDB, LDC, prec
+        REAL :: ALPHA, BETA
+        CHARACTER(len=1) :: TRANSA, TRANSB
+        IF (prec.EQ.prec_dbl) THEN
+            CALL MUMPS_LRMIXED_DGEMM(TRANSA, TRANSB, M, N, K, ALPHA, 
+     &           A, LDA, B, LDB, BETA, C, LDC)
+        ELSEIF (prec.EQ.prec_sgl) THEN
+            CALL MUMPS_LRMIXED_SGEMM(TRANSA, TRANSB, M, N, K, ALPHA, 
+     &           A, LDA, B, LDB, BETA, C, LDC)
+        ELSE 
+          write(*,*) 'Internal error in MUMPS_LRMIXED_GEMM, prec=',prec
+          CALL MUMPS_ABORT()
+        ENDIF
+      END SUBROUTINE SMUMPS_LRMIXED_GEMM

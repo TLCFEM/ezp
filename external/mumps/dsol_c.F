@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -28,6 +28,9 @@ C
 #if defined(STAT_ES_SOLVE)
      & , IPTR_WORKING, SIZE_IPTR_WORKING, WORKING, SIZE_WORKING
 #endif
+#if defined(MPI_TO_K_OMP)
+     & , I_AM_HEAD, PROCS_MAP_STRUC, COMM_LOAD
+#endif
      &  ,IPOOL_B_L0_OMP, LPOOL_B_L0_OMP, IPOOL_A_L0_OMP, LPOOL_A_L0_OMP,
      &  L_VIRT_L0_OMP, VIRT_L0_OMP, L_PHYS_L0_OMP, PHYS_L0_OMP,
      &  PERM_L0_OMP, PTR_LEAFS_L0_OMP, L0_OMP_MAPPING, LL0_OMP_MAPPING,
@@ -40,6 +43,10 @@ C
       USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC
       USE DMUMPS_INTR_TYPES, ONLY : DMUMPS_ROOT_STRUC
      & , DMUMPS_L0OMPFAC_T
+#if defined(MPI_TO_K_OMP)
+      USE MUMPS_MPITOOMP_M, ONLY : PROCS_MAP_STRUC_T,
+     &                             MUMPS_MPITOOMP_SLEEPSYNC
+#endif
       IMPLICIT NONE
 #if defined(V_T)
       INCLUDE 'VT.inc'
@@ -78,6 +85,11 @@ C
       INTEGER, intent(in) :: Lnodes_FWD, Lnodes_BWD
       INTEGER, intent(in) :: nodes_FWD(max(1,Lnodes_FWD)), 
      &                       nodes_BWD(max(1,Lnodes_BWD))
+#if defined(MPI_TO_K_OMP)
+      LOGICAL, intent(in) :: I_AM_HEAD
+      INTEGER :: COMM_LOAD
+      TYPE ( PROCS_MAP_STRUC_T ), intent(in) :: PROCS_MAP_STRUC
+#endif
       INTEGER, intent(in)      :: NZ_RHS, NBCOL_INBLOC
       INTEGER, intent(in)      :: SIZE_UNS_PERM_INV 
       INTEGER, intent(in)      :: SIZE_PERM_RHS 
@@ -161,6 +173,9 @@ C
       EXTERNAL :: MUMPS_OOC_GET_FCT_TYPE
       DOUBLE PRECISION TIME_FWD,TIME_BWD,TIME_SpecialRoot
       INTEGER :: nb_sparse
+#if defined(MPI_TO_K_OMP)
+      INTEGER:: MTKO_ERROR
+#endif
       INTEGER, EXTERNAL :: MUMPS_PROCNODE
       LOGICAL, EXTERNAL :: MUMPS_IN_OR_ROOT_SSARBR
       MYLEAF = -1
@@ -241,6 +256,10 @@ C
       DO_L0OMP_BWD = ( (KEEP(401).EQ.1).AND.(KEEP(400).GT.0)
      &              .AND.DOBACKWARD )
       DO_L0OMP_BWD = DO_L0OMP_BWD .AND. KEEP(201).EQ.0
+#if defined(MPI_TO_K_OMP)
+      DO_L0OMP_FWD = DO_L0OMP_FWD .AND. I_AM_HEAD
+      DO_L0OMP_BWD = DO_L0OMP_BWD .AND. I_AM_HEAD
+#endif
       IF ( DO_PRUN_FWD.OR.DO_PRUN_BWD ) THEN
          ALLOCATE (Pruned_SONS(KEEP(28)), stat=I)
          IF(I.GT.0) THEN
@@ -415,6 +434,9 @@ C
      &    BUFR, LBUFR, LBUFR_BYTES,
      &    RHS_ROOT, LRHS_ROOT,     
      &    ISTEP_TO_INIV2, TAB_POS_IN_PERE, 
+#if defined(MPI_TO_K_OMP)
+     &    I_AM_HEAD, 
+#endif
      &    RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE,
      &    FROM_PP,
      &    NBROOT_UNDER_L0,
@@ -434,6 +456,13 @@ C
           KEEP(405)=0
           MYROOT = MYROOT - NBROOT_UNDER_L0
         ENDIF
+#if defined(MPI_TO_K_OMP)
+          IF ( KEEP(381) .GT. 1 ) THEN
+            CALL MUMPS_MPITOOMP_SLEEPSYNC( KEEP,
+     &      PROCS_MAP_STRUC%PROCS_MAP,
+     &      MYID_NODES, COMM_LOAD, SLAVEF, .TRUE. )
+          ENDIF
+#endif
         IF ( DO_L0OMP_FWD ) THEN
           IF ( DO_PRUN_FWD ) THEN
             MYLEAF_NOT_PRUNED = IPOOL_A_L0_OMP(LPOOL_A_L0_OMP)
@@ -506,6 +535,9 @@ C
      &       
      &       ISTEP_TO_INIV2, TAB_POS_IN_PERE
      &       , RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE, FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &          , I_AM_HEAD
+#endif
      &          , L0_OMP_MAPPING, LL0_OMP_MAPPING,
      &            L0_OMP_FACTORS, LL0_OMP_FACTORS
      &       )
@@ -697,6 +729,11 @@ C
 #if defined(V_T)
             CALL VTBEGIN(root_soln,ierr)
 #endif
+#if defined(MPI_TO_K_OMP)
+            IF (I_AM_HEAD .and. KEEP(381).GT.1) THEN
+              CALL mumps_mtko_deactivate(KEEP(249))
+            ENDIF
+#endif
              CALL DMUMPS_ROOT_SOLVE( NRHS, root%DESCRIPTOR(1), 
      &       root%CNTXT_BLACS, LOCAL_M, LOCAL_N,
      &       root%MBLOCK, root%NBLOCK,
@@ -705,6 +742,12 @@ C
      &       RHS_ROOT(1),
      &       root%TOT_ROOT_SIZE, A( IAPOS ),
      &       INFO(1), MTYPE, KEEP(50), FROM_PP)
+#if defined(MPI_TO_K_OMP)
+            IF (I_AM_HEAD .and. KEEP(381).GT.1) THEN
+              CALL mumps_mtko_reactivate(KEEP(381)*KEEP(249),
+     &                  MTKO_ERROR)
+            ENDIF
+#endif
             IF(KEEP(201).GT.0)THEN 
               CALL DMUMPS_FREE_FACTORS_FOR_SOLVE(KEEP(38),
      &             PTRFAC,KEEP(28),A,LA,.FALSE.,IERR)
@@ -1036,6 +1079,9 @@ C
      &          LPANEL_POS, PRUN_BELOW_BWD, TO_PROCESS, SIZE_TO_PROCESS
      &        , RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE_BWD
      &         , FROM_PP
+#if defined(MPI_TO_K_OMP)
+     &          , I_AM_HEAD
+#endif
      &          , L0_OMP_MAPPING, LL0_OMP_MAPPING,
      &            L0_OMP_FACTORS, LL0_OMP_FACTORS
      &          )
@@ -1059,6 +1105,9 @@ C
      &      COMM_NODES, MYID_NODES, BUFR, LBUFR, LBUFR_BYTES, 
      &      RHS_ROOT, LRHS_ROOT, ISTEP_TO_INIV2, TAB_POS_IN_PERE, 
      &      IW1(IPANEL_POS), LPANEL_POS,
+#if defined(MPI_TO_K_OMP)
+     &      I_AM_HEAD,
+#endif
      &      PRUN_BELOW_BWD, TO_PROCESS, SIZE_TO_PROCESS,
      &      RHS_BOUNDS, LRHS_BOUNDS, DO_NBSPARSE_BWD,
      &      FROM_PP,
@@ -1070,6 +1119,13 @@ C
      &    L0_OMP_FACTORS, LL0_OMP_FACTORS )
           KEEP(405)=0
         ENDIF
+#if defined(MPI_TO_K_OMP)
+        IF (KEEP(381) .GT. 1) THEN
+          CALL MUMPS_MPITOOMP_SLEEPSYNC( KEEP,
+     &    PROCS_MAP_STRUC%PROCS_MAP,
+     &    MYID_NODES, COMM_LOAD, SLAVEF, .TRUE. )
+        ENDIF
+#endif
         CALL MUMPS_CLEAN_PENDING( INFO(1), KEEP,
      &     BUFR, LBUFR,LBUFR_BYTES,
      &     COMM_NODES, IDUMMY,       
@@ -1119,7 +1175,7 @@ C
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: KEEP(500), ICNTL(60), NBRHS, MPG
       LOGICAL, INTENT(IN)  :: PROKG
-      INTEGER, INTENT(OUT) :: ICNTL10, ICNTL11
+      INTEGER, INTENT(INOUT) :: ICNTL10, ICNTL11
       LOGICAL, INTENT(OUT) :: POSTPros
       POSTPros = .FALSE.
       IF (ICNTL11.NE.0 .OR. ICNTL10.NE.0) THEN

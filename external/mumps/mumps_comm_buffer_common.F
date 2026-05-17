@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -29,6 +29,9 @@ C
      &   MUMPS_BUF_BROADCAST, MUMPS_BUF_SEND_NOT_MSTR,
      &   MUMPS_BUF_SEND_FILS,
      &   MUMPS_BUF_TEST
+#if defined(USE_GPU)
+        PUBLIC :: MUMPS_BUF_MAX_OUTER_T2
+#endif
         INTEGER NEXT, REQ, CONTENT, OVHSIZE
         PARAMETER( NEXT = 0, REQ = 1, CONTENT = 2, OVHSIZE = 2 )
         PUBLIC :: OVHSIZE
@@ -376,15 +379,15 @@ C
       SUBROUTINE MUMPS_BUF_SEND_DESC_BANDE(
      &             INODE, NBPROCFILS, NLIG, ILIG, NCOL, ICOL,
      &             NASS, NSLAVES_HDR, LIST_SLAVES,
-     &             NSLAVES,
+     &             NSLAVES, XXG_MASTER,
      &             ESTIM_NFS4FATHER_ATSON,
      &             DEST, NFRONT, COMM, KEEP, IERR
      &             , LRSTATUS
      &)
       IMPLICIT NONE
         INTEGER COMM, IERR, NFRONT
-        INTEGER, intent(in) :: INODE
-        INTEGER, intent(in) :: NLIG, NCOL, NASS, NSLAVES_HDR, NSLAVES
+        INTEGER, intent(in) :: INODE,NLIG, NCOL, NASS
+        INTEGER, intent(in) :: NSLAVES_HDR, NSLAVES, XXG_MASTER
         INTEGER, intent(in) :: ESTIM_NFS4FATHER_ATSON
         INTEGER NBPROCFILS, DEST
         INTEGER ILIG( NLIG )
@@ -401,7 +404,7 @@ C
         PARAMETER ( IONE=1 )
         DEST2(1) = DEST
         IERR = 0
-        SIZE_INT = ( 11 + NLIG + NCOL + NSLAVES_HDR )
+        SIZE_INT = ( 12 + NLIG + NCOL + NSLAVES_HDR )
         SIZE_BYTES = SIZE_INT * SIZEofINT
         IF (SIZE_INT.GT.SIZE_RBUF_BYTES ) THEN
          IERR = -3
@@ -435,6 +438,8 @@ C
         BUF_CB%CONTENT( POSITION ) = LRSTATUS
         POSITION = POSITION + 1
         BUF_CB%CONTENT( POSITION ) = ESTIM_NFS4FATHER_ATSON
+        POSITION = POSITION + 1
+        BUF_CB%CONTENT( POSITION ) = XXG_MASTER
         POSITION = POSITION + 1
         IF (NSLAVES_HDR.GT.0) THEN
          BUF_CB%CONTENT( POSITION: POSITION + NSLAVES_HDR - 1 ) = 
@@ -1224,4 +1229,21 @@ C
         SIZE_RBUF_BYTES = MUMPS_LBUFR_BYTES
         RETURN
       END SUBROUTINE MUMPS_BUF_DIST_IRECV_SIZE
+#if defined(USE_GPU)
+        SUBROUTINE MUMPS_BUF_MAX_OUTER_T2 ( MAX_OUTER_T2, NBSMB,
+     &      NFRONT, NASS, NSLAVES, KEEP, NBmin )
+        INTEGER, intent(in)  :: MAX_OUTER_T2, NBSMB
+        INTEGER, intent(in)  :: NFRONT, NASS, NSLAVES, KEEP(500)
+        INTEGER, intent(out) :: NBmin
+        DOUBLE PRECISION     :: LARGEST_MESSAGE
+         LARGEST_MESSAGE = dble(min(MAX_OUTER_T2,NASS))*
+     &          min (
+     &               dble(min(MAX_OUTER_T2,NASS)*NBSMB), 
+     &               dble(NFRONT)
+     &               )
+         LARGEST_MESSAGE = LARGEST_MESSAGE*dble(KEEP(35))
+         NBmin = int(LARGEST_MESSAGE/dble(SIZE_RBUF_BYTES))+1
+        RETURN
+        END SUBROUTINE MUMPS_BUF_MAX_OUTER_T2
+#endif
       END MODULE MUMPS_BUF_COMMON

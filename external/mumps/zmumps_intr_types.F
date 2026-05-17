@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -13,6 +13,10 @@ C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       MODULE ZMUMPS_INTR_TYPES
       USE MUMPS_INTR_TYPES, ONLY: MUMPS_ROOT_STRUC
+#if defined(SINGLEINDOUBLE)
+      USE CMUMPS_INTR_TYPES, ONLY : CMUMPS_L0OMPFAC_T,
+     &                               CMUMPS_ROOT_STRUC
+#endif
       PRIVATE
       PUBLIC :: ZMUMPS_ROOT_STRUC,
      &          ZMUMPS_L0OMPFAC_T,
@@ -21,21 +25,24 @@ C
      &          ZMUMPS_FREE_INTR_ENCODING,
      &          ZMUMPS_ENCODE_INTR,
      &          ZMUMPS_DECODE_INTR
+#if defined(SINGLEINDOUBLE)
+     &       , CMUMPS_ROOT_STRUC, CMUMPS_L0OMPFAC_T
+#endif
 C     ZMUMPS_ROOT_STRUC no longer contains INTEGERS
       TYPE ZMUMPS_ROOT_STRUC
 !       Centralized master of root
         COMPLEX(kind=8), DIMENSION(:), POINTER :: RHS_CNTR_MASTER_ROOT
 !       Used to access Schur easily from root structure
         COMPLEX(kind=8), DIMENSION(:), POINTER :: SCHUR_POINTER
-!       for try_null_space preprocessing constant only:
+!       for null_space preprocessing only:
         COMPLEX(kind=8), DIMENSION(:), POINTER :: QR_TAU
 !       Fwd in facto: 
 !           case of scalapack root: to store RHS in 2D block cyclic
 !           format compatible with root distribution
         COMPLEX(kind=8), DIMENSION(:,:), POINTER :: RHS_ROOT
-!       for SVD on root (#define try_null_space)
+!       for SVD on root (null_space)
         COMPLEX(kind=8), DIMENSION(:,:), POINTER :: SVD_U, SVD_VT
-!       for RR on root (#define try_null_space)
+!       for RR on root (null_space)
         DOUBLE PRECISION, DIMENSION(:), POINTER :: SINGULAR_VALUES
 !
       END TYPE ZMUMPS_ROOT_STRUC
@@ -51,6 +58,10 @@ C     All MUMPS internal datatypes are in an internal structure:
          TYPE (ZMUMPS_ROOT_STRUC) :: roota
          TYPE (ZMUMPS_L0OMPFAC_T), DIMENSION(:), POINTER ::
      &                             L0_OMP_FACTORS
+#if defined(SINGLEINDOUBLE)
+         TYPE (CMUMPS_L0OMPFAC_T), DIMENSION(:), POINTER ::
+     &                             LPL0_OMP_FACTORS
+#endif
       END TYPE ZMUMPS_INTR_STRUC
 C     =================================================================
       CONTAINS

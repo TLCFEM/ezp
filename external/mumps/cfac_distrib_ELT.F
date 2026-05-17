@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -80,6 +80,9 @@ C
       ARROW_ROOT = 0
       EARLYT3ROOTINS = KEEP(200) .EQ.0
      &        .OR.  ( KEEP(200) .LT. 0 .AND. KEEP(400) .EQ. 0 )
+#if defined(SINGLEINDOUBLE)
+      EARLYT3ROOTINS =.FALSE.
+#endif
       IF ( MYID .eq. MASTER ) THEN
         IF ( KEEP(46) .eq. 0 ) THEN
           NBUF = SLAVEF
@@ -185,6 +188,8 @@ C
      &      = id%ELTVAR( IELTPTR8: IELTPTR8 + SIZEI - 1 )
             RECV_IELTPTR8 = RECV_IELTPTR8 + SIZEI
             IF ( KEEP(52) .ne. 0
+#if defined(SINGLEINDOUBLE)
+#endif
      &         ) THEN
               ELTVAL_LOC( RECV_RELTPTR8: RECV_RELTPTR8 + SIZER - 1)
      &        = TEMP_ELT_R( 1: SIZER )

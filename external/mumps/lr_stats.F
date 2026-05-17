@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -12,14 +12,41 @@ C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       MODULE MUMPS_LR_STATS
+      USE MUMPS_LR_COMMON, only: NPREC_STOC_MAX,
+     &                           NPREC_CALC, NPREC_STOC, 
+     &                           COSTS_PREC, PRECISIONS, CALC2STOC,
+     &                           PREC_DBL, PREC_SGL, 
+     &                           PREC_56, PREC_48,
+     &                           PREC_40, PREC_24,
+     &                           PREC_16,
+     &                           PREC_FR, PREC_DIAG_FR, CLOSE_PREC,
+     &                           PREC_FAC,
+     &                           QUANTIZE
       IMPLICIT NONE
+C --------------------------------------------------------
+C  ALL the variables for the statistics
+C --------------------------------------------------------
+C memory stuff
       DOUBLE PRECISION :: MRY_CB_FR, 
      &                    MRY_CB_LRGAIN,
      &                    MRY_LU_FR,
      &                    MRY_LU_LRGAIN,
      &                    GLOBAL_MRY_LPRO_COMPR,
      &                    GLOBAL_MRY_LTOT_COMPR
+     &                  , MRY_CB_LRGAIN_mixed,
+     &                    MRY_LU_LRGAIN_mixed,
+     &                    GLOBAL_MRY_LPRO_COMPR_mixed,
+     &                    GLOBAL_MRY_LTOT_COMPR_mixed
+                   ! per_prec = off-diagonal LR blocks in LR fronts
+     &                  , ENTRIES_PER_PREC(NPREC_STOC_MAX),
+                   ! per_prec_fr = off-diagonal FR blocks in LR fronts
+     &                    ENTRIES_PER_PREC_FR(NPREC_STOC_MAX),
+                   ! per_prec_diag = FR diagonal blocks in LR fronts
+     &                    ENTRIES_PER_PREC_DIAG(NPREC_STOC_MAX),
+                          ! per_prec_cb = idk
+     &                    ENTRIES_PER_PREC_CB(NPREC_STOC_MAX)
       INTEGER :: CNT_NODES
+C flop stuff
       DOUBLE PRECISION :: FLOP_LRGAIN,
      &                    FLOP_FACTO_FR,
      &                    FLOP_FACTO_LR,
@@ -34,8 +61,18 @@ C
      &                    FLOP_UPDATE_LRLR3,
      &                    FLOP_UPDATE_FRLR,
      &                    FLOP_UPDATE_FRFR
+     &                  , FLOP_LRGAIN_mixed,
+     &                    FLOP_FACTO_LR_mixed,
+     &                    FLOP_TRSM_LR_mixed,
+     &                    FLOP_UPDATE_LR_mixed,
+     &                    FLOP_UPDATE_LRLR1_mixed,
+     &                    FLOP_UPDATE_LRLR2_mixed,
+     &                    FLOP_UPDATE_LRLR3_mixed,
+     &                    FLOP_UPDATE_FRLR_mixed,
+     &                    FLOP_UPDATE_FRFR_mixed
       DOUBLE PRECISION :: FLOP_COMPRESS,
      &                    FLOP_CB_COMPRESS,
+     &                    FLOP_COMPRESS_mixed,
      &                    FLOP_MIDBLK_COMPRESS,
      &                    FLOP_FRSWAP_COMPRESS,
      &                    FLOP_ACCUM_COMPRESS,
@@ -45,6 +82,7 @@ C
       DOUBLE PRECISION :: FACTOR_PROCESSED_FRACTION
       INTEGER(KIND=8)  :: FACTOR_SIZE
       DOUBLE PRECISION :: TOTAL_FLOP
+C timing stuff
       DOUBLE PRECISION :: TIME_UPDATE
       DOUBLE PRECISION :: TIME_UPDATE_LRLR1
       DOUBLE PRECISION :: TIME_UPDATE_LRLR2
@@ -74,6 +112,7 @@ C
       DOUBLE PRECISION :: TIME_FRASM_LOCASM2
       DOUBLE PRECISION :: TIME_FRASM_MAPLIG1
       DOUBLE PRECISION :: TIME_FRASM_CONTRIB2
+C analysis timers      
       DOUBLE PRECISION :: TIME_LRANA_LRGROUPING
       DOUBLE PRECISION :: TIME_LRANA_SEPGROUPING
       DOUBLE PRECISION :: TIME_LRANA_GETHALO
@@ -136,6 +175,12 @@ C
         MIN_BLOCKSIZE_CB = min(MIN_BLOCKSIZE_CB,LOC_MIN_CB)
         MAX_BLOCKSIZE_ASS = max(MAX_BLOCKSIZE_ASS,LOC_MAX_ASS)
         MAX_BLOCKSIZE_CB = max(MAX_BLOCKSIZE_CB,LOC_MAX_CB)
+C        open(unit=20,access='append',file='block_stats.txt')
+C        write(20,*) LOC_TOT_ASS, LOC_AVG_ASS,
+C     &              LOC_MIN_ASS, LOC_MAX_ASS,
+C     &              LOC_TOT_CB, LOC_AVG_CB,
+C     &              LOC_MIN_CB, LOC_MAX_CB
+C        close(20)
       END SUBROUTINE COLLECT_BLOCKSIZES
       SUBROUTINE UPD_FLOP_DECOMPRESS(F, CB)
           DOUBLE PRECISION, INTENT(IN) :: F
@@ -201,14 +246,14 @@ C
           INTEGER,INTENT(IN) :: M, N, K, LorU
           LOGICAL,INTENT(IN) :: ISLR
           DOUBLE PRECISION :: LR_COST, FR_COST, LR_GAIN
-          IF (LorU.EQ.0) THEN 
+          IF (LorU.EQ.0) THEN ! L
             FR_COST = dble(M*N*N)
             IF (ISLR) THEN
               LR_COST = dble(K*N*N)
             ELSE
               LR_COST = FR_COST
             ENDIF
-          ELSE 
+          ELSE ! U
             FR_COST = dble(M-1)*dble(N*N)
             IF (ISLR) THEN
               LR_COST = dble(N-1)*dble(N*K)
@@ -228,6 +273,15 @@ C
      &      IS_SYMDIAG, LUA_ACTIVATED, REC_ACC)
         INTEGER, INTENT(IN) :: LRB1M, LRB1N, LRB1K, LRB2M, LRB2N, LRB2K
         LOGICAL, INTENT(IN) :: LRB1ISLR, LRB2ISLR
+C       MIDBLK_COMPRESS = whether we tried compressing the middle
+C       product in CMUMPS_LRGEMM3  
+C       RANK = rank revealed when MIDBLK_COMPRESS >= 1
+C       BUILDQ = if RANK is small enough, we also build Q in
+C       CMUMPS_LRGEMM3 to exploit low-rankness
+C       IS_SYMDIAG = whether it is a diagonal block AND we are in
+C                    the symmetric case 
+C       REC_ACC = whether this routine is called from
+C       CMUMPS_RECOMPRESS_ACCUMULATOR        
         LOGICAL, INTENT(IN) :: BUILDQ, IS_SYMDIAG, LUA_ACTIVATED
         INTEGER, INTENT(IN) :: RANK_IN, MIDBLK_COMPRESS
         LOGICAL, INTENT(IN), OPTIONAL :: REC_ACC
@@ -295,15 +349,23 @@ C
           COST_FR = 2.0D0*M1*M2*N1
         ENDIF
         IF (IS_SYMDIAG) THEN
+C         We do not use the fact that diagonal blocks are triangular 
+C         in LDLT. But the total flops are computed assuming we do.            
+C         If we want the sum of each part to be equal to the total,
+C         we have to cheat:            
           COST_FR = COST_FR/2.0D0
           COST_LRLR3 = COST_LRLR3/2.0D0
           COST_FRFR = COST_FRFR/2.0D0
           COST_LR = COST_LR - COST_LRLR3 - COST_FRFR
         ENDIF
         IF (LUA_ACTIVATED) THEN
+C         LUA is activated: the outer update (LR block decompression)
+C         is not done
           COST_LR = COST_LR - COST_LRLR3
           COST_LRLR3 = 0.0D0
           IF (REC_ACC_LOC) THEN
+C           Special case: this a not a regular LR product, it is
+C           called from CMUMPS_RECOMPRESS_ACCUMULATOR 
             COST_LR_AND_COMPRESS = COST_LR + COST_COMPRESS
 !$OMP       ATOMIC UPDATE
             FLOP_COMPRESS  = FLOP_COMPRESS + COST_LR_AND_COMPRESS
@@ -331,19 +393,49 @@ C
       END SUBROUTINE UPD_FLOP_UPDATE_LRLR3
       SUBROUTINE UPD_FLOP_ROOT(KEEP50, NFRONT, NPIV,
      &           NPROW, NPCOL, MYID)
+C
+C  Purpose:
+C  =======
+C
+C     Update FLOP_FRFRONTS with flops for the factorization of 
+C     root node.
+C     To be called only by processes participating to the root node
+C     (root%yes = .true.)
+C
+C  Arguments:
+C  =========
         INTEGER, intent(in) :: KEEP50, NFRONT, NPIV,
      &           NPROW, NPCOL, MYID
+C  Local variables
+C  ===============
         DOUBLE PRECISION :: COST, COST_PER_PROC
         INTEGER, PARAMETER :: LEVEL3 = 3
         CALL MUMPS_GET_FLOPS_COST(NFRONT, NPIV, NFRONT, KEEP50, LEVEL3, 
      &                            COST)
         COST_PER_PROC = dble(int( COST,8) / int(NPROW * NPCOL,8))
+C      Simpler for root to forget a few flops and have same 
+C      value on all procs.
+C      Proc with MYID = 0 gets more flops in case division by NPROW and
+C      NPCOL is not exact.
+C      IF ( MYID .EQ. 0) THEN
+C       COST_PER_PROC = COST - (COST_PER_PROC * dble(NPROW * NPCOL-1))
+C      ENDIF
 !$OMP   ATOMIC UPDATE
         FLOP_FRFRONTS = FLOP_FRFRONTS + COST_PER_PROC
 !$OMP   END ATOMIC
         RETURN
       END SUBROUTINE UPD_FLOP_ROOT
+C  Stats front-by-front no longer available
       SUBROUTINE INIT_STATS_GLOBAL()
+        INTEGER::PREC
+        DO PREC=1,NPREC_STOC_MAX
+          ENTRIES_PER_PREC(PREC)        = 0.D0
+          ENTRIES_PER_PREC_FR(PREC)     = 0.D0
+          ENTRIES_PER_PREC_DIAG(PREC)   = 0.D0
+          ENTRIES_PER_PREC_CB(PREC)     = 0.D0
+        ENDDO
+        MRY_LU_LRGAIN_mixed = 0.D0
+        MRY_CB_LRGAIN_mixed = 0.D0
         MRY_LU_FR = 0.D0
         MRY_LU_LRGAIN = 0.D0
         MRY_CB_FR = 0.D0
@@ -441,13 +533,35 @@ C
         RETURN
       END SUBROUTINE UPD_MRY_CB_FR
       SUBROUTINE UPD_MRY_CB_LRGAIN(M, N, K
+     &            , LRMIXED_ACTIVATED, K_STOC, NPREC_STOC, COSTS_PREC
      &                            )
         INTEGER, INTENT(IN) :: M, N, K 
+        LOGICAL, INTENT(IN) :: LRMIXED_ACTIVATED
+        INTEGER, INTENT(IN) :: NPREC_STOC
+C       INTEGER, INTENT(IN) :: K_STOC(NPREC_STOC)
+C       K_STOC is declared assumed shape array to allow passing a
+C       pointer array without the risk of temporary array creation
+        INTEGER, INTENT(IN) :: K_STOC(:)
+        INTEGER, INTENT(IN) :: COSTS_PREC(NPREC_STOC_MAX)
+C       Local variables
         DOUBLE PRECISION :: LRGAIND
+        DOUBLE PRECISION :: LRGAIND_mixed
+        INTEGER :: PREC
         LRGAIND = dble(M*N-(M+N)*K)
 !$OMP   ATOMIC UPDATE
         MRY_CB_LRGAIN = MRY_CB_LRGAIN + LRGAIND
 !$OMP   END ATOMIC
+        IF(LRMIXED_ACTIVATED) THEN
+            LRGAIND_mixed = dble(M*N)
+            DO PREC=1,NPREC_STOC
+               LRGAIND_mixed = LRGAIND_mixed - dble(K_STOC(PREC))
+     &          *dble(COSTS_PREC(PREC))/dble(COSTS_PREC(1))
+     &          *dble(M + N)
+            END DO
+!$OMP   ATOMIC UPDATE
+            MRY_CB_LRGAIN_mixed = MRY_CB_LRGAIN_mixed + LRGAIND_mixed
+!$OMP   END ATOMIC
+        ENDIF
         RETURN
       END SUBROUTINE UPD_MRY_CB_LRGAIN
       SUBROUTINE UPD_FLOP_FACTO_FR( NFRONT, NASS, NPIV, SYM, NIV)
@@ -461,6 +575,8 @@ C
       END SUBROUTINE UPD_FLOP_FACTO_FR
       SUBROUTINE STATS_COMPUTE_FLOP_SLAVE_TYPE2( NROW1, NCOL1,
      &                NASS1, KEEP50, INODE)
+C         This routines computes the FR flops performed by a slave on
+C         its band of a type 2 front
           INTEGER,INTENT(IN) :: NROW1, NCOL1, KEEP50, NASS1, INODE
           DOUBLE PRECISION   :: NROW2, NCOL2, NASS2
           DOUBLE PRECISION   :: FLOP
@@ -468,12 +584,15 @@ C
           NCOL2 = dble(NCOL1)
           NASS2 = dble(NASS1)
           IF (KEEP50.EQ.0) THEN
-            FLOP = NROW2*NASS2*NASS2         
-     &              + 2.0D0*NROW2*NASS2*(NCOL2-NASS2) 
+            FLOP = NROW2*NASS2*NASS2         ! trsm
+     &              + 2.0D0*NROW2*NASS2*(NCOL2-NASS2) ! gemm
           ELSE
              FLOP =
+C              trsm
      &            NROW2*NASS2*NASS2
+C              gemm diag
      &          + NROW2*NASS2*NROW2
+C              gemm subdiag
      &          + 2.0D0*NROW2*NASS2*(NCOL2-NASS2-NROW2)
           ENDIF
 !$OMP     ATOMIC UPDATE
@@ -501,12 +620,15 @@ C
           NCOL2 = dble(NCOL1)
           NASS2 = dble(NASS1)
           IF (KEEP50.EQ.0) THEN
-            FLOP = NROW2*NASS2*NASS2         
-     &              + 2.0D0*NROW2*NASS2*(NCOL2-NASS2) 
+            FLOP = NROW2*NASS2*NASS2         ! trsm
+     &              + 2.0D0*NROW2*NASS2*(NCOL2-NASS2) ! gemm
           ELSE
              FLOP =
+C                   trsm
      &            NROW2*NASS2*NASS2
+C                   gemm diag
      &          + NROW2*NASS2*NROW2
+C                   gemm subdiag
      &          + 2.0D0*NROW2*NASS2*(NCOL2-NASS2-NROW2)
           ENDIF
 !$OMP     ATOMIC UPDATE
@@ -517,12 +639,14 @@ C
       SUBROUTINE COMPUTE_GLOBAL_GAINS(NB_ENTRIES_FACTOR, 
      &                FLOP_NUMBER, NB_ENTRIES_FACTOR_withLR,
      &                PROKG, MPG)
-        INTEGER(8), INTENT(IN) :: NB_ENTRIES_FACTOR   
+        INTEGER(8), INTENT(IN) :: NB_ENTRIES_FACTOR   !=KEEP8(110)
         INTEGER, INTENT(IN)    :: MPG
         LOGICAL, INTENT(IN)    :: PROKG
-        DOUBLE PRECISION, INTENT(IN)  :: FLOP_NUMBER   
+        DOUBLE PRECISION, INTENT(IN)  :: FLOP_NUMBER   !=RINFOG(3)
         INTEGER(8), INTENT(OUT) :: 
-     &                  NB_ENTRIES_FACTOR_withLR 
+     &                  NB_ENTRIES_FACTOR_withLR !=KEEP8(49)
+C       Local variables:
+C        DOUBLE PRECISION :: LR_PEAK, FR_PEAK
         IF (NB_ENTRIES_FACTOR < 0) THEN
          IF (PROKG.AND.MPG.GT.0) THEN
           WRITE(MPG,*) "NEGATIVE NUMBER OF ENTRIES IN FACTOR"
@@ -535,6 +659,14 @@ C
            GLOBAL_MRY_LPRO_COMPR = 100.0D0 *
      &                             MRY_LU_LRGAIN/MRY_LU_FR
         ENDIF
+        IF (MRY_LU_FR .EQ. 0) THEN
+           GLOBAL_MRY_LPRO_COMPR_mixed = 100.0D0
+        ELSE
+           GLOBAL_MRY_LPRO_COMPR_mixed = 100.0D0 *
+     &                             MRY_LU_LRGAIN_mixed/MRY_LU_FR
+        ENDIF
+C if only the root was processed with LR we need to set the values by
+C hand to avoid problems
         IF (MRY_CB_FR .EQ. 0) THEN 
           MRY_CB_FR = 100.0D0
         END IF
@@ -543,11 +675,14 @@ C
         IF (NB_ENTRIES_FACTOR.EQ.0) THEN
           FACTOR_PROCESSED_FRACTION = 100.0D0
           GLOBAL_MRY_LTOT_COMPR = 100.0D0
+          GLOBAL_MRY_LTOT_COMPR_mixed = 100.0D0
         ELSE
           FACTOR_PROCESSED_FRACTION = 100.0D0 *
      &                            MRY_LU_FR/dble(NB_ENTRIES_FACTOR)
           GLOBAL_MRY_LTOT_COMPR = 
      &            100.0D0*MRY_LU_LRGAIN/dble(NB_ENTRIES_FACTOR)
+          GLOBAL_MRY_LTOT_COMPR_mixed = 
+     &            100.0D0*MRY_LU_LRGAIN_mixed/dble(NB_ENTRIES_FACTOR)
         ENDIF
         TOTAL_FLOP = FLOP_NUMBER
         FLOP_FACTO_LR = FLOP_FACTO_FR - FLOP_LRGAIN + FLOP_COMPRESS 
@@ -558,19 +693,29 @@ C
      &         LR_DKEEPSHIFT, LR_TABSIZE, LR_TAB, LR_EPSILON,
      &         N, ICNTL36,
      &         DEPTH, BCKSZ, NASSMIN, NFRONTMIN, SYM, K486,
-     &         NBTHREADS, K472, K475, K478, K480, K481, K483, K484, 
-     &         K8110, K849, 
+     &         K450, K452, NPREC_STOC,
+     &         NBTHREADS, K472, K475, K478, K480, K481, K483, K484,
+     &         K117, K8110, K849, 
      &         NBTREENODES, NPROCS, MPG, PROKG)
         INTEGER, INTENT(IN) :: LOCAL,K489,DEPTH, N,
      &      ICNTL36, BCKSZ,NASSMIN,
      &      NFRONTMIN, K486, NBTREENODES, MPG, 
-     &      NBTHREADS, K472, K475, K478, K480, K481, K483, K484, 
+     &      NBTHREADS, K472, K475, K478, K480, K481, K483, K484, K117,
      &      SYM, NPROCS
+C       LR_TAB is a double precision array that corrsponds
+C       to a section of the real or complex array DKEEP
+C       LR_TAB(xx-LR_DKEEPSHIFT) <-> DKEEP(xx)
         INTEGER, INTENT(IN) :: LR_TABSIZE, LR_DKEEPSHIFT
         DOUBLE PRECISION, INTENT(INOUT) :: LR_TAB(LR_TABSIZE)
+C       LR_EPSILON=CNTL(7) or DKEEP(8): just to be able to print it
         DOUBLE PRECISION, INTENT(IN)    :: LR_EPSILON
+        INTEGER, INTENT(IN) :: K450, K452, NPREC_STOC
         INTEGER(8), INTENT(IN) :: K8110, K849
         LOGICAL, INTENT(IN) :: PROKG
+C  if 0 : only the global memory gain
+C  if 1 : the gains for each front and the global memory gain
+C       Divide timers corresponding to multithreaded computations by
+C       KEEP(249) (number of threads)
         TIME_UPDATE_LRLR1    = TIME_UPDATE_LRLR1/dble(NBTHREADS)
         TIME_UPDATE_LRLR2    = TIME_UPDATE_LRLR2/dble(NBTHREADS)
         TIME_UPDATE_LRLR3    = TIME_UPDATE_LRLR3/dble(NBTHREADS)
@@ -586,21 +731,29 @@ C
         WRITE(MPG,'(A,ES8.1)')  
      & ' CNTL(7)   Dropping parameter controlling accuracy = ',
      &                          LR_EPSILON
+C        WRITE(MPG,'(A)') 
+C     &          ' -----------------------------------'
         WRITE(MPG,'(A)') 
      &          ' Statistics after BLR factorization :'
+C        WRITE(MPG,'(A)') 
+C     &          ' -----------------------------------'
         WRITE(MPG,'(A,I8)') 
      &    '     Number of BLR fronts                     = ',
      &                          CNT_NODES
+C       endif test prokg
         ENDIF  
         IF (PROKG) WRITE(MPG,'(A,F8.1,A)')
      &    '     Fraction of factors in BLR fronts        =',
      &                FACTOR_PROCESSED_FRACTION,'% ' 
         IF (PROKG) THEN
+C         Factor : here we are concerned by the number of entries
+C         and not the storage that also depends on the factor 
+C         factors need be saved in compressed form i.e. KEEP(486)>=2
           WRITE(MPG,'(A)') 
      &  '     Statistics on the number of entries in factors :'
-          WRITE(MPG,'(A,I15,A)')
+          WRITE(MPG,'(A,ES10.3,A)')
      &  '     INFOG(29) Theoretical nb of entries in factors      ='
-     &     ,K8110,' (100.0%)'
+     &     ,real(K8110),' (100.0%)'
           WRITE(MPG,'(A,ES10.3,A,F5.1,A)') 
      &  '     INFOG(35) Effective nb of entries  (% of INFOG(29)) ='
      &     ,real(K849),' ('
@@ -609,6 +762,7 @@ C
         ENDIF
         IF (PROKG) WRITE(MPG,'(A)')
      &  '     Statistics on operation counts (OPC):'
+C       To avoid division by zero        
         TOTAL_FLOP = max(TOTAL_FLOP,epsilon(1.0D0))
         LR_TAB(55-LR_DKEEPSHIFT)=real(TOTAL_FLOP)
         LR_TAB(60-LR_DKEEPSHIFT)=100.0D0

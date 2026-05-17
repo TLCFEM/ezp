@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -373,6 +373,13 @@ C
       INTEGER :: INODE
       REAL ALPHA, ONE
       PARAMETER (ONE = 1.0E0, ALPHA=-1.0E0)
+#if defined(USE_GPU)
+      INTEGER :: run_gemm_on_gpu, run_ltrsm_on_gpu, run_utrsm_on_gpu
+      INTEGER, EXTERNAL :: SMUMPS_GEMM_ON_GPU_C, SMUMPS_TRSM_ON_GPU_C
+      INTEGER :: K427_LOC
+      INTEGER :: ASYNC_LTRSM, ASYNC_UTRSM
+      INTEGER :: NB_TASKS_K428, NB_TASKS_MAX
+#endif
       INCLUDE 'mumps_headers.h'
       NEL1   = NFRONT - NASS
       NEL11  = NFRONT - NPIV
@@ -380,10 +387,147 @@ C
       LPOS   = LPOS2 + int(NPIV,8)  
       LPOS1  = POSELT + int(NPIV,8) 
       UPOS   = POSELT + int(NASS,8) 
+#if defined(USE_GPU)
+      IF ( IWFAC(XXG+1) .EQ. MemPinned .OR.
+     &     IWFAC(XXG+1) .EQ. PinningOnTheWay ) THEN
+        run_gemm_on_gpu=SMUMPS_GEMM_ON_GPU_C(KEEP(417),NEL1,NEL1,NASS)
+      ELSE
+        run_gemm_on_gpu=SMUMPS_GEMM_ON_GPU_C(KEEP(417),NEL11,NEL1,NPIV)
+      ENDIF
+      run_ltrsm_on_gpu = SMUMPS_TRSM_ON_GPU_C(KEEP(417),NPIV,NEL1,'L')
+      run_utrsm_on_gpu = run_ltrsm_on_gpu
+#     if ! defined(USE_XKBLAS)
+      IF ( KEEP(427) .LT. 0 ) THEN
+        WRITE(*,*) " KEEP(427) < 0 but XKBLAS not available", KEEP(427)
+        CALL MUMPS_ABORT()
+      ENDIF
+#     endif
+      CALL SMUMPS_FAC_PT_SETLOCK427( K427_LOC, KEEP(427),
+     &      KEEP(405), KEEP(422), NEL1, NASS )
+      NB_TASKS_MAX = KEEP(426) * KEEP(417)
+      IF ( KEEP(405) .NE. 0 ) THEN
+        IF ( run_utrsm_on_gpu .EQ. 1 .OR.
+     &       run_ltrsm_on_gpu .EQ. 1 .OR.
+     &       run_gemm_on_gpu  .EQ. 1 ) THEN
+!$OMP ATOMIC CAPTURE
+          KEEP(428) = KEEP(428) + 1
+          NB_TASKS_K428 = KEEP(428)
+!$OMP END ATOMIC
+          IF ( NB_TASKS_K428 .GT. NB_TASKS_MAX ) THEN
+            run_ltrsm_on_gpu = 0
+            run_utrsm_on_gpu = 0
+            run_gemm_on_gpu = 0
+!$OMP ATOMIC
+            KEEP(428) = KEEP(428) - 1
+!$OMP END ATOMIC
+          ENDIF
+        ENDIF
+      ENDIF
+      IF ( run_utrsm_on_gpu .eq. 0 ) THEN
+#endif
         IF ( CALL_UTRSM ) THEN
           CALL strsm('R', 'U', 'N', 'U', NEL1, NPIV, ONE,
      &                A(POSELT), NFRONT, A(UPOS), NFRONT)
         ENDIF
+#if defined(USE_GPU)
+      ENDIF
+      IF ( run_ltrsm_on_gpu .EQ. 0 ) THEN
+        CALL strsm('L','L','N','N',NPIV,NEL1,ONE,A(POSELT),NFRONT,
+     &        A(LPOS2),NFRONT)
+        IF (CALL_OOC) THEN
+            CALL SMUMPS_OOC_IO_LU_PANEL
+     &        ( STRAT_TRY_WRITE, TYPEF_BOTH_LU, 
+     &         A(POSELT), LAFAC, MonBloc,
+     &         LNextPiv2beWritten, UNextPiv2beWritten,
+     &         IWFAC, LIWFAC, 
+     &         MYID, KEEP8(31), IFLAG_OOC,
+     &         .FALSE. ) 
+             IF (IFLAG_OOC .LT. 0) THEN
+               IFLAG = IFLAG_OOC
+               GOTO 500
+             ENDIF
+        ENDIF
+      ENDIF
+      IF ( KEEP(422) .EQ. 2 ) THEN
+        IF (IWFAC(1+XXG).EQ.PinningOnTheWay) THEN
+            CALL SMUMPS_GPU_WAIT_ENDOFPINNING_C()
+            IWFAC(1+XXG)=MemPinned
+        ENDIF
+      ELSE
+        IF (KEEP(422).EQ.1 .AND. 
+     &      (KEEP(405).EQ.0.OR.KEEP(432).EQ.1)) THEN
+          IF (run_gemm_on_gpu .EQ. 1 .AND.
+     &        IWFAC(1+XXG).EQ.MemNotPinned) THEN
+              CALL SMUMPS_GPU_PIN_MEMORY_C( A(POSELT),
+     &        int(NFRONT,8)*int(NFRONT,8) )
+              IWFAC(1+XXG) = MemPinned
+          ENDIF
+        ENDIF
+      ENDIF
+      IF (CALL_UTRSM) THEN
+        IF (run_utrsm_on_gpu .EQ. 1) THEN
+          ASYNC_UTRSM = 2
+          IF (K427_LOC .EQ. -1 .AND. run_gemm_on_gpu .EQ. 1) THEN
+            ASYNC_UTRSM = 1
+          ELSE IF ( K427_LOC .EQ. 0 ) THEN
+            ASYNC_UTRSM = 0 
+          ENDIF
+          CALL SMUMPS_TRSM_GPU_C( ASYNC_UTRSM, 'R', 'U', 'N', 'U',
+     &                  NEL1, NPIV, ONE,
+     &                  A(POSELT), NFRONT, A(UPOS), NFRONT )
+        ENDIF
+      ENDIF
+      IF ( run_ltrsm_on_gpu .EQ. 1 .AND.
+     &     ( K427_LOC .EQ.-1 .OR. K427_LOC .EQ. 0 ) ) THEN
+        ASYNC_LTRSM = 0
+        IF ( run_ltrsm_on_gpu .EQ. 1 ) THEN
+          IF (K427_LOC .EQ.-1 .AND. run_gemm_on_gpu.EQ.1) THEN
+            ASYNC_LTRSM=1
+          ELSE
+            ASYNC_LTRSM=0
+          ENDIF
+          CALL SMUMPS_TRSM_GPU_C(ASYNC_LTRSM,'L','L','N','N',
+     &         NPIV,NEL1,ONE,
+     &         A(POSELT),NFRONT,A(LPOS2),NFRONT)
+        ELSE
+          CALL strsm('L','L','N','N',NPIV,NEL1,ONE,A(POSELT),NFRONT,
+     &        A(LPOS2),NFRONT)
+        ENDIF
+        IF (CALL_OOC) THEN
+          IF ( run_ltrsm_on_gpu.EQ.0 .OR.
+     &        (run_ltrsm_on_gpu.EQ.1.AND.ASYNC_LTRSM.EQ.0) ) THEN
+            CALL SMUMPS_OOC_IO_LU_PANEL
+     &        ( STRAT_TRY_WRITE, TYPEF_BOTH_LU, 
+     &         A(POSELT), LAFAC, MonBloc,
+     &         LNextPiv2beWritten, UNextPiv2beWritten,
+     &         IWFAC, LIWFAC, 
+     &         MYID, KEEP8(31), IFLAG_OOC,
+     &         .FALSE. ) 
+             IF (IFLAG_OOC .LT. 0) THEN
+               IFLAG = IFLAG_OOC
+               GOTO 500
+             ENDIF
+          ENDIF
+        ENDIF
+      ENDIF
+      IF (run_gemm_on_gpu .eq. 1) THEN
+        CALL SMUMPS_GEMM_GPU_C(0,'N','N',
+     &     NEL11,NEL1,NPIV,ALPHA,
+     &     A(LPOS1), NFRONT,A(LPOS2),NFRONT,ONE,A(LPOS),NFRONT)
+      ELSE
+        CALL sgemm('N','N',NEL11,NEL1,NPIV,ALPHA,A(LPOS1),
+     &      NFRONT,A(LPOS2),NFRONT,ONE,A(LPOS),NFRONT)
+      ENDIF
+      IF ( KEEP(405) .NE. 0 ) THEN
+        IF ( run_utrsm_on_gpu .EQ. 1 .OR.
+     &       run_ltrsm_on_gpu .EQ. 1 .OR.
+     &       run_gemm_on_gpu  .EQ. 1 ) THEN
+!$OMP ATOMIC UPDATE
+            KEEP(428) = KEEP(428) - 1
+!$OMP END ATOMIC
+        ENDIF
+      ENDIF
+#else
       CALL strsm('L','L','N','N',NPIV,NEL1,ONE,A(POSELT),NFRONT,
      &            A(LPOS2),NFRONT)
       IF (CALL_OOC) THEN
@@ -401,6 +545,7 @@ C
       ENDIF
       CALL sgemm('N','N',NEL11,NEL1,NPIV,ALPHA,A(LPOS1),
      &            NFRONT,A(LPOS2),NFRONT,ONE,A(LPOS),NFRONT)
+#endif
       IF ((CALL_UTRSM).AND.(NASS-NPIV.GT.0)) THEN
         LPOS2 = POSELT + int(NPIV,8)*int(NFRONT,8) 
         LPOS  = LPOS2  + int(NASS,8) 
@@ -437,6 +582,156 @@ C
      &          NFRONT,A(LPOS1),NFRONT,ONE,A(LPOS),NFRONT)
         RETURN
         END SUBROUTINE SMUMPS_FAC_T
+#if defined(USE_GPU)
+      SUBROUTINE SMUMPS_FAC_SQ_GPU(
+     &    INODE, KEEP, IBEG_BLOCK, IEND_BLOCK, NPIV,
+     &    NFRONT, LAST_ROW, LAST_COL, A, LA, POSELT, 
+     &    FIRST_COL, CALL_LTRSM, CALL_UTRSM, CALL_GEMM )
+      IMPLICIT NONE
+      INTEGER, intent(in)     :: INODE
+      INTEGER                 :: KEEP(500)
+      INTEGER, intent(in)     :: IBEG_BLOCK, IEND_BLOCK
+      INTEGER, intent(in)     :: NPIV, NFRONT, LAST_ROW, LAST_COL
+      INTEGER, intent(in)     :: FIRST_COL
+      INTEGER(8), intent(in)  :: LA
+      REAL, intent(inout)  :: A(LA)
+      INTEGER(8), intent(in)  :: POSELT 
+      LOGICAL, intent(in)     :: CALL_LTRSM, CALL_UTRSM, CALL_GEMM
+      INCLUDE 'mumps_headers.h'
+      INTEGER(8) :: NFRONT8, LPOSN, LPOS2N
+      INTEGER(8) :: LPOS, LPOS1, LPOS2, UPOS, POSELT_LOCAL
+      INTEGER :: NELIM, LKJIW, NEL1, NEL11, UTRSM_NCOLS
+      INTEGER :: run_ltrsm_on_gpu, run_utrsm_on_gpu, run_gemm_on_gpu
+      INTEGER :: NB_TASKS_K428, NB_TASKS_MAX
+      REAL ALPHA, ONE
+      PARAMETER (ONE = 1.0E0, ALPHA=-1.0E0)
+      INTEGER :: async_trsm
+      INTEGER, EXTERNAL :: SMUMPS_TRSM_ON_GPU_C,
+     &                     SMUMPS_GEMM_ON_GPU_C
+      NFRONT8= int(NFRONT,8)
+      NELIM  = IEND_BLOCK - NPIV
+      NEL1   = LAST_ROW - IEND_BLOCK
+      IF ( NEL1 < 0 ) THEN
+        WRITE(*,*)
+     &  "Internal error 1 in SMUMPS_FAC_SQ,IEND_BLOCK>LAST_ROW",
+     &  IEND_BLOCK, LAST_ROW
+        CALL MUMPS_ABORT()
+      ENDIF
+      LKJIW  = NPIV - IBEG_BLOCK + 1
+      NEL11  = LAST_COL - NPIV
+      LPOS2  = POSELT + int(IEND_BLOCK,8)*NFRONT8 + int(IBEG_BLOCK-1,8)
+      UTRSM_NCOLS = LAST_COL - FIRST_COL
+      UPOS   = POSELT + int(IBEG_BLOCK-1,8)*NFRONT8 + int(FIRST_COL,8)
+      POSELT_LOCAL = POSELT + int(IBEG_BLOCK-1,8)*NFRONT8 
+     &                      + int(IBEG_BLOCK-1,8)
+      IF ((NEL1.NE.0).AND.(LKJIW.NE.0)) THEN
+        run_ltrsm_on_gpu = 0
+        run_utrsm_on_gpu = 0
+        run_gemm_on_gpu = 0
+        IF (CALL_LTRSM) run_ltrsm_on_gpu = 
+     &  SMUMPS_TRSM_ON_GPU_C( KEEP(417), LKJIW, NEL1, 'L' )
+        IF (CALL_UTRSM) run_utrsm_on_gpu = 
+     &  SMUMPS_TRSM_ON_GPU_C( KEEP(417), UTRSM_NCOLS, LKJIW, 'R' )
+        IF (CALL_GEMM) run_gemm_on_gpu = SMUMPS_GEMM_ON_GPU_C(
+     &  KEEP(417),NEL11,NEL1,LKJIW)
+        IF ( KEEP(405) .NE.0 ) THEN
+          IF ( run_utrsm_on_gpu .EQ. 1 .OR.
+     &      run_ltrsm_on_gpu .EQ. 1 .OR.
+     &      run_gemm_on_gpu  .EQ. 1 ) THEN
+            NB_TASKS_MAX = KEEP(426) * KEEP(417)
+!$OMP ATOMIC CAPTURE
+            KEEP(428) = KEEP(428) + 1
+            NB_TASKS_K428 = KEEP(428)
+!$OMP END ATOMIC
+            IF ( NB_TASKS_K428 .GT. NB_TASKS_MAX ) THEN
+              run_ltrsm_on_gpu = 0
+              run_utrsm_on_gpu = 0
+              run_gemm_on_gpu = 0
+!$OMP ATOMIC
+            KEEP(428) = KEEP(428) - 1
+!$OMP END ATOMIC
+            ENDIF
+          ENDIF
+        ENDIF
+        IF (CALL_LTRSM) THEN
+          IF (run_ltrsm_on_gpu .eq. 1) THEN
+            IF (KEEP(427) .LE. -1 .AND. run_gemm_on_gpu.EQ.1) THEN
+             async_trsm=1 
+            ELSE
+             async_trsm=0 
+            ENDIF
+            CALL SMUMPS_TRSM_GPU_C( async_trsm,
+     &              'L','L','N','N',LKJIW,NEL1,ONE,
+     &              A(POSELT_LOCAL),NFRONT,
+     &              A(LPOS2),NFRONT)
+          ELSE
+            CALL strsm('L','L','N','N',LKJIW,NEL1,ONE,
+     &              A(POSELT_LOCAL),NFRONT,
+     &              A(LPOS2),NFRONT)
+          ENDIF
+        ENDIF
+        IF (CALL_UTRSM) THEN
+          IF (KEEP(427) .LE. -1 .AND. run_gemm_on_gpu.EQ.1) THEN
+            IF ( NELIM .NE. 0) THEN
+              async_trsm=2 
+            ELSE
+              async_trsm=1 
+            ENDIF
+          ELSE
+            async_trsm=0 
+          ENDIF
+          IF (run_utrsm_on_gpu .EQ. 1) THEN
+            CALL SMUMPS_TRSM_GPU_C( async_trsm,
+     &            'R','U','N','U',UTRSM_NCOLS,LKJIW,ONE,
+     &             A(POSELT_LOCAL),NFRONT,
+     &             A(UPOS),NFRONT)
+          ELSE
+            CALL strsm('R','U','N','U',UTRSM_NCOLS,LKJIW,ONE,
+     &             A(POSELT_LOCAL),NFRONT,
+     &             A(UPOS),NFRONT)
+          ENDIF
+          LPOS2N = POSELT + int(NPIV,8)*NFRONT8 + int(IBEG_BLOCK-1,8)
+          LPOSN  = POSELT + int(NPIV,8)*NFRONT8 + int(FIRST_COL,8)
+          CALL sgemm('N','N',UTRSM_NCOLS,NELIM,
+     &            LKJIW,ALPHA,A(UPOS),NFRONT,A(LPOS2N),
+     &            NFRONT,ONE,A(LPOSN),NFRONT)
+        ENDIF
+        IF (CALL_GEMM) THEN
+          LPOS   = LPOS2 + int(LKJIW,8)
+          LPOS1  = POSELT_LOCAL + int(LKJIW,8)
+          IF (run_gemm_on_gpu.EQ.1) THEN
+            CALL SMUMPS_GEMM_GPU_C(0,
+     &         'N','N',NEL11,NEL1,LKJIW,ALPHA,A(LPOS1),
+     &         NFRONT,A(LPOS2),NFRONT,ONE,A(LPOS),NFRONT)
+          ELSE
+            CALL sgemm('N','N',NEL11,NEL1,LKJIW,ALPHA,A(LPOS1),
+     &         NFRONT,A(LPOS2),NFRONT,ONE,A(LPOS),NFRONT)
+          ENDIF
+        ENDIF
+        IF ( KEEP(405) .NE.0 ) THEN
+          IF ( run_utrsm_on_gpu .EQ. 1 .OR.
+     &      run_ltrsm_on_gpu .EQ. 1 .OR.
+     &      run_gemm_on_gpu  .EQ. 1 ) THEN
+!$OMP ATOMIC UPDATE
+            KEEP(428) = KEEP(428) - 1
+!$OMP END ATOMIC
+          ENDIF
+        ENDIF
+      ELSE
+        IF (CALL_UTRSM.AND.UTRSM_NCOLS.NE.0) THEN
+          CALL strsm('R','U','N','U',UTRSM_NCOLS,LKJIW,ONE,
+     &                 A(POSELT_LOCAL),NFRONT,
+     &                 A(UPOS),NFRONT)
+          LPOS2N = POSELT + int(NPIV,8)*NFRONT8 + int(IBEG_BLOCK-1,8)
+          LPOSN  = POSELT + int(NPIV,8)*NFRONT8 + int(FIRST_COL,8)
+          CALL sgemm('N','N',UTRSM_NCOLS,NELIM,
+     &              LKJIW,ALPHA,A(UPOS),NFRONT,A(LPOS2N),
+     &              NFRONT,ONE,A(LPOSN),NFRONT)
+        ENDIF
+      ENDIF
+      RETURN
+      END SUBROUTINE SMUMPS_FAC_SQ_GPU
+#endif
       SUBROUTINE SMUMPS_FAC_SQ(IBEG_BLOCK, IEND_BLOCK, NPIV,
      &    NFRONT, LAST_ROW, LAST_COL, A, LA, POSELT, 
      &    FIRST_COL, CALL_LTRSM, CALL_UTRSM, CALL_GEMM, 
@@ -1784,7 +2079,7 @@ C
                 A(K1POS+1_8)=A(K1POS+1_8) - A(K1POS) * A(APOS+1_8)
                 MAXFROMMTMP=max(MAXFROMMTMP, abs(A(K1POS+1_8)))
               ENDDO
- !$OMP END PARALLEL DO
+!$OMP         END PARALLEL DO
               IS_MAXFROMM_AVAIL = .TRUE.
               MAXFROMM=max(MAXFROMM, MAXFROMMTMP)
               IF (NVSCHUR_K253.GT.0) THEN
@@ -2087,6 +2382,184 @@ C
   500 CONTINUE
       RETURN
       END SUBROUTINE SMUMPS_FAC_SQ_LDLT
+#if defined(USE_GPU)
+      SUBROUTINE SMUMPS_FAC_SQ_LDLT_GPU(IBEG_BLOCK,IEND_BLOCK,NPIV,
+     &    NFRONT,NASS,INODE,A,LA,
+     &    LDA,
+     &    POSELT,
+     &    KEEP,KEEP8, 
+     &    FIRST_ROW_TRSM, LAST_ROW_TRSM, 
+     &    LAST_COL_GEMM, LAST_ROW_GEMM, 
+     &    CALL_TRSM, CALL_GEMM, LR_ACTIVATED,
+     &    IW, LIW, OFFSET_IW )
+      IMPLICIT NONE
+      INTEGER, intent(in) :: NPIV
+      INTEGER, intent(in) :: NFRONT, NASS, IBEG_BLOCK, IEND_BLOCK
+      INTEGER(8), intent(in) :: LA
+      REAL, intent(inout) :: A(LA)
+      INTEGER, intent(in) :: INODE
+      INTEGER    :: KEEP(500)
+      INTEGER(8) :: KEEP8(150)
+      INTEGER(8), intent(in) :: POSELT
+      INTEGER, intent(in) :: LDA
+      INTEGER, intent(in) :: LAST_COL_GEMM
+      INTEGER, intent(in) :: LAST_ROW_GEMM, LAST_ROW_TRSM,
+     &                       FIRST_ROW_TRSM
+      LOGICAL, intent(in) :: CALL_TRSM, CALL_GEMM, LR_ACTIVATED
+      INTEGER :: OFFSET_IW, LIW
+      INTEGER :: IW(LIW)
+      INTEGER(8) :: LDA8
+      INTEGER NPIV_BLOCK, NEL1
+      INTEGER NRHS_TRSM
+      INTEGER(8) :: LPOS, UPOS, APOS
+      INTEGER IROW
+      INTEGER Block
+      INTEGER BLSIZE
+      INCLUDE 'mumps_headers.h'
+      INTEGER, EXTERNAL :: SMUMPS_TRSM_ON_GPU_C, SMUMPS_GEMMT_ON_GPU_C
+      REAL ONE, ALPHA
+      PARAMETER (ONE=1.0E0, ALPHA=-1.0E0)
+      INTEGER :: ASYNC_COPYSCALE, ASYNC_TRSM
+      INTEGER :: run_trsm_on_gpu, run_schur_on_gpu
+      INTEGER :: NB_TASKS_MAX, NB_TASKS_K428
+      LDA8 = int(LDA,8)
+      NEL1 = LAST_COL_GEMM - IEND_BLOCK
+      NRHS_TRSM = LAST_ROW_TRSM-FIRST_ROW_TRSM
+      NPIV_BLOCK  = NPIV - IBEG_BLOCK + 1
+      IF (NPIV_BLOCK.EQ.0) GO TO 500
+      IF (NEL1.NE.0) THEN
+        run_trsm_on_gpu = 0
+        IF (CALL_TRSM) THEN
+          run_trsm_on_gpu = 
+     &    SMUMPS_TRSM_ON_GPU_C( KEEP(417), NPIV_BLOCK, NRHS_TRSM, 'L' )
+        ENDIF
+        run_schur_on_gpu = 0
+#if defined(GEMMT_AVAILABLE_ON_GPU) || defined(USE_XKBLAS)
+        run_schur_on_gpu = SMUMPS_GEMMT_ON_GPU_C( KEEP(417),
+     &                 NEL1, NPIV_BLOCK )
+#endif
+        IF ( KEEP(405) .NE.0 ) THEN
+          NB_TASKS_MAX = KEEP(426) * KEEP(417)
+          IF ( run_trsm_on_gpu .EQ. 1 .OR.
+     &      run_schur_on_gpu  .EQ. 1 ) THEN
+!$OMP ATOMIC CAPTURE
+            KEEP(428) = KEEP(428) + 1
+            NB_TASKS_K428 = KEEP(428)
+!$OMP END ATOMIC
+            IF ( NB_TASKS_K428 .GT. NB_TASKS_MAX ) THEN
+              run_trsm_on_gpu = 0
+              run_schur_on_gpu = 0
+!$OMP ATOMIC
+            KEEP(428) = KEEP(428) - 1
+!$OMP END ATOMIC
+            ENDIF
+          ENDIF
+        ENDIF
+        IF (CALL_TRSM) THEN
+          APOS = POSELT + LDA8*int(IBEG_BLOCK-1,8) + int(IBEG_BLOCK-1,8)
+          LPOS = POSELT + LDA8*int(FIRST_ROW_TRSM,8)+int(IBEG_BLOCK-1,8)
+          UPOS = POSELT + LDA8*int(IBEG_BLOCK-1,8)+int(FIRST_ROW_TRSM,8)
+          IF ( run_trsm_on_gpu .EQ.1 ) THEN
+            IF (CALL_GEMM) THEN
+#if defined(USE_XKBLAS_COPYSCALE)
+              ASYNC_TRSM = 3
+#else
+              ASYNC_TRSM = 0
+#endif
+              ASYNC_COPYSCALE = 1
+            ELSE
+              ASYNC_TRSM = 0
+              ASYNC_COPYSCALE = 0
+            ENDIF
+            CALL SMUMPS_TRSM_GPU_C( ASYNC_TRSM, 
+     &              'L', 'U', 'T', 'U',
+     &              NPIV_BLOCK, NRHS_TRSM, ONE,
+     &              A(APOS), LDA, A(LPOS), LDA)
+          ELSE
+            CALL strsm('L', 'U', 'T', 'U', NPIV_BLOCK, NRHS_TRSM,
+     &              ONE, A(APOS), LDA, A(LPOS), LDA)
+          ENDIF
+#if defined(USE_XKBLAS_COPYSCALE)
+          CALL SMUMPS_GPU_COPY2U_SCALEL_C( ASYNC_COPYSCALE,
+     &             NRHS_TRSM, 1,
+     &             KEEP(424), NFRONT, NPIV_BLOCK,
+     &             LIW, IW, OFFSET_IW, LA, A, APOS, LPOS, UPOS, 
+     &             .NOT.LR_ACTIVATED)
+#else
+          CALL SMUMPS_FAC_LDLT_COPY2U_SCALEL(
+     &             NRHS_TRSM, 1, KEEP(424),
+     &             NFRONT, NPIV_BLOCK, LIW, IW, OFFSET_IW, LA, A,
+     &             POSELT, LPOS, UPOS, APOS, .NOT.LR_ACTIVATED)
+#endif
+        ENDIF
+        IF (CALL_GEMM) THEN
+          IF (.FALSE.) THEN
+#if defined(GEMMT_AVAILABLE_ON_GPU) || defined(USE_XKBLAS)
+          ELSE IF (run_schur_on_gpu .EQ. 1) THEN
+           LPOS = POSELT + LDA8*int(IEND_BLOCK,8) + int(IBEG_BLOCK-1,8)
+           UPOS = POSELT + LDA8*int(IBEG_BLOCK-1,8) + int(IEND_BLOCK,8)
+           APOS = POSELT + LDA8*int(IEND_BLOCK,8) + int(IEND_BLOCK,8)
+           CALL SMUMPS_GEMMT_GPU_C( 0, 'U',
+     &           'N','N', NEL1, 
+     &           NPIV_BLOCK,
+     &           ALPHA, A( UPOS ), LDA, A( LPOS ), LDA,
+     &           ONE, A( APOS ), LDA )
+#endif
+#if defined(GEMMT_AVAILABLE)
+          ELSE IF ( KEEP(421).EQ. -1 .OR.
+     &        ( KEEP(421) > 0 .AND. NEL1 > KEEP(421) ) ) THEN
+           LPOS = POSELT + LDA8*int(IEND_BLOCK,8) + int(IBEG_BLOCK-1,8)
+           UPOS = POSELT + LDA8*int(IBEG_BLOCK-1,8) + int(IEND_BLOCK,8)
+           APOS = POSELT + LDA8*int(IEND_BLOCK,8) + int(IEND_BLOCK,8)
+           CALL sgemmt( 'U','N','N', NEL1,
+     &                NPIV_BLOCK,
+     &                ALPHA, A( UPOS ), LDA,
+     &                A( LPOS ), LDA, ONE, A( APOS ), LDA )
+#endif
+          ELSE
+            IF ( LAST_COL_GEMM - IEND_BLOCK > KEEP(7) ) THEN
+              BLSIZE = KEEP(8)
+            ELSE
+              BLSIZE = LAST_COL_GEMM - IEND_BLOCK
+            END IF
+            IF ( LAST_COL_GEMM - IEND_BLOCK .GT. 0 ) THEN
+              DO IROW = IEND_BLOCK+1, LAST_COL_GEMM, BLSIZE
+                Block = min( BLSIZE, LAST_COL_GEMM - IROW + 1 )
+                LPOS = POSELT + int( IROW - 1,8) * LDA8 +
+     &                          int(IBEG_BLOCK - 1,8)
+                UPOS = POSELT + int(IBEG_BLOCK - 1,8) * LDA8 +
+     &                          int( IROW - 1,8)
+                APOS = POSELT + int( IROW - 1,8) * LDA8 +
+     &                          int( IROW - 1,8)
+                CALL sgemm( 'N','N', Block, LAST_COL_GEMM - IROW + 1, 
+     &                     NPIV_BLOCK, ALPHA, A( UPOS ), LDA,
+     &                     A( LPOS ), LDA, ONE, A( APOS ), LDA )
+              END DO
+            END IF
+         END IF
+         IF ( KEEP(405) .NE.0 ) THEN
+           IF ( run_trsm_on_gpu .EQ. 1 .OR.
+     &       run_schur_on_gpu  .EQ. 1 ) THEN
+!$OMP ATOMIC UPDATE
+             KEEP(428) = KEEP(428) - 1
+!$OMP END ATOMIC
+           ENDIF
+         ENDIF
+         LPOS = POSELT + int(LAST_COL_GEMM,8)*LDA8 + int(IBEG_BLOCK-1,8)
+         UPOS = POSELT + int(IBEG_BLOCK-1,8) * LDA8 +
+     &                 int(IEND_BLOCK,8)
+         APOS = POSELT + int(LAST_COL_GEMM,8)*LDA8 + int(IEND_BLOCK,8)
+         IF (LAST_ROW_GEMM .GT. LAST_COL_GEMM) THEN
+           CALL sgemm('N', 'N', NEL1, LAST_ROW_GEMM-LAST_COL_GEMM, 
+     &              NPIV_BLOCK, ALPHA, A(UPOS), LDA, A(LPOS), LDA, 
+     &              ONE, A(APOS), LDA)
+         ENDIF
+        ENDIF
+      ENDIF
+  500 CONTINUE
+      RETURN
+      END SUBROUTINE SMUMPS_FAC_SQ_LDLT_GPU
+#endif
         SUBROUTINE SMUMPS_SWAP_LDLT( A, LA, IW, LIW,
      &                       IOLDPS, NPIVP1, IPIV, POSELT, LASTROW2SWAP,
      &                       LDA, NFRONT, LEVEL, PARPIV, K50, XSIZE,
@@ -2364,7 +2837,7 @@ C
      &    IOLDPS,POSELT,KEEP,KEEP8,
      &    POSTPONE_COL_UPDATE, ETATASS,
      &    TYPEFile, LAFAC, MonBloc, NextPiv2beWritten,
-     &    LIWFAC, MYID, IFLAG, OFFSET_IW, INODE )
+     &    LIWFAC, MYID, IFLAG, OFFSET_IW, INODE, LR_ACTIV_POSTPROC )
       USE SMUMPS_OOC
       IMPLICIT NONE
       INTEGER NFRONT, NASS,LIW
@@ -2383,6 +2856,7 @@ C
       TYPE(IO_BLOCK):: MonBloc
       INTEGER IDUMMY
       LOGICAL LAST_CALL
+      LOGICAL, INTENT(in)  :: LR_ACTIV_POSTPROC
       INTEGER :: OFFSET_IW
       INTEGER, intent(in):: INODE
       INCLUDE 'mumps_headers.h'
@@ -2461,7 +2935,7 @@ C
      &               A(LPOS+int(I2-1,8)*LDA8), LDA,
      &               BETA,
      &               A(APOS + int(I2-1,8) + int(I2-1,8)*LDA8), LDA)
-          IF (KEEP(201).EQ.1) THEN
+          IF (KEEP(201).EQ.1.AND..NOT.LR_ACTIV_POSTPROC) THEN
             IF (NextPiv2beWritten.LE.NPIV) THEN
               LAST_CALL=.FALSE.
               CALL SMUMPS_OOC_IO_LU_PANEL(
@@ -2505,6 +2979,423 @@ C
       END IF
       RETURN
       END SUBROUTINE SMUMPS_FAC_T_LDLT
+#if defined(USE_GPU)
+      SUBROUTINE SMUMPS_FAC_T_LDLT_GPU(NFRONT,NASS,
+     &    IW,LIW,A,LA,
+     &    LDA,
+     &    IOLDPS,POSELT,KEEP,KEEP8,
+     &    POSTPONE_COL_UPDATE, ETATASS,
+     &    TYPEFile, LAFAC, MonBloc, NextPiv2beWritten,
+     &    LIWFAC, MYID, IFLAG, OFFSET_IW, INODE, 
+     &    LR_ACTIV_POSTPROC )
+!$    USE OMP_LIB
+      USE SMUMPS_OOC
+      IMPLICIT NONE
+      INTEGER NFRONT, NASS,LIW
+      INTEGER(8) :: LA
+      REAL    :: A(LA)
+      INTEGER    :: IW(LIW)
+      INTEGER    :: KEEP(500)
+      INTEGER(8) :: KEEP8(150)
+      INTEGER(8) :: POSELT
+      INTEGER    :: LDA
+      INTEGER    :: IOLDPS, ETATASS
+      LOGICAL    :: POSTPONE_COL_UPDATE
+      INTEGER(8) :: LAFAC
+      INTEGER    :: TYPEFile, NextPiv2beWritten
+      INTEGER    :: LIWFAC, MYID, IFLAG, IFLAG_OOC
+      TYPE(IO_BLOCK):: MonBloc
+      INTEGER    :: IDUMMY
+      LOGICAL    :: LAST_CALL
+      LOGICAL, INTENT(in)  :: LR_ACTIV_POSTPROC
+      INTEGER    :: OFFSET_IW
+      INTEGER, INTENT(in):: INODE
+      INCLUDE 'mumps_headers.h'
+      INTEGER(8) :: LDA8
+      INTEGER(8) :: UPOS, APOS, LPOS
+      INTEGER BLSIZE_CPU, BLSIZE2, NPIV
+      INTEGER :: BLSIZE_GPU, BLSIZE_loc
+      REAL  ONE, ALPHA, BETA, ZERO
+      PARAMETER (ONE = 1.0E0, ALPHA=-1.0E0)
+      PARAMETER (ZERO=0.0E0)
+      INTEGER:: run_ltrsm_on_gpu, run_schur_on_gpu
+      INTEGER :: run_gemm_on_gpu
+      INTEGER, EXTERNAL :: SMUMPS_GEMM_ON_GPU_C, SMUMPS_TRSM_ON_GPU_C
+      INTEGER :: K427_LOC
+#     if defined(GEMMT_AVAILABLE_FOR_GPU) || defined(USE_XKBLAS)
+      INTEGER, EXTERNAL :: SMUMPS_GEMMT_ON_GPU_C
+#     else
+      INTEGER, EXTERNAL :: SMUMPS_SYMSCHUR_ON_GPU_C
+#     endif
+      INTEGER :: NEL1
+      INTEGER :: INIT_SIZE
+      INTEGER :: NB_TASKS_K428, NB_TASKS_MAX
+#if defined(USE_XKBLAS_COPYSCALE)
+      INTEGER :: ASYNC_COPYSCALE
+#endif
+      NEL1 = NFRONT - NASS
+      LDA8 = int(LDA,8)
+      IF (ETATASS.EQ.1) THEN
+        BETA = ZERO
+      ELSE
+        BETA = ONE
+      ENDIF
+      BLSIZE2 = KEEP(218)
+      NPIV = IW( IOLDPS + 1 + KEEP(IXSZ))
+      IF ( IW(IOLDPS+XXG) .EQ. MemPinned .OR.
+     &     IW(IOLDPS+XXG) .EQ. PinningOnTheWay ) THEN
+#       if defined(GEMMT_AVAILABLE_FOR_GPU) || defined(USE_XKBLAS)
+          run_schur_on_gpu = SMUMPS_GEMMT_ON_GPU_C(KEEP(417),
+     &                  NFRONT-NASS, NASS)
+#       else
+          BLSIZE_GPU = KEEP(57)
+          run_schur_on_gpu = SMUMPS_SYMSCHUR_ON_GPU_C(KEEP(417),
+     &           NFRONT-NASS, NASS, BLSIZE_GPU)
+#       endif
+      ELSE
+#       if defined(GEMMT_AVAILABLE_FOR_GPU) || defined(USE_XKBLAS)
+        run_schur_on_gpu = SMUMPS_GEMMT_ON_GPU_C(KEEP(417),
+     &                    NFRONT-NASS, NPIV)
+#       else
+        BLSIZE_GPU = KEEP(57)
+        run_schur_on_gpu = SMUMPS_SYMSCHUR_ON_GPU_C(KEEP(417),
+     &         NFRONT-NASS, NPIV, BLSIZE_GPU)
+#       endif
+      ENDIF
+      run_ltrsm_on_gpu = 0
+      IF (NFRONT - NASS .GT. 0 .AND. POSTPONE_COL_UPDATE) THEN
+        run_ltrsm_on_gpu = SMUMPS_TRSM_ON_GPU_C(KEEP(417), NPIV,
+     &                               NFRONT-NASS, ONE, 'L')
+      ENDIF
+#     if ! defined(USE_XKBLAS)
+      IF ( KEEP(427) .LT. 0 ) THEN
+        WRITE(*,*) " KEEP(427) < 0 but XKBLAS not available", KEEP(427)
+        CALL MUMPS_ABORT()
+      ENDIF
+#     endif
+      CALL SMUMPS_FAC_PT_SETLOCK427( K427_LOC, KEEP(427),
+     &      KEEP(405), KEEP(422), NEL1, NASS )
+      IF ( NFRONT - NASS > KEEP(58) ) THEN
+        IF ( NFRONT - NASS > KEEP(57) ) THEN
+          BLSIZE_CPU = KEEP(58)
+        ELSE
+          BLSIZE_CPU = (NFRONT - NASS)/2
+        END IF
+      ELSE
+        BLSIZE_CPU = NFRONT - NASS
+      END IF
+      NB_TASKS_MAX = KEEP(426) * KEEP(417)
+      IF ( KEEP(405) .NE. 0 ) THEN
+        IF ( run_ltrsm_on_gpu .EQ. 1 .OR.
+     &       run_schur_on_gpu  .EQ. 1 ) THEN
+!$OMP ATOMIC CAPTURE
+            KEEP(428) = KEEP(428) + 1
+            NB_TASKS_K428 = KEEP(428)
+!$OMP END ATOMIC
+          IF ( NB_TASKS_K428 .GT. NB_TASKS_MAX ) THEN
+            run_ltrsm_on_gpu = 0
+            run_schur_on_gpu = 0
+!$OMP ATOMIC
+            KEEP(428) = KEEP(428) - 1
+!$OMP END ATOMIC
+          ENDIF
+        ENDIF
+      ENDIF
+      IF (run_ltrsm_on_gpu .EQ. 0 .AND. NFRONT - NASS .GT. 0 ) THEN
+        IF ( POSTPONE_COL_UPDATE ) THEN
+          CALL strsm( 'L', 'U', 'T', 'U',
+     &                NPIV, NFRONT-NASS, ONE,
+     &                A( POSELT ), LDA,
+     &                A( POSELT + LDA8 * int(NASS,8) ), LDA )
+          LPOS = POSELT + int(NASS,8)*LDA8
+          UPOS = POSELT + int(NASS,8)
+          CALL SMUMPS_FAC_LDLT_COPY2U_SCALEL( NFRONT - NASS, 1,
+     &               KEEP(424), NFRONT, NPIV,
+     &               LIW, IW, OFFSET_IW, LA, A, POSELT, LPOS, UPOS,
+     &               POSELT, .TRUE. )
+          IF (KEEP(201).EQ.1) THEN
+            IF (NextPiv2beWritten.LE.NPIV) THEN
+              LAST_CALL=.FALSE.
+              CALL SMUMPS_OOC_IO_LU_PANEL(
+     &        STRAT_TRY_WRITE, TYPEFile,
+     &        A(POSELT), LAFAC, MonBloc,
+     &        NextPiv2beWritten, IDUMMY,
+     &        IW(IOLDPS), LIWFAC, MYID,
+     &        KEEP8(31),
+     &        IFLAG_OOC,LAST_CALL )
+              IF (IFLAG_OOC .LT. 0 ) THEN
+                IFLAG = IFLAG_OOC
+                RETURN
+              ENDIF
+            ENDIF
+          ENDIF
+        ENDIF 
+      ENDIF 
+      IF ( KEEP(422) .EQ. 2 ) THEN
+        IF (IW(IOLDPS+XXG).EQ.PinningOnTheWay) THEN
+          CALL SMUMPS_GPU_WAIT_ENDOFPINNING_C()
+        ENDIF
+      ELSE
+        IF (KEEP(422).EQ.1 .AND. 
+     &       (KEEP(405).EQ.0.OR.KEEP(432).EQ.1) ) THEN
+          IF (run_schur_on_gpu .EQ. 1) THEN
+             CALL SMUMPS_GPU_PIN_MEMORY_C( A(POSELT),
+     &       int(NFRONT,8)*int(NFRONT,8) )
+          ENDIF
+        ENDIF
+      ENDIF
+      IF ( POSTPONE_COL_UPDATE .AND. NFRONT-NASS .GT. 0) THEN
+        IF ( run_ltrsm_on_gpu .EQ. 1 .AND.
+     &     ( K427_LOC .EQ.-1 .OR. K427_LOC .EQ. 0 ) ) THEN
+#if defined(USE_XKBLAS_COPYSCALE)
+          CALL SMUMPS_TRSM_GPU_C( 3, 
+#else
+          CALL SMUMPS_TRSM_GPU_C( 0, 
+#endif
+     &                'L', 'U', 'T', 'U',
+     &                NPIV, NFRONT-NASS, ONE,
+     &                A( POSELT ), LDA,
+     &                A( POSELT + LDA8 * int(NASS,8) ), LDA )
+          LPOS = POSELT + int(NASS,8)*LDA8
+          UPOS = POSELT + int(NASS,8)
+#if defined(USE_XKBLAS_COPYSCALE)
+          IF (run_schur_on_gpu .EQ.1 ) THEN
+            ASYNC_COPYSCALE = 1 
+          ELSE
+            ASYNC_COPYSCALE = 0
+          ENDIF
+          CALL SMUMPS_GPU_COPY2U_SCALEL_C( ASYNC_COPYSCALE,
+     &               NFRONT - NASS, 1,
+     &               KEEP(424), NFRONT, NPIV,
+     &               LIW, IW, OFFSET_IW, LA, A, POSELT, LPOS, UPOS,
+     &               1 ) 
+#else
+          CALL SMUMPS_FAC_LDLT_COPY2U_SCALEL( NFRONT - NASS, 1,
+     &               KEEP(424), NFRONT, NPIV,
+     &               LIW, IW, OFFSET_IW, LA, A, POSELT, LPOS, UPOS,
+     &               POSELT, .TRUE. )
+#endif
+          IF (KEEP(201).EQ.1.AND..NOT.LR_ACTIV_POSTPROC) THEN
+            IF (NextPiv2beWritten.LE.NPIV) THEN
+              LAST_CALL=.FALSE.
+              CALL SMUMPS_OOC_IO_LU_PANEL(
+     &        STRAT_TRY_WRITE, TYPEFile,
+     &        A(POSELT), LAFAC, MonBloc,
+     &        NextPiv2beWritten, IDUMMY,
+     &        IW(IOLDPS), LIWFAC, MYID,
+     &        KEEP8(31),
+     &        IFLAG_OOC,LAST_CALL )
+              IF (IFLAG_OOC .LT. 0 ) THEN
+                IFLAG = IFLAG_OOC
+                RETURN
+              ENDIF
+            ENDIF
+          ENDIF
+        ENDIF 
+      ENDIF 
+      IF ( NFRONT - NASS .GT. 0 ) THEN
+       IF (.FALSE.) THEN
+#      if defined(GEMMT_AVAILABLE_FOR_GPU) || defined(USE_XKBLAS)
+       ELSE IF (run_schur_on_gpu.EQ.1) THEN
+         UPOS = POSELT + int(NASS,8)
+         LPOS = POSELT + int(NASS,8)*LDA8
+         APOS = POSELT + int(NASS,8)*LDA8 + int(NASS,8)
+         CALL SMUMPS_GEMMT_GPU_C(KEEP(417),
+     &              'U', 'N', 'N', NFRONT-NASS, NPIV,
+     &              ALPHA, A( UPOS ), LDA,
+     &              A( LPOS ), LDA,
+     &              BETA,
+     &              A( APOS ), LDA )
+#      endif
+#      if defined(GEMMT_AVAILABLE)
+       ELSE IF ( ( KEEP(421).EQ. -1 .OR.
+     &           ( KEEP(421) > 0 .AND. NFRONT - NASS > KEEP(421) ) )
+     &     .AND. run_schur_on_gpu .NE. 1 ) THEN
+         UPOS = POSELT + int(NASS,8)
+         LPOS = POSELT + int(NASS,8)*LDA8
+         APOS = POSELT + int(NASS,8)*LDA8 + int(NASS,8)
+         CALL sgemmt('U', 'N', 'N', NFRONT-NASS, NPIV,
+     &                ALPHA, A( UPOS ), LDA,
+     &                A( LPOS ), LDA,
+     &                BETA,
+     &                A( APOS ), LDA )
+#      endif
+       ELSE IF (.true.) THEN 
+#       if defined(GEMMT_AVAILABLE_FOR_GPU) || defined(USE_XKBLAS)
+           BLSIZE_GPU = KEEP(57)
+#       endif
+           IF (run_schur_on_gpu .EQ. 1) THEN
+             BLSIZE_loc = BLSIZE_GPU 
+           ELSE
+             BLSIZE_loc = BLSIZE_CPU 
+           ENDIF
+           INIT_SIZE = max(KEEP(7),KEEP(8),KEEP(57),KEEP(58)) - 1
+           CALL SMUMPS_MYGEMMT_STAIRS( A, POSELT, LDA, LDA8,
+     &          ALPHA, BETA, NFRONT-NASS, NPIV, NASS,
+     &          BLSIZE_loc, BLSIZE2, INIT_SIZE, run_schur_on_gpu,
+     &          KEEP, INODE )
+       END IF
+      END IF
+      IF ( KEEP(405) .NE. 0 ) THEN
+        IF ( run_ltrsm_on_gpu .EQ. 1 .OR.
+     &       run_schur_on_gpu  .EQ. 1 ) THEN
+!$OMP ATOMIC UPDATE
+            KEEP(428) = KEEP(428) - 1
+!$OMP END ATOMIC
+        ENDIF
+      ENDIF
+      IF ( NFRONT - NASS .GT. 0 ) THEN
+       IF ( (POSTPONE_COL_UPDATE).AND.(NASS-NPIV.GT.0) ) THEN
+         LPOS = POSELT + int(NPIV,8)*LDA8
+         UPOS = POSELT + int(NPIV,8)
+         CALL SMUMPS_FAC_LDLT_COPYSCALE_U( NASS - NPIV, 1, 
+     &       KEEP(424), NFRONT, NPIV, 
+     &       LIW, IW, OFFSET_IW, LA, A, POSELT, LPOS, UPOS, POSELT)
+         LPOS = POSELT + LDA8 * int(NASS,8)
+         CALL sgemm('N', 'N', NASS-NPIV, NFRONT-NASS, NPIV, ALPHA,
+     &               A( POSELT + int(NPIV,8)), LDA,
+     &               A( LPOS ), LDA,
+     &               BETA,
+     &               A( LPOS + int(NPIV,8) ), LDA)
+       ENDIF
+      END IF
+      RETURN
+      END SUBROUTINE SMUMPS_FAC_T_LDLT_GPU
+      SUBROUTINE SMUMPS_MYGEMMT_STAIRS(
+     &       A, POSELT, LDA, LDA8, ALPHA, BETA, NBROWS, NPIV, NASS,
+     &       BLSIZE, BLSIZE2, INIT_SIZE, CPU_OR_GPU, KEEP,
+     &       INODE )
+!$    USE OMP_LIB, ONLY : OMP_GET_MAX_THREADS
+      INTEGER, INTENT(IN)    :: CPU_OR_GPU
+      INTEGER(8), INTENT(IN) :: POSELT, LDA8
+      INTEGER, INTENT(IN)    :: LDA
+      INTEGER, INTENT(IN)    :: BLSIZE, BLSIZE2
+      INTEGER, INTENT(IN)    :: NBROWS, NPIV, NASS
+      REAL, INTENT(IN)    :: ALPHA, BETA
+      REAL, DIMENSION(:)  :: A
+      INTEGER, INTENT(IN)    :: INIT_SIZE
+      INTEGER, INTENT(IN)    :: INODE
+      INTEGER :: KEEP(500)
+      INTEGER    :: do_rectangle_on_gpu
+      LOGICAL    :: DO_INIT_MISS
+      INTEGER    :: IROWEND, IROW, Block, I2END, I2, Block2
+      INTEGER(8) :: LPOS, APOS, UPOS
+!$    INTEGER    :: NOMP, CHUNK
+      INTEGER(8) :: JINIT_BEG, JINIT_END, I2POS
+      REAL, PARAMETER :: ZERO=0.0E0
+      INTEGER, EXTERNAL :: SMUMPS_GEMM_ON_GPU_C
+      IF (CPU_OR_GPU.EQ.0) THEN
+        do_rectangle_on_gpu = 0
+        DO_INIT_MISS = .FALSE.
+      ELSE IF (CPU_OR_GPU.EQ.2) THEN
+        do_rectangle_on_gpu = 1
+        DO_INIT_MISS = .FALSE.
+      ELSE IF (CPU_OR_GPU.EQ.1) THEN
+        do_rectangle_on_gpu = 0 
+        DO_INIT_MISS = (BLSIZE-1 .GT. INIT_SIZE)
+      ELSE
+        WRITE(*,*) "Unknown CPU_OR_GPU," , CPU_OR_GPU
+        CALL MUMPS_ABORT()
+      ENDIF
+      DO IROWEND = NBROWS, 1, -BLSIZE
+         Block = min( BLSIZE, IROWEND )
+         IROW  = IROWEND - Block + 1
+         LPOS = POSELT + int(NASS,8)*LDA8 + int(IROW-1,8) * LDA8
+         APOS = POSELT + int(NASS,8)*LDA8 + int(IROW-1,8) * LDA8 +
+     &                  int(NASS + IROW - 1,8)
+         UPOS = POSELT + int(NASS + IROW - 1,8)
+         IF (CPU_OR_GPU .EQ.1) THEN
+           do_rectangle_on_gpu =
+     &                       SMUMPS_GEMM_ON_GPU_C(KEEP(417), Block,
+     &                       NBROWS-IROW+1, NPIV)
+         ENDIF
+         IF (do_rectangle_on_gpu .EQ. 0) THEN
+          DO I2END = Block, 1, -BLSIZE2
+            Block2 = min(BLSIZE2, I2END)
+            I2 = I2END - Block2+1
+            CALL sgemm('N', 'N', Block2, Block-I2+1, NPIV, ALPHA,
+     &                A(UPOS+int(I2-1,8)), LDA,
+     &                A(LPOS+int(I2-1,8)*LDA8), LDA,
+     &                BETA,
+     &                A(APOS + int(I2-1,8) + int(I2-1,8)*LDA8), LDA)
+          ENDDO
+          IF ( NBROWS - IROW + 1 - Block > 0 ) THEN
+           CALL sgemm( 'N', 'N', Block, NBROWS-Block-IROW+1, NPIV,
+     &              ALPHA,  A( UPOS ), LDA,
+     &              A( LPOS + LDA8 * int(Block,8) ), LDA,
+     &              BETA,
+     &              A( APOS + LDA8 * int(Block,8) ), LDA )
+          ENDIF
+         ELSE
+          IF ( NBROWS - IROW + 1 > 0 ) THEN
+           IF (DO_INIT_MISS) THEN
+!$          NOMP = omp_get_max_threads()
+!$          CHUNK = max(KEEP(360)/2, (Block+NOMP-1)/NOMP)
+!$OMP       PARALLEL DO PRIVATE(JINIT_BEG,JINIT_END,I2POS)
+!$OMP&      SCHEDULE(STATIC, CHUNK)
+!$OMP&      IF (Block .GT. KEEP(360) .AND. NOMP .GT. 1)
+            DO I2=1, Block
+              I2POS=APOS+int(I2-1,8)*LDA8
+              JINIT_BEG=I2+INIT_SIZE
+              JINIT_END=Block-1
+              IF (JINIT_END .GE. JINIT_BEG) THEN
+                A(I2POS+int(JINIT_BEG,8):I2POS+int(JINIT_END,8)) = ZERO
+              ENDIF
+            END DO
+!$OMP       END PARALLEL DO
+           ENDIF
+            CALL SMUMPS_GEMM_GPU_C( 0, 'N', 'N',
+     &              Block, NBROWS-IROW+1, NPIV,
+     &              ALPHA,  A( UPOS ), LDA,
+     &              A( LPOS ), LDA,
+     &              BETA,
+     &              A( APOS ), LDA )
+          ENDIF
+         ENDIF
+        END DO
+      RETURN
+      END SUBROUTINE SMUMPS_MYGEMMT_STAIRS
+      SUBROUTINE SMUMPS_INITMISS_STAIRS(
+     &       A, POSELT, LDA8, NBROWS, NASS,
+     &       BLSIZE, INIT_SIZE, KEEP, INODE )
+!$    USE OMP_LIB, ONLY : OMP_GET_MAX_THREADS
+      REAL, DIMENSION(:)  :: A
+      INTEGER(8), INTENT(IN) :: POSELT, LDA8
+      INTEGER, INTENT(IN)    :: NBROWS, NASS, BLSIZE
+      INTEGER, INTENT(IN)    :: INIT_SIZE, INODE
+      INTEGER, INTENT(IN)    :: KEEP(500)
+      INTEGER    :: IROWEND, IROW, Block, I2
+      INTEGER(8) :: LPOS, APOS, UPOS
+!$    INTEGER    :: NOMP, CHUNK
+      INTEGER(8) :: JINIT_BEG, JINIT_END, I2POS
+      REAL, PARAMETER :: ZERO=0.0E0
+      DO IROWEND = NBROWS, 1, -BLSIZE
+         Block = min( BLSIZE, IROWEND )
+         IROW  = IROWEND - Block + 1
+         LPOS = POSELT + int(NASS,8)*LDA8 + int(IROW-1,8) * LDA8
+         APOS = POSELT + int(NASS,8)*LDA8 + int(IROW-1,8) * LDA8 +
+     &                  int(NASS + IROW - 1,8)
+         UPOS = POSELT + int(NASS + IROW - 1,8)
+         IF ( NBROWS - IROW + 1 > 0 ) THEN
+!$          NOMP = omp_get_max_threads()
+!$          CHUNK = max(KEEP(360)/2, (Block+NOMP-1)/NOMP)
+!$OMP       PARALLEL DO PRIVATE(JINIT_BEG,JINIT_END,I2POS)
+!$OMP&      SCHEDULE(STATIC, CHUNK)
+!$OMP&      IF (Block .GT. KEEP(360) .AND. NOMP .GT. 1)
+            DO I2=1, Block
+              I2POS=APOS+int(I2-1,8)*LDA8
+              JINIT_BEG=I2+INIT_SIZE
+              JINIT_END=Block-1
+              IF (JINIT_END .GE. JINIT_BEG) THEN
+                A(I2POS+int(JINIT_BEG,8):I2POS+int(JINIT_END,8)) = ZERO
+              ENDIF
+            END DO
+!$OMP       END PARALLEL DO
+         ENDIF
+        END DO
+      RETURN
+      END SUBROUTINE SMUMPS_INITMISS_STAIRS
+#endif
       SUBROUTINE SMUMPS_STORE_PERMINFO( PIVRPTR, NBPANELS, PIVR, NASS,
      &                                  K, P, LastPanelonDisk,
      &                                  LastPIVRPTRIndexFilled )

@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.8.2, released
-C  on Mon Jan 12 15:17:08 UTC 2026
+C  This file is part of MUMPS 5.9.0, released
+C  on Tue Apr 28 13:05:59 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -12,6 +12,9 @@ C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
       MODULE ZMUMPS_FAC_ASM_MASTER_ELT_M
+      USE MUMPS_TOOLS_COMMON_M, ONLY : MUMPS_LR_COMPRESS_CB,
+     &                                 MUMPS_LR_COMPRESS_PANEL,
+     &                                 MUMPS_LR_FORCE_BFR
       CONTAINS
       SUBROUTINE ZMUMPS_FAC_ASM_NIV1_ELT( COMM_LOAD, ASS_IRECV,
      &    UU, NELT, FRT_PTR, FRT_ELT,
@@ -156,11 +159,17 @@ C
       LOGICAL BLOCKING, SET_IRECV, MESSAGE_RECEIVED
       INTEGER LRSTATUS  
       LOGICAL COMPRESS_PANEL, LR_ACTIVATED, COMPRESS_CB,
-     &        OOCWRITE_COMPATIBLE_WITH_BLR
+     &        OOCWRITE_COMPATIBLE_WITH_BLR,
+     &        FORCE_BFR
       INTEGER :: ITHREAD
       INTEGER, POINTER :: SON_IWPOS, SON_LIW
       INTEGER, POINTER, DIMENSION(:) :: SON_IW
       COMPLEX(kind=8), POINTER, DIMENSION(:) :: SON_A
+      LOGICAL :: run_on_gpu_sq, run_on_gpu_cb, run_on_gpu
+#if defined(USE_GPU)
+      INTEGER :: DO_PIN, OLD, NEW
+      INTEGER :: Idummy1, Idummy2
+#endif
       INTEGER NCBSON
       LOGICAL SAME_PROC
       INTEGER, POINTER, DIMENSION(:) :: BEGS_BLR
@@ -225,7 +234,7 @@ C
       NFRONT = ND(STEP(INODE)) + NASS + KEEP(253)
       NASS1 = NASS + NUMORG
       CALL IS_FRONT_BLR_CANDIDATE(INODE, 1, ND(STEP(INODE)), 
-     &       NUMORG, KEEP(486),
+     &       NUMORG, KEEP(486), KEEP(473),
      &       KEEP(489), KEEP(490), KEEP(491), KEEP(492), 
      &       KEEP(20), KEEP(60), DAD(STEP(INODE)), KEEP(38),
      &       KEEP(123), LRSTATUS, KEEP(280), LRGROUPS)
@@ -238,18 +247,24 @@ C
      &                                     KEEP(199))
      &    .EQ.1
      &    ) THEN
-          IF (LRSTATUS.EQ.1 .OR. LRSTATUS.EQ.3) THEN
-            LRSTATUS = LRSTATUS-1
+          IF (LRSTATUS.EQ.1) THEN
+            LRSTATUS = 0
+            IF (KEEP(473).EQ.2.OR.KEEP(473).EQ.3) LRSTATUS = 4
+          ELSE IF (LRSTATUS.EQ.3) THEN
+            LRSTATUS = 2
+            IF (KEEP(473).EQ.2.OR.KEEP(473).EQ.3) LRSTATUS = 4
           ENDIF
         ENDIF
       ENDIF
-      COMPRESS_PANEL = (LRSTATUS.GE.2)
-      COMPRESS_CB    = ((LRSTATUS.EQ.1).OR.
-     &                  (LRSTATUS.EQ.3))
+      FORCE_BFR      = MUMPS_LR_FORCE_BFR(LRSTATUS)
+      COMPRESS_PANEL = MUMPS_LR_COMPRESS_PANEL(LRSTATUS)
+      COMPRESS_PANEL = COMPRESS_PANEL.OR.FORCE_BFR
+      COMPRESS_CB    = MUMPS_LR_COMPRESS_CB(LRSTATUS)
       LR_ACTIVATED   = (LRSTATUS.GT.0)
       IF (COMPRESS_CB.AND.(.NOT.COMPRESS_PANEL)) THEN
         COMPRESS_PANEL = .TRUE.
         LRSTATUS      = 3 
+        IF (KEEP(473).EQ.2.OR.KEEP(473).EQ.3) LRSTATUS = 5
       ENDIF
       OOCWRITE_COMPATIBLE_WITH_BLR = 
      &          ( .NOT.LR_ACTIVATED.OR.(.NOT.COMPRESS_PANEL).OR.
@@ -392,6 +407,68 @@ C
      &     LAELL8,  
      &     KEEP,KEEP8,
      &     LRLUS)
+      run_on_gpu         =.FALSE.
+      run_on_gpu_sq      =.FALSE.
+      run_on_gpu_cb      =.FALSE.
+#if defined(USE_GPU)
+      IF (KEEP(417).GT.0) THEN
+         IF (LR_ACTIVATED.AND.KEEP(117).EQ.1) THEN 
+           IF (KEEP(405).EQ.0) THEN
+             NEW= (KEEP(418))*max((1000/ICNTL(39)),1)
+           ELSE
+             NEW= (KEEP(415))*max((1000/ICNTL(39)),1)
+           ENDIF
+           CALL ZMUMPS_GPU_MODIFY_ARITH_TRHRESHOLD (OLD, NEW)
+         ENDIF
+         Idummy2 = 0
+         CALL ZMUMPS_RUNONGPU_BLOCKSIZEST1( NFRONT, NASS1, KEEP,
+     &             PIVOT_OPTION, run_on_gpu_sq, run_on_gpu_cb,
+     &             Idummy1, Idummy2 )
+         run_on_gpu = run_on_gpu.OR.run_on_gpu_sq
+         IF (LR_ACTIVATED.AND.KEEP(117).EQ.1) THEN 
+           IF (KEEP(405).EQ.0) THEN
+             OLD = KEEP(418)
+             CALL ZMUMPS_GPU_MODIFY_ARITH_TRHRESHOLD (NEW, OLD)
+           ELSE
+             OLD = KEEP(415)
+!$OMP        CRITICAL
+             CALL ZMUMPS_GPU_MODIFY_ARITH_TRHRESHOLD (NEW, OLD)
+!$OMP        END CRITICAL
+           ENDIF
+         ENDIF
+      ENDIF
+#endif
+      IF (run_on_gpu.AND.(KEEP(417).GT.0)) THEN
+         IW(IOLDPS+XXG) = MemNotPinned
+      ELSE
+         IW(IOLDPS+XXG) = NotCandidateGPU
+      ENDIF
+#if defined(USE_GPU)
+      IF ( IW(IOLDPS+XXG) .NE. NotCandidateGPU) THEN
+      IF (KEEP(417).GT.0) THEN
+       IF (KEEP(422).EQ.2 .AND. 
+     &    (KEEP(405).EQ.0.OR.KEEP(432).EQ.1) .AND.
+     &    KEEP(429) .EQ. 0 ) THEN
+        IF (run_on_gpu_cb) DO_PIN=1
+        IF (DO_PIN .EQ.0) THEN
+          IF ( KEEP(431) .EQ. 1 .OR.
+     &         (KEEP(431) .EQ. 2 .AND. KEEP(405) .EQ. 0 ) ) THEN
+           IF (run_on_gpu) THEN
+             DO_PIN = 1
+           ENDIF
+          ENDIF
+        ENDIF
+        IF (DO_PIN .EQ. 1) THEN
+         IF (.NOT.LR_ACTIVATED.OR.KEEP(117).GT.0) THEN
+          CALL ZMUMPS_GPU_ASYNC_PIN_MEMORY_C(A(POSELT),
+     &         int(NFRONT,8)*int(NFRONT,8))
+          IW(IOLDPS+XXG) = PinningOnTheWay
+         ENDIF
+        ENDIF
+       ENDIF
+      ENDIF
+      ENDIF
+#endif
       IF (KEEP(405).EQ.0) KEEP(429)= KEEP(429)+1
 #if defined(ZERO_TRIANGLE)
       LAPOS2 = POSELT + LAELL8 - 1_8
@@ -1005,7 +1082,16 @@ C
       INTEGER TROW_SIZE, INDX, FIRST_INDEX, SHIFT_INDEX
       INTEGER LRSTATUS  
       LOGICAL COMPRESS_PANEL, LR_ACTIVATED, COMPRESS_CB,
-     &        OOCWRITE_COMPATIBLE_WITH_BLR
+     &        OOCWRITE_COMPATIBLE_WITH_BLR,
+     &        FORCE_BFR
+      LOGICAL :: run_on_gpu
+      INTEGER :: XXG_MASTER
+#if defined(USE_GPU)
+      INTEGER :: IDummy1, IDummy2, OLD, NEW
+      LOGICAL :: LDLTRegular_NIV2, BDummy, 
+     &           run_on_gpu_slave, run_on_gpu_master
+      INTEGER(8) :: SIZE_TO_PIN
+#endif
       INTEGER IZERO
       INTEGER IDUMMY(1)
       PARAMETER( IZERO = 0 )
@@ -1069,13 +1155,15 @@ C
       NFRONT = ND(STEP(INODE)) + NASS + KEEP(253)
       NASS1 = NASS + NUMORG
       NCB   = NFRONT - NASS1
-      CALL IS_FRONT_BLR_CANDIDATE(INODE, 2, NFRONT, NASS1, KEEP(486),
+      CALL IS_FRONT_BLR_CANDIDATE(INODE, 2, NFRONT, NASS1, 
+     &       KEEP(486), KEEP(473),
      &       KEEP(489), KEEP(490), KEEP(491), KEEP(492), 
      &       KEEP(20), KEEP(60), DAD(STEP(INODE)), KEEP(38),
      &       KEEP(123), LRSTATUS, KEEP(280), LRGROUPS)
-      COMPRESS_PANEL = (LRSTATUS.GE.2)
-      COMPRESS_CB    = ((LRSTATUS.EQ.1).OR.
-     &                  (LRSTATUS.EQ.3))
+      FORCE_BFR      = MUMPS_LR_FORCE_BFR(LRSTATUS)
+      COMPRESS_PANEL = MUMPS_LR_COMPRESS_PANEL(LRSTATUS)
+      COMPRESS_PANEL = FORCE_BFR.OR.COMPRESS_PANEL
+      COMPRESS_CB    = MUMPS_LR_COMPRESS_CB(LRSTATUS)
       LR_ACTIVATED   = (LRSTATUS.GT.0)
       IF (COMPRESS_CB.AND.(.NOT.COMPRESS_PANEL)) THEN
         COMPRESS_PANEL = .TRUE.
@@ -1130,6 +1218,15 @@ C
       IF (allocok > 0 ) THEN
         GOTO 265
       ENDIF
+#if defined(USE_GPU)
+      LDLTRegular_NIV2 = .FALSE.
+      IF (KEEP(198).NE.0.AND.KEEP(50).NE.0) THEN
+         IDummy2 = 0
+         CALL ZMUMPS_RUNONGPU_BLOCKSIZEST2 (
+     &    NFRONT, NASS1, NMB_OF_CAND, KEEP, 
+     &    LDLTRegular_NIV2, BDummy, IDummy1, IDummy2)
+      ENDIF
+#endif
        TYPESPLIT =  MUMPS_TYPESPLIT (PROCNODE_STEPS(STEP(INODE)), 
      &              KEEP(199))
        IF  ( (TYPESPLIT.EQ.4) 
@@ -1155,6 +1252,9 @@ C
      &     TAB_POS_IN_PERE(1,INIV2),
      &     TMP_SLAVES_LIST(NBSPLIT+1),
      &     SIZE_LIST_SPLIT,INODE
+#if defined(USE_GPU)
+     &     , LDLTRegular_NIV2
+#endif
      &     )
          DEALLOCATE (COPY_CAND)
          CALL MUMPS_SPLIT_POST_PARTITION (
@@ -1196,6 +1296,9 @@ C
      &     TAB_POS_IN_PERE(1,INIV2),
      &     TMP_SLAVES_LIST,
      &     SIZE_TMP_SLAVES_LIST,INODE
+#if defined(USE_GPU)
+     &     , LDLTRegular_NIV2
+#endif
      &     )
        ENDIF
       HF   = NSLAVES + 6 + KEEP(IXSZ)
@@ -1275,6 +1378,9 @@ C
      &         TAB_POS_IN_PERE(1,INIV2),
      &         TMP_SLAVES_LIST(NBSPLIT+1),
      &         SIZE_LIST_SPLIT,INODE 
+#if defined(USE_GPU)
+     &          , LDLTRegular_NIV2
+#endif
      &         )
              DEALLOCATE (COPY_CAND)
              CALL MUMPS_SPLIT_POST_PARTITION (
@@ -1291,6 +1397,9 @@ C
      &       MEM_DISTRIB(0), NCB, NFRONT_EFF, NSLAVES,
      &       TAB_POS_IN_PERE(1,INIV2),
      &       TMP_SLAVES_LIST, SIZE_TMP_SLAVES_LIST,INODE 
+#if defined(USE_GPU)
+     &          , LDLTRegular_NIV2
+#endif
      &       ) 
             ENDIF
             HF = NSLAVES + 6 + KEEP(IXSZ)
@@ -1411,7 +1520,50 @@ C
       IW(IOLDPS+XXA) = -99999
       IW(IOLDPS+XXF) = -99999
       IW(IOLDPS+XXLR)= LRSTATUS
-      IW(IOLDPS+XXG) = MemNotPinned
+      run_on_gpu=.FALSE.
+#if defined(USE_GPU)
+      IF (KEEP(417).GT.0) THEN
+         IF (LR_ACTIVATED.AND.KEEP(117).EQ.1) THEN 
+           NEW= KEEP(418)*max((1000/ICNTL(39)),1)
+           CALL ZMUMPS_GPU_MODIFY_ARITH_TRHRESHOLD (OLD, NEW)
+         ENDIF
+         IDummy2 = 0
+         CALL ZMUMPS_RUNONGPU_BLOCKSIZEST2(
+     &       NFRONT, NASS1, NMB_OF_CAND, KEEP,
+     &       run_on_gpu_slave, run_on_gpu_master, IDummy1, IDummy2)
+         run_on_gpu = run_on_gpu_slave.OR.run_on_gpu_master
+         IF (LR_ACTIVATED.AND.KEEP(117).EQ.1) THEN 
+           CALL ZMUMPS_GPU_MODIFY_ARITH_TRHRESHOLD (NEW, OLD)
+         ENDIF
+      ENDIF
+#endif
+      IF (run_on_gpu.AND.(KEEP(417).GT.0)) THEN
+         IW(IOLDPS+XXG) = MemNotPinned
+      ELSE
+         IW(IOLDPS+XXG) = NotCandidateGPU
+      ENDIF
+      XXG_MASTER = IW(IOLDPS+XXG)
+#if defined(USE_GPU)
+      IF ( IW(IOLDPS+XXG) .NE. NotCandidateGPU) THEN
+       IF (KEEP(417).GT.0) THEN
+        IF ( KEEP(422) .EQ. 2 .AND.               
+     &    ( (KEEP(50).EQ. 0.OR.KEEP(432).EQ.1)
+     &       .OR. KEEP(431).NE.0 ) 
+     &   ) THEN
+         IF ( KEEP(429) .EQ. 1 ) THEN 
+           IF (run_on_gpu_master) THEN
+             IF (.NOT.LR_ACTIVATED.OR.KEEP(117).GT.0) THEN
+              SIZE_TO_PIN = LAELL8
+              CALL ZMUMPS_GPU_ASYNC_PIN_MEMORY_C(A(POSELT),
+     &             SIZE_TO_PIN)
+              IW(IOLDPS+XXG)=PinningOnTheWay
+             ENDIF
+           ENDIF
+         ENDIF
+        ENDIF
+       ENDIF
+      ENDIF
+#endif
       CALL MUMPS_LOAD_MEM_UPDATE(.FALSE.,.FALSE.,LA-LRLUS,0_8,LAELL8,
      &     KEEP,KEEP8,LRLUS)
       POSEL1 = POSELT - LDAFS8
@@ -1678,6 +1830,7 @@ C
      &      NBLIG, IW(PTRROW), NBCOL, IW(PTRCOL), NASS1,
      &      IZERO, IDUMMY, 
      &      NSLAVES, 
+     &      XXG_MASTER, 
      &      ESTIM_NFS4FATHER_ATSON,   
      &      IW(PDEST), NFRONT, COMM, KEEP, IERR
      &      , IW(IOLDPS+XXLR)
@@ -1690,6 +1843,7 @@ C
      &      NSLAVES-ISLAVE,
      &      IW( PTLUST(STEP(INODE))+6+KEEP(IXSZ)+ISLAVE), 
      &      NSLAVES, 
+     &      XXG_MASTER, 
      &      ESTIM_NFS4FATHER_ATSON,   
      &      IW(PDEST), NFRONT, COMM, KEEP, IERR
      &      , IW(IOLDPS+XXLR)
