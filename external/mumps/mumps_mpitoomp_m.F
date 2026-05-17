@@ -11,9 +11,9 @@ C  released under the CeCILL-C license
 C  (see doc/CeCILL-C_V1-en.txt, doc/CeCILL-C_V1-fr.txt, and
 C  https://cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 C
-#if defined(MPI_TO_K_OMP)
       MODULE MUMPS_MPITOOMP_M
       IMPLICIT NONE
+#if defined(MPI_TO_K_OMP)
       TYPE PROCS_MAP_STRUC_T
          INTEGER, POINTER :: PROCS_MAP(:)
       END TYPE PROCS_MAP_STRUC_T
@@ -999,9 +999,10 @@ C
       ENDIF
       RETURN
       END SUBROUTINE MUMPS_MPITOOMP_SLEEPSYNC
-      END MODULE MUMPS_MPITOOMP_M
 #else
+      CONTAINS
       SUBROUTINE MUMPS_MPITOOMP_M_RETURN()
         RETURN
       END SUBROUTINE MUMPS_MPITOOMP_M_RETURN
 #endif
+      END MODULE MUMPS_MPITOOMP_M
