@@ -215,6 +215,8 @@ set_source_files_properties(zmumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARI
 set_source_files_properties(cmumps_c.c PROPERTIES COMPILE_DEFINITIONS "MUMPS_ARITH=MUMPS_ARITH_c")
 
 add_library(${PROJECT_NAME} STATIC ${mumps_c} ${mumps_f} ${mumps_mod})
+set_target_properties(${PROJECT_NAME} PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mod)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/mod)
 if (MKL_FOUND)
     target_link_libraries(${PROJECT_NAME} PRIVATE MKL::MKL_SCALAPACK)
 elseif (EZP_USE_SYSTEM_LIBS)
