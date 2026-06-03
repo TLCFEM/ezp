@@ -27,7 +27,7 @@ int main(int, char**) {
     int config[5]{};
     int iparm[64]{};
 
-    iparm[0] = 1;  // solver default parameters overriden with provided by iparm
+    iparm[0] = 1;  // solver default parameters overridden with provided by iparm
     iparm[1] = 3;  // use METIS for fill-in reordering
     iparm[7] = 2;  // max number of iterative refinement steps
     iparm[9] = 13; // perturb the pivot elements with 1E-13

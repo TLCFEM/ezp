@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
     }
 
     const auto& comm_world{mpl::environment::comm_world()};
-    const auto worker = comm_world.spawn(0, argc < 3 ? 1 : std::abs(std::stoi(argv[2])), {solver});
+    const auto worker = comm_world.spawn(0, std::abs(std::stoi(argv[2])), {solver});
     const auto all = mpl::communicator(worker, mpl::communicator::order_low);
 
     all.bcast(0, config.data(), mpl::contiguous_layout<int>(config.size()));

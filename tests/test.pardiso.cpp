@@ -76,7 +76,7 @@ template<data_t DT> auto random_pardiso() {
 
         auto solver = solver_t(mtype);
 
-        solver(0) = 1;  // solver default parameters overriden with provided by iparm
+        solver(0) = 1;  // solver default parameters overridden with provided by iparm
         solver(1) = 3;  // use METIS for fill-in reordering
         solver(7) = 2;  // max number of iterative refinement steps
         solver(9) = 13; // perturb the pivot elements with 1E-13
