@@ -90,8 +90,8 @@ namespace ezp {
     };
 
     template<data_t DT, index_t IT> class mumps final {
-        using struct_t = typename detail::mumps_struc<DT>::struct_type;
-        using entry_t = typename detail::mumps_struc<DT>::entry_type;
+        using struct_t = detail::mumps_struc<DT>::struct_type;
+        using entry_t = detail::mumps_struc<DT>::entry_type;
 
         struct_t id{};
 
