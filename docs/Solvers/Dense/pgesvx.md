@@ -17,7 +17,7 @@ There are four template arguments.
 1. data type, e.g., `double`, `float`, `std::complex<double>`, `std::complex<float>`.
 2. index type, e.g., `std::int32_t`, `std::int64_t`.
 3. equilibration flag, `F`, `N`, `E`.
-4. proccess grid order, `R` or `C`.
+4. process grid order, `R` or `C`.
 
 This solver uses a 2D process grid, so one can choose from `R`ow major or `C`olumn major ordering.
 
@@ -54,7 +54,7 @@ std::vector<double> A, B;
 const auto info = solver.solve({N, N, A.data()}, {N, NRHS, B.data()});
 ```
 
-The factorization **cannnot** be reused.
+The factorization **cannot** be reused.
 Thus, every call to `solve(full_mat<DT, IT>&& A, full_mat<DT, IT>&& B)` will invalidate the previous factorization and perform the factorization again even if the matrix $A$ does not change.
 This is a costly solver, if `pgesv` suffices, `pgesvx` shall only be used in advanced cases.
 

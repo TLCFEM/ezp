@@ -5,6 +5,85 @@ The `pardiso` solver supports the following input types.
 * data type: DSZC
 * index type: `std::int32_t`, `std::int64_t`
 
+`pardiso` wraps the [Intel MKL Cluster Sparse Solver](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2025-1/cluster-sparse-solver.html).
+It requires the macro `EZP_MKL` to be defined, which is set automatically when MKL is detected.
+
+## Constructor
+
+```cpp
+auto solver = ezp::pardiso<double, int_t>(
+    ezp::matrix_type::real_and_nonsymmetric,
+    ezp::message_level::no_output
+);
+```
+
+The `matrix_type` enum specifies the structure of the matrix.
+Available values:
+
+| Enum | Description |
+|------|-------------|
+| `real_and_structurally_symmetric` | Structurally symmetric |
+| `real_and_symmetric_positive_definite` | Symmetric positive definite |
+| `real_and_symmetric_indefinite` | Symmetric indefinite |
+| `real_and_nonsymmetric` | General non-symmetric |
+| `complex_and_hermitian_positive_definite` | Hermitian positive definite |
+| `complex_and_hermitian_indefinite` | Hermitian indefinite |
+| `complex_and_structurally_symmetric` | Structurally symmetric complex |
+| `complex_and_symmetric` | Symmetric complex |
+| `complex_and_nonsymmetric` | General complex non-symmetric |
+
+The `message_level` enum controls solver output: `no_output` or `print_statistical_information`.
+
+## Input Format
+
+The matrix $A$ must be provided as a `sparse_csr_mat` with **one-based** indexing.
+Fields required:
+
+* `n` — number of rows (and columns),
+* `nnz` — number of non-zero entries,
+* `row_ptr` — array of length `n+1` with one-based row pointers,
+* `col_idx` — array of length `nnz` with one-based column indices,
+* `data` — array of length `nnz`, values.
+
+The right-hand side $B$ is a dense `full_mat` with `n_rows = N` and `n_cols = NRHS`.
+
+## COO-to-CSR Conversion
+
+If the matrix is available in COO format, it can be converted to CSR automatically.
+
+```cpp
+const ezp::sparse_coo_mat coo{N, N, ia.data(), ja.data(), a.data()};
+// pass true for one-based indexing
+solver.solve(ezp::sparse_csr_mat<double, int_t>{coo, true}, {N, NRHS, b.data()});
+```
+
+## Usage Example
+
+```cpp
+#include <ezp/pardiso.hpp>
+
+auto solver = ezp::pardiso<double, int_t>(
+    ezp::matrix_type::real_and_nonsymmetric,
+    ezp::message_level::no_output
+);
+
+int_t N = 10, NRHS = 1;
+std::vector<int_t> ia, ja;
+std::vector<double> a, b;
+
+// populate one-based CSR diagonal matrix on root process
+if(0 == mpl::environment::comm_world().rank()) {
+    ia.resize(N + 1);  ja.resize(N);  a.resize(N);  b.resize(N * NRHS);
+    for(auto i = 0; i < N; i++) { ia[i] = ja[i] = static_cast<int_t>(a[i] = i + 1); }
+    ia[N] = N + 1;
+    std::ranges::fill(b, 1.);
+}
+
+const auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
+```
+
+The factorization is retained internally and reused when `solve` is called again with a new right-hand side.
+
 ## Solver Options
 
 There are two ways to configure the solver.
@@ -12,7 +91,7 @@ There are two ways to configure the solver.
 ### Member Methods
 
 The `operator()` operator provides access to `iparm` array.
-There are explicitly named memeber methods, which give the same functionality.
+There are explicitly named member methods, which give the same functionality.
 
 ```cpp
 solver(26) = 1;

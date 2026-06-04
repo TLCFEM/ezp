@@ -48,7 +48,7 @@ int main() {
 
 ### Dense Matrix
 
-`ezp` provides all solvers listed in [ScaLAPCK](https://www.netlib.org/scalapack/slug/node44.html) page for **full** and **band** matrices.
+`ezp` provides all solvers listed in [ScaLAPACK](https://www.netlib.org/scalapack/slug/node44.html) page for **full** and **band** matrices.
 Solvers for tridiagonal matrices are not implemented as they can be stored in band formats and solved by the corresponding solver.
 
 ### Sparse Matrix
