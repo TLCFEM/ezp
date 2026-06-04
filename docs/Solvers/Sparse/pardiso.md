@@ -5,7 +5,7 @@ The `pardiso` solver supports the following input types.
 * data type: DSZC
 * index type: `std::int32_t`, `std::int64_t`
 
-`pardiso` wraps the [Intel MKL Cluster Sparse Solver](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2025-1/cluster-sparse-solver.html).
+`pardiso` wraps the Intel MKL Cluster Sparse Solver.
 It requires the macro `EZP_MKL` to be defined, which is set automatically when MKL is detected.
 
 ## Constructor

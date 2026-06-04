@@ -87,18 +87,6 @@ The sparse solvers require additional libraries and must be explicitly enabled.
 
 ### PARDISO (Intel MKL Cluster Sparse Solver)
 
-`PARDISO` is bundled in [Intel® oneAPI Math Kernel Library (oneMKL)](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2025-1/cluster-sparse-solver.html).
+`PARDISO` is bundled in [Intel® oneAPI Math Kernel Library (oneMKL)](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html).
 It is automatically detected when the `oneAPI` environment is sourced.
 No additional CMake flags are needed; the macro `EZP_MKL` will be defined when MKL is found.
-
-### MUMPS
-
-[MUMPS](https://mumps-solver.org/) must be compiled and installed separately.
-Point CMake to the installation via `-DMUMPS_DIR=<path>`.
-Note that `MUMPS` always uses 32-bit integers internally (see [mumps.md](../Solvers/Sparse/mumps.md) for details).
-
-### Lis
-
-[Lis](http://www.ssisc.org/lis/) must be compiled with MPI support (`--enable-mpi`) and installed separately.
-Point CMake to the installation via `-DLIS_DIR=<path>`.
-`Lis` only supports `double` precision.
