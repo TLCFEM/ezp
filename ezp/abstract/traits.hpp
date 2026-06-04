@@ -63,7 +63,7 @@ namespace ezp {
     template<> struct WorkType<complex16> {
         using type = double;
     };
-    template<typename T> using work_t = typename WorkType<T>::type;
+    template<typename T> using work_t = WorkType<T>::type;
 
     template<data_t DT, index_t IT> struct base_mat {
         using data_type = DT;

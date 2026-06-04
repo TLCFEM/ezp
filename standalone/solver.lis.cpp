@@ -74,7 +74,7 @@ int main(int, char**) {
     const auto nnz = config[2];
     const auto nrhs = config[3];
 
-    auto solver = ezp::lis(opt.c_str());
+    auto solver = ezp::lis(opt );
 
     std::vector<LIS_INT> ia, ja;
     std::vector<LIS_SCALAR> a, b;

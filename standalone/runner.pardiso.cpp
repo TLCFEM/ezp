@@ -45,7 +45,7 @@ int main(int, char**) {
     std::vector<int> ia(N + 1), ja(N);
     std::vector<double> a(N), b(N * NRHS, 1.);
 
-    for(auto i = 0; i < N; i++) ia[i] = ja[i] = a[i] = i + 1;
+    for(auto i = 0; i < N; i++) ia[i] = ja[i] = static_cast<int>(a[i] = i + 1);
     ia[N] = N + 1;
 
     all.bcast(0, config);

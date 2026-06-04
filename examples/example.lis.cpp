@@ -52,7 +52,7 @@ int main() {
         }
         ia[N] = N;
 
-        std::fill(b.begin(), b.end(), 1.);
+        std::ranges::fill(b, 1.);
     };
 
     // initialise zero-based CSR matrix on the root process

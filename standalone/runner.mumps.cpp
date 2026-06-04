@@ -38,7 +38,7 @@ int main(int, char**) {
     std::vector<double> a(N), b(N * NRHS, 1.);
 
     // one based COO format
-    for(auto i = 0; i < N; i++) ia[i] = ja[i] = a[i] = i + 1;
+    for(auto i = 0; i < N; i++) ia[i] = ja[i] = static_cast<int>(a[i] = i + 1);
 
     all.bcast(0, config);
 

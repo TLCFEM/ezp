@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 
     constexpr int N = 40, NRHS = 1;
 
-    config[0] = option.size(); // length of the option string
+    config[0] = static_cast<int>(option.size()); // length of the option string
     config[1] = N;             // n
     config[2] = N;             // nnz
     config[3] = NRHS;          // nrhs

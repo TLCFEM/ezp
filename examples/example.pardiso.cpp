@@ -34,7 +34,7 @@ int main() {
 
     auto solver = ezp::pardiso<double, int_t>(ezp::matrix_type::real_and_nonsymmetric, ezp::message_level::no_output);
 
-    int N = 10, NRHS = 1;
+    int_t N = 10, NRHS = 1;
 
     std::vector<int_t> ia, ja;
     std::vector<double> a, b;
@@ -49,7 +49,7 @@ int main() {
         b.resize(N * NRHS);
 
         for(auto i = 0; i < N; i++) ia[i] = ja[i] = static_cast<int_t>(a[i] = i + 1);
-        ia[N] = static_cast<int_t>(N + 1);
+        ia[N] = N + 1;
 
         std::ranges::fill(b, 1.);
     };
