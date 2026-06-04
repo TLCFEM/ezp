@@ -20,12 +20,12 @@
 
 #include "traits.hpp"
 
-#include <algorithm>
 #include <numeric>
 #ifdef EZP_TBB
 #include <tbb/parallel_sort.h>
 #define ezp_sort tbb::parallel_sort
 #else
+#include <algorithm>
 #define ezp_sort std::sort
 #endif
 

@@ -22,37 +22,35 @@
 #include <sstream>
 #include <vector>
 
-namespace ezp {
-    namespace detail {
-        struct cli_arg {
-            std::string token;
-            int value;
-        };
+namespace ezp::detail {
+    struct cli_arg {
+        std::string token;
+        int value;
+    };
 
-        inline auto parse(const std::string& command) {
-            std::istringstream iss(command);
-            auto current = std::istream_iterator<std::string>(iss);
-            const auto end = std::istream_iterator<std::string>();
+    inline auto parse(const std::string& command) {
+        std::istringstream iss(command);
+        auto current = std::istream_iterator<std::string>(iss);
+        const auto end = std::istream_iterator<std::string>();
 
-            std::vector<cli_arg> args;
+        std::vector<cli_arg> args;
 
-            while(current != end) {
-                cli_arg arg{*current++, 0};
-                if(!arg.token.starts_with("--")) continue;
-                if(current == end) break;
-                try {
-                    arg.value = std::stoi(*current);
-                    args.push_back(arg);
-                    ++current;
-                }
-                catch(...) {
-                }
+        while(current != end) {
+            cli_arg arg{*current++, 0};
+            if(!arg.token.starts_with("--")) continue;
+            if(current == end) break;
+            try {
+                arg.value = std::stoi(*current);
+                args.push_back(arg);
+                ++current;
             }
-
-            return args;
+            catch(...) {
+            }
         }
-    } // namespace detail
-} // namespace ezp
+
+        return args;
+    }
+} // namespace ezp::detail
 
 #endif
 

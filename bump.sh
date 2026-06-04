@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if [ "$#" -eq 0 ]; then
     echo "No arguments supplied, using default branches"
     BRANCH_EZP="master"
@@ -20,12 +22,10 @@ then
     exit 1
 fi
 
-cd "$(dirname "$0")"
-
-cd mpl
+cd "$(dirname "$0")"/mpl
 
 git fetch origin
-git checkout origin/$BRANCH_MPL -- mpl
+git checkout origin/"$BRANCH_MPL" -- mpl
 git restore --staged .
 
 if ! git diff --quiet; then
@@ -33,10 +33,10 @@ if ! git diff --quiet; then
   git add --all && git commit -m "Automatic sync with $BRANCH_MPL" || exit 1
 fi
 
-cd ..
+cd "$(dirname "$0")"
 
 git fetch origin
-git checkout origin/$BRANCH_EZP -- external ezp CMakeLists.txt
+git checkout origin/"$BRANCH_EZP" -- external ezp CMakeLists.txt
 git restore --staged .
 
 if ! git diff --quiet; then

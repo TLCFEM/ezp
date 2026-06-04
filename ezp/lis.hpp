@@ -416,12 +416,12 @@ namespace ezp {
 
             void set_option(const std::string_view setting) const { lis_solver_set_option(setting.data(), solver); }
 
-            auto solve(const lis_matrix& A, const lis_vector& B, const lis_vector& X) const { return lis_solve(A.get(), B.get(), X.get(), solver); }
+            [[nodiscard]] auto solve(const lis_matrix& A, const lis_vector& B, const lis_vector& X) const { return lis_solve(A.get(), B.get(), X.get(), solver); }
         };
 
         class lis_base {
         protected:
-            const detail::lis_env& env = detail::get_lis_env();
+            const lis_env& env = get_lis_env();
 
             [[nodiscard]] auto sync_error(LIS_INT error) const {
                 env.comm_world.allreduce(mpl::min<LIS_INT>(), error);
