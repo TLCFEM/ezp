@@ -15,7 +15,7 @@ There are four template arguments.
 1. data type, e.g., `double`, `float`, `std::complex<double>`, `std::complex<float>`.
 2. index type, e.g., `std::int32_t`, `std::int64_t`.
 3. symmetry flag, e.g., `U`, `L`.
-4. proccess grid order, `R` or `C`.
+4. process grid order, `R` or `C`.
 
 This solver uses a 2D process grid, so one can choose from `R`ow major or `C`olumn major ordering.
 

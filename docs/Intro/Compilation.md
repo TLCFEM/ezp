@@ -22,7 +22,7 @@ sudo dnf install -y intel-oneapi-mkl-devel intel-oneapi-mpi-devel cmake gcc g++ 
 
 git clone --recurse-submodules --depth 1 https://github.com/TLCFEM/ezp.git
 
-mkdir /ezp/build && /ezp/build
+mkdir /ezp/build && cd /ezp/build
 
 . /opt/intel/oneapi/setvars.sh && cmake -DEZP_TEST=ON .. && cmake --build . --config Release
 ```
@@ -40,7 +40,7 @@ Simply install the library and you are ready to go.
 ```bash
 sudo zypper in -y gcc-c++ gcc-fortran cmake libscalapack2-openmpi5-devel-static openblas_openmp-devel-static
 git clone --recurse-submodules --depth 1 https://github.com/TLCFEM/ezp.git
-mkdir /ezp/build && /ezp/build
+mkdir /ezp/build && cd /ezp/build
 cmake -DEZP_STANDALONE=ON -DEZP_USE_SYSTEM_LIBS=ON -DMPI_HOME=/usr/lib64/mpi/gcc/openmpi5/ -DCMAKE_PREFIX_PATH="/usr/lib64/mpi/gcc/openmpi5/lib64/;/usr/lib64/openblas-openmp/" .. && cmake --build . --config Release
 ```
 
@@ -54,7 +54,7 @@ sudo dnf install -y cmake gcc g++ gfortran git ninja-build scalapack-mpich-devel
 sudo ln -s /usr/lib64/mpich/lib/libscalapack.so.2.2.0 /usr/lib64/libscalapack.so.2.2.0
 
 git clone --recurse-submodules --depth 1 https://github.com/TLCFEM/ezp.git
-mkdir /ezp/build && /ezp/build
+mkdir /ezp/build && cd /ezp/build
 cmake -DEZP_TEST=ON -DMPI_HOME=/usr/lib64/mpich/ -DEZP_USE_SYSTEM_LIBS=ON .. && cmake --build . --config Release
 ```
 
@@ -79,3 +79,14 @@ Use `-DEZP_STANDALONE=ON` flag in CMake to compile standalone solver.
 ### Enable OpenMP
 
 Use `-DEZP_ENABLE_OPENMP=ON` flag in CMake to enable the `-fopenmp` compiling flag.
+
+## Sparse Solver Dependencies
+
+The dense `ScaLAPACK`-based solvers (`pgesv`, `pposv`, `pgbsv`, etc.) are always available.
+The sparse solvers require additional libraries and must be explicitly enabled.
+
+### PARDISO (Intel MKL Cluster Sparse Solver)
+
+`PARDISO` is bundled in [Intel® oneAPI Math Kernel Library (oneMKL)](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html).
+It is automatically detected when the `oneAPI` environment is sourced.
+No additional CMake flags are needed; the macro `EZP_MKL` will be defined when MKL is found.

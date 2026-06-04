@@ -15,6 +15,69 @@ There are some caveats.
 To allow maximum compatibility, `MUMPS_INTSIZE64` is **not** enabled, even if `EZP_USE_64BIT_INT` is switched on.
 Thus the underlying `mumps` library needs to be linked to 32-bit ScaLAPACK and MPI.
 
+## Constructor
+
+```cpp
+auto solver = mumps<double, int>();
+// optionally specify the symmetry pattern:
+//   mumps<double, int>(ezp::symmetric_positive_definite)
+//   mumps<double, int>(ezp::symmetric_indefinite)
+//   mumps<double, int>(ezp::unsymmetric)  // default
+// and the parallel mode (whether host process participates in factorization):
+//   mumps<double, int>(ezp::unsymmetric, ezp::host_involved)
+```
+
+## Input Format
+
+The matrix $A$ must be provided as a `sparse_coo_mat` with **one-based** indexing.
+Fields required:
+
+* `n` — number of rows (and columns),
+* `nnz` — number of non-zero entries,
+* `row` — array of length `nnz`, one-based row indices,
+* `col` — array of length `nnz`, one-based column indices,
+* `data` — array of length `nnz`, values.
+
+The right-hand side $B$ is a dense `full_mat` with `n_rows = N` and `n_cols = NRHS`.
+
+## Usage Example
+
+```cpp
+#include <ezp/mumps.hpp>
+
+using namespace ezp;
+
+int N = 10, NRHS = 1;
+std::vector<int> ia, ja;
+std::vector<double> a, b;
+
+// populate one-based COO diagonal matrix on root process
+if(0 == mpl::environment::comm_world().rank()) {
+    ia.resize(N);  ja.resize(N);  a.resize(N);  b.resize(N * NRHS);
+    for(auto i = 0; i < N; i++) ia[i] = ja[i] = a[i] = i + 1;
+    std::ranges::fill(b, 1.);
+}
+
+auto solver = mumps<double, int>();
+solver.icntl_printing_level(0);              // suppress output
+solver.icntl_determinant_computation(1);     // enable determinant
+
+const auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
+
+if(0 == mpl::environment::comm_world().rank() && info == 0) {
+    std::cout << "sign(det): " << solver.sign_det() << '\n';
+    for(const auto x : b) std::cout << x << '\n';
+}
+```
+
+The factorization is retained internally.
+Calling `solve` again with a different $B$ (same sparsity pattern and values) reuses the existing factorization automatically.
+
+## Determinant
+
+When `icntl_determinant_computation(1)` is set, the determinant is available after solving via `solver.sign_det()` and related methods.
+
+
 ## Solver Options
 
 There are two ways to configure the solver.
@@ -22,7 +85,7 @@ There are two ways to configure the solver.
 ### Member Methods
 
 The `operator()` operator provides access to `icntl` array.
-There are explicitly named memeber methods, which give the same functionality.
+There are explicitly named member methods, which give the same functionality.
 
 ```cpp
 solver(3) = 1;
