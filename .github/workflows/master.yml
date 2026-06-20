@@ -1,28 +1,8 @@
-name: master
-on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
-permissions:
-  contents: write
 env:
-  MPI_HOME: ""
+  MPI_HOME: ''
 jobs:
   linux-dev:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
-    strategy:
-      matrix:
-        os: [ubuntu-24.04]
-        build: [RelWithDebInfo, Debug]
-        mpi: [impi, mpich, openmpi]
-        index: [ON, OFF]
-        exclude:
-          - mpi: mpich
-            index: ON
-          - mpi: openmpi
-            index: OFF
     steps:
       - name: Clone
         uses: actions/checkout@v6
@@ -31,8 +11,8 @@ jobs:
       - name: Update
         run: |
           sudo apt-get update && sudo apt-get install lcov
-      - name: MKL
-        if: matrix.mpi == 'impi'
+      - if: matrix.mpi == 'impi'
+        name: MKL
         run: |
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
@@ -56,8 +36,8 @@ jobs:
           echo "MPI_HOME=$MPI_HOME" >> "$GITHUB_ENV" && echo $MPI_HOME
           cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build }} -DEZP_TEST=ON -DEZP_STANDALONE=ON -DMPI_HOME=${{ env.MPI_HOME }} -DEZP_USE_64BIT_INT=${{ matrix.index }}
           cmake --build build --target all
-      - name: Test
-        if: matrix.build == 'Debug' && matrix.index == 'OFF'
+      - if: matrix.build == 'Debug' && matrix.index == 'OFF'
+        name: Test
         run: |
           if [ "${{ matrix.mpi }}" == "impi" ]; then
             source /opt/intel/oneapi/setvars.sh
@@ -71,11 +51,41 @@ jobs:
           lcov --capture --directory . --output-file coverage.info
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
           lcov --list coverage.info
-      - name: Report
+      - env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         if: ${{ hashFiles('./build/coverage.info') != '' }}
+        name: Report
         uses: codecov/codecov-action@v7
         with:
-          plugins: gcov
           files: ./build/coverage.info
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          plugins: gcov
+    strategy:
+      matrix:
+        build:
+          - RelWithDebInfo
+          - Debug
+        exclude:
+          - index: 'ON'
+            mpi: mpich
+          - index: 'OFF'
+            mpi: openmpi
+        index:
+          - 'ON'
+          - 'OFF'
+        mpi:
+          - impi
+          - mpich
+          - openmpi
+        os:
+          - ubuntu-24.04
+    timeout-minutes: 60
+name: CICD
+'on':
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+permissions:
+  contents: write
