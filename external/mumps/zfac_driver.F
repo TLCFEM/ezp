@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -986,7 +986,7 @@ C     Compute \sum of memories allowed
           IF (KEEP(252).GT.0) 
      &    WRITE(MPG,173) KEEP(253)
           IF (KEEP(269).NE.0) 
-     &    WRITE(MPG,174) KEEP(269)
+     &    WRITE(MPG,176) KEEP(269)
       ENDIF
       IF (KEEP(201).LE.0) THEN
 C       In-core version or no factors
@@ -1115,20 +1115,20 @@ C    &                      id%MYID_NODES, id%NSLAVES, id%COMM,
 C          print on all procs
            WRITE(MP,'(A,I16)') 
      &     ' ICNTL(51) Number of GPUs                   =',KEEP(417)
-           WRITE(MP,'(A,I16)') 
-     &     ' KEEP(416) GPU bitset                       =',KEEP(416)
-           WRITE(MP,'(A,I16)') 
-     &     ' KEEP(418) GPU Arith. Intensity threshold   =',KEEP(418)
-           WRITE(MP,'(A,I16)')
-     &     ' KEEP(422) Memory pinning                   =',KEEP(422)
+             WRITE(MP,'(A,I16)') 
+     &     ' Set of GPU devices to be used              =',KEEP(416)
+             WRITE(MP,'(A,I16)') 
+     &     ' GPU Arith. Intensity threshold             =',KEEP(418)
+            WRITE(MP,'(A,I16)')
+     &     ' Memory pinning (0=OFF)                     =',KEEP(422)
            WRITE(MP,'(A,I16)')
      &     ' Max number of MPI per GPU                  =',
      &     MAX_MPIs_PER_GPU
            WRITE(MP,'(A,I16,I4)')
      &     ' Local GPU bit set, id%MYID                 =',GPUBITMAP,
      &                                                     id%MYID
-           WRITE(MP,'(A,I16)')
-     &     ' KEEP(66) MPI setting for larger granularity=',KEEP(198)
+            WRITE(MP,'(A,I16)')
+     &     ' MPI setting for larger granularity (0=OFF) =',KEEP(198)
            WRITE(MP,'(A,F12.4)')
      &     ' Local time spent in MUMPS_INIT_GPU_C       =',TIME_INIT_GPU
          ENDIF
@@ -1136,17 +1136,17 @@ C          print on all procs
 C          print on master
            WRITE(MPG,'(A,I16)') 
      &     ' ICNTL(51) Offload on GPUs                  =',KEEP(417)
-           WRITE(MPG,'(A,I16)') 
-     &     ' KEEP(416) GPU bitset                       =',KEEP(416)
-           WRITE(MPG,'(A,I16)') 
-     &     ' KEEP(418) GPU Arith. Intensity threshold   =',KEEP(418)
-           WRITE(MPG,'(A,I16)')
-     &     ' KEEP(422) Memory pinning                   =',KEEP(422)
+             WRITE(MPG,'(A,I16)') 
+     &     ' Set of GPU devices to be used              =',KEEP(416)
+             WRITE(MPG,'(A,I16)') 
+     &     ' GPU Arith. Intensity threshold             =',KEEP(418)
+            WRITE(MPG,'(A,I16)')
+     &     ' Memory pinning (0=OFF)                     =',KEEP(422)
            WRITE(MPG,'(A,I16)')
      &     ' Max number of MPI per GPU                  =',
      &     MAX_MPIs_PER_GPU
-           WRITE(MPG,'(A,I16)')
-     &     ' KEEP(66) MPI setting for larger granularity=',KEEP(198)
+            WRITE(MPG,'(A,I16)')
+     &     ' MPI setting for larger granularity (0=OFF) =',KEEP(198)
          ENDIF
          IF (PROKG) THEN
            IF (id%NSLAVES.GT.1) THEN
@@ -5147,7 +5147,7 @@ C
      &        ' Memory provided by user, sum of LWK_USER   =',I16/
      &        ' Effective threshold for pivoting, CNTL(1)  =',D16.4)
  173  FORMAT( ' Perform forward during facto, NRHS         =',I16)
- 174  FORMAT( ' KEEP(268) Relaxed pivoting effective value =',I16)
+ 176  FORMAT( ' Relaxed pivoting (0=OFF)                   =',I16)
  180  FORMAT(/' Elapsed time for factorization                     =',
      &          F12.4)
  185  FORMAT(/' Elapsed time for (failed) factorization            =',
@@ -5593,10 +5593,10 @@ C
           nullify(lrb2%R)
           if (associated(lrb1%Q_stoc).or.
      &        associated(lrb1%Q)) then
-            allocate(lrb2%Q_stoc(nprec_stoc), stat=allocok)
+            allocate(lrb2%Q_stoc(NPREC_STOC), stat=allocok)
             IF (allocok .GT. 0) THEN
               IFLAG = -13
-              IERROR = nprec_stoc
+              IERROR = NPREC_STOC
               return
             ENDIF
             do i = 1, NPREC_STOC
@@ -5605,10 +5605,10 @@ C
           end if
           if (associated(lrb1%R_stoc).or.
      &        associated(lrb1%R)) then
-            allocate(lrb2%R_stoc(nprec_stoc), stat=allocok)
+            allocate(lrb2%R_stoc(NPREC_STOC), stat=allocok)
             IF (allocok .GT. 0) THEN
               IFLAG = -13
-              IERROR = nprec_stoc
+              IERROR = NPREC_STOC
               return
             ENDIF
             do i = 1, NPREC_STOC
@@ -5637,7 +5637,7 @@ C
               IERROR = nprec_stoc
               return
             ENDIF
-            do i = 1, nprec_stoc
+            do i = 1, NPREC_STOC
               lrb2%K_stoc(i) = lrb1%K_stoc(i)
             end do
             deallocate(lrb1%K_stoc)
@@ -5650,29 +5650,29 @@ C
                  m = lrb1%m
                  n = lrb1%n
              endif
-             int_sz = 1 + (costs_prec(PREC_SGL)*size(lrb1%Q)-1)/K34
+             int_sz = 1 + (COSTS_PREC(PREC_FAC)*size(lrb1%Q)-1)/K34
 #if !defined(NOMIXHPC)
-             allocate(lrb2%Q_stoc(prec_sgl)%val(int_sz), stat=allocok)
+             allocate(lrb2%Q_stoc(PREC_FAC)%val(int_sz), stat=allocok)
              IF (allocok .GT. 0) THEN
                IFLAG = -13
                IERROR = int_sz
                return
              ENDIF
              CALL ZMUMPS_LRMIXED_CAST(
-     &         lrb1%Q(1,1), lrb2%Q_stoc(prec_sgl)%val(1),
+     &         lrb1%Q(1,1), lrb2%Q_stoc(PREC_FAC)%val(1),
      &         m, n,
      &         lrb1%M, lrb2%M,
-     &         PREC_FAC, PREC_SGL)
+     &         PREC_FAC, PREC_FAC)
 #else
              if (lrb1%islr) then
-               allocate(lrb2%Q_stoc(prec_sgl)%val(int_sz), stat=allocok)
+               allocate(lrb2%Q_stoc(PREC_FAC)%val(int_sz), stat=allocok)
                IF (allocok .GT. 0) THEN
                  IFLAG = -13
                  IERROR = int_sz
                  return
                ENDIF
                CALL ZMUMPS_LRMIXED_CAST(
-     &           lrb1%Q(1,1), lrb2%Q_stoc(prec_sgl)%val(1),
+     &           lrb1%Q(1,1), lrb2%Q_stoc(PREC_FAC)%val(1),
      &           m, n,
      &           lrb1%M, lrb2%M,
      &           PREC_FAC, PREC_SGL)
@@ -5688,37 +5688,37 @@ C
      &           lrb1%Q(1,1), lrb2%Q(1,1),
      &           m, n,
      &           lrb1%M, lrb2%M,
-     &           PREC_FAC, PREC_DBL)
+     &           PREC_FAC, 1)
              endif
 #endif
              deallocate(lrb1%Q)
           end if
           if (associated(lrb1%R)) then
-             int_sz = 1 + (costs_prec(PREC_SGL)*size(lrb1%R)-1)/K34
-             allocate(lrb2%R_stoc(prec_sgl)%val(int_sz), stat=allocok)
+             int_sz = 1 + (COSTS_PREC(PREC_FAC)*size(lrb1%R)-1)/K34
+             allocate(lrb2%R_stoc(PREC_FAC)%val(int_sz), stat=allocok)
              IF (allocok .GT. 0) THEN
                IFLAG = -13
                IERROR = int_sz
                return
              ENDIF
              CALL ZMUMPS_LRMIXED_CAST(
-     &         lrb1%R(1,1), lrb2%R_stoc(prec_sgl)%val(1),
+     &         lrb1%R(1,1), lrb2%R_stoc(PREC_FAC)%val(1),
      &         lrb1%K, lrb1%N,
      &         lrb1%K, lrb2%K,
-     &         PREC_FAC, PREC_SGL)
+     &         PREC_FAC, PREC_FAC)
              deallocate(lrb1%R)
              if (.not.associated(lrb2%k_stoc)) then
-               allocate(lrb2%k_stoc(nprec_stoc), stat=allocok)
+               allocate(lrb2%k_stoc(NPREC_STOC), stat=allocok)
                IF (allocok .GT. 0) THEN
                  IFLAG = -13
-                 IERROR = nprec_stoc
+                 IERROR = NPREC_STOC
                  return
                ENDIF
              end if
              do i = 1, NPREC_STOC
                lrb2%K_stoc(i) = 0
              end do
-             lrb2%K_stoc(PREC_SGL) = lrb2%k
+             lrb2%K_stoc(PREC_FAC) = lrb2%k
           end if
       END SUBROUTINE ZMUMPS_lrb_type_cast
 #endif

@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -604,7 +604,8 @@ C
      &  IPERE, NFRONT_PERE, NASS_PERE, NFS4FATHER, NSLAVES_PERE,
      &  ISON, NBROW, LMAP, MAPROW, POS_FIRST_ROW_TO_PDEST, 
      &  IW_CBSON, A_CBSON, LA_CBSON,
-     &  ISLAVE, PDEST, PDEST_MASTER, COMM, IERR, 
+     &  ISLAVE, PDEST, PDEST_MASTER, COMM, 
+     &  IERR, IERR_SIZEREQ, LP,
      &  
      &  KEEP,KEEP8, STEP, N, SLAVEF,
      &  ISTEP_TO_INIV2, TAB_POS_IN_PERE,
@@ -622,6 +623,8 @@ C
         INTEGER, INTENT(in)  :: POS_FIRST_ROW_TO_PDEST
         INTEGER IPERE, ISON, NBROW, MYID
         INTEGER PDEST, ISLAVE, COMM, IERR
+        INTEGER, INTENT (in)  :: LP
+        INTEGER, INTENT (out) :: IERR_SIZEREQ
         INTEGER PDEST_MASTER, NASS_PERE, NSLAVES_PERE,
      &       NFRONT_PERE, LMAP
         INTEGER MAPROW( LMAP )
@@ -693,10 +696,16 @@ C
      &              (PDEST.EQ.PDEST_MASTER)
      &       .AND. (NBCOLS_ALREADY_SENT.EQ.0)
      &       .AND. (NBROWS_ALREADY_SENT.EQ.0)
+      LNEXT          = 0
+      MAX_ROW_LENGTH = 0
+      IERR_SIZEREQ   = 0
+      B              = 0
+      ONEorTWO       = 1
       IF (COMPUTE_MAX) THEN
         CALL CMUMPS_BUF_MAX_ARRAY_MINSIZE(NFS4FATHER,IERR)
         IF (IERR .NE. 0) THEN
           IERR         = -4
+          IERR_SIZEREQ = max(1,NFS4FATHER)
           RETURN
         ENDIF
       ENDIF
@@ -850,9 +859,14 @@ C
      &      ( -1 + 2 *  LROW + 2 * POS_FIRST_ROW_TO_PDEST -2*LMAP
      &                                  + 2 * NBROWS_ALREADY_SENT )
      &      * SIZEofREAL / SIZEofINT
-          NBROWS_PACKET=int((dble(-B)+sqrt((dble(B)*dble(B))+
-     &        dble(4)*dble(2)*dble(SIZE_AV)/dble(SIZEofINT) *
-     &        dble(SIZEofREAL/SIZEofINT)))*
+          NBROWS_PACKET=int(
+     &        (dble(-B)+
+     &         sqrt
+     &         ( (dble(B)*dble(B))+
+     &           dble(4)*dble(2)*dble(SIZE_AV)/dble(SIZEofINT) *
+     &           dble(SIZEofREAL)/dble(SIZEofINT)
+     &         )
+     &        )*
      &        dble(SIZEofINT) / dble(2) / dble(SIZEofREAL))
         ENDIF
       ENDIF
@@ -898,14 +912,62 @@ C
        CALL MPI_PACK_SIZE( LNEXT, 
      &                     MPI_COMPLEX,
      &                     COMM, SIZE_NEXT_BLOCK, IERR_MPI )
-      ENDIF
+      ENDIF 
       IF (SIZE_NEXT_BLOCK.GT.SIZE_RBUF_BYTES) THEN
+         IF (LP.GT.0) THEN
+            write(LP, '(A/, A/, A, I5,I10,L2/, A, 2I12/,A,2I10)') 
+     &      " Error 2 in  CMUMPS_BUF_SEND_CONTRIB_TYPE2,",
+     &      " RECV buffer too small for next block",
+     &      "    BUF_MYID, ISON,CB_IS_LR         = ", 
+     &           BUF_MYID, ISON,CB_IS_LR,
+     &      "    SIZE_NEXT_BLOCK, SIZE_RBUF_BYTES= ",
+     &           SIZE_NEXT_BLOCK, SIZE_RBUF_BYTES,
+     &      "    LNEXT, MAX_ROW_LENGTH           = ",
+     &           LNEXT, MAX_ROW_LENGTH
+            write(LP,'(A/,A,5I9/,A,4I12/,A,3I9/,A,2I9)')
+     &       " Error 2 additional information :",
+     &       "    NBROW, NBROWS_ALREADY_SENT, LROW, B, ONEorTWO    = ",
+     &            NBROW, NBROWS_ALREADY_SENT, LROW, B, ONEorTWO, 
+     &       "    SIZE_AV, SIZE1, SIZE_RBUF_BYTES, DESC_BANDE_BYTES= ",
+     &            SIZE_AV, SIZE1, SIZE_RBUF_BYTES, DESC_BANDE_BYTES,
+     &       "    NPIV,NROW,NFRONT           = ", NPIV,NROW,NFRONT,
+     &       "    NBROWS_PACKET, NBLRB_PACKET= ",
+     &            NBROWS_PACKET, NBLRB_PACKET
+         ENDIF
          IERR = -3
+         IERR_SIZEREQ = SIZE_NEXT_BLOCK
          RETURN
       ENDIF
       IF (NOT_ENOUGH_SPACE) THEN
          IF (RECV_BUF_SMALLER_THAN_SEND) THEN
           IERR = -3
+          IERR_SIZEREQ =  SIZE1
+          IF (LP.GT.0) THEN
+            write(LP,'(A/,A/,A,I5,I9,L2/,A,2I4)')
+     &      " Error 1 in CMUMPS_BUF_SEND_CONTRIB_TYPE2, ",
+     &      " RECV buffer too small to send any real/complex data",
+     &      "    BUF_MYID,ISON, CB_IS_LR = ",
+     &           BUF_MYID,ISON, CB_IS_LR,
+     &      "    SIZEofINT, SIZEofREAL   = ",
+     &           SIZEofINT, SIZEofREAL
+            write(LP,'(A/,A,5I9/,A,4I12/,A,3I9/,A,2I9)')
+     &      " Error 1 additional information 1:",
+     &      "    NBROW, NBROWS_ALREADY_SENT, LROW, B, ONEorTWO    = ",
+     &           NBROW, NBROWS_ALREADY_SENT, LROW, B, ONEorTWO, 
+     &      "    SIZE_AV, SIZE1, SIZE_RBUF_BYTES, DESC_BANDE_BYTES= ",
+     &           SIZE_AV, SIZE1, SIZE_RBUF_BYTES, DESC_BANDE_BYTES,
+     &      "    NPIV, NROW, NFRONT         = ", NPIV, NROW, NFRONT,
+     &      "    NBROWS_PACKET, NBLRB_PACKET= ",
+     &           NBROWS_PACKET, NBLRB_PACKET
+            write(LP,'(A/,A,4I9/,A,3I9/,A,2I9)')
+     &      " Error 1 additional information 2:",
+     &      "    SON_NIV, NELIM, PDEST, PDEST_MASTER      = ",
+     &           SON_NIV, NELIM, PDEST, PDEST_MASTER,
+     &      "    POS_FIRST_ROW_TO_PDEST, LMAP, L          = ",
+     &           POS_FIRST_ROW_TO_PDEST, LMAP, L, 
+     &      "    MAX_ROW_LENGTH, LNEXT                    = ",
+     &           MAX_ROW_LENGTH, LNEXT                    
+          ENDIF
           GOTO 100
        ELSE
           IERR = -1
@@ -949,7 +1011,31 @@ C
          IF (NBROWS_PACKET .GT. 0 .AND..NOT.CB_IS_LR) THEN
            GOTO 10
          ENDIF
-           IF (RECV_BUF_SMALLER_THAN_SEND) THEN
+          IF (RECV_BUF_SMALLER_THAN_SEND) THEN
+             IF (LP.GT.0) THEN
+              WRITE (LP,'(A/,A,A/,A,I5,I9,L2)')
+     &        " Error 5 in CMUMPS_BUF_SEND_CONTRIB_TYPE2",
+     &        " DO NOT SEND: ",
+     &        " Receive buffer minus DESC_BAND would be too small ",
+     &        "    BUF_MYID, ISON, CB_IS_LR= ", BUF_MYID, ISON, CB_IS_LR
+              WRITE(LP,'(A/,A,3I12/,A,3I12)')
+     &        " Error 5 additional information 1:",
+     &        "    Message size, size available, SIZE_RBUF_BYTES= ",
+     &         SIZE1+SIZE2+SIZE3, SIZE_AV+SIZE1, SIZE_RBUF_BYTES,
+     &        "    SIZE1, SIZE2, SIZE3                          = ", 
+     &             SIZE1, SIZE2, SIZE3 
+              write(LP,'(A/,A,5I9/,A,3I12/,A,3I9/,A,2I9)')
+     &        " Error 5 additional information 2:",
+     &        "    NBROW, NBROWS_ALREADY_SENT, LROW, B, ONEorTWO= ",
+     &             NBROW, NBROWS_ALREADY_SENT, LROW, B, ONEorTWO, 
+     &        "    SIZE_AV, SIZE1, DESC_BANDE_BYTES             = ",
+     &             SIZE_AV, SIZE1, DESC_BANDE_BYTES,
+     &        "    NPIV, NROW, NFRONT                           = ", 
+     &             NPIV, NROW, NFRONT,
+     &        "    NBROWS_PACKET, NBLRB_PACKET                  = ",
+     &             NBROWS_PACKET, NBLRB_PACKET
+             ENDIF
+             IERR_SIZEREQ = SIZE1+SIZE2+SIZE3
              IERR = -3
              GOTO 100
           ELSE
@@ -958,6 +1044,7 @@ C
            ENDIF
       ENDIF
         SIZE_PACK = SIZE1 + SIZE2 + SIZE3
+        IERR_SIZEREQ = SIZE_PACK
         K170PER1000 = real(min(KEEP(170),500))/real(1000)
         IF ( .NOT.CB_IS_LR 
      &    .AND. (NBROWS_PACKET + NBROWS_ALREADY_SENT.NE.NBROW)
@@ -986,12 +1073,43 @@ C
             GOTO 100
         ENDIF
         IF (SIZE_PACK.GT.SIZE_RBUF_BYTES ) THEN
-          IERR = -3
-          GOTO 100
+          IERR         = -3
+          IERR_SIZEREQ = SIZE_PACK
+          IF (LP.GT.0) THEN
+            WRITE(LP,'(A/,A/,A,I5,I10,L2)')
+     &      " Error 4 in CMUMPS_BUF_SEND_CONTRIB_TYPE2",
+     &      "    Receive buffer will be too small ",
+     &      "    BUF_MYID, ISON, CB_IS_LR= ", BUF_MYID, ISON, CB_IS_LR
+            WRITE(LP,'(A/,A,3I12/,A,4I12/,A,3I12)')
+     &      " Error 4 additional information 1:",
+     &      "    Message size, size available, SIZE_RBUF_BYTES= ",
+     &           SIZE1+SIZE2+SIZE3, SIZE_AV+SIZE1, SIZE_RBUF_BYTES,
+     &      "    SIZE_PACK, SIZE_RBUF_BYTES, ISON, IPERE      = ",
+     &           SIZE_PACK, SIZE_RBUF_BYTES, ISON, IPERE, 
+     &      "    SIZE1, SIZE2, SIZE3                          = ", 
+     &           SIZE1, SIZE2, SIZE3 
+            WRITE(LP,'(A/,A,5I9/,A,4I12/,A,3I9/,A,2I9)')
+     &      " Error 4 additional information 2:",
+     &      "    NBROW, NBROWS_ALREADY_SENT, LROW, B, ONEorTWO    = ",
+     &           NBROW, NBROWS_ALREADY_SENT, LROW, B, ONEorTWO, 
+     &      "    SIZE_AV, SIZE1, SIZE_RBUF_BYTES, DESC_BANDE_BYTES= ",
+     &           SIZE_AV, SIZE1, SIZE_RBUF_BYTES, DESC_BANDE_BYTES,
+     &      "    NPIV, NROW, NFRONT                               = ", 
+     &           NPIV, NROW, NFRONT,
+     &      "    NBROWS_PACKET, NBLRB_PACKET                      = ",
+     &           NBROWS_PACKET, NBLRB_PACKET
+           ENDIF
+           GOTO 100
         ENDIF
         CALL BUF_LOOK( BUF_CB, IPOS, IREQ, SIZE_PACK, IERR, 
      &                 IONE , PDEST2)
         IF (IERR .EQ. -1 .OR. IERR.EQ. -2) THEN
+          IF (LP.GT.0) THEN
+           WRITE(LP,*) 
+     &      "Internal Error 6 in CMUMPS_BUF_SEND_CONTRIB_TYPE2",
+     &      " SIZE msg/available= ",SIZE_PACK, SIZE_AV + SIZE1,
+     &      " IERR= ",IERR
+          ENDIF
           NBROWS_PACKET = NBROWS_PACKET - 1
           IF (NBROWS_PACKET > 0 ) GOTO 10
         ENDIF

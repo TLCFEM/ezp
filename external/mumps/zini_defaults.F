@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -1375,7 +1375,7 @@ C     Forcing proportional is ok with strategy 5
       KEEP(99)=4  ! new OOC -> asynchronous + buffer
 #endif
       KEEP(100)=0
-      KEEP(117) = -1   ! automatic setting
+      KEEP(117) = 0    ! not activated
       KEEP(114) = 1
 C     Threshold value for null pîvot detection during
 C     LU factorization on root in case of RR

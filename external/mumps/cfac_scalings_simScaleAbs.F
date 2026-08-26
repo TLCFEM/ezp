@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -296,10 +296,9 @@ C     TMP VARS
       REAL INFERRROW, INFERRCOL, INFERRL, INFERRG
       LOGICAL OORANGEIND
       INTEGER, PARAMETER :: K361 = 2048
+!$    ! INTEGER(8) :: CHUNK8 
 !$    INTEGER    :: NOMP
 !$    INTEGER    :: CHUNK, CHUNK_NZ
-!$    ! Too large => pb with cache L3 ?
-!$    ! INTEGER(8) :: CHUNK8 
 !$    IF (NOMP_MAX.GT.0) THEN
 !$     NOMP     = omp_get_max_threads()
 !$     CHUNK    = max(K361/2, (N+NOMP-1) / NOMP )
@@ -1100,7 +1099,6 @@ C     TMP VARS
       INTEGER            :: IOMP
 !$    INTEGER    :: NOMP
 !$    INTEGER    :: CHUNK, CHUNK_NZ
-!$    ! Too large => pb with cache L3 ?
 !$    ! INTEGER(8) :: CHUNK8 
 !$    ! CHUNK8= max(int(K361/2,8), 
 !$    !  &   (NZ_loc+int(NOMP-1,8) / int(NOMP,8) ) )

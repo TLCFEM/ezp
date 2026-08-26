@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -2623,6 +2623,7 @@ C       old: MAXRANK = max(1, MAXRANK/2)
 C       Compress factors controlled by KPERCENT 
         MAXRANK = max (1, int((MAXRANK*KPERCENT/100)))
         allocate(K_STOC(NPREC_STOC))
+        K_STOC = 0
         CALL ZMUMPS_TRUNCATED_RRQR( M, N,
      &       BLOCK_THR(1,1),
      &       MAXI_CLUSTER, JPVT_THR(1), 
@@ -2645,8 +2646,11 @@ C       Compress factors controlled by KPERCENT
 !         block I,J is LR 
           IF (associated(LRB%K_STOC)) THEN
             deallocate(LRB%K_STOC)
+            nullify(LRB%K_STOC)
           ENDIF
-          LRB%K_STOC=>K_STOC
+          if (associated(K_STOC)) then
+              LRB%K_STOC=>K_STOC
+          end if
           nullify(K_STOC)
            IF (RANK .GT. 0) THEN 
 C compute R from the upper triangular original R computed
@@ -2691,9 +2695,9 @@ C compute Q from H and store it in %Q field
      &                           )
         ELSE !block I,J is not LR
           IF (associated(K_STOC)) THEN
-            deallocate(K_STOC)
-            nullify(K_STOC)
+            LRB%K_STOC => K_STOC
           ENDIF
+          nullify(K_STOC)
 C          Copy current block to a temp block
            DO II=1,M
              LRB%Q(II,1:N) =
@@ -2930,6 +2934,7 @@ C     old: MAXRANK = max(1, MAXRANK/2)
 C     Compress factors controlled by KPERCENT 
         MAXRANK = max (1, int((MAXRANK*KPERCENT/100)))
         allocate(K_STOC(NPREC_STOC))
+        K_STOC = 0 
 C       Implicit interface but pointers
 C       known to point to contiguous data
         CALL ZMUMPS_TRUNCATED_RRQR( M, N,
@@ -2961,7 +2966,9 @@ C       known to point to contiguous data
 !         block IP is LR 
           IF (associated(LRB%K_STOC)) THEN
           ENDIF
-          LRB%K_STOC=>K_STOC
+          IF (associated(K_STOC)) THEN
+            LRB%K_STOC=>K_STOC
+          ENDIF
           nullify(K_STOC)
            IF (RANK .EQ. 0) THEN !RANK = 0
            ELSE !LOW RANK BUT NOT ZERO
@@ -3008,8 +3015,11 @@ C compute Q from the Householder vectors and store it in %Q field
 #else
           IF (associated(LRB%K_STOC)) THEN
             deallocate(LRB%K_STOC)
+            nullify(LRB%K_STOC)
           ENDIF
-          LRB%K_STOC=>K_STOC
+          IF (associated(K_STOC)) THEN
+            LRB%K_STOC => K_STOC
+          ENDIF
           nullify(K_STOC)
 #endif
 C          Copy current block to a temp block

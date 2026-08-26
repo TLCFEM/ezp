@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -776,10 +776,16 @@ C       -----------------------------
 !$      ENDIF
         NOMP = 0
 !$      NOMP = OMP_GET_MAX_THREADS()
+#if defined(MPI_TO_K_OMP)
+C Warning: call to MUMPS_CHECK_OMP_C may lead to a link issue 
+C if different fortran/c compilers because 
+C in mumps_thread_affinity.c of #include <omp.h>
+C In case of problem suppress next block.
         IF (JOB.EQ.1) THEN
-C       OMP_GET_MAX_THREADS should be identical in Fortran and C
+C{      OMP_GET_MAX_THREADS should be identical in Fortran and C
 C       We also want to check that C and Fortran files were both 
 C       compile with the same OpenMP option
+C
           CALL MUMPS_CHECK_OMP_C(NOMP_C)
           IF (NOMP.NE.NOMP_C) THEN
            id%INFO(1) = -106
@@ -796,7 +802,9 @@ C       compile with the same OpenMP option
           IF ( id%INFO( 1 ) .LT. 0) THEN
            GOTO 499
           ENDIF
+C}
         ENDIF
+#endif
 C       -----------------------------
 C       Check if number of threads is
 C       the same on all processes
