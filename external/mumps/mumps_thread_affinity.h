@@ -1,7 +1,7 @@
 /*
  *
- *  This file is part of MUMPS 5.9.0, released
- *  on Tue Apr 28 13:05:59 UTC 2026
+ *  This file is part of MUMPS 5.9.1, released
+ *  on Mon Jul 20 09:00:43 UTC 2026
  *
  *
  *  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -16,12 +16,12 @@
 #ifndef MUMPS_THREAD_AFFINITY_H
 #define MUMPS_THREAD_AFFINITY_H
 #include "mumps_common.h"
+#if defined(MPI_TO_K_OMP)
 #define MUMPS_CHECK_OMP_C \
   F_SYMBOL(check_omp_c,CHECK_OMP_C)
 void MUMPS_CALL
 MUMPS_CHECK_OMP_C(MUMPS_INT *NOMP);
 /* This function returns 0 if OpenMP is not used, omp_get_max_threads() otherwise */
-#if defined(MPI_TO_K_OMP)
 #if defined(USE_LIBHWLOC)
 #include <hwloc.h>
 /**

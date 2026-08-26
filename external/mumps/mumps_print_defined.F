@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -79,7 +79,7 @@ C
 #  endif
 #endif
 #if defined(MUMPS_ALLOC_FROM_C)
-      WRITE(MPG,*) " MUMPS compiled with option -DMUMPS_ALLOC_FROM_C"
+      WRITE(MPG,*) "MUMPS compiled with option -DMUMPS_ALLOC_FROM_C"
 #endif
 #if defined(MUMPS_NOF2003)
       write(MPG,*) "MUMPS compiled with option -DMUMPS_NOF2003"
@@ -202,6 +202,12 @@ C
 #endif
 #if defined(STAT_ES_SOLVE)
       write(MPG,*) "MUMPS compiled with option -DSTAT_ES_SOLVE"
+#endif
+#if defined(USE_AVX512_VBMI)
+      write(MPG,*) "MUMPS compiled with option -DUSE_AVX512_VBMI"
+#endif
+#if defined(nrm2_returns_double)
+      write(MPG,*) "MUMPS compiled with option -Dnrm2_returns_double"
 #endif
       write(MPG,*) "================================================="
       RETURN

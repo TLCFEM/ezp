@@ -62,4 +62,4 @@ def process(src: str, dest: str | None = None):
 
 
 if __name__ == "__main__":
-    process("/home/theodore/Downloads/MUMPS_5.9.0")
+    process("/home/theodore/Downloads/MUMPS_5.9.1")

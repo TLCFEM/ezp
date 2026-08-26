@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -116,6 +116,7 @@ C
       INTEGER ITYPE_SON, TYPESPLIT
       INTEGER :: KEEP253_LOC 
       INTEGER :: NVSCHUR, NSLAVES_L, NROW_L, IROW_L, NASS_L, NELIM_L
+      INTEGER :: IERR_SIZEREQ
       LOGICAL :: CB_IS_LR
       INTEGER :: IWXXF_HANDLER
       REAL :: ADummy(1)
@@ -441,7 +442,7 @@ C
            DO WHILE (IERR .EQ. -1)
              IF ( IW ( PTRIST(STEP(ISON) )+KEEP(IXSZ) )
      &             .GT. N + KEEP(253) ) THEN
-               WRITE(*,*) MYID,': Internal error in Maplig'
+               WRITE(*,*) MYID,': Internal error 2 in Maplig'
                WRITE(*,*) MYID,': PTRIST(STEP(ISON))/N=',
      &                            PTRIST(STEP(ISON)), N
                WRITE(*,*) MYID,': I, NBROW(I)=',I, NBROW(I)
@@ -466,7 +467,7 @@ C
      &                 IW( PTRIST(STEP(ISON))),
      &                 ADummy, 1_8,
      &                 I, PDEST, PDEST_MASTER, 
-     &                 COMM, IERR, 
+     &                 COMM, IERR, IERR_SIZEREQ, LP,
      &                 KEEP,KEEP8, STEP, N, SLAVEF,
      &                 ISTEP_TO_INIV2, TAB_POS_IN_PERE, PACKED_CB,
      &                 KEEP253_LOC, NVSCHUR, 
@@ -490,7 +491,7 @@ C
      &                 SON_A(IACHK:IACHK+RECSIZE-1_8),
      &                 RECSIZE,
      &                 I, PDEST, PDEST_MASTER, 
-     &                 COMM, IERR, 
+     &                 COMM, IERR, IERR_SIZEREQ, LP,
      &                KEEP,KEEP8, STEP, N, SLAVEF,
      &                 ISTEP_TO_INIV2, TAB_POS_IN_PERE, PACKED_CB,
      &                 KEEP253_LOC, NVSCHUR, 
@@ -502,9 +503,7 @@ C
                  WRITE(LP,*)
      &           "FAILURE: SEND BUFFER TOO SMALL IN SMUMPS_MAPLIG"
                ENDIF
-               IERROR =  (NROWS_TO_SEND + 3 )* KEEP( 34 ) +
-     &         NROWS_TO_SEND * IW(PTRIST(STEP(ISON))+KEEP(IXSZ))
-     &        * KEEP( 35 )
+               IERROR = IERR_SIZEREQ
                GO TO 600
              END IF
              IF ( IERR .EQ. -3 ) THEN
@@ -513,9 +512,7 @@ C
      &           "FAILURE: RECV BUFFER TOO SMALL IN SMUMPS_MAPLIG"
                ENDIF
                IFLAG  = -20
-               IERROR =  (NROWS_TO_SEND + 3 )* KEEP( 34 ) +
-     &         NROWS_TO_SEND * IW(PTRIST(STEP(ISON))+KEEP(IXSZ))
-     &         * KEEP( 35 )
+               IERROR = IERR_SIZEREQ
                GOTO 600
              ENDIF
              IF (KEEP(219).NE.0) THEN
@@ -752,6 +749,7 @@ C
      &        NPIV, NROWS_TO_STACK, II, IROW_SON,
      &        IPOS_IN_SLAVE, DECR, ITYPE_SON
       INTEGER NBCOLS_EFF
+      INTEGER IERR_SIZEREQ
       LOGICAL BLOCKING, SET_IRECV, MESSAGE_RECEIVED
       LOGICAL PACKED_CB
       LOGICAL :: CB_IS_LR
@@ -1216,7 +1214,8 @@ C
      &               MAP, min(LMAP_LOC,NBROW(I)),
      &               IW(PIMASTER(STEP(ISON))),
      &               ADummy, 1_8,
-     &               I, PDEST, PDEST_MASTER, COMM, IERR,
+     &               I, PDEST, PDEST_MASTER, COMM, 
+     &               IERR, IERR_SIZEREQ, LP,
      &               KEEP,KEEP8, STEP, N, SLAVEF,
      &               ISTEP_TO_INIV2, TAB_POS_IN_PERE,
      &               PACKED_CB, KEEP(253), NVSCHUR,
@@ -1239,7 +1238,8 @@ C
      &               IW(PIMASTER(STEP(ISON))),
      &               SON_A(IACHK:IACHK+RECSIZE-1_8), 
      &               RECSIZE,
-     &               I, PDEST, PDEST_MASTER, COMM, IERR,
+     &               I, PDEST, PDEST_MASTER, COMM, 
+     &               IERR, IERR_SIZEREQ, LP,
      &
      &               KEEP,KEEP8, STEP, N, SLAVEF,
      &               ISTEP_TO_INIV2, TAB_POS_IN_PERE,
@@ -1250,22 +1250,20 @@ C
               IF (LP > 0) WRITE(LP,*) MYID,
      &": FAILURE, SEND BUFFER TOO SMALL DURING SMUMPS_MAPLIG_FILS_NIV1"
               IFLAG  = -17
-              IERROR =  (NROWS_TO_SEND + 3 )* KEEP( 34 ) +
-     &        NROWS_TO_SEND *  KEEP( 35 )
+              IERROR = IERR_SIZEREQ
               GO TO 700
             END IF
             IF ( IERR .EQ. -3 ) THEN
               IF (LP > 0) WRITE(LP,*) MYID,
      &": FAILURE, RECV BUFFER TOO SMALL DURING SMUMPS_MAPLIG_FILS_NIV1"
               IFLAG  = -20
-              IERROR =  (NROWS_TO_SEND + 3 )* KEEP( 34 ) +
-     &        NROWS_TO_SEND *  KEEP( 35 )
+              IERROR = IERR_SIZEREQ
               GO TO 700
             ENDIF
             IF (KEEP(219).NE.0) THEN
              IF ( IERR .EQ. -4 ) THEN
                IFLAG  = -13
-               IERROR = BUF_LMAX_ARRAY
+               IERROR = IERR_SIZEREQ
               IF (LP > 0) WRITE(LP,*) MYID,
      &": FAILURE, MAX_ARRAY ALLOC FAILED DURING SMUMPS_MAPLIG_FILS_NIV1"
                GO TO 700

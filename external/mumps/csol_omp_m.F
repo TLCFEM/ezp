@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -324,7 +324,7 @@ C
      &  PERM_L0_OMP, PTR_LEAFS_L0_OMP, L0_OMP_MAPPING, LL0_OMP_MAPPING,
      &  L0_OMP_FACTORS, LL0_OMP_FACTORS )
       USE CMUMPS_INTR_TYPES, ONLY : CMUMPS_L0OMPFAC_T
-      USE OMP_LIB
+!$    USE OMP_LIB
       USE MUMPS_L0_OMP_M, ONLY : THREAD_ID
       IMPLICIT NONE
       INTEGER, INTENT( in ) :: N, MTYPE, NRHS, SLAVEF, LIW

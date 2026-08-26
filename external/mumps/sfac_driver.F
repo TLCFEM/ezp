@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -927,7 +927,7 @@ C     Compute \sum of memories allowed
           IF (KEEP(252).GT.0) 
      &    WRITE(MPG,173) KEEP(253)
           IF (KEEP(269).NE.0) 
-     &    WRITE(MPG,174) KEEP(269)
+     &    WRITE(MPG,176) KEEP(269)
       ENDIF
       IF (KEEP(201).LE.0) THEN
 C       In-core version or no factors
@@ -1048,20 +1048,20 @@ C    &                      id%MYID_NODES, id%NSLAVES, id%COMM,
 C          print on all procs
            WRITE(MP,'(A,I16)') 
      &     ' ICNTL(51) Number of GPUs                   =',KEEP(417)
-           WRITE(MP,'(A,I16)') 
-     &     ' KEEP(416) GPU bitset                       =',KEEP(416)
-           WRITE(MP,'(A,I16)') 
-     &     ' KEEP(418) GPU Arith. Intensity threshold   =',KEEP(418)
-           WRITE(MP,'(A,I16)')
-     &     ' KEEP(422) Memory pinning                   =',KEEP(422)
+             WRITE(MP,'(A,I16)') 
+     &     ' Set of GPU devices to be used              =',KEEP(416)
+             WRITE(MP,'(A,I16)') 
+     &     ' GPU Arith. Intensity threshold             =',KEEP(418)
+            WRITE(MP,'(A,I16)')
+     &     ' Memory pinning (0=OFF)                     =',KEEP(422)
            WRITE(MP,'(A,I16)')
      &     ' Max number of MPI per GPU                  =',
      &     MAX_MPIs_PER_GPU
            WRITE(MP,'(A,I16,I4)')
      &     ' Local GPU bit set, id%MYID                 =',GPUBITMAP,
      &                                                     id%MYID
-           WRITE(MP,'(A,I16)')
-     &     ' KEEP(66) MPI setting for larger granularity=',KEEP(198)
+            WRITE(MP,'(A,I16)')
+     &     ' MPI setting for larger granularity (0=OFF) =',KEEP(198)
            WRITE(MP,'(A,F12.4)')
      &     ' Local time spent in MUMPS_INIT_GPU_C       =',TIME_INIT_GPU
          ENDIF
@@ -1069,17 +1069,17 @@ C          print on all procs
 C          print on master
            WRITE(MPG,'(A,I16)') 
      &     ' ICNTL(51) Offload on GPUs                  =',KEEP(417)
-           WRITE(MPG,'(A,I16)') 
-     &     ' KEEP(416) GPU bitset                       =',KEEP(416)
-           WRITE(MPG,'(A,I16)') 
-     &     ' KEEP(418) GPU Arith. Intensity threshold   =',KEEP(418)
-           WRITE(MPG,'(A,I16)')
-     &     ' KEEP(422) Memory pinning                   =',KEEP(422)
+             WRITE(MPG,'(A,I16)') 
+     &     ' Set of GPU devices to be used              =',KEEP(416)
+             WRITE(MPG,'(A,I16)') 
+     &     ' GPU Arith. Intensity threshold             =',KEEP(418)
+            WRITE(MPG,'(A,I16)')
+     &     ' Memory pinning (0=OFF)                     =',KEEP(422)
            WRITE(MPG,'(A,I16)')
      &     ' Max number of MPI per GPU                  =',
      &     MAX_MPIs_PER_GPU
-           WRITE(MPG,'(A,I16)')
-     &     ' KEEP(66) MPI setting for larger granularity=',KEEP(198)
+            WRITE(MPG,'(A,I16)')
+     &     ' MPI setting for larger granularity (0=OFF) =',KEEP(198)
          ENDIF
          IF (PROKG) THEN
            IF (id%NSLAVES.GT.1) THEN
@@ -4845,7 +4845,7 @@ C
      &        ' Memory provided by user, sum of LWK_USER   =',I16/
      &        ' Effective threshold for pivoting, CNTL(1)  =',D16.4)
  173  FORMAT( ' Perform forward during facto, NRHS         =',I16)
- 174  FORMAT( ' KEEP(268) Relaxed pivoting effective value =',I16)
+ 176  FORMAT( ' Relaxed pivoting (0=OFF)                   =',I16)
  180  FORMAT(/' Elapsed time for factorization                     =',
      &          F12.4)
  185  FORMAT(/' Elapsed time for (failed) factorization            =',

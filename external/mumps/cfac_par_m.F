@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -50,7 +50,7 @@ C
       USE CMUMPS_FAC2_LDLT_M
       USE CMUMPS_FAC1_LU_M
       USE CMUMPS_FAC2_LU_M
-      USE OMP_LIB
+!$    USE OMP_LIB
       USE MUMPS_TPS_M
       USE CMUMPS_TPS_M
       USE MUMPS_INTR_TYPES, ONLY : MUMPS_ROOT_STRUC

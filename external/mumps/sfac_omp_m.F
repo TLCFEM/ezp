@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -636,7 +636,7 @@ C
 !$OMP      END PARALLEL DO 
          ENDIF
          IF ( associated(SMUMPS_TPS_ARR(MYTHREAD_ID)%A)) THEN
-           CALL SMUMPS_DM_FREE_S_WK( SMUMPS_TPS_ARR(THREAD_ID_P)%A,
+           CALL SMUMPS_DM_FREE_S_WK( SMUMPS_TPS_ARR(MYTHREAD_ID)%A,
      &                               KEEP(430) )
            NULLIFY(SMUMPS_TPS_ARR(MYTHREAD_ID)%A)
            CALL MUMPS_DM_FAC_UPD_DYN_MEMCNTS( 

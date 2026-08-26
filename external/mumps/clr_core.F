@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -55,10 +55,14 @@ C (allocation occurs somewhere else)
           PREC = PREC_FAC
         ELSE IF (.not.QUANTIZE) THEN
           PREC = PREC_FR
-        ELSE IF (ASSOCIATED(LRB%Q_STOC)) THEN
+        ELSE IF (ASSOCIATED(LRB%K_STOC)) THEN
+        !ELSE IF (ASSOCIATED(LRB%Q_STOC)) THEN
           DO PREC=1,NPREC_STOC
-            IF (associated(LRB%q_STOC(PREC)%val)) EXIT
-          ENDDO  
+            IF (LRB%K_STOC(PREC).GT.0) THEN
+            !IF (associated(LRB%Q_STOC(PREC)%VAL)) THEN
+              EXIT
+            END IF
+          END DO  
           IF (PREC.EQ.NPREC_STOC+1) PREC = PREC_FAC
         ENDIF
       END SUBROUTINE FRB_GET_PREC
@@ -2492,8 +2496,17 @@ C        ||B_{I(k+1:end),J{k+1:end}}||_X <= TOLEPS*sqrt(||B_{I,I}||_2*||B_{J,J}|
       EXTERNAL           cgeqrf, cunmqr, xerbla
       EXTERNAL           ilaenv
       EXTERNAL           cgemm, cgemv, clarfg, cswap
+#if defined(nrm2_returns_double)
+      DOUBLE PRECISION, EXTERNAL :: scnrm2
+#else
       REAL, EXTERNAL :: scnrm2
+#endif
+#if defined(nrm2_returns_double)
+      DOUBLE PRECISION, EXTERNAL :: snrm2
+      DOUBLE PRECISION :: TMP_D
+#else
       REAL, EXTERNAL :: snrm2
+#endif
       INFO = 0
       ISLR = .FALSE.
       IF( M.LT.0 ) THEN
@@ -2549,7 +2562,12 @@ C     LDF  =  LDW
 *     store the exact column norms.
       DO J = 1, N
 C        VN1( J ) = scnrm2( M, A( 1, J ), 1 )
+#if defined(nrm2_returns_double)
+         TMP_D      = scnrm2( M, A( 1, J ), 1 )
+         RWORK( J ) =  TMP_D
+#else
          RWORK( J ) = scnrm2( M, A( 1, J ), 1 )
+#endif
 C        VN2( J ) = VN1( J )
          RWORK( N + J ) = RWORK( J )
          JPVT(J) = J
@@ -2557,7 +2575,12 @@ C        VN2( J ) = VN1( J )
       IF (TOL_OPT.LT.0) THEN
 C       Compute TRUNC_ERR for first step              
 C       TRUNC_ERR = snrm2( N, VN1( 1 ), 1 )
+#if defined(nrm2_returns_double)
+        TMP_D     = snrm2( N, RWORK( 1 ), 1 )
+        TRUNC_ERR = TMP_D
+#else
         TRUNC_ERR = snrm2( N, RWORK( 1 ), 1 )
+#endif
       ENDIF
       OFFSET = 0
       TOL3Z  = SQRT(slamch('Epsilon'))
@@ -2727,7 +2750,12 @@ C                       VN1( J ) = VN1( J )*SQRT( TEMP )
             IF (TOL_OPT.LT.0) THEN
 C             Compute TRUNC_ERR for next step              
 C             TRUNC_ERR = snrm2( N-RK, VN1( RK+1 ), 1 )
+#if defined(nrm2_returns_double)
+              TMP_D     = snrm2( N-RK, RWORK( RK+1 ), 1 )
+              TRUNC_ERR = TMP_D
+#else
               TRUNC_ERR = snrm2( N-RK, RWORK( RK+1 ), 1 )
+#endif
             ENDIF
          END DO
 *     Apply the block reflector to the rest of the matrix:
@@ -2744,7 +2772,12 @@ C    &           F(K+1,1), LDF, ONE, A(RK+1,RK+1), LDA )
 C           ITEMP = NINT( VN2( LSTICC ) )
             ITEMP = NINT( RWORK( N + LSTICC ) )
 C           VN1( LSTICC ) = scnrm2( M-RK, A( RK+1, LSTICC ), 1 )
+#if defined(nrm2_returns_double)
+            TMP_D           = scnrm2( M-RK, A( RK+1, LSTICC ), 1 )
+            RWORK( LSTICC ) = TMP_D
+#else
             RWORK( LSTICC ) = scnrm2( M-RK, A( RK+1, LSTICC ), 1 )
+#endif
 *     
 *     NOTE: The computation of RWORK( LSTICC ) relies on the fact that 
 *     SNRM2 does not fail on vectors with norm below the value of
@@ -2759,7 +2792,12 @@ C           VN2( LSTICC ) = VN1( LSTICC )
          IF (TOL_OPT.LT.0) THEN
 C          Compute TRUNC_ERR for next step              
 C          TRUNC_ERR = snrm2( N-RK, VN1( RK+1 ), 1 )
+#if defined(nrm2_returns_double)
+           TMP_D     = snrm2( N-RK, RWORK( RK+1 ), 1 )
+           TRUNC_ERR = TMP_D
+#else
            TRUNC_ERR = snrm2( N-RK, RWORK( RK+1 ), 1 )
+#endif
          ENDIF
       END DO
       RANK = RK

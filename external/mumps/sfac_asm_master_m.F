@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.0, released
-C  on Tue Apr 28 13:05:59 UTC 2026
+C  This file is part of MUMPS 5.9.1, released
+C  on Mon Jul 20 09:00:43 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -479,7 +479,7 @@ C
          CALL SMUMPS_RUNONGPU_BLOCKSIZEST1( NFRONT, NASS1, KEEP,
      &             PIVOT_OPTION, run_on_gpu_sq, run_on_gpu_cb,
      &             Idummy1, Idummy2 )
-         run_on_gpu = run_on_gpu.OR.run_on_gpu_sq
+         run_on_gpu = run_on_gpu_cb.OR.run_on_gpu_sq
          IF (LR_ACTIVATED.AND.KEEP(117).EQ.1) THEN 
            IF (KEEP(405).EQ.0) THEN
              OLD = KEEP(418)

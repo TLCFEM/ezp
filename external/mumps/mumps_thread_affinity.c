@@ -1,7 +1,7 @@
 /*
  *
- *  This file is part of MUMPS 5.9.0, released
- *  on Tue Apr 28 13:05:59 UTC 2026
+ *  This file is part of MUMPS 5.9.1, released
+ *  on Mon Jul 20 09:00:43 UTC 2026
  *
  *
  *  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -30,6 +30,8 @@
 /* } */
 #endif
 #include "mumps_thread_affinity.h"
+#if defined(MPI_TO_K_OMP)
+/* { */
 #if defined(_OPENMP)
 #include <omp.h>
 #endif
@@ -42,8 +44,6 @@ MUMPS_CHECK_OMP_C(MUMPS_INT *NOMP)
 *NOMP=omp_get_max_threads();
 #endif
 }
-#if defined(MPI_TO_K_OMP)
-/* { */
 #if defined(USE_SCHEDAFFINITY)
 #include <sched.h>
 #endif
