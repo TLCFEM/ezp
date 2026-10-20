@@ -1,28 +1,22 @@
-<h1 align="center">
-  <br>
-  ezp
-  <br>
-</h1>
+<h1 align="center">ezp</h1>
 
 <h3 align="center">Distributed linear solvers, distilled into one line of C++.</h3>
 
+<p align="center"><em>Header-only · C++20 · MPI + ScaLAPACK, without the boilerplate.</em></p>
+
 <p align="center">
-  <em>Header-only · C++20 · MPI + ScaLAPACK, without the boilerplate.</em>
+<a href="https://codecov.io/gh/TLCFEM/ezp"><img src="https://codecov.io/gh/TLCFEM/ezp/graph/badge.svg?token=ME0M312F5M" alt="codecov"></a>
+<a href="https://github.com/TLCFEM/ezp/actions/workflows/master.yml"><img src="https://github.com/TLCFEM/ezp/actions/workflows/master.yml/badge.svg?branch=master" alt="master"></a>
+<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPLv3-blue.svg" alt="License: GPL v3"></a>
+<img src="https://img.shields.io/badge/C%2B%2B-20-blue.svg" alt="C++20">
+<img src="https://img.shields.io/badge/platform-Linux-informational.svg" alt="Platform: Linux">
 </p>
 
 <p align="center">
-  <a href="https://codecov.io/gh/TLCFEM/ezp"><img src="https://codecov.io/gh/TLCFEM/ezp/graph/badge.svg?token=ME0M312F5M" alt="codecov"></a>
-  <a href="https://github.com/TLCFEM/ezp/actions/workflows/master.yml"><img src="https://github.com/TLCFEM/ezp/actions/workflows/master.yml/badge.svg?branch=master" alt="master"></a>
-  <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPLv3-blue.svg" alt="License: GPL v3"></a>
-  <img src="https://img.shields.io/badge/C%2B%2B-20-blue.svg" alt="C++20">
-  <img src="https://img.shields.io/badge/platform-Linux-informational.svg" alt="Platform: Linux">
-</p>
-
-<p align="center">
-  <a href="https://tlcfem.github.io/ezp/">Documentation</a> &nbsp;·&nbsp;
-  <a href="#quick-start">Quick start</a> &nbsp;·&nbsp;
-  <a href="#supported-solvers">Solvers</a> &nbsp;·&nbsp;
-  <a href="#standalone-solvers">Standalone solvers</a>
+<a href="https://tlcfem.github.io/ezp/">Documentation</a> &nbsp;·&nbsp;
+<a href="#quick-start">Quick start</a> &nbsp;·&nbsp;
+<a href="#supported-solvers">Solvers</a> &nbsp;·&nbsp;
+<a href="#standalone-solvers">Standalone solvers</a>
 </p>
 
 ---
@@ -45,14 +39,14 @@ You may be interested if you...
 
 ## Features
 
-| | Feature |
-|:--:|---|
-| ✨ | **Ergonomic interface** — prepare $A$ and $B$ on the root process; everything else is automatic |
-| 📦 | **Drop-in, header-only library** — no build step, no ABI to manage; just `#include` |
-| 🧮 | **Full precision coverage** — all four `DSZC` precisions, with 32-bit *and* 64-bit indexing |
+|    | Feature                                                                                                         |
+|:--:|-----------------------------------------------------------------------------------------------------------------|
+| ✨ | **Ergonomic interface** — prepare $A$ and $B$ on the root process; everything else is automatic                 |
+| 📦 | **Drop-in, header-only library** — no build step, no ABI to manage; just `#include`                             |
+| 🧮 | **Full precision coverage** — all four `DSZC` precisions, with 32-bit *and* 64-bit indexing                     |
 | 🖥️ | **Standalone solver binaries** — invoke the solver from any `MPI`-capable caller, including Python via `mpi4py` |
-| 🧠 | **Build once, solve many** — factorization is retained and reused across right-hand sides |
-| ✅ | **Validated with randomly generated inputs** — an extensive test suite backs every solver |
+| 🧠 | **Build once, solve many** — factorization is retained and reused across right-hand sides                       |
+| ✅ | **Validated with randomly generated inputs** — an extensive test suite backs every solver                       |
 
 The library implements all precisions with both 32-bit and 64-bit integer indexing, and supports both row- and column-major process grids.
 
@@ -62,21 +56,21 @@ The library implements all precisions with both 32-bit and 64-bit integer indexi
 
 | availability | type of matrix                             | operation | solver  | package   |
 |:------------:|--------------------------------------------|-----------|---------|-----------|
-|      ✅       | general (partial pivoting)                 | simple    | PxGESV  | ScaLAPACK |
-|      ✅       | general (partial pivoting)                 | expert    | PxGESVX | ScaLAPACK |
-|      ✅       | symmetric/Hermitian positive definite      | simple    | PxPOSV  | ScaLAPACK |
-|      ✅       | symmetric/Hermitian positive definite      | expert    | PxPOSVX | ScaLAPACK |
-|      ✅       | general band (partial pivoting)            | simple    | PxGBSV  | ScaLAPACK |
-|      ✅       | general band (no pivoting)                 | simple    | PxDBSV  | ScaLAPACK |
-|      ✅       | symmetric/Hermitian positive definite band | simple    | PxPBSV  | ScaLAPACK |
+|      ✅      | general (partial pivoting)                 | simple    | PxGESV  | ScaLAPACK |
+|      ✅      | general (partial pivoting)                 | expert    | PxGESVX | ScaLAPACK |
+|      ✅      | symmetric/Hermitian positive definite      | simple    | PxPOSV  | ScaLAPACK |
+|      ✅      | symmetric/Hermitian positive definite      | expert    | PxPOSVX | ScaLAPACK |
+|      ✅      | general band (partial pivoting)            | simple    | PxGBSV  | ScaLAPACK |
+|      ✅      | general band (no pivoting)                 | simple    | PxDBSV  | ScaLAPACK |
+|      ✅      | symmetric/Hermitian positive definite band | simple    | PxPBSV  | ScaLAPACK |
 
 ### Sparse
 
-| availability | type of matrix                             | operation | solver  | package   |
-|:------------:|--------------------------------------------|-----------|---------|-----------|
-|      ✅       | sparse (one- or zero-indexing CSR format)  | direct    | PARDISO | MKL       |
-|      ✅       | sparse (one-indexing COO format)           | direct    | MUMPS   | MUMPS     |
-|      ✅       | sparse (zero-indexing CSR format)          | iterative | Lis     | Lis       |
+| availability | type of matrix                            | operation | solver  | package |
+|:------------:|-------------------------------------------|-----------|---------|---------|
+|      ✅      | sparse (one- or zero-indexing CSR format) | direct    | PARDISO | MKL     |
+|      ✅      | sparse (one-indexing COO format)          | direct    | MUMPS   | MUMPS   |
+|      ✅      | sparse (zero-indexing CSR format)         | iterative | Lis     | Lis     |
 
 Expert drivers additionally provide equilibration, iterative refinement, condition estimation and determinant computation where applicable.
 
@@ -164,9 +158,7 @@ More runnable examples live in [`examples/`](examples/), covering every solver a
 `MPI` can dynamically spawn worker processes via `MPI_Comm_spawn`.
 `ezp` exploits this to ship its solvers as **standalone executables**, cleanly separating the main application from the solver.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/TLCFEM/ezp/master/docs/Guide/communication.svg" alt="Standalone solver architecture" width="640">
-</p>
+<p align="center"><img src="https://raw.githubusercontent.com/TLCFEM/ezp/master/docs/Guide/communication.svg" alt="Standalone solver architecture" width="640"></p>
 
 This is particularly handy when the main application runs a different parallelism model, has latency constraints, or simply wants a clear boundary around the solver.
 Because the boundary is a plain `MPI` interface, callers can be written in any `MPI`-compatible language — the bundled [`runner.py`](standalone/runner.py) demonstrates doing it from Python with [`mpi4py`](https://github.com/mpi4py/mpi4py).
