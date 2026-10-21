@@ -2,6 +2,8 @@
 
 set -e
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
 if [ "$#" -eq 0 ]; then
     echo "No arguments supplied, using default branches"
     BRANCH_EZP="master"
@@ -22,7 +24,7 @@ then
     exit 1
 fi
 
-cd "$(dirname "$0")"/mpl
+cd "$SCRIPT_DIR/mpl"
 
 git fetch origin
 git checkout origin/"$BRANCH_MPL" -- mpl
@@ -33,7 +35,7 @@ if ! git diff --quiet; then
   git add --all && git commit -m "Automatic sync with $BRANCH_MPL" || exit 1
 fi
 
-cd "$(dirname "$0")"
+cd "$SCRIPT_DIR"
 
 git fetch origin
 git checkout origin/"$BRANCH_EZP" -- external ezp CMakeLists.txt
