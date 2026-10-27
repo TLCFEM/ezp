@@ -66,7 +66,7 @@
     const auto IDX = [&](int i, int j) {
         if(i > j) std::swap(i, j);
         if(j - i > KLU) return -1;
-        return 2 * j - i + (j + 1) * KLU;
+        return KLU + i + j * KLU;
     };
  * @endcode
  *
@@ -123,7 +123,7 @@ namespace ezp {
             IT n, klu;
 
         public:
-            explicit indexer(const band_mat<DT, IT>& A)
+            explicit indexer(const band_symm_mat<DT, IT>& A)
                 : n(A.n_rows)
                 , klu(A.klu) {}
 
@@ -141,7 +141,7 @@ namespace ezp {
                 else {
                     if(i > j) std::swap(i, j);
                     if(j - i > klu) return IT{-1};
-                    return 2 * j - i + (j + 1) * klu;
+                    return klu + i + j * klu;
                 }
             }
         };
