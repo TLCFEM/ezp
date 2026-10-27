@@ -61,9 +61,10 @@ namespace ezp {
             }
         };
 
-        template<typename T> bool approx_equal(T x, T y, int ulp = 2)
-            requires(!std::numeric_limits<T>::is_integer)
-        { return std::fabs(x - y) <= std::numeric_limits<T>::epsilon() * std::fabs(x + y) * ulp || std::fabs(x - y) < std::numeric_limits<T>::min(); }
+        template<data_t T> bool approx_equal(const T x, const T y, const int ulp = 2) {
+            using R = decltype(std::abs(x));
+            return std::abs(x - y) <= std::numeric_limits<R>::epsilon() * std::abs(x + y) * ulp || std::abs(x - y) < std::numeric_limits<R>::min();
+        }
     } // namespace detail
 
     template<data_t DT, index_t IT> struct sparse_csr_mat final {
@@ -116,64 +117,65 @@ namespace ezp {
             std::iota(index.begin(), index.end(), IT2(0));
             ezp_sort(index.begin(), index.end(), detail::csr_comparator(coo.row, coo.col));
 
-            row_storage.resize(nnz);
+            row_storage.resize(n + 1);
             col_storage.resize(nnz);
             data_storage.resize(nnz);
 
-            for(auto I = IT{0}; I < nnz; ++I) {
-                row_storage[I] = coo.row[index[I]];
-                col_storage[I] = coo.col[index[I]];
-                data_storage[I] = coo.data[index[I]];
-            }
-
-            condense(one_based, full);
+            condense(coo, index, one_based, full);
 
             row_ptr = row_storage.data();
             col_idx = col_storage.data();
             data = data_storage.data();
         }
 
-        auto condense(const bool one_based, const bool full) {
-            auto last_row = row_storage[0], last_col = col_storage[0];
+        /**
+         * Sum duplicated entries, drop trivial entries and build the row pointer in a single pass.
+         * @param coo The input matrix in the COO format.
+         * @param index The permutation that sorts the COO entries by row then by column.
+         * @param one_based Indicate if the input matrix uses one based indexing.
+         * @param full If true, explicitly present diagonal entries are kept even if they are trivial.
+         */
+        template<data_t DT2, index_t IT2> auto condense(const sparse_coo_mat<DT2, IT2>& coo, const std::vector<IT2>& index, const bool one_based, const bool full) {
+            const auto shift = one_based ? IT{1} : IT{0};
 
-            auto current_pos = IT{0};
+            auto current_pos = IT{0}, current_row = IT{0};
+            auto last_row = IT{0}, last_col = IT{0};
             auto last_sum = DT{0};
 
             auto populate = [&] {
-                if(detail::approx_equal(last_sum, DT(0)) && (!full || last_row != last_col)) return;
-                row_storage[current_pos] = last_row;
-                col_storage[current_pos] = last_col;
-                data_storage[current_pos] = last_sum;
-                ++current_pos;
+                if(!detail::approx_equal(last_sum, DT{0}) || (full && last_row == last_col)) {
+                    while(current_row + shift <= last_row) row_storage[current_row++] = current_pos + shift;
+                    col_storage[current_pos] = last_col;
+                    data_storage[current_pos++] = last_sum;
+                }
                 last_sum = DT{0};
             };
 
-            for(auto I = IT{0}; I < nnz; ++I) {
-                if(last_row != row_storage[I] || last_col != col_storage[I]) {
-                    populate();
-                    last_row = row_storage[I];
-                    last_col = col_storage[I];
-                }
-                last_sum += data_storage[I];
+            if(nnz > 0) {
+                last_row = static_cast<IT>(coo.row[index[0]]);
+                last_col = static_cast<IT>(coo.col[index[0]]);
             }
 
-            populate();
+            for(auto I = IT{0}; I < nnz; ++I) {
+                const auto idx = index[I];
+                const auto row = static_cast<IT>(coo.row[idx]), col = static_cast<IT>(coo.col[idx]);
+                if(last_row != row || last_col != col) {
+                    populate();
+                    last_row = row;
+                    last_col = col;
+                }
+                last_sum += coo.data[idx];
+            }
+
+            if(nnz > 0) populate();
 
             nnz = current_pos;
 
-            auto current_row = current_pos = IT{0};
-            const auto shift = one_based ? IT{1} : IT{0};
+            // remaining (trailing empty) rows and the end pointer
+            while(current_row <= n) row_storage[current_row++] = nnz + shift;
 
-            while(current_pos < nnz)
-                if(row_storage[current_pos] < current_row + shift) ++current_pos;
-                else row_storage[current_row++] = current_pos + shift;
-
-            row_storage.resize(n + 1);
             col_storage.resize(nnz);
             data_storage.resize(nnz);
-
-            row_storage[0] = IT{0} + shift;
-            row_storage[n] = nnz + shift;
         }
 
         auto is_valid() { return row_ptr && col_idx && data; }
