@@ -128,20 +128,20 @@ namespace ezp {
 
     template<index_t IT, char UL = 'L', char ODER = 'R'> using par_dposv = pposv<double, IT, UL, ODER>;
     template<index_t IT, char UL = 'L', char ODER = 'R'> using par_sposv = pposv<float, IT, UL, ODER>;
-    template<index_t IT, char UL = 'L', char ODER = 'R'> using par_zposv = pposv<double, IT, UL, ODER>;
-    template<index_t IT, char UL = 'L', char ODER = 'R'> using par_cposv = pposv<float, IT, UL, ODER>;
+    template<index_t IT, char UL = 'L', char ODER = 'R'> using par_zposv = pposv<complex16, IT, UL, ODER>;
+    template<index_t IT, char UL = 'L', char ODER = 'R'> using par_cposv = pposv<complex8, IT, UL, ODER>;
     template<index_t IT, char UL = 'L'> using par_dposv_c = pposv<double, IT, UL, 'C'>;
     template<index_t IT, char UL = 'L'> using par_sposv_c = pposv<float, IT, UL, 'C'>;
-    template<index_t IT, char UL = 'L'> using par_zposv_c = pposv<double, IT, UL, 'C'>;
-    template<index_t IT, char UL = 'L'> using par_cposv_c = pposv<float, IT, UL, 'C'>;
+    template<index_t IT, char UL = 'L'> using par_zposv_c = pposv<complex16, IT, UL, 'C'>;
+    template<index_t IT, char UL = 'L'> using par_cposv_c = pposv<complex8, IT, UL, 'C'>;
     template<index_t IT, char ODER = 'R'> using par_dposv_u = pposv<double, IT, 'U', ODER>;
     template<index_t IT, char ODER = 'R'> using par_sposv_u = pposv<float, IT, 'U', ODER>;
-    template<index_t IT, char ODER = 'R'> using par_zposv_u = pposv<double, IT, 'U', ODER>;
-    template<index_t IT, char ODER = 'R'> using par_cposv_u = pposv<float, IT, 'U', ODER>;
+    template<index_t IT, char ODER = 'R'> using par_zposv_u = pposv<complex16, IT, 'U', ODER>;
+    template<index_t IT, char ODER = 'R'> using par_cposv_u = pposv<complex8, IT, 'U', ODER>;
     template<index_t IT> using par_dposv_uc = pposv<double, IT, 'U', 'C'>;
     template<index_t IT> using par_sposv_uc = pposv<float, IT, 'U', 'C'>;
-    template<index_t IT> using par_zposv_uc = pposv<double, IT, 'U', 'C'>;
-    template<index_t IT> using par_cposv_uc = pposv<float, IT, 'U', 'C'>;
+    template<index_t IT> using par_zposv_uc = pposv<complex16, IT, 'U', 'C'>;
+    template<index_t IT> using par_cposv_uc = pposv<complex8, IT, 'U', 'C'>;
 } // namespace ezp
 
 #endif // PPOSV_HPP
