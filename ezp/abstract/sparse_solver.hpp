@@ -77,6 +77,7 @@ namespace ezp {
         sparse_csr_mat() = default;
         sparse_csr_mat(const sparse_csr_mat& other)
             : n(other.n)
+            , nnz(other.nnz)
             , row_ptr(other.row_ptr)
             , col_idx(other.col_idx)
             , data(other.data)
