@@ -133,14 +133,14 @@ namespace ezp {
 
             auto operator()(IT i, IT j) const {
                 if(i < 0 || i >= n || j < 0 || j >= n) return IT{-1};
-                if('L' == UL) {
+                if constexpr('L' == UL) {
                     if(i < j) std::swap(i, j);
-                    if(i - j > klu) return IT{-1};
+                    if(i > j + klu) return IT{-1};
                     return i + j * klu;
                 }
                 else {
                     if(i > j) std::swap(i, j);
-                    if(j - i > klu) return IT{-1};
+                    if(j > i + klu) return IT{-1};
                     return klu + i + j * klu;
                 }
             }
