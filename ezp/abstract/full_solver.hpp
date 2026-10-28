@@ -86,7 +86,7 @@ namespace ezp::detail {
                 , m(M) {}
 
             auto operator()(const IT i, const IT j) const {
-                if(i < 0 || i >= n || j < 0 || j >= n) return IT{-1};
+                if(i < 0 || i >= n || j < 0 || j >= m) return IT{-1};
                 return i + j * n;
             }
         };
