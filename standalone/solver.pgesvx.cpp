@@ -72,11 +72,11 @@ int main(int, char**) {
     const auto NRHS = config[1];
     const auto FLOAT = config[2];
 
-    if(FLOAT >= 10) return run<complex16, int_t, ezp::pgesvx<complex16, int_t>>(N, NRHS);
-    if(FLOAT >= 0) return run<double, int_t, ezp::pgesvx<double, int_t>>(N, NRHS);
-    if(FLOAT > -10) return run<float, int_t, ezp::pgesvx<float, int_t>>(N, NRHS);
+    if(FLOAT >= 10) return run<complex16, int_t, ezp::pgesvx<complex16, int_t, 'N'>>(N, NRHS);
+    if(FLOAT >= 0) return run<double, int_t, ezp::pgesvx<double, int_t, 'N'>>(N, NRHS);
+    if(FLOAT > -10) return run<float, int_t, ezp::pgesvx<float, int_t, 'N'>>(N, NRHS);
 
-    return run<complex8, int_t, ezp::pgesvx<complex8, int_t>>(N, NRHS);
+    return run<complex8, int_t, ezp::pgesvx<complex8, int_t, 'N'>>(N, NRHS);
 }
 
 //! @}
