@@ -465,7 +465,10 @@ namespace ezp {
             detail::lis_vector b_loc{B.n_rows}, x_loc{B.n_rows};
 
             for(decltype(B.n_rows) I = 0; I < B.n_rows * B.n_cols; I += B.n_rows) {
-                error = solver.solve(a_loc, b_loc.set(b_ref.data() + I), x_loc.set(B.data + I));
+                auto* b_ptr = 0 == env.rank() ? b_ref.data() + I : nullptr;
+                auto* x_ptr = B.data ? B.data + I : nullptr;
+
+                error = solver.solve(a_loc, b_loc.set(b_ptr), x_loc.set(x_ptr));
 
                 if(0 != error) break;
             }
