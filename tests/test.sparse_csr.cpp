@@ -80,6 +80,32 @@ static void valid_one_based() {
     REQUIRE(csr.data[1] == 7.);
 }
 
+// The `full` flag must force every diagonal entry to be explicitly present,
+// even when a diagonal entry is entirely absent from the input COO (not just
+// when it is present with a trivial value). Regression: the single pass in
+// condense() could only keep a diagonal entry that already appeared in the
+// input; it never synthesized a missing one, so `full` silently failed to
+// honour its documented contract whenever a row had no diagonal entry at all.
+static void full_forces_absent_diagonal() {
+    // 3x3 matrix with entries only at (0,1) and (2,0); rows 0, 1 and 2 all
+    // lack an explicit diagonal entry.
+    std::vector<double> data{4., 6.};
+    std::vector<int_t> row{0, 2}, col{1, 0};
+
+    sparse_coo_mat<double, int_t> coo{3, 2, row.data(), col.data(), data.data()};
+    sparse_csr_mat<double, int_t> csr(coo, false, true);
+
+    REQUIRE(csr.is_valid());
+    REQUIRE(csr.nnz == 5); // 2 original entries + 3 synthesized zero diagonals
+
+    for(int_t r = 0; r < 3; ++r) {
+        auto found_diag = false;
+        for(auto k = csr.row_ptr[r]; k < csr.row_ptr[r + 1]; ++k)
+            if(csr.col_idx[k] == r) found_diag = true;
+        REQUIRE(found_diag);
+    }
+}
+
 // Constructing from an invalid (or empty, nnz == 0) COO must yield a
 // well-defined object. Regression: the raw pointers used to be left
 // uninitialized on the early-return path, so is_valid() could report true on
@@ -113,6 +139,10 @@ TEST_CASE("Valid one-based sparse CSR", "[Sparse CSR]") {
     valid_one_based();
 }
 
+TEST_CASE("Full flag forces absent diagonal entries", "[Sparse CSR]") {
+    full_forces_absent_diagonal();
+}
+
 TEST_CASE("Invalid COO input is not valid CSR", "[Sparse CSR]") {
     invalid_input_is_not_valid();
 }
@@ -124,6 +154,7 @@ TEST_CASE("Default-constructed CSR is not valid", "[Sparse CSR]") {
 int main() {
     valid_zero_based();
     valid_one_based();
+    full_forces_absent_diagonal();
     invalid_input_is_not_valid();
     default_constructed_is_not_valid();
     return 0;

@@ -176,6 +176,62 @@ namespace ezp {
 
             col_storage.resize(nnz);
             data_storage.resize(nnz);
+
+            if(full) insert_missing_diagonals(shift);
+        }
+
+        /**
+         * Ensure every diagonal entry is explicitly present.
+         * The main pass above can only keep a diagonal entry that already appears
+         * (with any value, including a trivial one) in the input COO matrix.
+         * If a diagonal entry is entirely absent from the input, it must be
+         * synthesized here with a value of zero, as documented for the `full` flag.
+         * @param shift The indexing shift (0 or 1) used for row/col pointers.
+         */
+        auto insert_missing_diagonals(const IT shift) {
+            IT missing{0};
+            for(auto row = IT{0}; row < n; ++row) {
+                auto found = false;
+                for(auto k = row_storage[row] - shift; k < row_storage[row + 1] - shift; ++k)
+                    if(col_storage[k] == row + shift) {
+                        found = true;
+                        break;
+                    }
+                if(!found) ++missing;
+            }
+
+            if(0 == missing) return;
+
+            std::vector<IT> new_row(n + 1);
+            std::vector<IT> new_col(nnz + missing);
+            std::vector<DT> new_data(nnz + missing);
+
+            auto pos = IT{0};
+            for(auto row = IT{0}; row < n; ++row) {
+                new_row[row] = pos + shift;
+                auto inserted = false;
+                for(auto k = row_storage[row] - shift; k < row_storage[row + 1] - shift; ++k) {
+                    const auto col = col_storage[k];
+                    if(!inserted && col > row + shift) {
+                        new_col[pos] = row + shift;
+                        new_data[pos++] = DT{0};
+                        inserted = true;
+                    }
+                    new_col[pos] = col;
+                    new_data[pos++] = data_storage[k];
+                    if(col == row + shift) inserted = true;
+                }
+                if(!inserted) {
+                    new_col[pos] = row + shift;
+                    new_data[pos++] = DT{0};
+                }
+            }
+            new_row[n] = pos + shift;
+
+            nnz = pos;
+            row_storage = std::move(new_row);
+            col_storage = std::move(new_col);
+            data_storage = std::move(new_data);
         }
 
         auto is_valid() { return row_ptr && col_idx && data; }
