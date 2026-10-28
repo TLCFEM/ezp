@@ -68,9 +68,9 @@ namespace ezp {
     } // namespace detail
 
     template<data_t DT, index_t IT> struct sparse_csr_mat final {
-        IT n, nnz;
-        IT *row_ptr, *col_idx;
-        DT* data;
+        IT n{}, nnz{};
+        IT *row_ptr{nullptr}, *col_idx{nullptr};
+        DT* data{nullptr};
 
         std::vector<IT> row_storage, col_storage;
         std::vector<DT> data_storage;
