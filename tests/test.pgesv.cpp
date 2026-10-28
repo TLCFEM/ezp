@@ -100,7 +100,7 @@ TEST_CASE("Random PSGESVC", "[Simple Solver]") {
 #else
 void random_psgesv_c() {
 #endif
-    random_pgesv<double, 'C'>();
+    random_pgesv<float, 'C'>();
 }
 
 #ifdef EZP_ENABLE_TEST

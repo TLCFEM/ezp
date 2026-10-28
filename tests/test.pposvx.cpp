@@ -98,7 +98,7 @@ TEST_CASE("Random PSPOSVXC", "[Expert Solver]") {
 #else
 void random_psposvx_c() {
 #endif
-    random_pposvx<double, 'C'>();
+    random_pposvx<float, 'C'>();
 }
 
 #ifdef EZP_ENABLE_TEST
