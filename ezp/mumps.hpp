@@ -363,9 +363,10 @@ namespace ezp {
         auto det() const {
             using WT = work_t<DT>;
 
-            const auto a = id.rinfog[11];
-            const auto b = floating_t<DT> ? DT{0} : id.rinfog[12];
-            const auto c = std::pow(WT{2}, id.infog[33]);
+            const auto a = static_cast<WT>(id.rinfog[11]);
+            WT b{0};
+            if constexpr(!floating_t<DT>) b = static_cast<WT>(id.rinfog[12]);
+            const auto c = std::pow(WT{2}, static_cast<WT>(id.infog[33]));
 
             return std::complex<WT>{a, b} * c;
         }
