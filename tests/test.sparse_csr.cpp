@@ -98,12 +98,7 @@ static void full_forces_absent_diagonal() {
     REQUIRE(csr.is_valid());
     REQUIRE(csr.nnz == 5); // 2 original entries + 3 synthesized zero diagonals
 
-    for(int_t r = 0; r < 3; ++r) {
-        auto found_diag = false;
-        for(auto k = csr.row_ptr[r]; k < csr.row_ptr[r + 1]; ++k)
-            if(csr.col_idx[k] == r) found_diag = true;
-        REQUIRE(found_diag);
-    }
+    for(int_t r = 0; r < 3; ++r) REQUIRE(std::find(csr.col_idx + csr.row_ptr[r], csr.col_idx + csr.row_ptr[r + 1], r) != csr.col_idx + csr.row_ptr[r + 1]);
 }
 
 // Constructing from an invalid (or empty, nnz == 0) COO must yield a
