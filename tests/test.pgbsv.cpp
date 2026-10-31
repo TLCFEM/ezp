@@ -16,11 +16,15 @@
  ******************************************************************************/
 
 #include <chrono>
+#include <cmath>
 #include <ezp/pgbsv.hpp>
 #include <random>
 #include <thread>
 
+#include "check.hpp"
+
 using namespace ezp;
+using namespace ezp::test;
 using namespace std::chrono;
 
 #ifdef EZP_ENABLE_TEST
@@ -55,20 +59,44 @@ template<data_t DT> auto random_pgbsv() {
 
         const auto IDX = typename solver_t::indexer{N, KL, KU};
 
-        std::vector<DT> A, B;
+        std::vector<DT> A, B, RHS, XEXACT;
 
         if(0 == env.rank()) {
             A.resize(N * LDA, DT{0.});
-            B.resize(N * NRHS, DT{1.});
+            B.resize(N * NRHS, DT{0.});
+            RHS.resize(N * NRHS);
+            XEXACT.resize(N * NRHS);
 
             std::uniform_real_distribution dist_v(0.f, 1.f);
+            std::uniform_real_distribution dist_x(-1.f, 1.f);
 
-            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = 10.f * dist_v(gen) + 10.f;
+            for(auto I = 0; I < N; ++I) {
+                A[IDX(I, I)] = 10.f * dist_v(gen) + 10.f;
+                for(auto J = std::max(0, I - KU); J < std::min(N, I + KL + 1); ++J)
+                    if(I != J && IDX(I, J) >= 0) A[IDX(I, J)] = dist_v(gen);
+            }
+
+            // Pick a known exact solution and form `B = A * XEXACT` from band storage.
+            for(auto& x : XEXACT) x = dist_x(gen);
+            for(auto C = 0; C < NRHS; ++C)
+                for(auto I = 0; I < N; ++I) {
+                    DT sum{0};
+                    for(auto J = 0; J < N; ++J)
+                        if(const auto position = IDX(I, J); position >= 0) sum += A[position] * XEXACT[J + C * N];
+                    B[I + C * N] = RHS[I + C * N] = sum;
+                }
         }
 
         const auto info = solver_t().solve({N, N, KL, KU, A.data()}, {N, NRHS, B.data()});
 
-        if(0 == env.rank()) REQUIRE(info == 0);
+        if(0 == env.rank()) {
+            REQUIRE(info == 0);
+            // After the solve, `B` holds the computed solution `X`.
+            const auto A_FULL = rebuild_full_band(A, IDX, N);
+            const auto res = full_residual(A_FULL, B, RHS, N, NRHS);
+            REQUIRE(res < residual_tol<DT>());
+            printf("Relative residual: %e\n", static_cast<double>(res));
+        }
     }
 };
 

@@ -11,3 +11,4 @@ doxygen/
 site/
 x64/
 opencode.json
+build*

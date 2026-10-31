@@ -16,11 +16,15 @@
  ******************************************************************************/
 
 #include <chrono>
+#include <cmath>
 #include <ezp/pgesv.hpp>
 #include <random>
 #include <thread>
 
+#include "check.hpp"
+
 using namespace ezp;
+using namespace ezp::test;
 using namespace std::chrono;
 
 #ifdef EZP_ENABLE_TEST
@@ -49,25 +53,102 @@ template<data_t DT, char ODER = 'R'> auto random_pgesv() {
 
         const auto IDX = typename solver_t::indexer{N};
 
-        std::vector<DT> A, B;
+        std::vector<DT> A, B, RHS, XEXACT;
 
         if(0 == env.rank()) {
             A.resize(N * N, DT{0.});
-            B.resize(N * NRHS, DT{1.});
+            B.resize(N * NRHS, DT{0.});
+            RHS.resize(N * NRHS);
+            XEXACT.resize(N * NRHS);
 
             std::uniform_real_distribution dist_v(0.f, 1.f);
+            std::uniform_real_distribution dist_x(-1.f, 1.f);
 
             for(auto I = 0; I < N; ++I)
                 for(auto J = I; J < std::min(N, I + 2); ++J) A[IDX(I, J)] = dist_v(gen) + .5f;
+
+            // Pick a known exact solution and form `B = A * XEXACT`.
+            for(auto& x : XEXACT) x = dist_x(gen);
+            for(auto C = 0; C < NRHS; ++C)
+                for(auto I = 0; I < N; ++I) {
+                    DT sum{0};
+                    for(auto J = 0; J < N; ++J) sum += A[IDX(I, J)] * XEXACT[J + C * N];
+                    B[I + C * N] = RHS[I + C * N] = sum;
+                }
         }
 
         auto solver = solver_t();
 
         const auto info = solver.solve({N, N, A.data()}, {N, NRHS, B.data()});
+
+        if(0 == env.rank()) {
+            REQUIRE(info == 0);
+            // After the solve, `B` holds the computed solution `X`. Check the residual
+            // against the unmodified original matrix `A` (before `det` overwrites it).
+            const auto res = full_residual(A, B, RHS, N, NRHS);
+            REQUIRE(res < residual_tol<DT>());
+            printf("Relative residual: %e\n", static_cast<double>(res));
+        }
+
         const auto det = solver.det({N, N, A.data()});
 
         if(0 == env.rank() && std::is_same_v<DT, double>) printf("Determinant: %e\n", det);
-        if(0 == env.rank()) REQUIRE(info == 0);
+    }
+}
+
+/**
+ * @brief Solves a small system with an analytically known solution and determinant.
+ *
+ * The matrix `A = [[2,1,0],[0,3,1],[1,0,4]]` has `det(A) = 25` and, for the
+ * exact solution `X = [1,2,3]`, the right-hand side is `B = [4,9,13]`.
+ * This provides an exact-reference check of both the solution and the determinant.
+ */
+template<data_t DT, char ODER = 'R'> auto known_pgesv() {
+    using solver_t = pgesv<DT, int_t, ODER>;
+
+    const auto& env = get_env<int_t>();
+
+    constexpr int_t N{3};
+    constexpr int_t NRHS{1};
+
+    std::vector<DT> A, B;
+
+    if(0 == env.rank()) {
+        A.resize(N * N, DT{0.});
+        B.resize(N * NRHS);
+
+        const auto IDX = typename solver_t::indexer{N};
+        A[IDX(0, 0)] = DT{2};
+        A[IDX(0, 1)] = DT{1};
+        A[IDX(1, 2)] = DT{1};
+        A[IDX(2, 0)] = DT{1};
+        A[IDX(2, 2)] = DT{4};
+        A[IDX(1, 1)] = DT{3};
+
+        // B = A * X with X = [1, 2, 3]
+        B[0] = DT{4};
+        B[1] = DT{9};
+        B[2] = DT{13};
+    }
+
+    const auto RHS = B;
+
+    auto solver = solver_t();
+    const auto info = solver.solve({N, N, A.data()}, {N, NRHS, B.data()});
+
+    if(0 == env.rank()) {
+        REQUIRE(info == 0);
+        // Check the residual against the unmodified matrix `A` before `det` overwrites it.
+        const auto res = full_residual(A, B, RHS, N, NRHS);
+        REQUIRE(res < residual_tol<DT>());
+        printf("Known PDGESV: solution residual=%e\n", static_cast<double>(res));
+    }
+
+    const auto det = solver.det({N, N, A.data()});
+
+    if(0 == env.rank()) {
+        REQUIRE(std::abs(det - DT{25}) < residual_tol<DT>());
+        printf("Known PDGESV: det=%e (expected 25)\n", static_cast<double>(std::abs(det)));
     }
 }
 
@@ -80,11 +161,27 @@ void random_pdgesv() {
 }
 
 #ifdef EZP_ENABLE_TEST
+TEST_CASE("Known PDGESV", "[Simple Solver][Known]") {
+#else
+void known_pdgesv() {
+#endif
+    known_pgesv<double>();
+}
+
+#ifdef EZP_ENABLE_TEST
 TEST_CASE("Random PDGESVC", "[Simple Solver]") {
 #else
 void random_pdgesv_c() {
 #endif
     random_pgesv<double, 'C'>();
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Known PDGESVC", "[Simple Solver][Known]") {
+#else
+void known_pdgesv_c() {
+#endif
+    known_pgesv<double, 'C'>();
 }
 
 #ifdef EZP_ENABLE_TEST
@@ -96,11 +193,27 @@ void random_psgesv() {
 }
 
 #ifdef EZP_ENABLE_TEST
+TEST_CASE("Known PSGESV", "[Simple Solver][Known]") {
+#else
+void known_psgesv() {
+#endif
+    known_pgesv<float>();
+}
+
+#ifdef EZP_ENABLE_TEST
 TEST_CASE("Random PSGESVC", "[Simple Solver]") {
 #else
 void random_psgesv_c() {
 #endif
     random_pgesv<float, 'C'>();
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Known PSGESVC", "[Simple Solver][Known]") {
+#else
+void known_psgesv_c() {
+#endif
+    known_pgesv<float, 'C'>();
 }
 
 #ifdef EZP_ENABLE_TEST
@@ -112,11 +225,27 @@ void random_pzgesv() {
 }
 
 #ifdef EZP_ENABLE_TEST
+TEST_CASE("Known PZGESV", "[Simple Solver][Known]") {
+#else
+void known_pzgesv() {
+#endif
+    known_pgesv<complex16>();
+}
+
+#ifdef EZP_ENABLE_TEST
 TEST_CASE("Random PZGESVC", "[Simple Solver]") {
 #else
 void random_pzgesv_c() {
 #endif
     random_pgesv<complex16, 'C'>();
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Known PZGESVC", "[Simple Solver][Known]") {
+#else
+void known_pzgesv_c() {
+#endif
+    known_pgesv<complex16, 'C'>();
 }
 
 #ifdef EZP_ENABLE_TEST
@@ -128,11 +257,27 @@ void random_pcgesv() {
 }
 
 #ifdef EZP_ENABLE_TEST
+TEST_CASE("Known PCGESV", "[Simple Solver][Known]") {
+#else
+void known_pcgesv() {
+#endif
+    known_pgesv<complex8>();
+}
+
+#ifdef EZP_ENABLE_TEST
 TEST_CASE("Random PCGESVC", "[Simple Solver]") {
 #else
 void random_pcgesv_c() {
 #endif
     random_pgesv<complex8, 'C'>();
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Known PCGESVC", "[Simple Solver][Known]") {
+#else
+void known_pcgesv_c() {
+#endif
+    known_pgesv<complex8, 'C'>();
 }
 
 #ifndef EZP_ENABLE_TEST
@@ -144,13 +289,21 @@ int main(const int argc, const char* argv[]) {
     else REPEAT = std::atoi(argv[1]);
 
     random_pdgesv();
+    known_pdgesv();
     random_pdgesv_c();
+    known_pdgesv_c();
     random_psgesv();
+    known_psgesv();
     random_psgesv_c();
+    known_psgesv_c();
     random_pzgesv();
+    known_pzgesv();
     random_pzgesv_c();
+    known_pzgesv_c();
     random_pcgesv();
+    known_pcgesv();
     random_pcgesv_c();
+    known_pcgesv_c();
 
     return 0;
 }

@@ -16,11 +16,15 @@
  ******************************************************************************/
 
 #include <chrono>
+#include <cmath>
 #include <ezp/ppbsv.hpp>
 #include <random>
 #include <thread>
 
+#include "check.hpp"
+
 using namespace ezp;
+using namespace ezp::test;
 using namespace std::chrono;
 
 #ifdef EZP_ENABLE_TEST
@@ -53,25 +57,45 @@ template<data_t DT, char UL = 'L'> auto random_ppbsv() {
 
         const auto IDX = typename solver_t::indexer{N, KLU};
 
-        std::vector<DT> A, B;
+        std::vector<DT> A, B, RHS, XEXACT;
 
         if(0 == env.rank()) {
             A.resize(N * LDA, DT{0.});
-            B.resize(N * NRHS, DT{1.});
+            B.resize(N * NRHS, DT{0.});
+            RHS.resize(N * NRHS);
+            XEXACT.resize(N * NRHS);
 
             std::uniform_real_distribution dist_v(0.f, 1.f);
+            std::uniform_real_distribution dist_x(-1.f, 1.f);
 
-            for(auto I = 0; I < N; ++I) A[IDX(I, I)] = 10.f * dist_v(gen) + 10.f;
+            // Fill the stored triangle of a diagonally dominant symmetric band matrix.
+            for(auto I = 0; I < N; ++I) {
+                A[IDX(I, I)] = 10.f * dist_v(gen) + 10.f;
+                for(auto J = I + 1; J < std::min(N, I + KLU + 1); ++J)
+                    if(const auto position = IDX(I, J); position >= 0) A[position] = dist_v(gen);
+            }
 
-            // std::uniform_int_distribution dist_idx(0, N - 1);
-            //
-            // for(auto I = 0; I < N * N; ++I)
-            //     if(const auto position = IDX(dist_idx(gen), dist_idx(gen)); position >= 0) A[position] += dist_v(gen);
+            // Pick a known exact solution and form `B = A * XEXACT` from band storage.
+            const auto A_FULL = rebuild_full_symm_band<DT, UL>(A, IDX, N);
+            for(auto& x : XEXACT) x = dist_x(gen);
+            for(auto C = 0; C < NRHS; ++C)
+                for(auto I = 0; I < N; ++I) {
+                    DT sum{0};
+                    for(auto J = 0; J < N; ++J) sum += A_FULL[I + J * N] * XEXACT[J + C * N];
+                    B[I + C * N] = RHS[I + C * N] = sum;
+                }
         }
 
         const auto info = solver_t().solve({N, N, KLU, A.data()}, {N, NRHS, B.data()});
 
-        if(0 == env.rank()) REQUIRE(info == 0);
+        if(0 == env.rank()) {
+            REQUIRE(info == 0);
+            // After the solve, `B` holds the computed solution `X`.
+            const auto A_FULL = rebuild_full_symm_band<DT, UL>(A, IDX, N);
+            const auto res = full_residual(A_FULL, B, RHS, N, NRHS);
+            REQUIRE(res < residual_tol<DT>());
+            printf("Relative residual: %e\n", static_cast<double>(res));
+        }
     }
 }
 
