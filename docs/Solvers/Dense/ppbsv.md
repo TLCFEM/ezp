@@ -2,30 +2,33 @@
 
 The `ppbsv` solver supports the following input types.
 
-* data type: DSZC
-* index type: `std::int32_t`, `std::int64_t`
+- data type: DSZC
+- index type: `std::int32_t`, `std::int64_t`
 
-The `ppbsv` solves a square real banded symmetric positive definite distributed matrix with bandwidth $KLU$ using Cholesky factorization.
-The matrix of size $N$ is stored in a memory block of size $N \times (KLU+1)$.
+`ppbsv` solves a square banded symmetric positive definite system `A * X = B` with bandwidth $KLU$ using Cholesky factorization.
+The matrix `A` of size $N$ is stored in a memory block of size $N \times (KLU + 1)$.
+
+!!! note
+    Although `KLU = 0` is supported, a zero bandwidth triggers an unwanted warning from `ScaLAPACK`.
 
 ## Constructor
 
-There are three template arguments.
+The solver takes three template arguments.
 
-1. data type, e.g., `double`, `float`, `std::complex<double>`, `std::complex<float>`.
-2. index type, e.g., `std::int32_t`, `std::int64_t`.
+1. data type, e.g., `double`, `float`, `std::complex<double>`, `std::complex<float>`;
+2. index type, e.g., `std::int32_t`, `std::int64_t`;
 3. `UPLO` flag indicating which triangular half is stored, `U` (upper) or `L` (lower).
 
-This solver uses a 1D process grid.
-It takes a single argument that represents the number of rows in the grid.
+The solver uses a 1D process grid.
+It takes a single argument representing the number of rows in the grid.
 
 ```cpp
 auto solver = ppbsv<double, int, 'U'>(np_row);
 ```
 
-Since the matrix is symmetric, `ScaLAPACK` expects only half of the matrix.
-Thus the caller must provide the matrix exactly stored in a contiguous memory block of size $N \times (KLU+1)$.
-For different `UPLO` flags, the internal storage layout varies.
+Because the matrix is symmetric, `ScaLAPACK` expects only one half of it.
+The caller must provide the matrix exactly stored in a contiguous memory block of size $N \times (KLU + 1)$.
+The internal storage layout varies with the `UPLO` flag.
 
 ## Indexer
 

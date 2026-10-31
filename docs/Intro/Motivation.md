@@ -1,21 +1,22 @@
 # Motivation
 
-As of this writing, it is necessary to directly call `ScaLAPACK` subroutines via the `C` interface if one wants to solve linear systems using `ScaLAPACK`.
-It is, however, not a trivial task, compared to solving similar problems using `LAPACK`.
-One needs to figure out how to distribute the matrix over the process grid, and allocate the necessary buffers (with appropriate sizes) for the `ScaLAPACK` subroutines.
-It requires quite a bit of boilerplate code, which is not only tedious to write, but also error-prone.
+To solve a linear system with `ScaLAPACK`, one currently has to call its subroutines directly through the `C` interface.
+This is not a trivial task compared to solving the same problem sequentially with `LAPACK`.
+One must figure out how to distribute the matrix over the process grid and allocate the required buffers of appropriate sizes.
+This demands a substantial amount of boilerplate code that is tedious to write and error-prone.
 
-Since both `MPI` and `LAPACK`/`BLAS` have fabulous `C++` wrappers (see [`mpl`](https://github.com/rabauke/mpl) and [`Armadillo`](https://arma.sourceforge.net/download.html)), it would be nice if `ScaLAPACK` can be used in a similar OO manner.
-Such a wrapper is advantageous and beneficial in the context of `C++` applications due to the following reasons.
+Both `MPI` and `LAPACK`/`BLAS` already enjoy excellent `C++` wrappers, such as [`mpl`](https://github.com/rabauke/mpl) and [`Armadillo`](https://arma.sourceforge.net/download.html).
+It would be desirable for `ScaLAPACK` to offer a similar object-oriented experience.
+Such a wrapper benefits `C++` applications in the following ways.
 
-1. It avoids direct interactions with the `C` API, which requires manual memory management.
-   The caller has to follow pretty much the same procedural style.
-2. A well-designed OO approach can significantly reduce the code size.
+1. It avoids direct interaction with the `C` API and its manual memory management.
+2. A well-designed object-oriented approach significantly reduces the amount of code the caller writes.
 
-`ezp` is designed to provide an intuitive interface that resembles the non-MPI version of linear systems solvers.
-The majority of `ScaLAPACK`, `BLACS` and `MPI` communication details shall be well hidden from the caller so that solving a system can be as simple as `solver.solve(A, B)`.
-Of course, a complete, working example would be longer than a single line of code, due to the distributed-memory nature of MPI.
-However, as shown in the front page, a minimum example spans merely a few lines of code.
+`ezp` provides an intuitive interface that resembles the non-distributed version of linear system solvers.
+Most of the `ScaLAPACK`, `BLACS`, and `MPI` communication details are hidden from the caller.
+As a result, solving a system can be as simple as `solver.solve(A, B)`.
+A complete working example is necessarily longer than a single line because of the distributed-memory nature of `MPI`.
+However, as shown below, a minimal example spans only a few lines.
 
 ```cpp
 #include <ezp/pgesv.hpp>
@@ -44,26 +45,36 @@ int main() {
 
 ## Available Solvers
 
-`ezp` implements all precisions (DSZC) with both 32-bit and 64-bit indexing.
+`ezp` implements dense and sparse solvers in all four `DSZC` precisions, with both 32-bit and 64-bit indexing.
 
 ### Dense Matrix
 
-`ezp` provides all solvers listed in [ScaLAPACK](https://www.netlib.org/scalapack/slug/node44.html) page for **full** and **band** matrices.
-Solvers for tridiagonal matrices are not implemented as they can be stored in band formats and solved by the corresponding solver.
+Dense solvers are built on top of `ScaLAPACK`.
+Both **full** and **band** matrices are supported, and both row-major and column-major process grids are available.
+Tridiagonal matrices are not implemented separately, because they can be stored in band format and solved by the corresponding band solver.
+
+| Solver    | Matrix                                           | Decomposition         | Grid    |
+|-----------|--------------------------------------------------|-----------------------|---------|
+| `pgesv`   | General (partial pivoting)                       | LU                    | 2D      |
+| `pgesvx`  | General (expert, equilibration + refinement)     | LU                    | 2D      |
+| `pposv`   | Symmetric/Hermitian positive definite            | Cholesky              | 2D      |
+| `pposvx`  | SPD (expert, equilibration + refinement)         | Cholesky              | 2D      |
+| `pgbsv`   | General band (partial pivoting)                  | LU                    | 1D      |
+| `pdbsv`   | General band (no pivoting)                       | LU                    | 1D      |
+| `ppbsv`   | Symmetric/Hermitian positive definite band       | Cholesky              | 1D      |
 
 ### Sparse Matrix
 
-`ezp` provides interface to `PARDISO` direct solver bundled in [Intel® oneAPI Math Kernel Library (oneMKL)](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2025-1/cluster-sparse-solver.html).
+Sparse solvers cover both direct and iterative methods.
 
-`ezp` provides interface to [`MUMPS`](https://mumps-solver.org/) direct solver.
-
-`ezp` provides interface to [`Lis`](http://www.ssisc.org/lis/) iterative solver.
+- `pardiso` wraps the Intel MKL Cluster Sparse Solver and accepts CSR input in one- or zero-based indexing.
+- `mumps` wraps the `MUMPS` direct solver and accepts COO input in one-based indexing.
+- `lis` wraps the `Lis` iterative solver and accepts CSR input in zero-based indexing.
 
 ### Why not SuperLU?
 
-~~The codebase is messy and hard to maintain due to, for example, abuse of macros.~~
-~~And it is not significantly faster than other direct solvers.~~
-I do not like its code aesthetics.
+The codebase is considered messy and hard to maintain.
+It is not significantly faster than the other direct solvers, at least for the use cases `ezp` targets.
 
 ## References
 

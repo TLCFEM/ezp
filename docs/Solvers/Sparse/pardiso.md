@@ -2,11 +2,12 @@
 
 The `pardiso` solver supports the following input types.
 
-* data type: DSZC
-* index type: `std::int32_t`, `std::int64_t`
+- data type: DSZC
+- index type: `std::int32_t`, `std::int64_t`
 
 `pardiso` wraps the Intel MKL Cluster Sparse Solver.
-It requires the macro `EZP_MKL` to be defined, which is set automatically when MKL is detected.
+It requires the macro `EZP_MKL` to be defined.
+The macro is set automatically when MKL is detected at configuration time.
 
 ## Constructor
 
@@ -18,7 +19,7 @@ auto solver = ezp::pardiso<double, int_t>(
 ```
 
 The `matrix_type` enum specifies the structure of the matrix.
-Available values:
+The available values are:
 
 | Enum | Description |
 |------|-------------|
@@ -32,28 +33,30 @@ Available values:
 | `complex_and_symmetric` | Symmetric complex |
 | `complex_and_nonsymmetric` | General complex non-symmetric |
 
-The `message_level` enum controls solver output: `no_output` or `print_statistical_information`.
+The matrix type must match the data type of the solver.
+The `message_level` enum controls the solver output: `no_output` or `print_statistical_information`.
 
 ## Input Format
 
-The matrix $A$ must be provided as a `sparse_csr_mat` with **one-based** indexing.
-Fields required:
+The matrix $A$ must be provided as a `sparse_csr_mat` with **one-based** indexing by default.
+The required fields are:
 
-* `n` — number of rows (and columns),
-* `nnz` — number of non-zero entries,
-* `row_ptr` — array of length `n+1` with one-based row pointers,
-* `col_idx` — array of length `nnz` with one-based column indices,
-* `data` — array of length `nnz`, values.
+- `n` — the number of rows (and columns);
+- `nnz` — the number of non-zero entries;
+- `row_ptr` — an array of length `n + 1` with one-based row pointers;
+- `col_idx` — an array of length `nnz` with one-based column indices;
+- `data` — an array of length `nnz` holding the values.
 
 The right-hand side $B$ is a dense `full_mat` with `n_rows = N` and `n_cols = NRHS`.
+Zero-based indexing can be enabled with `iparm_zero_based_indexing` or the `--zero-based-indexing` option.
 
 ## COO-to-CSR Conversion
 
-If the matrix is available in COO format, it can be converted to CSR automatically.
+A matrix available in COO format can be converted to CSR automatically.
+Pass `true` for one-based indexing.
 
 ```cpp
 const ezp::sparse_coo_mat coo{N, N, ia.data(), ja.data(), a.data()};
-// pass true for one-based indexing
 solver.solve(ezp::sparse_csr_mat<double, int_t>{coo, true}, {N, NRHS, b.data()});
 ```
 
@@ -82,7 +85,8 @@ if(0 == mpl::environment::comm_world().rank()) {
 const auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
 ```
 
-The factorization is retained internally and reused when `solve` is called again with a new right-hand side.
+The factorization is retained internally.
+A subsequent call to `solve` with a new right-hand side reuses it.
 
 ## Solver Options
 
@@ -90,15 +94,15 @@ There are two ways to configure the solver.
 
 ### Member Methods
 
-The `operator()` operator provides access to `iparm` array.
-There are explicitly named member methods, which give the same functionality.
+The `operator()` operator provides access to the `iparm` array.
+Explicitly named member methods give the same functionality.
 
 ```cpp
 solver(26) = 1;
 solver.iparm_matrix_checker(1);
 ```
 
-When using the explicit methods, it is possible to chain multiple methods together.
+The explicit methods can be chained.
 
 ```cpp
 solver.iparm_matrix_checker(1).iparm_iterative_refinement(2);
@@ -106,8 +110,8 @@ solver.iparm_matrix_checker(1).iparm_iterative_refinement(2);
 
 ### Verbose String Arguments
 
-The `pardiso.parser.hpp` provides a parsing function.
-Setting parameters can be done via the following.
+The `pardiso.parser.hpp` header provides a parsing function.
+Parameters can be set through a string.
 
 ```cpp
 #include <ezp/pardiso.parser.hpp>
@@ -115,7 +119,7 @@ Setting parameters can be done via the following.
 pardiso_set("--matrix-checker 1 --iterative-refinement 2", solver);
 ```
 
-All available options are listed as follows.
+The available options are listed below.
 
 ```text
 Usage: [--default-value INT] [--reducing-ordering INT] [--user-permutation INT] [--iterative-refinement INT] [--pivoting-perturbation INT] [--scaling INT] [--transpose-matrix INT] [--weighted-matching INT] [--nnz-factor INT] [--pivoting-type INT] [--matrix-checker INT] [--partial-solve INT] [--zero-based-indexing INT] [--schur-complement INT] [--out-of-core INT]

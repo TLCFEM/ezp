@@ -2,15 +2,15 @@
 
 The `lis` solver supports the following input types.
 
-* data type: D (`double` only)
-* index type: `std::int32_t`, `std::int64_t`
+- data type: D (`double` only)
+- index type: `std::int32_t`, `std::int64_t`
 
 `lis` is an iterative solver from the [Lis library](http://www.ssisc.org/lis/).
-It requires a matrix in **zero-based CSR** (Compressed Sparse Row) format.
+It requires the matrix in **zero-based** CSR (Compressed Sparse Row) format.
 
 ## Constructor
 
-The constructor accepts an optional string of solver options (see [Solver Options](#solver-options) below).
+The constructor accepts an optional string of solver options (see [Solver Options](#solver-options)).
 
 ```cpp
 auto solver = lis("-i fgmres -p ilu");
@@ -19,13 +19,13 @@ auto solver = lis("-i fgmres -p ilu");
 ## Input Format
 
 The matrix $A$ must be provided as a `sparse_csr_mat` with **zero-based** indexing.
-Fields required:
+The required fields are:
 
-* `n` — number of rows (and columns) of the square matrix,
-* `nnz` — number of non-zero entries,
-* `row_ptr` — array of length `n+1`, where `row_ptr[i]` is the index of the first non-zero in row `i`,
-* `col_idx` — array of length `nnz`, column indices of the non-zero entries,
-* `data` — array of length `nnz`, values of the non-zero entries.
+- `n` — the number of rows (and columns) of the square matrix;
+- `nnz` — the number of non-zero entries;
+- `row_ptr` — an array of length `n + 1`, where `row_ptr[i]` is the index of the first non-zero entry in row `i`;
+- `col_idx` — an array of length `nnz` holding the column indices of the non-zero entries;
+- `data` — an array of length `nnz` holding the values of the non-zero entries.
 
 The right-hand side $B$ is a dense `full_mat` with `n_rows = N` and `n_cols = NRHS`.
 
@@ -54,7 +54,7 @@ const auto info = solver.solve({N, N, ia.data(), ja.data(), a.data()}, {N, NRHS,
 
 ## Solver Options
 
-Call the `set_option` method to change solver options after construction.
+Call the `set_option` method to change the solver options after construction.
 
 ```cpp
 solver.set_option("-i fgmres -p ilu -print 2");
@@ -70,4 +70,4 @@ Commonly used options include:
 | `-ilu_fill <n>` | ILU fill-in level |
 | `-maxiter <n>` | Maximum number of iterations |
 | `-tol <val>` | Convergence tolerance |
-| `-print <level>` | Verbosity level (0=none, 1=summary, 2=iterations) |
+| `-print <level>` | Verbosity level (0 = none, 1 = summary, 2 = iterations) |

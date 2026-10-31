@@ -2,11 +2,11 @@
 
 The `pgesv` solver supports the following input types.
 
-* data type: DSZC
-* index type: `std::int32_t`, `std::int64_t`
+- data type: DSZC
+- index type: `std::int32_t`, `std::int64_t`
 
-The `pgesv` solves a square matrix using LU decomposition with partial pivoting.
-The matrix of size $N$ is stored in a memory block of size $N^2$.
+`pgesv` solves a square system `A * X = B` using LU decomposition with partial pivoting.
+The matrix `A` of size $N$ is stored in a memory block of size $N^2$.
 
 ## Type Aliases
 
@@ -25,21 +25,21 @@ For example, `par_dgesv<int>` is equivalent to `pgesv<double, int, 'R'>`.
 
 ## Constructor
 
-There are three template arguments.
+The solver takes three template arguments.
 
-1. data type, e.g., `double`, `float`, `std::complex<double>`, `std::complex<float>`.
-2. index type, e.g., `std::int32_t`, `std::int64_t`.
+1. data type, e.g., `double`, `float`, `std::complex<double>`, `std::complex<float>`;
+2. index type, e.g., `std::int32_t`, `std::int64_t`;
 3. process grid order, `R` or `C`.
 
-This solver uses a 2D process grid, so one can choose from `R`ow major or `C`olumn major ordering.
-
-With `np_row` and `np_col` denoting the numbers of rows and columns of the process grid, a solver can be constructed using the following.
+The solver uses a 2D process grid.
+The grid order can be either `R`ow major or `C`olumn major.
+With `np_row` and `np_col` denoting the numbers of rows and columns of the process grid, a solver is constructed as follows.
 
 ```cpp
 auto solver = pgesv<double, int, 'R'>(np_row, np_col);
 ```
 
-It is possible to let the library automatically determine the numbers of rows and columns, then the solver can be constructed as
+The library can also determine the grid dimensions automatically.
 
 ```cpp
 auto solver = pgesv<double, int, 'R'>();
@@ -47,7 +47,7 @@ auto solver = pgesv<double, int, 'R'>();
 
 ## Indexer
 
-A helper `indexer` type is nested in the solver to convert 2D row-major indices into column-major 1D offsets (as required by ScaLAPACK's Fortran-order storage).
+A nested `indexer` helper converts 2D row-major indices into the 1D column-major offsets required by `ScaLAPACK`'s Fortran-order storage.
 
 ```cpp
 const auto IDX = par_dgesv<int>::indexer{N};
@@ -56,14 +56,14 @@ const auto IDX = par_dgesv<int>::indexer{N};
 
 ## Solving
 
-Prepare matrices $A$ and $B$ on the root process in whatever form of choice.
-Those two matrices need to be wrapped into `template<data_t DT, index_t IT> struct full_mat` objects, which require
+Prepare matrices $A$ and $B$ on the root process in whatever form is convenient.
+The two matrices must be wrapped into `template<data_t DT, index_t IT> struct full_mat` objects, which require
 
-1. the number of rows of the matrix, `n_rows`,
-2. the number of columns of the matrix, `n_cols`,
-3. a pointer pointing to the data, `data`.
+1. the number of rows of the matrix, `n_rows`;
+2. the number of columns of the matrix, `n_cols`;
+3. a pointer to the data, `data`.
 
-Then one can call the solver via
+Then call the solver.
 
 ```cpp
 constexpr auto N = 6, NRHS = 2;
@@ -75,22 +75,21 @@ std::vector<double> A, B;
 const auto info = solver.solve({N, N, A.data()}, {N, NRHS, B.data()});
 ```
 
-The factorization will be stored internally as long as the solver object stays alive.
-Thus to reuse the factorization, a second solve can call the following.
+The factorization is stored internally as long as the solver object stays alive.
+A second solve reuses the stored factorization.
 
 ```cpp
 const auto info = solver.solve({N, NRHS, B.data()});
 ```
 
-A second call to `solve(full_mat<DT, IT>&& A, full_mat<DT, IT>&& B)` will clear previous factorizations automatically.
-
-On return, `B` will be replaced by the solution.
-In the above example, `std::vector<double> B` will contain the solution.
+Calling `solve(full_mat<DT, IT>&& A, full_mat<DT, IT>&& B)` again clears the previous factorization automatically.
+On return, `B` is replaced by the solution.
+In the example above, `std::vector<double> B` then contains the solution.
 
 ## Determinant
 
-The `pgesv` solver also provides a `det()` method to compute the determinant of a square matrix using the LU factorization.
-The factorization must have been performed before calling `det()`.
+`pgesv` also provides a `det()` method that computes the determinant from the stored LU factorization.
+The factorization must be performed before `det()` is called.
 
 ```cpp
 const auto info = solver.solve({N, N, A.data()}, {N, NRHS, B.data()});

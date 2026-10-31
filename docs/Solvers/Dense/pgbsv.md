@@ -2,21 +2,25 @@
 
 The `pgbsv` solver supports the following input types.
 
-* data type: DSZC
-* index type: `std::int32_t`, `std::int64_t`
+- data type: DSZC
+- index type: `std::int32_t`, `std::int64_t`
 
-The `pgbsv` solves a square real banded distributed matrix with bandwidth $KL$, $KU$ using LU decomposition with partial pivoting.
-The matrix of size $N$ is stored in a memory block of size $N \times (2 \times KL + KU + 1)$ (with extra rows for pivoting workspace, as required by the `ScaLAPACK` band solver).
+`pgbsv` solves a square banded system `A * X = B` with bandwidth $KL$, $KU$ using LU decomposition with partial pivoting.
+The matrix `A` of size $N$ is stored in a memory block of size $N \times (2 \times KL + KU + 1)$.
+The extra rows provide workspace for pivoting, as required by the `ScaLAPACK` band solver.
+
+!!! note
+    Although `KL = 0` and `KU = 0` are supported, a zero bandwidth triggers an unwanted warning from `ScaLAPACK`.
 
 ## Constructor
 
-There are two template arguments.
+The solver takes two template arguments.
 
-1. data type, e.g., `double`, `float`, `std::complex<double>`, `std::complex<float>`.
+1. data type, e.g., `double`, `float`, `std::complex<double>`, `std::complex<float>`;
 2. index type, e.g., `std::int32_t`, `std::int64_t`.
 
-This solver uses a 1D process grid.
-It takes a single argument that represents the number of rows in the grid.
+The solver uses a 1D process grid.
+It takes a single argument representing the number of rows in the grid.
 
 ```cpp
 auto solver = pgbsv<double, int>(np_row);

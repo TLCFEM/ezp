@@ -2,26 +2,27 @@
 
 The `pdbsv` solver supports the following input types.
 
-* data type: DSZC
-* index type: `std::int32_t`, `std::int64_t`
+- data type: DSZC
+- index type: `std::int32_t`, `std::int64_t`
 
-The `pdbsv` solves a square real banded diagonally dominant-like distributed matrix with bandwidth $KL$, $KU$ using LU decomposition with **no pivoting**.
-The matrix of size $N$ is stored in a memory block of size $N \times (KL + KU + 1)$.
+`pdbsv` solves a square banded system `A * X = B` with bandwidth $KL$, $KU$ using LU decomposition **without** pivoting.
+The matrix `A` of size $N$ is stored in a memory block of size $N \times (KL + KU + 1)$.
 
 !!! note
     `pdbsv` does not perform partial pivoting.
-    It is faster than `pgbsv` but requires the matrix to be diagonally dominant or positive definite to be numerically stable.
+    It is faster than `pgbsv` but requires the matrix to be diagonally dominant or positive definite to remain numerically stable.
     Use `pgbsv` for general banded matrices.
+    Although `KL = 0` and `KU = 0` are supported, a zero bandwidth triggers an unwanted warning from `ScaLAPACK`.
 
 ## Constructor
 
-There are two template arguments.
+The solver takes two template arguments.
 
-1. data type, e.g., `double`, `float`, `std::complex<double>`, `std::complex<float>`.
+1. data type, e.g., `double`, `float`, `std::complex<double>`, `std::complex<float>`;
 2. index type, e.g., `std::int32_t`, `std::int64_t`.
 
-This solver uses a 1D process grid.
-It takes a single argument that represents the number of rows in the grid.
+The solver uses a 1D process grid.
+It takes a single argument representing the number of rows in the grid.
 
 ```cpp
 auto solver = pdbsv<double, int>(np_row);

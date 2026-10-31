@@ -1,30 +1,28 @@
 # Standalone Solver
 
-MPI provides a mechanism to dynamically spawn worker processes via `MPI_Comm_spawn`.
-By utilising this feature, it is possible to separate the main application from the solver.
-The architecture can be illustrated as follows.
+`MPI` provides a mechanism to dynamically spawn worker processes through `MPI_Comm_spawn`.
+By exploiting this feature, it is possible to separate the main application from the solver.
+The architecture is illustrated below.
 
 ![architecture design](communication.svg)
 
-The `ezp` solvers are also available as standalone executables that follow the above design.
-Such a form is particularly beneficial if the following holds.
+The `ezp` solvers are also available as standalone executables that follow this design.
+Such a form is particularly beneficial when one or more of the following holds.
 
-1. The main application is not suitable for distributed-memory model due to, for example, latency constraints.
+1. The main application is not suitable for a distributed-memory model, for example due to latency constraints.
 2. The main application adopts a different parallelism pattern.
-3. Sometimes, one may want to have a clear boundary between the main application and the solver(s).
+3. One wants a clear boundary between the main application and the solver.
 
-However, such a clear boundary may be a shortcoming as well.
-For example, the root process needs to store the whole matrices in memory, which is subject to physical limitations.
-And since the spawned processes are not persistent, solving the same system with different right-hand sides may incur unnecessary data communication.
-
-If the matrices need to be read from IO in a distributed manner, one may also need a refined control of how the data is prepared, by probably directly using `BLACS`/`ScaLAPACK`/`MPI` functions.
+The clear boundary can also be a shortcoming.
+The root process must store the whole matrices in memory, which is subject to physical limitations.
+Because the spawned processes are not persistent, solving the same system for different right-hand sides may incur unnecessary data communication.
+If the matrices are read from file in a distributed manner, one may also need fine control over how the data is prepared, possibly by calling `BLACS`/`ScaLAPACK`/`MPI` functions directly.
 
 ## Backbone
 
-Here, we use the `pgesv` solver as the example to illustrate some critical steps used in implementing the above architecture.
-
-We are not using the raw `MPI` functions, instead, the `mpl` library is used.
-It is necessary to get the default communicator and the parent inter communicator.
+The `pgesv` solver is used below to illustrate the critical steps of implementing this architecture.
+`ezp` does not use the raw `MPI` functions directly; instead, the `mpl` library is used.
+It is necessary to obtain the default communicator and the parent inter-communicator.
 
 ```cpp title="solver.full.hpp:24:25"
 --8<--
@@ -32,16 +30,16 @@ It is necessary to get the default communicator and the parent inter communicato
 --8<--
 ```
 
-Since `mpl` handles `MPI` environment initialisation and finalisation, it is necessary to tell `ezp` to ignore finalising the `MPI` environment.
-The function `ezp::blacs_env::do_not_manage_mpi()` must be called if `MPI` is managed by external tools.
+Because `mpl` handles `MPI` environment initialisation and finalisation, `ezp` must be told not to finalise `MPI`.
+The function `ezp::blacs_env<>::do_not_manage_mpi()` must be called when `MPI` is managed externally.
 
-```cpp title="solver.pgesv.cpp:54" hl_lines="1"
+```cpp title="solver.pgesv.cpp:54:55" hl_lines="1"
 --8<--
 ./standalone/solver.pgesv.cpp:54:55
 --8<--
 ```
 
-The parameters of the linear system will be broadcast over by the main application first.
+The parameters of the linear system are broadcast from the main application first.
 
 ```cpp title="solver.pgesv.cpp:61:65" hl_lines="5"
 --8<--
@@ -49,7 +47,7 @@ The parameters of the linear system will be broadcast over by the main applicati
 --8<--
 ```
 
-Knowing the problem sizes `N` and `NRHS`, the root process can initialise the containers and receive the contents of two matrices.
+Knowing the problem sizes `N` and `NRHS`, the root process initialises the containers and receives the contents of the two matrices.
 
 ```cpp title="solver.full.hpp:28:40" hl_lines="3-5 9 10"
 --8<--
@@ -57,8 +55,8 @@ Knowing the problem sizes `N` and `NRHS`, the root process can initialise the co
 --8<--
 ```
 
-Solving the system follows the conventional approach, that is, create a solver object and call the solve method with data wrapped.
-The solution is sent back to the caller.
+Solving the system follows the conventional approach: create a solver object, wrap the data, and call `solve`.
+The solution is then sent back to the caller.
 
 ```cpp title="solver.full.hpp:42:47" hl_lines="1 5"
 --8<--
@@ -68,13 +66,13 @@ The solution is sent back to the caller.
 
 ## The Caller
 
-From the above code snippets, one may observe that the caller needs to
+From the code snippets above, the caller must
 
-1. broadcast `config`,
-2. send `A` and `B`,
-3. receive the error code and the solution `X` if no error occurred.
+1. broadcast `config`;
+2. send `A` and `B`;
+3. receive the error code and, if no error occurred, the solution `X`.
 
-To this end, one can declare the corresponding containers using `std::vector`.
+To this end, one declares the corresponding containers with `std::vector`.
 
 ```cpp title="runner.cpp:41:42" hl_lines="1 2"
 --8<--
@@ -90,7 +88,7 @@ The following creates a diagonal matrix for illustration.
 --8<--
 ```
 
-Now since all the data is ready to be communicated, the actual communication is very concise and straightforward.
+Once all data is ready to be communicated, the communication itself is concise and straightforward.
 
 ```cpp title="runner.cpp:114:129" hl_lines="2 5 9 10 15 16"
 --8<--
@@ -100,25 +98,25 @@ Now since all the data is ready to be communicated, the actual communication is 
 
 ## Python Caller
 
-Since there is a clear boundary between the main application and the solver, it is possible to use other MPI compatible to send/receive the problem.
-
+Because there is a clear boundary between the main application and the solver, any `MPI`-compatible caller can exchange the problem data.
 For example, one can use [`mpi4py`](https://github.com/mpi4py/mpi4py) to call the solvers.
 
-It has to be pointed out that, the ***column-major*** memory layout shall be kept.
+Note that the **column-major** memory layout must be preserved.
+NumPy arrays are row-major by default, so they must be created with `order="F"`.
 
-```py title="runner.py" hl_lines="15 25 31 35 37 38"
+```py title="runner.py:41:76" hl_lines="15 21 27 31 33"
 --8<--
-./standalone/runner.py:35
+./standalone/runner.py:41:76
 --8<--
 ```
 
-Calling the above script with
+Calling the script with
 
 ```bash
 ./runner.py 2 6 2
 ```
 
-yields the following is the solution, which is correct.
+produces the following correct solution.
 
 ```text
 A:
@@ -146,7 +144,7 @@ Solution:
 
 ## Full Reference Implementation
 
-The following is a full reference implementation of a standalone solver and the corresponding caller logic.
+The following is a full reference implementation of a standalone solver and its caller.
 
 ??? note "runner.cpp"
     ```cpp title="runner.cpp"
