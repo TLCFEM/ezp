@@ -10,16 +10,16 @@
 #   4. writes a Slurm batch script for parallel.q and optionally submits it.
 #
 # Typical use from a HERCULES login node:
-#   bash misc/benchmark.hercules.sh
-#   bash misc/benchmark.hercules.sh --submit
+#   bash ./benchmark.hercules.sh
+#   bash ./benchmark.hercules.sh --submit
 #
 # The default problem is a 100000 x 100000 dense-storage 5-point Laplacian with
 # an exact solution of all ones.  Rank 0 holds ~75 GiB (the ezp API takes the
 # full matrix on the root process), so the job asks for `--mem=0` and 32 nodes.
 #
-# Useful overrides (environment variables or flags):
-#   N=150000 NRHS=4 NTASKS=1536 GRID=32x48 bash misc/benchmark.hercules.sh
-#   WORK_ROOT=/scratch/$USER/ezp-benchmark bash misc/benchmark.hercules.sh
+# The workplace (clones plus the generated benchmark) is created next to this
+# script in an `ezp-benchmark/` folder; override with WORK_ROOT or --work-root:
+#   WORK_ROOT=/scratch/$USER/ezp-benchmark bash ./benchmark.hercules.sh
 #
 # HERCULES parallel.q: 32 nodes x 48 cores = 1536 cores maximum.
 # 1500 ranks with a 30x50 BLACS grid is the default; use 1536/32x48 for a
@@ -29,7 +29,10 @@ set -euo pipefail
 
 REPO_URL=${REPO_URL:-https://github.com/TLCFEM/ezp.git}
 BRANCH=${BRANCH:-master}
-WORK_ROOT=${WORK_ROOT:-$HOME/ezp-benchmark}
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# The workplace folder lives next to this script (in $SCRIPT_DIR); use
+# WORK_ROOT to point it elsewhere.
+WORK_ROOT=${WORK_ROOT:-$SCRIPT_DIR/ezp-benchmark}
 REPO_DIR=${REPO_DIR:-$WORK_ROOT/ezp}
 BENCH_DIR=${BENCH_DIR:-$WORK_ROOT/benchmark}
 
@@ -65,8 +68,8 @@ What it does:
   4. writes a Slurm batch script for parallel.q and optionally submits it.
 
 Typical use from a HERCULES login node:
-  bash misc/benchmark.hercules.sh
-  bash misc/benchmark.hercules.sh --submit
+  bash ./benchmark.hercules.sh
+  bash ./benchmark.hercules.sh --submit
 
 The default problem is a 100000 x 100000 dense-storage 5-point Laplacian with
 an exact solution of all ones.  It needs ~80 GB on rank 0 (the ezp API gathers
@@ -80,7 +83,7 @@ Options:
   --tasks N             MPI ranks / cores (default 1500; max 1536)
   --grid RxC            BLACS grid (default: near-square factorisation)
   --time HH:MM:SS       Slurm time limit (default 02:00:00)
-  --work-root DIR       clone/build location (default $HOME/ezp-benchmark)
+  --work-root DIR       clone/build location (default: ezp-benchmark next to this script)
   --repo URL            repository to clone
   --branch NAME         branch to clone (default master)
   -h, --help            show this help
