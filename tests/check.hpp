@@ -130,7 +130,7 @@ namespace ezp::test {
             for(auto j = i; j < n; ++j) {
                 int_t p;
                 if constexpr('L' == UL) p = idx(j, i); // lower triangle
-                else p = idx(i, j);                     // upper triangle
+                else p = idx(i, j);                    // upper triangle
                 if(p < 0) continue;
                 const auto val = a[p];
                 a_full[i + j * n] = conjugate(val);
