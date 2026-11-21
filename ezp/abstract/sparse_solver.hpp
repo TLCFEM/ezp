@@ -30,6 +30,19 @@
 #endif
 
 namespace ezp {
+    /**
+     * @enum distribution_category
+     * @brief Distribution of the input matrix.
+     *
+     * The right-hand side and the solution are always stored on the host/master process.
+     */
+    enum class distribution_category : std::int8_t {
+        /** The host/master process stores the whole matrix. */
+        centralized = 0,
+        /** The matrix is distributed across the MPI processes. */
+        distributed_matrix = 1
+    };
+
     template<data_t DT, index_t IT> struct sparse_coo_mat {
         IT n, nnz;
         IT *row, *col;

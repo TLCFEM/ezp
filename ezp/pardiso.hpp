@@ -65,20 +65,6 @@ namespace ezp {
         print_statistical_information = 1
     };
 
-    /**
-     * @enum distribution_category
-     * @brief Distribution of the matrix.
-     *
-     * The enumerators map directly to the supported values of `iparm[39]` of the Intel MKL Cluster Sparse Solver.
-     * The right-hand side and the solution are always stored on the master process.
-     */
-    enum class distribution_category : std::int8_t {
-        /** The master process stores the whole matrix. */
-        centralized = 0,
-        /** Each process stores a contiguous row block of the matrix. */
-        distributed_matrix = 1
-    };
-
     template<data_t DT, index_t IT, distribution_category DC = distribution_category::centralized> class pardiso final {
         static constexpr IT one{1}, negone{-1}, PARDISO_ANA_FACT{12}, PARDISO_SOLVE{33}, PARDISO_RELEASE{-1};
 

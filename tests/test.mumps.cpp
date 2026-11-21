@@ -15,8 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <ezp/mumps.parser.hpp>
+#include <limits>
 #include <random>
 #include <thread>
 
@@ -155,6 +158,110 @@ template<data_t DT> auto random_mumps() {
               solver);
 }
 
+template<data_t DT> auto distributed_mumps() {
+    const auto& comm_world{mpl::environment::comm_world()};
+
+    blacs_env<>::do_not_manage_mpi();
+
+    constexpr int N = 12, NRHS = 2;
+
+    const auto size = static_cast<int>(comm_world.size());
+    const auto rank = static_cast<int>(comm_world.rank());
+
+    if(size > N) return;
+
+    const auto block = N / size;
+    const auto remainder = N % size;
+
+    const auto local_n = block + (rank < remainder ? 1 : 0);
+    const auto begin = rank * block + std::min(rank, remainder);
+
+    std::vector<int> irn, jcn;
+    std::vector<DT> a;
+
+    const auto add = [&](const int row, const int col, const DT value) {
+        irn.push_back(row + 1);
+        jcn.push_back(col + 1);
+        a.push_back(value);
+    };
+
+    for(auto i = 0; i < local_n; ++i) {
+        const auto row = begin + i;
+
+        if(row > 0) add(row, row - 1, DT{-1});
+        add(row, row, DT{4});
+        if(row + 1 < N) add(row, row + 1, DT{-1});
+    }
+
+    const auto rhs = [](const int row) {
+        auto value = 4.;
+        if(row > 0) value -= 1.;
+        if(row + 1 < N) value -= 1.;
+        return static_cast<DT>(value);
+    };
+
+    std::vector<DT> b;
+    if(0 == rank) {
+        b.resize(N * NRHS);
+        for(auto K = 0; K < NRHS; ++K)
+            for(auto I = 0; I < N; ++I) b[I + K * N] = rhs(I);
+    }
+
+    auto solver = mumps<DT, int, distribution_category::distributed_matrix>();
+    mumps_set("--printing-level 0", solver);
+
+    [[maybe_unused]] const auto tolerance = 1000 * std::numeric_limits<work_t<DT>>::epsilon();
+
+    [[maybe_unused]] auto info = solver.solve({N, static_cast<int>(irn.size()), irn.data(), jcn.data(), a.data()}, {N, NRHS, b.data()});
+
+    if(0 == rank) {
+        REQUIRE(info == 0);
+        for([[maybe_unused]] const auto value : b) REQUIRE(std::abs(value - DT{1}) < tolerance);
+
+        for(auto K = 0; K < NRHS; ++K)
+            for(auto I = 0; I < N; ++I) b[I + K * N] = rhs(I);
+    }
+
+    info = solver.solve({N, NRHS, b.data()});
+
+    if(0 == rank) {
+        REQUIRE(info == 0);
+        for([[maybe_unused]] const auto value : b) REQUIRE(std::abs(value - DT{1}) < tolerance);
+    }
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Distributed DMUMPS", "[Sparse Solver]") {
+#else
+void distributed_dmumps() {
+#endif
+    distributed_mumps<double>();
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Distributed SMUMPS", "[Sparse Solver]") {
+#else
+void distributed_smumps() {
+#endif
+    distributed_mumps<float>();
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Distributed ZMUMPS", "[Sparse Solver]") {
+#else
+void distributed_zmumps() {
+#endif
+    distributed_mumps<complex16>();
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Distributed CMUMPS", "[Sparse Solver]") {
+#else
+void distributed_cmumps() {
+#endif
+    distributed_mumps<complex8>();
+}
+
 #ifdef EZP_ENABLE_TEST
 TEST_CASE("Random DMUMPS", "[Sparse Solver]") {
 #else
@@ -194,6 +301,11 @@ int main(const int argc, const char* argv[]) {
         while(0 == i) std::this_thread::sleep_for(seconds(10));
     }
     else REPEAT = std::atoi(argv[1]);
+
+    distributed_dmumps();
+    distributed_smumps();
+    distributed_zmumps();
+    distributed_cmumps();
 
     random_dmumps();
     random_smumps();
