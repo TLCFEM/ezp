@@ -80,8 +80,6 @@ namespace ezp {
     };
 
     template<data_t DT, index_t IT, distribution_category DC = distribution_category::centralized> class pardiso final {
-        static_assert(DC == distribution_category::centralized || DC == distribution_category::distributed_matrix, "unsupported distribution category");
-
         static constexpr IT one{1}, negone{-1}, PARDISO_ANA_FACT{12}, PARDISO_SOLVE{33}, PARDISO_RELEASE{-1};
 
         std::int64_t pt[64]{};
@@ -103,6 +101,7 @@ namespace ezp {
         IT local_n{0}, row_begin{0}, row_end{0};
 
         static constexpr auto is_distributed() { return distribution_category::centralized != DC; }
+
         auto is_zero_based() const { return 0 != iparm[34]; }
 
         /**
