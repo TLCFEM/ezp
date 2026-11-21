@@ -29,8 +29,15 @@ auto solver = mumps<double, int>();
 ```
 
 The `symmetric_pattern` argument defaults to `unsymmetric`.
-The `parallel_mode` argument defaults to `no_host`.
+The `parallel_mode` argument defaults to `no_host` for a centralized matrix and to `host_involved` for a distributed matrix.
 When a single process is used, the host is always forced to participate.
+
+The third template argument selects the matrix distribution and defaults to `ezp::distribution_category::centralized`.
+Use `ezp::distribution_category::distributed_matrix` to provide the matrix as local triplets on each MPI process.
+
+```cpp
+auto solver = ezp::mumps<double, int, ezp::distribution_category::distributed_matrix>();
+```
 
 ## Input Format
 
@@ -44,6 +51,43 @@ The required fields are:
 - `data` — an array of length `nnz` holding the values.
 
 The right-hand side $B$ is a dense `full_mat` with `n_rows = N` and `n_cols = NRHS`.
+
+## Distributed Matrix Input
+
+Set the third template argument to `ezp::distribution_category::distributed_matrix` to provide the matrix as local triplets.
+Each process supplies a `sparse_coo_mat` whose fields have a local meaning:
+
+- `n` — the global number of rows (and columns);
+- `nnz` — the number of entries stored on this process;
+- `row` — the one-based global row indices of the local entries;
+- `col` — the one-based global column indices of the local entries;
+- `data` — the values of the local entries.
+
+The entries can be distributed arbitrarily; they do not need to form a contiguous row block.
+Entries that appear on several processes are summed by MUMPS.
+
+This category uses `ICNTL(18)=3`, which provides both the pattern and the values for the analysis and factorization phases.
+Only `ICNTL(18)=3` is supported; the other distributed input strategies of MUMPS are not exposed.
+The right-hand side and the solution remain centralized on the host process, so only the host needs to store $B$.
+
+The distributed category defaults to `parallel_mode::host_involved`, so every process, including rank 0, can provide local entries.
+If `parallel_mode::no_host` is selected explicitly, rank 0 does not participate in the factorization and its local entries are ignored.
+In that case, the entries of the rows owned by rank 0 must be provided by another process.
+
+```cpp
+using solver_t = ezp::mumps<double, int, ezp::distribution_category::distributed_matrix>;
+
+solver_t solver;
+solver.icntl_printing_level(0);
+
+// irn, jcn and a hold the local triplets with global one-based indices.
+const auto info = solver.solve(
+    {N, static_cast<int>(irn.size()), irn.data(), jcn.data(), a.data()},
+    {N, NRHS, b.data()}
+);
+```
+
+The complete example is available in `example.mumps.distributed.cpp`.
 
 ## Usage Example
 
