@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.1, released
-C  on Mon Jul 20 09:00:43 UTC 2026
+C  This file is part of MUMPS 5.9.2, released
+C  on Fri Nov 13 10:00:55 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -1620,6 +1620,9 @@ C
       INTEGER :: MYNAME_LENGTH, TMPNAME_LENGTH
       INTEGER :: SMALLEST_ID_ON_SAME_NODE, MYID_COMPUTENODE
       INTEGER :: I, K, L, IPROC, NGPUS_USED
+#if defined(AVOID_MPI_IN_PLACE)
+      INTEGER :: K_LOC, NGPUS_USED_LOC
+#endif
       IF ( MYID .EQ. MASTER ) THEN
         NGPUSBITMAP = 0
         DO I=0,bit_size(K416)-1
@@ -1706,13 +1709,28 @@ C
       ENDIF
       MAX_MPIs_PER_GPU = 0
       K=bit_size(GPUBITMAP)
+#if defined(AVOID_MPI_IN_PLACE)
+      K_LOC = K
+      CALL MPI_ALLREDUCE(K_LOC, K, 1,
+#else
       CALL MPI_ALLREDUCE(MPI_IN_PLACE, K, 1,
+#endif
      &                    MPI_INTEGER, MPI_MAX, COMM, IERR)
       DO I = 0, K-1
         NGPUS_USED = ibits(GPUBITMAP,I,1) 
+#if defined(AVOID_MPI_IN_PLACE)
+        NGPUS_USED_LOC = NGPUS_USED
+        CALL MPI_ALLREDUCE(NGPUS_USED_LOC, NGPUS_USED, 1,
+#else
         CALL MPI_ALLREDUCE(MPI_IN_PLACE, NGPUS_USED, 1,
+#endif
      &                    MPI_INTEGER, MPI_SUM, NEWCOMM, IERR)
+#if defined(AVOID_MPI_IN_PLACE)
+        NGPUS_USED_LOC = NGPUS_USED
+        CALL MPI_ALLREDUCE(NGPUS_USED_LOC, NGPUS_USED, 1,
+#else
         CALL MPI_ALLREDUCE(MPI_IN_PLACE, NGPUS_USED, 1,
+#endif
      &                    MPI_INTEGER, MPI_MAX, COMM, IERR)
         MAX_MPIs_PER_GPU = max(MAX_MPIs_PER_GPU, NGPUS_USED)
       ENDDO
@@ -2259,8 +2277,13 @@ C
                  IPOS =int(I,8)+int(I,8)-1_8
         ENDIF
         IF ( IS_IN_PLACE ) THEN
+#if defined(AVOID_MPI_IN_PLACE)
+          WRITE(6,*) "Internal error in MUMPS_BIGALLREDUCE"
+          CALL MUMPS_ABORT()
+#else
           CALL MPI_ALLREDUCE( MPI_IN_PLACE, B2(IPOS), THISCHUNK,
      &         MPI_TYPE, MPI_OP, COMM, IERR_MPI )
+#endif
         ELSE
           CALL MPI_ALLREDUCE( B1(IPOS), B2(IPOS), THISCHUNK,
      &         MPI_TYPE, MPI_OP, COMM, IERR_MPI )

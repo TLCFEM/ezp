@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.1, released
-C  on Mon Jul 20 09:00:43 UTC 2026
+C  This file is part of MUMPS 5.9.2, released
+C  on Fri Nov 13 10:00:55 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -895,6 +895,12 @@ C
      &               I8_L0_OMP_5, I8_L0_OMP_6, I8_L0_OMP_7, 
      &               I8_L0_OMP_8, I8_L0_OMP_9, I8_L0_OMP_10, 
      &               I8_L0_OMP_11, I8_L0_OMP_12, I8_L0_OMP_13
+       LOGICAL   :: EARLYT3ROOTINS
+      EARLYT3ROOTINS = KEEP(200) .EQ.0
+     &        .OR.  ( KEEP(200) .LT. 0 .AND. KEEP(400) .EQ. 0 )
+#if defined(SINGLEINDOUBLE)
+      EARLYT3ROOTINS = .FALSE.
+#endif
       I8OVERI   = int(KEEP(10),8)
       PERLU     = KEEP(12)
       NSTEPS8   = int(KEEP(28),8)
@@ -1148,13 +1154,14 @@ C
           TEMPR = TEMPR + int(1+2*NSLAVES,8) * int(NBRECORDS,8)
         END IF
       END IF
-      TEMP =  NB_BYTES + (NB_INT + TEMPI) * int(KEEP(34),8)
+      IF (EARLYT3ROOTINS) THEN
+         TEMP =  NB_BYTES + (NB_INT + TEMPI) * int(KEEP(34),8)
      &        + NB_REAL * int(KEEP(35),8)
      &        + (TEMPR+KEEP8(26)) * int(KEEP(149),8)
-#if defined(SINGLEINDOUBLE)
-      TEMP =  NB_BYTES + (NB_INT + TEMPI) * int(KEEP(34),8)
-     &           + (TEMPR+KEEP8(26)) * int(KEEP(149),8)
-#endif
+      ELSE
+         TEMP =  NB_BYTES + (NB_INT + TEMPI) * int(KEEP(34),8)
+     &        + (TEMPR+KEEP8(26)) * int(KEEP(149),8)
+      ENDIF
       NB_REAL = NB_REAL + KEEP8(26)
       IF ( I_AM_SLAVE ) THEN
         IF (BLR_STRAT.NE.0) THEN

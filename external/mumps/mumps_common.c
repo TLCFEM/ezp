@@ -1,7 +1,7 @@
 /*
  *
- *  This file is part of MUMPS 5.9.1, released
- *  on Mon Jul 20 09:00:43 UTC 2026
+ *  This file is part of MUMPS 5.9.2, released
+ *  on Fri Nov 13 10:00:55 UTC 2026
  *
  *
  *  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -14,6 +14,7 @@
  *
  */
 #include <stdlib.h>
+#include <string.h>
 #include "mumps_common.h"
 /* Special case of mapping and pivnul_list -- allocated from MUMPS */
 static MUMPS_INT * MUMPS_MAPPING;
@@ -122,8 +123,11 @@ MUMPS_ICOPY_32TO64_64C_IP_C(MUMPS_INT *inouttab, MUMPS_INT8 *sizetab)
    MUMPS_INT8 i8; /* signed integer needed for reversed loop below */
    for (i8=*sizetab-1; i8 >=0; i8--)
      {
+       // See "strict aliasing" comment in MUMPS_COPY_32TO64_64C_IP_C
        /* outtab8[i8]=(MUMPS_INT8)intab4[i8]; */
-       ((MUMPS_INT8 *)inouttab)[i8]=(MUMPS_INT8)inouttab[i8];
+       //((MUMPS_INT8 *)inouttab)[i8]=(MUMPS_INT8)inouttab[i8];
+       MUMPS_INT8 tmpval = (MUMPS_INT8) inouttab[i8];
+       memcpy( ((char*) inouttab) + i8 * sizeof(MUMPS_INT8), (char*) &tmpval, sizeof(MUMPS_INT8) ); 
      }
 }
 void MUMPS_CALL
@@ -134,8 +138,11 @@ MUMPS_ICOPY_64TO32_64C_IP_C(MUMPS_INT8 *inouttab, MUMPS_INT8 *sizetab)
    MUMPS_INT8 i8;
    for (i8=0; i8 < *sizetab; i8++)
      {
+       // See "strict aliasing" comment in MUMPS_COPY_32TO64_64C_IP_C
        /*       outtab4[i8]=(MUMPS_INT)intab8[i8]; */
-       ((MUMPS_INT *)inouttab)[i8]=(MUMPS_INT)inouttab[i8];
+       //((MUMPS_INT *)inouttab)[i8]=(MUMPS_INT)inouttab[i8];
+       MUMPS_INT tmpval = (MUMPS_INT) inouttab[i8];
+       memcpy( ((char*) inouttab) + i8 * sizeof(MUMPS_INT), (char*) &tmpval, sizeof(MUMPS_INT) ); 
      }
 }
 void MUMPS_CALL
@@ -158,9 +165,16 @@ MUMPS_RCOPY_32TO64_64C_IP_C(float *inouttab, MUMPS_INT8 *sizetab)
 {
    MUMPS_INT8 i8; /* signed integer needed for reversed loop below */
    for (i8=*sizetab-1; i8 >=0; i8--)
-     {
-       ((double *)inouttab)[i8]=(double)inouttab[i8];
-     }
+   {
+       /* Initial implementation was undefined in C
+	* the "strict aliasing" rule allows the compiler
+	* to assume pointer of incompatible types as independant objects.
+	* It can lead to undefined behaviors
+	*/
+       //((double *)inouttab)[i8]=(double)inouttab[i8];
+       double tmpval = (double) inouttab[i8];
+       memcpy( ((char*) inouttab) + i8 * sizeof(double), (char*) &tmpval, sizeof(double) ); 
+   }
 }
 void MUMPS_CALL
 MUMPS_RCOPY_64TO32_64C_IP_C(double *inouttab, MUMPS_INT8 *sizetab)
@@ -170,7 +184,10 @@ MUMPS_RCOPY_64TO32_64C_IP_C(double *inouttab, MUMPS_INT8 *sizetab)
    MUMPS_INT8 i8;
    for (i8=0; i8 < *sizetab; i8++)
      {
+       // See "strict aliasing" comment in MUMPS_COPY_32TO64_64C_IP_C
        /*       outtab4[i8]=(MUMPS_INT)intab8[i8]; */
-       ((float *)inouttab)[i8]=(float)inouttab[i8];
+       //((float *)inouttab)[i8]=(float)inouttab[i8];
+       float tmpval = (float) inouttab[i8];
+       memcpy( ((char*) inouttab) + i8 * sizeof(float), (char*) &tmpval, sizeof(float) ); 
      }
 }

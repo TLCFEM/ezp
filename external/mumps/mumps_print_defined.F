@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.1, released
-C  on Mon Jul 20 09:00:43 UTC 2026
+C  This file is part of MUMPS 5.9.2, released
+C  on Fri Nov 13 10:00:55 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -86,7 +86,7 @@ C
 #endif
 #if defined(MUMPS_SCOTCHIMPORTOMPTHREADS)
       write(MPG,*)
-     &"MUMPS compiled with option -DMUMPS_SCOTCHIMPORTTHREADS"
+     &"MUMPS compiled with option -DMUMPS_SCOTCHIMPORTOMPTHREADS"
 #endif
 #if defined(MUMPS_WINLARGEFILES)
       write(MPG,*) "MUMPS compiled with option -DMUMPS_WINLARGEFILES"

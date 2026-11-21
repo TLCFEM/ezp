@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.1, released
-C  on Mon Jul 20 09:00:43 UTC 2026
+C  This file is part of MUMPS 5.9.2, released
+C  on Fri Nov 13 10:00:55 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -2613,9 +2613,11 @@ C             TRUNC_ERR has been already computed at previous step
               RETURN
             ENDIF
             IF (LRMIXED_ACTIVATED) THEN
+C             CURRENT_PREC must be <= NPREC_STOC
               DO WHILE(TRUNC_ERR.LT.
      &               TOLEPS_EFF/PRECISIONS(CURRENT_PREC+1)/K453)
                 CURRENT_PREC = CURRENT_PREC+1
+                IF (CURRENT_PREC.GE.NPREC_STOC) EXIT
               ENDDO
 #if !defined(NOMIXHPC)
               MIN_CURRENT_PREC = MIN(MIN_CURRENT_PREC, CURRENT_PREC)

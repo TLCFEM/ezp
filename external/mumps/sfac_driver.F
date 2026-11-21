@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.1, released
-C  on Mon Jul 20 09:00:43 UTC 2026
+C  This file is part of MUMPS 5.9.2, released
+C  on Fri Nov 13 10:00:55 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -4188,13 +4188,15 @@ C         WRITE gains also compute stats stored in DKEEP array
      &                KEEP(483), KEEP(484), KEEP(117), 
      &                id%KEEP8(110), id%KEEP8(49),
      &                KEEP(28), id%NPROCS, MPG, PROKG)
-C           flops when BLR activated
-            RINFOG(14) = id%DKEEP(56)
           DO I=1,18
             id%DKEEP(I+LR_DKEEPSHIFT)=real(LR_TAB(I))
           ENDDO
+C         flops when BLR activated
+C         LR_TAB(56-LR_DKEEPSHIFT) computed in SAVEandWRITE_GAINS
+C         and saved in DKEEP(56) in previous loop
+          RINFOG(14) = id%DKEEP(56)
         ELSE
-            RINFOG(14) = 0.0E00
+          RINFOG(14) = 0.0E00
         ENDIF
         IF (id%MYID .eq. MASTER) THEN
           KEEP(399) = KEEP399_SAVE

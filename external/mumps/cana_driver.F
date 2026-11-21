@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.1, released
-C  on Mon Jul 20 09:00:43 UTC 2026
+C  This file is part of MUMPS 5.9.2, released
+C  on Fri Nov 13 10:00:55 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -4649,13 +4649,13 @@ C     ----------------------------------
 C     Choice of symbolic analysis option
 C     ----------------------------------
          IF (id%ICNTL(58).NE.1 .and. id%ICNTL(58).NE.2
-     &    .and. id%ICNTL(58).NE.3 .and.  id%ICNTL(58).NE.4 ) THEN
+     &    .and. id%ICNTL(58).NE.3 ) THEN
 C           out of range values leads to default
             id%KEEP(106)=2
          ELSE
             id%KEEP(106)=id%ICNTL(58)
-C           Options 3 and 4 not available, reset to default
-            IF (id%KEEP(106).EQ.4) id%KEEP(106)=2
+C           Option 3 not available (available only for research purposes)
+C           , reset to default
             IF (id%KEEP(106).EQ.3) id%KEEP(106)=2
          ENDIF
 C     modify input parameters to avoid incompatible

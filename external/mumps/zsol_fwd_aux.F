@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.1, released
-C  on Mon Jul 20 09:00:43 UTC 2026
+C  This file is part of MUMPS 5.9.2, released
+C  on Fri Nov 13 10:00:55 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -1146,7 +1146,8 @@ C
      &                                 int(NRHS_B,8) )
       INTEGER                  :: KEEP(500)
       DOUBLE PRECISION                     :: DKEEP(150)
-      INTEGER, PARAMETER :: ZERO = (0.0D0,0.0D0)
+      COMPLEX(kind=8)   :: ZERO
+      PARAMETER (ZERO = (0.0D0,0.0D0))
       INTEGER(8), PARAMETER :: PPIV_COURANT = 1_8
       INTEGER(8) :: PCB_COURANT
       INTEGER :: LD_WCBCB, LD_WCBPIV, J, JJ, K, IPOSINRHSINTR
