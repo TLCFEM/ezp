@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.1, released
-C  on Mon Jul 20 09:00:43 UTC 2026
+C  This file is part of MUMPS 5.9.2, released
+C  on Fri Nov 13 10:00:55 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -527,7 +527,9 @@ C}
 C     ------------------
 C     INF-NORM ITERATION
 C     ------------------
-               IF (NOMP_MAX.LE.0) THEN
+               IF (NOMP_MAX.LE.0
+!$   & .OR.NOMP.EQ.1
+     & ) THEN
                 IF((ITER.EQ.1).OR.(OORANGEIND)) THEN
                    DO NZIND=1_8,NZ_loc
                       IR = IRN_loc(NZIND)
@@ -564,9 +566,11 @@ C     ------------------
                       IF((IR.GE.1).AND.(IR.LE.M).AND.
      &                     (IC.GE.1).AND.(IC.LE.N)) THEN
                          ELM = abs(A_loc(NZIND))*ROWSCA(IR)*COLSCA(IC)
-!$OMP                    ATOMIC UPDATE
-                         WRKRC(IR)= max (ELM, WRKRC(IR))
-!$OMP                    END ATOMIC
+                         IF(WRKRC(IR).LT.ELM) THEN
+!$OMP                       ATOMIC UPDATE
+                            WRKRC(IR)= max (ELM, WRKRC(IR))
+!$OMP                       END ATOMIC
+                         ENDIF
 C                         IF(WRKRC(ITDRPTR-1_8+int(IR,8))<ELM) THEN
 C                            WRKRC(ITDRPTR-1_8+int(IR,8))= ELM
 C                         ENDIF
@@ -574,10 +578,12 @@ C                        IF(WRKRC(ITDCPTR-1_8+int(IC,8))<ELM) THEN
 C                           WRKRC(ITDCPTR-1_8+int(IC,8))= ELM
 C                         ENDIF
 C                        ITDCPTR+IC might be > int4
-!$OMP                    ATOMIC UPDATE
-                         WRKRC(ITDCPTR-1_8+int(IC,8)) = 
-     &                   max (ELM,WRKRC(ITDCPTR-1_8+int(IC,8)))
-!$OMP                    END ATOMIC
+                         IF(WRKRC(ITDCPTR-1_8+int(IC,8)).LT.ELM) THEN
+!$OMP                       ATOMIC UPDATE
+                            WRKRC(ITDCPTR-1_8+int(IC,8)) = 
+     &                      max (ELM,WRKRC(ITDCPTR-1_8+int(IC,8)))
+!$OMP                       END ATOMIC
+                         ENDIF
                       ELSE
                          OORANGEIND = .TRUE.
                       ENDIF
@@ -594,16 +600,20 @@ C                        ITDCPTR+IC might be > int4
 C                      IF(WRKRC(ITDRPTR-1_8+int(IR,8))<ELM) THEN
 C                         WRKRC(ITDRPTR-1_8+int(IR,8))= ELM
 C                      ENDIF
-!$OMP                 ATOMIC UPDATE
-                      WRKRC(IR)= max (ELM, WRKRC(IR))
-!$OMP                 END ATOMIC
+                      IF(WRKRC(IR).LT.ELM) THEN
+!$OMP                    ATOMIC UPDATE
+                         WRKRC(IR)= max (ELM, WRKRC(IR))
+!$OMP                    END ATOMIC
+                      ENDIF
 C                      IF(WRKRC(ITDCPTR-1_8+int(IC,8))<ELM) THEN
 C                         WRKRC(ITDCPTR-1_8+int(IC,8))= ELM
 C                      ENDIF
-!$OMP                 ATOMIC UPDATE
-                      WRKRC(ITDCPTR-1_8+int(IC,8)) = 
-     &                   max (ELM,WRKRC(ITDCPTR-1_8+int(IC,8)))
-!$OMP                 END ATOMIC
+                      IF(WRKRC(ITDCPTR-1_8+int(IC,8)).LT.ELM) THEN
+!$OMP                    ATOMIC UPDATE
+                         WRKRC(ITDCPTR-1_8+int(IC,8)) = 
+     &                      max (ELM,WRKRC(ITDCPTR-1_8+int(IC,8)))
+!$OMP                    END ATOMIC
+                      ENDIF
                    ENDDO
 !$OMP   END PARALLEL DO
                 ENDIF
@@ -702,7 +712,9 @@ C     ----------------------------------------
 C     WE HAVE ITER.GT.NB1 AND ITER.LE.NB1+NB2. 
 C     ONE-NORM ITERATION
 C     ----------------------------------------
-             IF (NOMP_MAX.LE.1) THEN
+             IF (NOMP_MAX.LE.1
+!$   & .OR.NOMP.EQ.1
+     & ) THEN
                IF((ITER .EQ.1).OR.(OORANGEIND))THEN
                   DO NZIND=1_8,NZ_loc
                      IR = IRN_loc(NZIND)
@@ -1260,7 +1272,9 @@ C
 C            ------------------
 C{           INF-NORM ITERATION
 C            ------------------
-               IF (NOMP_MAX.LE.0) THEN
+               IF (NOMP_MAX.LE.0
+!$   & .OR.NOMP.EQ.1
+     & ) THEN
                  IF((ITER .EQ.1).OR.(OORANGEIND))THEN
                    DO NZIND=1_8,NZ_loc
                       IR = IRN_loc(NZIND)
@@ -1295,15 +1309,19 @@ C            ------------------
                       IF((IR.GE.1).AND.(IR.LE.N).AND.
      &                     (IC.GE.1).AND.(IC.LE.N)) THEN
                          ELM = abs(A_loc(NZIND))*SCA(IR)*SCA(IC)
-!$OMP                    ATOMIC UPDATE
-                         WRKRC(IR)= max (ELM, WRKRC(IR))
-!$OMP                    END ATOMIC
+                         IF(WRKRC(IR).LT.ELM) THEN
+!$OMP                       ATOMIC UPDATE
+                            WRKRC(IR)= max (ELM, WRKRC(IR))
+!$OMP                       END ATOMIC
+                         ENDIF
 C                         IF(WRKRC(ITDRPTR-1_8+int(IR,8))<ELM) THEN
 C                            WRKRC(ITDRPTR-1_8+int(IR,8))= ELM
 C                         ENDIF
-!$OMP                    ATOMIC UPDATE
-                         WRKRC(IC) = max (ELM,WRKRC(IC))
-!$OMP                    END ATOMIC
+                         IF(WRKRC(IC).LT.ELM) THEN
+!$OMP                       ATOMIC UPDATE
+                            WRKRC(IC) = max (ELM,WRKRC(IC))
+!$OMP                       END ATOMIC
+                         ENDIF
 C                         IF(WRKRC(ITDRPTR-1_8+int(IC,8))<ELM) THEN
 C                            WRKRC(ITDRPTR-1_8+int(IC,8))= ELM
 C                         ENDIF
@@ -1320,15 +1338,19 @@ C                         ENDIF
                       IR = IRN_loc(NZIND)
                       IC = JCN_loc(NZIND)
                       ELM = abs(A_loc(NZIND))*SCA(IR)*SCA(IC)
-!$OMP                 ATOMIC UPDATE
-                      WRKRC(IR)= max (ELM, WRKRC(IR))
-!$OMP                 END ATOMIC
+                      IF(WRKRC(IR).LT.ELM) THEN
+!$OMP                    ATOMIC UPDATE
+                         WRKRC(IR)= max (ELM, WRKRC(IR))
+!$OMP                    END ATOMIC
+                      ENDIF
 C                      IF(WRKRC(ITDRPTR-1_8+int(IR,8))<ELM) THEN
 C                         WRKRC(ITDRPTR-1_8+int(IR,8))= ELM
 C                      ENDIF
-!$OMP                 ATOMIC UPDATE
-                      WRKRC(IC) = max (ELM, WRKRC(IC))
-!$OMP                 END ATOMIC
+                      IF(WRKRC(IC).LT.ELM) THEN
+!$OMP                    ATOMIC UPDATE
+                         WRKRC(IC) = max (ELM, WRKRC(IC))
+!$OMP                    END ATOMIC
+                      ENDIF
 C                      IF(WRKRC(ITDRPTR-1_8+int(IC,8))<ELM) THEN
 C                         WRKRC(ITDRPTR-1_8+int(IC,8))= ELM
 C                      ENDIF
@@ -1401,7 +1423,9 @@ C           ----------------------------------------
 C{          WE HAVE ITER.GT.NB1 AND ITER.LE.NB1+NB2. 
 C           ONE-NORM ITERATION
 C           ----------------------------------------
-             IF (NOMP_MAX.LE.1) THEN
+             IF (NOMP_MAX.LE.1
+!$   & .OR.NOMP.EQ.1
+     & ) THEN
                IF((ITER.EQ.1).OR.(OORANGEIND))THEN
                   DO NZIND=1_8,NZ_loc
                      IR = IRN_loc(NZIND)

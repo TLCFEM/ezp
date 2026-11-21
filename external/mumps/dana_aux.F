@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.1, released
-C  on Mon Jul 20 09:00:43 UTC 2026
+C  This file is part of MUMPS 5.9.2, released
+C  on Fri Nov 13 10:00:55 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -118,9 +118,9 @@ C
 #if defined (MUMPS_SCOTCHIMPORTOMPTHREADS)
       INTEGER            :: ESMUMPSCONTEXT
 #endif
-      EXTERNAL MUMPS_ANA_H, DMUMPS_ANA_J, 
-     &     DMUMPS_ANA_K, DMUMPS_ANA_GNEW,
-     &     DMUMPS_ANA_LNEW, DMUMPS_ANA_M
+      EXTERNAL MUMPS_ANA_H, 
+     &         DMUMPS_ANA_GNEW,
+     &         DMUMPS_ANA_LNEW, DMUMPS_ANA_M
       EXTERNAL DMUMPS_GNEW_SCHUR
       EXTERNAL DMUMPS_LDLT_COMPRESS, DMUMPS_EXPAND_PERMUTATION,
      &     DMUMPS_SET_CONSTRAINTS
@@ -1029,18 +1029,8 @@ C
      &        ' ELAPSED TIME IN symbolic factorization  =', TIMEB
            ENDIF
          ELSE
-            CALL DMUMPS_ANA_J(N, NZ8, IRN(1), ICN(1), IKEEP1(1), IW(1),
-     &           LIW8, IPE(1),
-     &           PTRAR(1,2), IWL1, IWFR8,
-     &           INFO(1),INFO(2), MP)
-            IF (KEEP(60) .EQ. 0) THEN
-               ITEMP = 0 
-            ELSE 
-               ITEMP = SIZE_SCHUR
-            ENDIF
-            CALL DMUMPS_ANA_K(N, IPE(1), IW(1), LIW8, IWFR8, IKEEP1(1),
-     &              IKEEP2(1), IWL1,
-     &              PTRAR, NCMPA, ITEMP, PARENT)
+           write(MP,*) " Internal error "
+           call MUMPS_ABORT()
          ENDIF                  
       ENDIF                     
       IF (KEEP(60) .NE. 0) THEN
@@ -1983,229 +1973,6 @@ C
       RETURN
       END SUBROUTINE DMUMPS_ANA_O
       END MODULE DMUMPS_ANA_AUX_M
-      SUBROUTINE DMUMPS_ANA_K(N,IPE, IW, LW, IWFR, IPS, IPV, 
-     &                           NV, FLAG,
-     &                           NCMPA, SIZE_SCHUR, PARENT)
-      IMPLICIT NONE
-      INTEGER, INTENT(IN)    :: N, SIZE_SCHUR
-      INTEGER, INTENT(IN)    :: IPS(N)
-      INTEGER(8), INTENT(IN) :: LW
-      INTEGER, INTENT(OUT)   :: NCMPA
-      INTEGER, INTENT(OUT)   :: IPV(N), NV(N), PARENT(N)
-      INTEGER(8), INTENT(INOUT) :: IWFR
-      INTEGER(8), INTENT(INOUT) :: IPE(N)
-      INTEGER, INTENT(INOUT)    :: IW(LW)
-      INTEGER, INTENT(OUT)      ::  FLAG(N)
-      INTEGER I,J,ML,MS,ME,MINJS,IE,KDUMMY
-      INTEGER LN,JS,JE
-      INTEGER(8) :: JP, JP1, JP2, LWFR, IP
-      DO 10 I=1,N
-        FLAG(I) = 0
-        NV(I) = 0
-        J = IPS(I)
-        IPV(J) = I
-   10 CONTINUE
-      NCMPA = 0
-      DO 100 ML=1,N-SIZE_SCHUR 
-        MS = IPV(ML)
-        ME = MS
-        FLAG(MS) = ME
-        IP = IWFR
-        MINJS = N
-        IE = ME
-        DO 70 KDUMMY=1,N
-          JP = IPE(IE)
-          LN = 0
-          IF (JP.LE.0_8) GO TO 60
-          LN = IW(JP)
-          DO 50 JP1=1_8,int(LN,8)
-            JP = JP + 1_8
-            JS = IW(JP)
-            IF (FLAG(JS).EQ.ME) GO TO 50
-            FLAG(JS) = ME
-            IF (IWFR.LT.LW) GO TO 40
-            IPE(IE) = JP
-            IW(JP) = LN - int(JP1)
-            CALL DMUMPS_ANA_D(N, IPE, IW, IP-1_8, LWFR, NCMPA)
-            JP2 = IWFR - 1
-            IWFR = LWFR
-            IF (IP.GT.JP2) GO TO 30
-            DO 20 JP=IP,JP2
-              IW(IWFR) = IW(JP)
-              IWFR = IWFR + 1_8
-   20       CONTINUE
-   30       IP = LWFR
-            JP = IPE(IE)
-   40       IW(IWFR) = JS
-            MINJS = min(MINJS,IPS(JS)+0)
-            IWFR = IWFR + 1_8
-   50     CONTINUE
-   60     IPE(IE) = int(-ME,8)
-          JE = NV(IE)
-          NV(IE) = LN + 1
-          IE = JE
-          IF (IE.EQ.0) GO TO 80
-   70   CONTINUE
-   80   IF (IWFR.GT.IP) GO TO 90
-        IPE(ME) = 0_8
-        NV(ME) = 1
-        GO TO 100
-   90   MINJS = IPV(MINJS)
-        NV(ME) = NV(MINJS)
-        NV(MINJS) = ME
-        IW(IWFR) = IW(IP)
-        IW(IP) = int(IWFR - IP)
-        IPE(ME) = IP
-        IWFR = IWFR + 1_8
-  100 CONTINUE
-      IF (SIZE_SCHUR == 0) GOTO 500
-      DO ML = N-SIZE_SCHUR+1,N
-        ME = IPV(ML)
-        IE = ME
-        DO KDUMMY=1,N
-          JP = IPE(IE)
-          LN = 0
-          IF (JP.LE.0_8) GO TO 160
-          LN = IW(JP)
-  160     IPE(IE) = int(-IPV(N-SIZE_SCHUR+1),8)
-          JE = NV(IE)
-          NV(IE) = LN + 1
-          IE = JE
-          IF (IE.EQ.0) GO TO 190
-        ENDDO
-  190   NV(ME) = 0
-        IPE(ME) = int(-IPV(N-SIZE_SCHUR+1),8)
-      ENDDO
-      ME = IPV(N-SIZE_SCHUR+1)
-      IPE(ME) = 0_8
-      NV(ME) = SIZE_SCHUR
-  500 DO I=1,N
-       PARENT(I) = int(IPE(I))
-      ENDDO
-      RETURN
-      END SUBROUTINE DMUMPS_ANA_K
-      SUBROUTINE DMUMPS_ANA_J(N, NZ, IRN, ICN, PERM,
-     & IW, LW, IPE, IQ, FLAG,
-     & IWFR, IFLAG, IERROR, MP)
-      INTEGER, INTENT(IN)    :: N
-      INTEGER(8), INTENT(IN) :: NZ, LW
-      INTEGER, INTENT(IN) :: IRN(NZ), ICN(NZ) 
-      INTEGER, INTENT(IN) :: PERM(N)
-      INTEGER, INTENT(IN)  ::  MP
-      INTEGER(8), INTENT(OUT):: IWFR
-      INTEGER, INTENT(OUT)   :: IERROR
-      INTEGER, INTENT(OUT)   :: IQ(N)
-      INTEGER(8), INTENT(OUT) :: IPE(N) 
-      INTEGER, INTENT(OUT) :: IW(LW) 
-      INTEGER, INTENT(OUT) :: FLAG(N)
-      INTEGER, INTENT(INOUT) :: IFLAG
-      INTEGER  :: I,J,LBIG,IN,LEN,JDUMMY,L1
-      INTEGER(8) :: K, K1, K2, KL, KID
-      IERROR = 0
-      DO 10 I=1,N
-        IQ(I) = 0
-   10 CONTINUE
-      DO 80 K=1_8,NZ
-        I = IRN(K)
-        J = ICN(K)
-        IW(K) = -I
-        IF (I.EQ.J) GOTO 40
-        IF (I.GT.J) GOTO 30
-        IF (I.GE.1 .AND. J.LE.N) GO TO 60
-        GO TO 50
-   30   IF (J.GE.1 .AND. I.LE.N) GO TO 60
-        GO TO 50
-   40   IW(K) = 0
-        IF (I.GE.1 .AND. I.LE.N) GO TO 80
-   50   IERROR = IERROR + 1
-        IW(K) = 0
-        IF (IERROR.LE.1 .AND. MP.GT.0) WRITE (MP,99999) 
-        IF (IERROR.LE.10 .AND. MP.GT.0) WRITE (MP,99998) K, I, J
-        GO TO 80
-   60   IF (PERM(J).GT.PERM(I)) GO TO 70
-        IQ(J) = IQ(J) + 1
-        GO TO 80
-   70   IQ(I) = IQ(I) + 1
-   80 CONTINUE
-      IF (IERROR.GE.1) THEN
-        IF (mod(IFLAG,2) .EQ. 0) IFLAG = IFLAG+1
-      ENDIF
-      IWFR = 1_8
-      LBIG = 0
-      DO 100 I=1,N
-        L1 = IQ(I)
-        LBIG = max(L1,LBIG)
-        IWFR = IWFR + int(L1,8)
-        IPE(I) = IWFR - 1_8
-  100 CONTINUE
-      DO 140 K=1_8,NZ
-        I = -IW(K)
-        IF (I.LE.0) GO TO 140
-        KL = K
-        IW(K) = 0
-        DO 130 KID=1,NZ
-          J = ICN(KL)
-          IF (PERM(I).LT.PERM(J)) GO TO 110
-          KL = IPE(J)
-          IPE(J) = KL - 1_8
-          IN = IW(KL)
-          IW(KL) = I
-          GO TO 120
-  110     KL = IPE(I)
-          IPE(I) = KL - 1_8
-          IN = IW(KL)
-          IW(KL) = J
-  120     I = -IN
-          IF (I.LE.0) GO TO 140
-  130   CONTINUE
-  140 CONTINUE
-      K = IWFR - 1_8
-      KL = K + int(N,8)
-      IWFR = KL + 1_8
-      DO 170 I=1,N
-        FLAG(I) = 0
-        J = N + 1 - I
-        LEN = IQ(J)
-        IF (LEN.LE.0) GO TO 160
-        DO 150 JDUMMY=1,LEN
-          IW(KL) = IW(K)
-          K = K - 1_8
-          KL = KL - 1_8
-  150   CONTINUE
-  160   IPE(J) = KL
-        KL = KL - 1_8
-  170 CONTINUE
-      IF (LBIG.GE.huge(N)) GO TO 190
-      DO 180 I=1,N
-        K = IPE(I)
-        IW(K) = IQ(I)
-        IF (IQ(I).EQ.0) IPE(I) = 0_8
-  180 CONTINUE
-      GO TO 230
-  190 IWFR = 1_8
-      DO 220 I=1,N
-        K1 = IPE(I) + 1_8
-        K2 = IPE(I) + int(IQ(I),8)
-        IF (K1.LE.K2) GO TO 200
-        IPE(I) = 0_8
-        GO TO 220
-  200   IPE(I) = IWFR
-        IWFR = IWFR + 1_8
-        DO 210 K=K1,K2
-          J = IW(K)
-          IF (FLAG(J).EQ.I) GO TO 210
-          IW(IWFR) = J
-          IWFR = IWFR + 1_8
-          FLAG(J) = I
-  210   CONTINUE
-        K = IPE(I)
-        IW(K) = int(IWFR - K - 1_8)
-  220 CONTINUE
-  230 RETURN
-99999 FORMAT (' *** WARNING MESSAGE FROM DMUMPS_ANA_J ***' )
-99998 FORMAT (I6, ' NON-ZERO (IN ROW, I6, 11H AND COLUMN ', I6,
-     & ') IGNORED')
-      END SUBROUTINE DMUMPS_ANA_J
       SUBROUTINE DMUMPS_ANA_D(N, IPE, IW, LW, IWFR,NCMPA)
       INTEGER, INTENT(IN)      :: N
       INTEGER(8), INTENT(IN)   :: LW
@@ -2823,7 +2590,7 @@ C
      &       ' ICNTL(14) Percentage of memory relaxation      =',I16/
      &       ' ICNTL(15) Analysis by block effectively used   =',I16/
 #if defined(MPI_TO_K_OMP)
-     &       ' ICNTL(17) Effective value of grouping factor   =',I16/
+     &       ' ICNTL(17) Eff. value of MPItokOMP reuse factor =',I16/
 #endif
      &       ' ICNTL(18) Distributed input matrix (on if >0)  =',I16/
      &       ' ICNTL(32) Forward elimination during facto.    =',I16/

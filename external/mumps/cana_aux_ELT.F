@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.1, released
-C  on Mon Jul 20 09:00:43 UTC 2026
+C  This file is part of MUMPS 5.9.2, released
+C  on Fri Nov 13 10:00:55 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -70,8 +70,6 @@ C
       EXTERNAL CMUMPS_ANA_G11_ELT, CMUMPS_ANA_G12_ELT,
      &         CMUMPS_ANA_G1_ELT, CMUMPS_ANA_G2_ELT, 
      &         CMUMPS_ANA_G2_ELTNEW,
-     &         CMUMPS_ANA_J1_ELT, CMUMPS_ANA_J2_ELT,
-     &         CMUMPS_ANA_K,
      &         CMUMPS_ANA_LNEW, CMUMPS_ANA_M,
      &         MUMPS_AMD_ELT
         ALLOCATE( IW ( LIW ), stat = allocok )
@@ -118,6 +116,7 @@ C
 #if ! defined(metis) && ! defined(parmetis) && ! defined(metis4) && ! defined(parmetis3)
       IF (IORD == 5) IORD = 0
 #endif
+      IORD = 0
       IF (KEEP(1).LT.1) KEEP(1) = 1
       NEMIN = KEEP(1)
       IF (LDIAG.LE.2 .OR. MP.LE.0) GO TO 10
@@ -217,122 +216,8 @@ C
      &   IWtemp)
         ENDIF
       ELSE
-#if defined(metis) || defined(parmetis) || defined(metis4) || defined(parmetis3)
-        IF (IORD.EQ.5) THEN
-         IF (PROK) THEN
-          WRITE(MPRINT,'(A)') ' Ordering based on METIS'
-         ENDIF
-         CALL CMUMPS_ANA_G1_ELT(N, NZ8, NELT, ELTPTR(NELT+1)-1, 
-     &              ELTPTR, ELTVAR, XNODEL, NODEL,
-     &              IWtemp(1,2), IW(L1))
-         LLIW8 = max(NZ8,int(N,8))
-         ALLOCATE( IW2(LLIW8), stat = allocok )
-         IF (allocok.GT.0) THEN
-           INFO(1) = -7
-           CALL MUMPS_SET_IERROR(LLIW8, INFO(2))
-           GOTO 90 
-         ENDIF
-         CALL CMUMPS_ANA_G2_ELTNEW(N, NELT, ELTPTR(NELT+1)-1, 
-     &              ELTPTR, ELTVAR, XNODEL, NODEL,
-     &              IW2, LLIW8, IPE8, IWtemp(1,2),
-     &              IW(L1), IWFR8)
-#if defined(metis4) || defined(parmetis3)
-         NUMFLAG = 1
-         OPT_METIS_SIZE = 8
-#else
-         ALLOCATE( NUMFLAG ( N ), stat = IERR )
-         IF ( IERR .GT. 0 ) THEN
-            INFO( 1 ) = -7
-            INFO( 2 ) = N
-            GOTO 90             
-         ENDIF
-         DO I=1,N
-            NUMFLAG(I) = 1
-         ENDDO
-         OPT_METIS_SIZE = 40
-#endif
-         CALL MUMPS_METIS_IDXSIZE(METIS_IDX_SIZE)
-         IF (KEEP(10).EQ.1.AND.METIS_IDX_SIZE.NE.64) THEN
-           INFO(1) = -52
-           INFO(2) = 1
-           GOTO 90
-         ENDIF
-         IF (METIS_IDX_SIZE .EQ. 32) THEN
-           CALL MUMPS_METIS_NODEND_MIXEDto32(N, IPE8, IW2,
-#if defined(metis4) || defined(parmetis3)
-     &          NUMFLAG,  
-#else
-     &          NUMFLAG,  
-#endif
-     &          METIS_OPTIONS(1), OPT_METIS_SIZE,
-     &          IKEEP(1:N,2), IKEEP(1:N,1), INFO(1), LP, LPOK)
-         ELSE IF (METIS_IDX_SIZE .EQ. 64) THEN
-           CALL MUMPS_METIS_NODEND_MIXEDto64(N, IPE8, IW2,
-#if defined(metis4) || defined(parmetis3)
-     &          NUMFLAG, 
-#else
-     &          NUMFLAG, 
-#endif
-     &          METIS_OPTIONS(1), OPT_METIS_SIZE,
-     &          IKEEP(1:N,2), IKEEP(1:N,1), INFO(1), 
-     &          LP, LPOK, KEEP(10), 
-     &          LLIW8, .FALSE., .TRUE. )
-         ELSE
-            WRITE(*,*)
-     &        "Internal error in METIS wrappers, METIS_IDX_SIZE=",
-     &        METIS_IDX_SIZE
-            CALL MUMPS_ABORT()
-         ENDIF
-         IF (INFO(1) .LT. 0) GOTO 90
-         DEALLOCATE(IW2)
-      ELSE IF (IORD.NE.1) THEN
-          WRITE(*,*) IORD
-          WRITE(*,*)  'bad option for ordering'
-          CALL MUMPS_ABORT()
-        ENDIF
-#endif
-       DO K=1,N
-         IW(L1+int(K,8)) = 0
-       ENDDO
-       DO K=1,N
-         IF ((IKEEP(K,1).LE.0).OR.(IKEEP(K,1).GT.N)) 
-     &    GO TO 40
-         IF (IW(L1+int(IKEEP(K,1),8)).EQ.1) THEN
-          GOTO 40
-         ELSE
-          IW(L1+int(IKEEP(K,1),8)) = 1
-         ENDIF
-       ENDDO
-       CALL CMUMPS_ANA_J1_ELT(N, NZ8, NELT, ELTPTR(NELT+1)-1,
-     &             ELTPTR, ELTVAR, XNODEL, NODEL, 
-     &             IKEEP, IWtemp(1,2), IW(L1))
-       LLIW8 = NZ8+int(N,8)
-       ALLOCATE( IW2(LLIW8), stat = allocok )
-       IF (allocok.GT.0) THEN
-         INFO(1) = -7
-         CALL MUMPS_SET_IERROR(LLIW8,INFO(2))
-         GOTO 90 
-       ENDIF
-       CALL CMUMPS_ANA_J2_ELT(N, NELT, ELTPTR(NELT+1)-1,
-     &             ELTPTR, ELTVAR, XNODEL, NODEL, 
-     &             IKEEP, IW2, LLIW8, IPE8, IWtemp(1,2),
-     &             IW(L1), IWFR8)
-       IF (KEEP(60) == 0) THEN
-         ITEMP = 0 
-       ELSE
-         ITEMP = SIZE_SCHUR
-         IF (KEEP(60) == 1) THEN
-           KEEP(20) = LISTVAR_SCHUR(1)
-         ELSEIF (KEEP(60) == 2 .OR. KEEP(60) == 3 ) THEN
-           KEEP(38) = LISTVAR_SCHUR(1)
-        ELSE
-           WRITE(*,*) "Internal error in CMUMPS_ANA_F_ELT",KEEP(60)
-           CALL MUMPS_ABORT()
-         ENDIF
-       ENDIF
-       CALL CMUMPS_ANA_K(N, IPE8, IW2, LLIW8, IWFR8, IKEEP, 
-     &    IKEEP(1,2), IW(L1),
-     &    IW(L2), NCMPA, ITEMP, IWtemp)
+       write(MP,*) " Internal error "
+       call MUMPS_ABORT()
       ENDIF
       CALL CMUMPS_ANA_LNEW(N, IWtemp, IW(L1), IKEEP, IKEEP(1,2),
      &     IKEEP(1,3),
@@ -672,86 +557,6 @@ C
       ENDDO
       RETURN
       END SUBROUTINE CMUMPS_ANA_G2_ELT
-      SUBROUTINE CMUMPS_ANA_J1_ELT(N, NZ, NELT, NELNOD,
-     & XELNOD, ELNOD, XNODEL, NODEL, 
-     & PERM, LEN, FLAG)
-      IMPLICIT NONE
-      INTEGER N,NELT,NELNOD
-      INTEGER(8), INTENT(OUT) :: NZ
-      INTEGER XELNOD(NELT+1), ELNOD(NELNOD)
-      INTEGER PERM(N)
-      INTEGER LEN(N)
-      INTEGER XNODEL(N+1), NODEL(NELNOD), FLAG(N)
-      INTEGER I,J,K1,K2,K3
-      FLAG(1:N) = 0
-      LEN(1:N) = 0
-      DO I = 1,N
-        DO K1 = XNODEL(I),XNODEL(I+1)-1
-          K2 = NODEL(K1)
-          DO K3 = XELNOD(K2),XELNOD(K2+1)-1
-            J = ELNOD(K3)
-            IF ((J.GE.1) .AND. (J.LE.N)) THEN
-              IF ((I.NE.J) .AND. (FLAG(J).NE.I)) THEN
-                IF (PERM(J).GT.PERM(I)) THEN
-                  LEN(I) = LEN(I) + 1
-                  FLAG(J) = I
-                ENDIF
-              ENDIF
-            ENDIF
-          ENDDO
-        ENDDO
-      ENDDO
-      NZ = 0_8
-      DO I = 1,N 
-        NZ = NZ + int(LEN(I),8)
-      ENDDO   
-      RETURN  
-      END SUBROUTINE CMUMPS_ANA_J1_ELT
-      SUBROUTINE CMUMPS_ANA_J2_ELT(N, NELT, NELNOD,
-     & XELNOD, ELNOD, XNODEL, NODEL, 
-     & PERM, IW, LW, IPE, LEN, FLAG, IWFR)
-      IMPLICIT NONE
-      INTEGER N,NELT,NELNOD
-      INTEGER(8), INTENT(IN) :: LW
-      INTEGER(8), INTENT(OUT) :: IWFR 
-      INTEGER(8), INTENT(OUT) :: IPE(N)
-      INTEGER  XELNOD(NELT+1), ELNOD(NELNOD)
-      INTEGER PERM(N)
-      INTEGER LEN(N)
-      INTEGER XNODEL(N+1), NODEL(NELNOD), IW(LW), 
-     &          FLAG(N)
-      INTEGER I,J,K1,K2,K3
-      IWFR = 0_8
-      DO I = 1,N
-        IWFR = IWFR + int(LEN(I) + 1,8)
-        IPE(I) = IWFR 
-      ENDDO
-      IWFR = IWFR + 1_8
-      FLAG(1:N) = 0
-      DO I = 1,N
-        DO K1 = XNODEL(I),XNODEL(I+1)-1
-          K2 = NODEL(K1)
-          DO K3 = XELNOD(K2),XELNOD(K2+1)-1
-            J = ELNOD(K3)
-            IF ((J.GE.1) .AND. (J.LE.N)) THEN
-              IF ((I.NE.J) .AND. (FLAG(J).NE.I)) THEN
-                IF (PERM(J).GT.PERM(I)) THEN
-                  IW(IPE(I)) = J
-                  IPE(I) = IPE(I) - 1_8
-                  FLAG(J) = I
-                ENDIF
-              ENDIF
-            ENDIF
-          ENDDO
-        ENDDO
-      ENDDO
-      DO I = 1,N
-        J = int(IPE(I))
-        IW(J) = LEN(I)
-        IF (LEN(I).EQ.0) IPE(I) = 0_8
-      ENDDO
-      RETURN
-      END SUBROUTINE CMUMPS_ANA_J2_ELT
       SUBROUTINE CMUMPS_ANA_DIST_ELEMENTS( MYID, SLAVEF, N, 
      &           PROCNODE, STEP, PTRAIW, PTRARW,
      &           NELT, FRTPTR, FRTELT, 

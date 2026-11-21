@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.1, released
-C  on Mon Jul 20 09:00:43 UTC 2026
+C  This file is part of MUMPS 5.9.2, released
+C  on Fri Nov 13 10:00:55 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -162,7 +162,12 @@ C
      &  KEEP(35) * (
      &      int( MAXRECORDS,8)*int(NRHS_COL,8)*int(MAX_ACTIVE_SENDS,8)
      &      + int(MAXRECORDS,8) * int(NRHS_COL,8) )
+#if defined(AVOID_MPI_IN_PLACE)
+      allocoktmp=allocok
+      CALL MPI_ALLREDUCE( allocoktmp, allocok, 1,
+#else
       CALL MPI_ALLREDUCE( MPI_IN_PLACE, allocok, 1,
+#endif
      &                    MPI_INTEGER, MPI_SUM,
      &                    COMM_NODES, IERR_MPI )
       IF (allocok .NE. 0) RETURN

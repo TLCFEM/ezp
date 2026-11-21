@@ -75,7 +75,7 @@
 #include "parser.hpp"
 
 namespace ezp {
-    template<data_t DT, index_t IT> auto pardiso_set(const std::string& command, pardiso<DT, IT>& solver) {
+    template<data_t DT, index_t IT, distribution_category DC> auto pardiso_set(const std::string& command, pardiso<DT, IT, DC>& solver) {
         for(const auto& [token, value] : detail::parse(command)) {
             if(token == "--default-value") solver.iparm_default_value(value);
             else if(token == "--reducing-ordering") solver.iparm_reducing_ordering(value);

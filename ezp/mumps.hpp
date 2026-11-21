@@ -21,7 +21,12 @@
  * It solves the system of linear equations `A * X = B` with a general sparse matrix `A`.
  * The RHS matrix `B` is a dense matrix.
  *
- * The matrix `A` should be stored in the Compressed Sparse Row (CSR) format with one-based indexing.
+ * The matrix `A` should be stored in the Coordinate (COO) format with one-based indexing.
+ *
+ * The optional template parameter `DC` selects between a centralized matrix (`distribution_category::centralized`, the default) and a matrix distributed across the MPI processes (`distribution_category::distributed_matrix`).
+ * For the distributed category, each process provides its local triplets and MUMPS is called with `ICNTL(18)=3`.
+ * The distributed category defaults to a working host (`host_involved`), so rank 0 can provide local entries as well.
+ * If `no_host` is selected explicitly, rank 0 does not participate in the factorization and its local entries are ignored.
  *
  * To set control parameters, use the overloaded function call operator, which allows access to the `icntl` array.
  *
@@ -34,6 +39,7 @@
  * The example usage can be seen as follows.
  *
  * @include example.mumps.cpp
+ * @include example.mumps.distributed.cpp
  *
  * @author tlc
  * @date 23/03/2025
@@ -89,7 +95,7 @@ namespace ezp {
         host_involved = 1
     };
 
-    template<data_t DT, index_t IT> class mumps final {
+    template<data_t DT, index_t IT, distribution_category DC = distribution_category::centralized> class mumps final {
         using struct_t = detail::mumps_struc<DT>::struct_type;
         using entry_t = detail::mumps_struc<DT>::entry_type;
 
@@ -108,12 +114,16 @@ namespace ezp {
             detail::mumps_struc<DT>::mumps_c(&id);
         }
 
+        static constexpr auto is_distributed() { return distribution_category::centralized != DC; }
+
     public:
-        explicit mumps(const symmetric_pattern sym = unsymmetric, const parallel_mode par = no_host) {
+        explicit mumps(const symmetric_pattern sym = unsymmetric, const parallel_mode par = is_distributed() ? host_involved : no_host) {
             id.comm_fortran = MPI_Comm_c2f(comm_world.native_handle());
             id.sym = sym;
             // force par=1 if there is only one process
             id.par = comm_world.size() == 1 ? 1 : par;
+            // only the distributed matrix input format ICNTL(18)=3 is supported
+            if constexpr(is_distributed()) id.icntl[17] = 3;
             perform_job(-1);
         }
 
@@ -312,10 +322,22 @@ namespace ezp {
 
             // ReSharper disable CppCStyleCast
             id.n = A.n;
-            id.nnz = A.nnz;
-            id.irn = A.row;
-            id.jcn = A.col;
-            id.a = (entry_t*)A.data;
+
+            if constexpr(is_distributed()) {
+                // Only the distributed matrix input format ICNTL(18)=3 is supported.
+                // The pattern and the values are provided in local triplets on every process.
+                id.icntl[17] = 3;
+                id.nnz_loc = A.nnz;
+                id.irn_loc = A.row;
+                id.jcn_loc = A.col;
+                id.a_loc = (entry_t*)A.data;
+            }
+            else {
+                id.nnz = A.nnz;
+                id.irn = A.row;
+                id.jcn = A.col;
+                id.a = (entry_t*)A.data;
+            }
 
             id.lrhs = B.n_rows;
             id.nrhs = B.n_cols;
@@ -329,6 +351,8 @@ namespace ezp {
 
         IT solve(full_mat<DT, IT>&& B) {
             if(id.n != B.n_rows) return IT{-1};
+
+            if constexpr(is_distributed()) id.icntl[17] = 3;
 
             // ReSharper disable CppCStyleCast
             id.lrhs = B.n_rows;

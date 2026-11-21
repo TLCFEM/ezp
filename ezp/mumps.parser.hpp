@@ -119,7 +119,7 @@
 #include "parser.hpp"
 
 namespace ezp {
-    template<data_t DT, index_t IT> auto mumps_set(const std::string& command, mumps<DT, IT>& solver) {
+    template<data_t DT, index_t IT, distribution_category DC> auto mumps_set(const std::string& command, mumps<DT, IT, DC>& solver) {
         for(const auto& [token, value] : detail::parse(command)) {
             if(token == "--output-error-message") solver.icntl_output_error_message(value);
             else if(token == "--output-diagnostic-statistics-warning") solver.icntl_output_diagnostic_statistics_warning(value);

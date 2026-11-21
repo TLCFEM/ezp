@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.1, released
-C  on Mon Jul 20 09:00:43 UTC 2026
+C  This file is part of MUMPS 5.9.2, released
+C  on Fri Nov 13 10:00:55 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -519,6 +519,7 @@ C     that are skipped (case of sparse RHS)
 C     next 4 initialisations needed in case of error
 C     to free space allocated
       LSCAL              = .FALSE.
+      ES_RHSINTR         = .FALSE.
 C
       ICNTL21  = -99998  ! will be bcasted later to slaves
       IBEG_RHSINTR =-152525_8  ! Should not be used

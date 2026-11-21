@@ -51,7 +51,7 @@ if (EZP_ENABLE_OPENMP)
     option(EZP_ENABLE_OPENMP_GK "Use OpenMP for GKlib." ON)
 endif ()
 
-find_package(MPI REQUIRED COMPONENTS C Fortran)
+find_package(MPI 3.1 REQUIRED COMPONENTS C Fortran)
 message(STATUS ${MPIEXEC_EXECUTABLE})
 get_filename_component(MPI_ROOT_DIR ${MPIEXEC_EXECUTABLE} DIRECTORY)
 file(GLOB MPI_VERSION_FILE

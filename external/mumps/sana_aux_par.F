@@ -1,6 +1,6 @@
 C
-C  This file is part of MUMPS 5.9.1, released
-C  on Mon Jul 20 09:00:43 UTC 2026
+C  This file is part of MUMPS 5.9.2, released
+C  on Fri Nov 13 10:00:55 UTC 2026
 C
 C
 C  Copyright 1991-2026 CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria,
@@ -1043,15 +1043,15 @@ C
       RETURN
  11   CONTINUE
       IF (id%KEEP(339).NE.0) THEN
+       nullify(VERTLOCTAB, EDGELOCTAB)
+      ELSE
         CALL MUMPS_DEALLOC(FIRST      , MEMCNT=MEMCNT)
         CALL MUMPS_DEALLOC(LAST       , MEMCNT=MEMCNT)
         CALL MUMPS_DEALLOC(ord%RANGTAB, MEMCNT=MEMCNT)
         CALL MUMPS_DEALLOC(EDGELOCTAB, MEMCNT=MEMCNT)
         CALL MUMPS_I8DEALLOC(VERTLOCTAB, MEMCNT=MEMCNT)
-      ELSE
-       CALL MUMPS_DEALLOC(ord%RANGTAB, MEMCNT=MEMCNT)
-       nullify(VERTLOCTAB, EDGELOCTAB)
       ENDIF
+      CALL MUMPS_DEALLOC(ord%RANGTAB, MEMCNT=MEMCNT)
       RETURN
       END SUBROUTINE SMUMPS_PTSCOTCH_ORD
 #endif
@@ -3292,7 +3292,7 @@ C
            CALL MUMPS_ABORT()
          ENDIF
          TMP    => WORK(1:N)
-         NZ_ROW => WORK(int(N+1,8):2-8*int(N,8))
+         NZ_ROW => WORK(int(N+1,8):2_8*int(N,8))
          TMP = 0
          LOCOFFDIAG = 0_8
          LOCNNZ = id%KEEP8(29)
