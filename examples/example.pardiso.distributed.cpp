@@ -17,10 +17,8 @@
 /**
  * @brief Example caller to the `pardiso` solver with a distributed matrix.
  *
- * Each process stores a contiguous block of rows of the matrix. The right-hand
- * side and the solution are stored on the master process; the solver scatters
- * the right-hand side internally, which is required by MKL for distributed
- * matrix input (`iparm[39] = 1`).
+ * Each process stores a contiguous block of rows of the matrix.
+ * The right-hand side and the solution are stored on the master process; the solver scatters the right-hand side internally, which is required by MKL for distributed matrix input (`iparm[39] = 1`).
  *
  * Run it with, for example:
  *
@@ -109,8 +107,8 @@ int main() {
 
     auto solver = ezp::pardiso<double, int_t, ezp::distribution_category::distributed_matrix>(ezp::matrix_type::real_and_nonsymmetric, ezp::message_level::no_output);
 
-    // The local blocks are supplied in rank order. Alternatively, call
-    // solver.iparm_input_domain(begin + 1, begin + local_n) to set the bounds explicitly.
+    // The local blocks are supplied in rank order.
+    // Alternatively, call solver.iparm_input_domain(begin + 1, begin + local_n) to set the bounds explicitly.
     const auto info = solver.solve({N, local_n, static_cast<int_t>(ja.size()), ia.data(), ja.data(), a.data()}, {N, NRHS, b.data()});
 
     if(0 == rank) {

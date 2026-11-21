@@ -24,9 +24,7 @@
  * The matrix `A` should be stored in the Compressed Sparse Row (CSR) format with one-based indexing.
  * Use the call operator to set the parameters `iparm` for the solver.
  *
- * The optional template parameter `DC` selects between a centralized matrix
- * (`distribution_category::centralized`, the default) and a matrix distributed
- * row-wise across the MPI processes (`distribution_category::distributed_matrix`).
+ * The optional template parameter `DC` selects between a centralized matrix (`distribution_category::centralized`, the default) and a matrix distributed row-wise across the MPI processes (`distribution_category::distributed_matrix`).
  *
  * The example usage can be seen as follows.
  *
@@ -71,9 +69,8 @@ namespace ezp {
      * @enum distribution_category
      * @brief Distribution of the matrix.
      *
-     * The enumerators map directly to the supported values of `iparm[39]` of the
-     * Intel MKL Cluster Sparse Solver. The right-hand side and the solution are
-     * always stored on the master process.
+     * The enumerators map directly to the supported values of `iparm[39]` of the Intel MKL Cluster Sparse Solver.
+     * The right-hand side and the solution are always stored on the master process.
      */
     enum class distribution_category : std::int8_t {
         /** The master process stores the whole matrix. */
@@ -111,10 +108,9 @@ namespace ezp {
         /**
          * @brief Fill the non-zero MKL defaults before enabling the distributed input format.
          *
-         * If `iparm[0]` is zero, MKL overwrites `iparm[1]` to `iparm[63]` with defaults during
-         * the analysis phase, including `iparm[39]`. The distributed category would be lost.
-         * The wrapper therefore switches to user-supplied parameters and reproduces the
-         * defaults that matter for the matrix type.
+         * If `iparm[0]` is zero, MKL overwrites `iparm[1]` to `iparm[63]` with defaults during the analysis phase, including `iparm[39]`.
+         * The distributed category would be lost.
+         * The wrapper therefore switches to user-supplied parameters and reproduces the defaults that matter for the matrix type.
          */
         auto initialize_defaults() {
             if(0 != iparm[0]) return;
@@ -137,9 +133,7 @@ namespace ezp {
          * @brief Determine the local row range and write the MKL domain parameters.
          *
          * The range is taken from `iparm_input_domain` when it has been set.
-         * Otherwise, the local row count is taken from `sparse_csr_mat::n_local`
-         * and the local row blocks are expected to be in rank order, so the
-         * global offsets are computed with a prefix scan.
+         * Otherwise, the local row count is taken from `sparse_csr_mat::n_local` and the local row blocks are expected to be in rank order, so the global offsets are computed with a prefix scan.
          */
         auto prepare_distribution(const sparse_csr_mat<DT, IT>& A) -> IT {
             if constexpr(!is_distributed()) {
@@ -345,14 +339,11 @@ namespace ezp {
                 if(on_master) std::copy_n(B.data, b_ref.size(), b_ref.data());
             }
             else {
-                // The right-hand side and the solution are stored centrally on
-                // the master process.
+                // The right-hand side and the solution are stored centrally on the master process.
                 b_ref.resize(local_n * nrhs);
                 if(on_master) x_ref.resize(a_mat.n * nrhs);
 
-                // Repack the right-hand side into local row blocks because MKL
-                // expects the local rows to be contiguous with leading dimension
-                // equal to the local number of rows.
+                // Repack the right-hand side into local row blocks because MKL expects the local rows to be contiguous with leading dimension equal to the local number of rows.
                 const auto size = static_cast<std::size_t>(comm_world.size());
                 std::vector<IT> counts(size), begins(size), offsets(size);
 
@@ -386,8 +377,8 @@ namespace ezp {
             void* b_ptr = b_ref.empty() ? nullptr : static_cast<void*>(b_ref.data());
             void* x_ptr = x_ref.empty() ? nullptr : static_cast<void*>(x_ref.data());
 
-            // Let MKL write the solution into x. This keeps the input and output
-            // buffers separate.
+            // Let MKL write the solution into x.
+            // This keeps the input and output buffers separate.
             const auto write_to_b = iparm[5];
             iparm[5] = 0;
 

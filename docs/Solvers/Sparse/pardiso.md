@@ -18,10 +18,8 @@ auto solver = ezp::pardiso<double, int_t>(
 );
 ```
 
-The third template argument selects the matrix distribution and defaults to
-`ezp::distribution_category::centralized`. Use
-`ezp::distribution_category::distributed_matrix` to store the matrix row-wise
-across MPI processes.
+The third template argument selects the matrix distribution and defaults to `ezp::distribution_category::centralized`.
+Use `ezp::distribution_category::distributed_matrix` to store the matrix row-wise across MPI processes.
 
 ```cpp
 auto solver = ezp::pardiso<double, int_t, ezp::distribution_category::distributed_matrix>(
@@ -64,8 +62,7 @@ Zero-based indexing can be enabled with `iparm_zero_based_indexing` or the `--ze
 
 ## Distributed Matrix Input
 
-Set the third template argument to `distribution_category::distributed_matrix`
-to store the matrix row-wise across the MPI processes.
+Set the third template argument to `distribution_category::distributed_matrix` to store the matrix row-wise across the MPI processes.
 Each process provides its local row block:
 
 ```cpp
@@ -80,28 +77,26 @@ solver.solve(
 );
 ```
 
-Here `row_ptr` has length `local_n + 1` and is local to the process, while
-`col_idx` contains global column indices. The local blocks must cover every
-global row exactly once. If `n_local` is used, the blocks are expected in rank
-order. Alternatively, the global bounds can be set explicitly:
+Here `row_ptr` has length `local_n + 1` and is local to the process, while `col_idx` contains global column indices.
+The local blocks must cover every global row exactly once.
+If `n_local` is used, the blocks are expected in rank order.
+Alternatively, the global bounds can be set explicitly:
 
 ```cpp
 // inclusive bounds in the currently selected indexing
 solver.iparm_input_domain(begin + 1, begin + local_n);
 ```
 
-The bounds follow the indexing selected by `iparm_zero_based_indexing`. When the
-bounds are set explicitly, the `n_local` field is not used to determine the
-domain.
+The bounds follow the indexing selected by `iparm_zero_based_indexing`.
+When the bounds are set explicitly, the `n_local` field is not used to determine the domain.
 
 The right-hand side and the solution are stored on the master process.
-`solve` distributes the right-hand side internally because MKL requires local
-right-hand side rows for distributed input. Non-master processes pass an empty
-buffer (null pointer) for $B$.
+`solve` distributes the right-hand side internally because MKL requires local right-hand side rows for distributed input.
+Non-master processes pass an empty buffer (null pointer) for $B$.
 
-Only `iparm[39] = 1` is exposed. The default
-`distribution_category::centralized` corresponds to `iparm[39] = 0`. The MKL
-modes `iparm[39] = 2` and `iparm[39] = 3` are not wrapped.
+Only `iparm[39] = 1` is exposed.
+The default `distribution_category::centralized` corresponds to `iparm[39] = 0`.
+The MKL modes `iparm[39] = 2` and `iparm[39] = 3` are not wrapped.
 
 ## COO-to-CSR Conversion
 

@@ -202,10 +202,8 @@ namespace ezp {
 
         /**
          * Ensure every diagonal entry is explicitly present.
-         * The main pass above can only keep a diagonal entry that already appears
-         * (with any value, including a trivial one) in the input COO matrix.
-         * If a diagonal entry is entirely absent from the input, it must be
-         * synthesized here with a value of zero, as documented for the `full` flag.
+         * The main pass above can only keep a diagonal entry that already appears (with any value, including a trivial one) in the input COO matrix.
+         * If a diagonal entry is entirely absent from the input, it must be synthesized here with a value of zero, as documented for the `full` flag.
          * @param shift The indexing shift (0 or 1) used for row/col pointers.
          */
         auto insert_missing_diagonals(const IT shift) {
