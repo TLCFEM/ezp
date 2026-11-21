@@ -68,7 +68,7 @@ The library implements all precisions with both 32-bit and 64-bit integer indexi
 
 | availability | type of matrix                            | operation | solver  | package |
 |:------------:|-------------------------------------------|-----------|---------|---------|
-|      ✅      | sparse (one- or zero-indexing CSR format) | direct    | PARDISO | MKL     |
+|      ✅      | sparse (one- or zero-indexing CSR format, centralized or row-distributed) | direct    | PARDISO | MKL     |
 |      ✅      | sparse (one-indexing COO format)          | direct    | MUMPS   | MUMPS   |
 |      ✅      | sparse (zero-indexing CSR format)         | iterative | Lis     | Lis     |
 

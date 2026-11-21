@@ -127,6 +127,79 @@ template<data_t DT> auto random_pardiso() {
     }
 }
 
+void distributed_pardiso() {
+    const auto& comm_world{mpl::environment::comm_world()};
+
+    blacs_env<>::do_not_manage_mpi();
+
+    constexpr int_t N = 12, NRHS = 2;
+
+    const auto size = static_cast<int_t>(comm_world.size());
+    const auto rank = static_cast<int_t>(comm_world.rank());
+
+    if(size > N) return;
+
+    const auto block = N / size;
+    const auto remainder = N % size;
+
+    const auto local_n = block + (rank < remainder ? 1 : 0);
+    const auto begin = rank * block + std::min(rank, remainder);
+
+    std::vector<int_t> ia(local_n + 1), ja;
+    std::vector<double> a;
+
+    for(int_t i = 0; i < local_n; ++i) {
+        const auto row = begin + i;
+
+        ia[i] = static_cast<int_t>(ja.size()) + 1;
+
+        if(row > 0) {
+            ja.push_back(row);
+            a.push_back(-1.);
+        }
+
+        ja.push_back(row + 1);
+        a.push_back(4.);
+
+        if(row + 1 < N) {
+            ja.push_back(row + 2);
+            a.push_back(-1.);
+        }
+    }
+    ia[local_n] = static_cast<int_t>(ja.size()) + 1;
+
+    const auto rhs = [](const int_t row) {
+        auto value = 4.;
+        if(row > 0) value -= 1.;
+        if(row + 1 < N) value -= 1.;
+        return value;
+    };
+
+    std::vector<double> b;
+    if(0 == rank) {
+        b.resize(N * NRHS);
+        for(int_t K = 0; K < NRHS; ++K)
+            for(int_t I = 0; I < N; ++I) b[I + K * N] = rhs(I);
+    }
+
+    auto solver = pardiso<double, int_t, distribution_category::distributed_matrix>(matrix_type::real_and_nonsymmetric);
+
+    const auto info = solver.solve({N, local_n, static_cast<int_t>(ja.size()), ia.data(), ja.data(), a.data()}, {N, NRHS, 0 == rank ? b.data() : nullptr});
+
+    if(0 == rank) {
+        REQUIRE(info == 0);
+        for(const auto value : b) REQUIRE(std::abs(value - 1.) < 1e-10);
+    }
+}
+
+#ifdef EZP_ENABLE_TEST
+TEST_CASE("Distributed PARDISO", "[Sparse Solver]") {
+#else
+void distributed_dpardiso() {
+#endif
+    distributed_pardiso();
+}
+
 #ifdef EZP_ENABLE_TEST
 TEST_CASE("Random PARDISO", "[Sparse Solver]") {
 #else
@@ -167,6 +240,7 @@ int main(const int argc, const char* argv[]) {
     }
     else REPEAT = std::atoi(argv[1]);
 
+    distributed_dpardiso();
     random_dpardiso();
     random_spardiso();
     random_zpardiso();
