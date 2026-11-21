@@ -37,9 +37,9 @@ int main(int argc, char** argv) {
     constexpr int N = 40, NRHS = 1;
 
     config[0] = static_cast<int>(option.size()); // length of the option string
-    config[1] = N;             // n
-    config[2] = N;             // nnz
-    config[3] = NRHS;          // nrhs
+    config[1] = N;                               // n
+    config[2] = N;                               // nnz
+    config[3] = NRHS;                            // nrhs
 
     std::vector<int> ia(N + 1), ja(N);
     std::vector<double> a(N), b(N * NRHS, 1.);

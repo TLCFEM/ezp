@@ -68,7 +68,7 @@ namespace ezp {
     } // namespace detail
 
     template<data_t DT, index_t IT> struct sparse_csr_mat final {
-        IT n{}, nnz{};
+        IT n{}, n_local{}, nnz{};
         IT *row_ptr{nullptr}, *col_idx{nullptr};
         DT* data{nullptr};
 
@@ -78,6 +78,7 @@ namespace ezp {
         sparse_csr_mat() = default;
         sparse_csr_mat(const sparse_csr_mat& other)
             : n(other.n)
+            , n_local(other.n_local)
             , nnz(other.nnz)
             , row_ptr(other.row_ptr)
             , col_idx(other.col_idx)
@@ -96,6 +97,24 @@ namespace ezp {
 
         sparse_csr_mat(const IT n, const IT nnz, IT* const row_ptr, IT* const col_idx, DT* const data)
             : n(n)
+            , n_local(n)
+            , nnz(nnz)
+            , row_ptr(row_ptr)
+            , col_idx(col_idx)
+            , data(data) {}
+
+        /**
+         * Construct a distributed CSR matrix from a local row block.
+         * @param n The global number of rows (and columns) of the matrix.
+         * @param n_local The number of rows stored on this process.
+         * @param nnz The number of non-zero entries stored on this process.
+         * @param row_ptr Local row pointers of length `n_local + 1`.
+         * @param col_idx Column indices with global numbering.
+         * @param data Non-zero values of the local row block.
+         */
+        sparse_csr_mat(const IT n, const IT n_local, const IT nnz, IT* const row_ptr, IT* const col_idx, DT* const data)
+            : n(n)
+            , n_local(n_local)
             , nnz(nnz)
             , row_ptr(row_ptr)
             , col_idx(col_idx)
@@ -110,6 +129,7 @@ namespace ezp {
          */
         template<data_t DT2, index_t IT2> explicit sparse_csr_mat(const sparse_coo_mat<DT2, IT2>& coo, const bool one_based = false, const bool full = false)
             : n(IT{coo.n})
+            , n_local(IT{coo.n})
             , nnz(IT{coo.nnz}) {
             if(!coo.is_valid()) return;
 
@@ -182,10 +202,8 @@ namespace ezp {
 
         /**
          * Ensure every diagonal entry is explicitly present.
-         * The main pass above can only keep a diagonal entry that already appears
-         * (with any value, including a trivial one) in the input COO matrix.
-         * If a diagonal entry is entirely absent from the input, it must be
-         * synthesized here with a value of zero, as documented for the `full` flag.
+         * The main pass above can only keep a diagonal entry that already appears (with any value, including a trivial one) in the input COO matrix.
+         * If a diagonal entry is entirely absent from the input, it must be synthesized here with a value of zero, as documented for the `full` flag.
          * @param shift The indexing shift (0 or 1) used for row/col pointers.
          */
         auto insert_missing_diagonals(const IT shift) {
