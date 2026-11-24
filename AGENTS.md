@@ -51,6 +51,7 @@ mpirun -n 2 ./build/test.pgesv 10
 ```
 
 - Tags: `[Simple Solver]`, `[Expert Solver]`, `[Sparse Solver]`, `[Sparse CSR]`, `[Known]`, `[Benchmarking]`.
+- `include/catch2/` carries local MPI patches on top of the vendored amalgamation: default test order is declaration order with seed `0` (ranks must execute tests in the same order), reporter output/file writing is suppressed on non-root ranks, and `ConsoleReporter` is non-`final` so `benchmark.mumps.pardiso.cpp` can derive a rank-aware reporter. Reapply these patches when upgrading Catch2 — a wholesale amalgamation replacement silently removes them.
 - Every `tests/*.cpp` is compiled into `catch2` (with `EZP_ENABLE_TEST`) and also built as its own executable; new tests must use the existing dual `TEST_CASE` / `#ifndef EZP_ENABLE_TEST` `main` pattern, or the aggregate build links two `main`s.
 - Standalone solver-test executables **sleep forever when given no argument** (debugger hook); without `EZP_ENABLE_TEST` their `REQUIRE` is a no-op, so they only detect crashes. Use `catch2` for actual pass/fail validation (`test.sparse_csr` is the exception, using `assert`).
 - MUMPS and Lis are ON by default. PARDISO exists only when MKL is found (`EZP_MKL`); `test.pardiso` is a no-op otherwise.

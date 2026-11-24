@@ -3750,7 +3750,9 @@ namespace Catch {
         bool allowZeroTests = false;
 
         int abortAfter = -1;
-        uint32_t rngSeed = generateRandomSeed(GenerateFrom::Default);
+        // EZP MPI customization: tests are collective, so every rank must see
+        // the same order and seed. Never derive these from time/random_device.
+        uint32_t rngSeed = 0;
         bool rngSeedWasFixed = false;
 
         unsigned int shardCount = 1;
@@ -3767,7 +3769,7 @@ namespace Catch {
         WarnAbout::What warnings = WarnAbout::Nothing;
         ShowDurations showDurations = ShowDurations::DefaultForReporter;
         double minDuration = -1;
-        TestRunOrder runOrder = TestRunOrder::Randomized;
+        TestRunOrder runOrder = TestRunOrder::Declared;
         ColourMode defaultColourMode = ColourMode::PlatformDefault;
         WaitForKeypress::When waitForKeypress = WaitForKeypress::Never;
 
@@ -13339,7 +13341,8 @@ namespace Catch {
     // Fwd decls
     class TablePrinter;
 
-    class ConsoleReporter final : public StreamingReporterBase {
+    // EZP MPI customization: not final so tests can derive a rank-aware reporter.
+    class ConsoleReporter : public StreamingReporterBase {
         Detail::unique_ptr<TablePrinter> m_tablePrinter;
 
     public:

@@ -15,6 +15,9 @@
 
 #include "catchy.hpp"
 
+// EZP MPI customization: needed for rank-aware reporter behaviour below.
+#include <ezp/abstract/abstract_solver.hpp>
+
 #ifndef CATCH_WINDOWS_H_PROXY_HPP_INCLUDED
 #define CATCH_WINDOWS_H_PROXY_HPP_INCLUDED
 
@@ -1482,7 +1485,7 @@ namespace Catch {
                !m_config->rngSeedWasFixed()) {
                 Catch::cerr()
                     << "Warning: using sharding (--shard-count) with random "
-                       "order (--order rand, the default) and without a fixed "
+                       "order (--order rand) and without a fixed "
                        "numeric --rng-seed does not guarantee disjoint coverage "
                        "between shard invocations. Pass the same numeric "
                        "--rng-seed to every shard, or use --order decl or "
@@ -2742,6 +2745,9 @@ namespace Catch {
     namespace Clara {
         namespace Detail {
 
+            // EZP MPI customization: non-root ranks must not write reporter output files.
+            static const auto console_dummy = "master";
+
             void TokenStream::loadBuffer() {
                 m_tokenBuffer.clear();
 
@@ -2782,6 +2788,9 @@ namespace Catch {
                         }
                     }
                     else {
+                        // EZP MPI customization: redirect reporter output files on
+                        // non-root ranks so they do not clobber the master's file.
+                        if(0 != ezp::get_env<>().rank() && std::string(next).find("::out=") != std::string::npos) next = console_dummy;
                         m_tokenBuffer.push_back(
                             {TokenType::Argument, next}
                         );
@@ -3407,7 +3416,7 @@ namespace Catch {
             return ParserResult::runtimeError("Path filter '" + pathFilter + "' has unknown type prefix");
         };
 
-        auto cli = ExeName(config.processName) | Help(config.showHelp) | Opt(config.showSuccessfulTests)["-s"]["--success"]("include successful tests in output") | Opt(config.shouldDebugBreak)["-b"]["--break"]("break into debugger on failure") | Opt(config.noThrow)["-e"]["--nothrow"]("skip exception tests") | Opt(config.showInvisibles)["-i"]["--invisibles"]("show invisibles (tabs, newlines)") | Opt(config.defaultOutputFilename, "filename")["-o"]["--out"]("default output filename") | Opt(accept_many, setReporter, "name[::key=value]*")["-r"]["--reporter"]("reporter to use (defaults to console)") | Opt(config.name, "name")["-n"]["--name"]("suite name") | Opt([&](bool) { config.abortAfter = 1; })["-a"]["--abort"]("abort at first failure") | Opt([&](int x) { config.abortAfter = x; }, "no. failures")["-x"]["--abortx"]("abort after x failures") | Opt(accept_many, setWarning, "warning name")["-w"]["--warn"]("enable warnings") | Opt([&](bool flag) { config.showDurations = flag ? ShowDurations::Always : ShowDurations::Never; }, "yes|no")["-d"]["--durations"]("show test durations") | Opt(config.minDuration, "seconds")["-D"]["--min-duration"]("show test durations for tests taking at least the given number of seconds") | Opt(loadTestNamesFromFile, "filename")["-f"]["--input-file"]("load test names to run from a file") | Opt(config.filenamesAsTags)["-#"]["--filenames-as-tags"]("adds a tag for the filename") | Opt(accept_many, setSectionFilter, "section name")["-c"]["--section"]("specify section to run") | Opt(accept_many, setGeneratorFilter, "index spec")["-g"]["--generator-index"]("specify generator elements to try") | Opt(accept_many, setPathFilter, "path filter spec")["-p"]["--path-filter"]("qualified path filter") | Opt(setVerbosity, "quiet|normal|high")["-v"]["--verbosity"]("set output verbosity") | Opt(config.listTests)["--list-tests"]("list all/matching test cases") | Opt(config.listTags)["--list-tags"]("list all/matching tags") | Opt(config.listReporters)["--list-reporters"]("list all available reporters") | Opt(config.listListeners)["--list-listeners"]("list all listeners") | Opt(setTestOrder, "decl|lex|rand")["--order"]("test case order (defaults to rand)") | Opt(setRngSeed, "'time'|'random-device'|number")["--rng-seed"]("set a specific seed for random numbers") | Opt(setDefaultColourMode, "ansi|win32|none|default")["--colour-mode"]("what color mode should be used as default") | Opt(config.libIdentify)["--libidentify"]("report name and version according to libidentify standard") | Opt(setWaitForKeypress, "never|start|exit|both")["--wait-for-keypress"]("waits for a keypress before exiting") | Opt(config.skipBenchmarks)["--skip-benchmarks"]("disable running benchmarks") | Opt(setBenchmarkSamples, "samples")["--benchmark-samples"]("number of samples to collect (default: 100)") | Opt(config.benchmarkResamples, "resamples")["--benchmark-resamples"]("number of resamples for the bootstrap (default: 100000)") | Opt(config.benchmarkConfidenceInterval, "confidence interval")["--benchmark-confidence-interval"]("confidence interval for the bootstrap (between 0 and 1, default: 0.95)") | Opt(config.benchmarkNoAnalysis)["--benchmark-no-analysis"]("perform only measurements; do not perform any analysis") | Opt(config.benchmarkWarmupTime, "benchmarkWarmupTime")["--benchmark-warmup-time"]("amount of time in milliseconds spent on warming up each test (default: 100)") | Opt(setShardCount, "shard count")["--shard-count"]("split the tests to execute into this many groups") | Opt(setShardIndex, "shard index")["--shard-index"]("index of the group of tests to execute (see --shard-count)") | Opt(config.allowZeroTests)["--allow-running-no-tests"]("Treat 'No tests run' as a success") | Opt(config.prematureExitGuardFilePath, "path")["--premature-exit-guard-file"]("create a file before running tests and delete it during clean exit") | Arg(config.testsOrTags, "test name|pattern|tags")("which test or tests to use");
+        auto cli = ExeName(config.processName) | Help(config.showHelp) | Opt(config.showSuccessfulTests)["-s"]["--success"]("include successful tests in output") | Opt(config.shouldDebugBreak)["-b"]["--break"]("break into debugger on failure") | Opt(config.noThrow)["-e"]["--nothrow"]("skip exception tests") | Opt(config.showInvisibles)["-i"]["--invisibles"]("show invisibles (tabs, newlines)") | Opt(config.defaultOutputFilename, "filename")["-o"]["--out"]("default output filename") | Opt(accept_many, setReporter, "name[::key=value]*")["-r"]["--reporter"]("reporter to use (defaults to console)") | Opt(config.name, "name")["-n"]["--name"]("suite name") | Opt([&](bool) { config.abortAfter = 1; })["-a"]["--abort"]("abort at first failure") | Opt([&](int x) { config.abortAfter = x; }, "no. failures")["-x"]["--abortx"]("abort after x failures") | Opt(accept_many, setWarning, "warning name")["-w"]["--warn"]("enable warnings") | Opt([&](bool flag) { config.showDurations = flag ? ShowDurations::Always : ShowDurations::Never; }, "yes|no")["-d"]["--durations"]("show test durations") | Opt(config.minDuration, "seconds")["-D"]["--min-duration"]("show test durations for tests taking at least the given number of seconds") | Opt(loadTestNamesFromFile, "filename")["-f"]["--input-file"]("load test names to run from a file") | Opt(config.filenamesAsTags)["-#"]["--filenames-as-tags"]("adds a tag for the filename") | Opt(accept_many, setSectionFilter, "section name")["-c"]["--section"]("specify section to run") | Opt(accept_many, setGeneratorFilter, "index spec")["-g"]["--generator-index"]("specify generator elements to try") | Opt(accept_many, setPathFilter, "path filter spec")["-p"]["--path-filter"]("qualified path filter") | Opt(setVerbosity, "quiet|normal|high")["-v"]["--verbosity"]("set output verbosity") | Opt(config.listTests)["--list-tests"]("list all/matching test cases") | Opt(config.listTags)["--list-tags"]("list all/matching tags") | Opt(config.listReporters)["--list-reporters"]("list all available reporters") | Opt(config.listListeners)["--list-listeners"]("list all listeners") | Opt(setTestOrder, "decl|lex|rand")["--order"]("test case order (defaults to decl)") | Opt(setRngSeed, "'time'|'random-device'|number")["--rng-seed"]("set a specific seed for random numbers") | Opt(setDefaultColourMode, "ansi|win32|none|default")["--colour-mode"]("what color mode should be used as default") | Opt(config.libIdentify)["--libidentify"]("report name and version according to libidentify standard") | Opt(setWaitForKeypress, "never|start|exit|both")["--wait-for-keypress"]("waits for a keypress before exiting") | Opt(config.skipBenchmarks)["--skip-benchmarks"]("disable running benchmarks") | Opt(setBenchmarkSamples, "samples")["--benchmark-samples"]("number of samples to collect (default: 100)") | Opt(config.benchmarkResamples, "resamples")["--benchmark-resamples"]("number of resamples for the bootstrap (default: 100000)") | Opt(config.benchmarkConfidenceInterval, "confidence interval")["--benchmark-confidence-interval"]("confidence interval for the bootstrap (between 0 and 1, default: 0.95)") | Opt(config.benchmarkNoAnalysis)["--benchmark-no-analysis"]("perform only measurements; do not perform any analysis") | Opt(config.benchmarkWarmupTime, "benchmarkWarmupTime")["--benchmark-warmup-time"]("amount of time in milliseconds spent on warming up each test (default: 100)") | Opt(setShardCount, "shard count")["--shard-count"]("split the tests to execute into this many groups") | Opt(setShardIndex, "shard index")["--shard-index"]("index of the group of tests to execute (see --shard-count)") | Opt(config.allowZeroTests)["--allow-running-no-tests"]("Treat 'No tests run' as a success") | Opt(config.prematureExitGuardFilePath, "path")["--premature-exit-guard-file"]("create a file before running tests and delete it during clean exit") | Arg(config.testsOrTags, "test name|pattern|tags")("which test or tests to use");
 
         return cli;
     }
@@ -9760,6 +9769,8 @@ namespace Catch {
         m_headerPrinted = false;
     }
     void ConsoleReporter::testRunEnded(TestRunStats const& _testRunStats) {
+        // EZP MPI customization: only the master prints the run summary.
+        if(0 != ezp::get_env<>().rank()) return;
         printTotalsDivider(_testRunStats.totals);
         printTestRunTotals(m_stream, *m_colour, _testRunStats.totals);
         m_stream << '\n'
