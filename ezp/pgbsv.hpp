@@ -85,13 +85,38 @@ namespace ezp {
             loc.ku = ku;
             loc.lead = 2 * (loc.kl + loc.ku) + 1;
             loc.block = std::max(loc.n / std::max(IT{1}, this->ctx.n_rows - 1) + 1, std::max(loc.kl + loc.ku + 1, this->ctx.row_block(loc.n)));
-            loc.block = std::min(loc.block, loc.n);
+            const IT bw = loc.kl + loc.ku;
+            // Start from ScaLAPACK's own automatic choice (psgbdriver.f uses
+            // NB >= 2*bw), then tune it below for the pivot bookkeeping of the
+            // distributed band algorithm.
+            loc.block = std::min(std::max(loc.block, 2 * bw), loc.n);
+            // p?gbtrs feeds the pivot indices produced by p?gbtrf to SLASWP. When
+            // the last active process owns fewer than bw columns, some levels of
+            // the factorization leave those pivots untouched while the solve
+            // still applies them (segfault / wrong solution, e.g. N=43,44 with
+            // NB=6). Pick an NB whose tail owns at least bw columns; keep the
+            // number of active processes within the grid.
+            while(loc.block > bw + 1) {
+                const IT next = loc.block - 1;
+                const IT np = (loc.n - 1) / next + 1;
+                if(np > this->ctx.n_rows) break;
+                loc.block = next;
+                if(loc.n - (np - 1) * loc.block >= bw) break;
+            }
+            while(loc.block < loc.n) {
+                const IT np = (loc.n - 1) / loc.block + 1;
+                if(loc.n - (np - 1) * loc.block >= bw) break;
+                ++loc.block;
+            }
             loc.lines = this->ctx.rows(loc.n, loc.block);
             loc.desc1d_a = {501, this->trans_ctx.context, loc.n, loc.block, 0, loc.lead, 0, 0, 0};
 
             // see: https://github.com/Reference-ScaLAPACK/scalapack/issues/117
             loc.a.resize(loc.lead * loc.lines + loc.ku);
-            loc.ipiv.resize(std::min(loc.n, loc.lines + loc.kl + loc.ku), -987654);
+            // No sentinel: indices left untouched by p?gbtrf are still read by
+            // SLASWP in p?gbtrs, so an invalid value causes OOB swaps or wrong
+            // solutions.
+            loc.ipiv.resize(std::min(loc.n, loc.lines + bw));
         }
 
         using base_t::to_band;
