@@ -10162,6 +10162,9 @@ namespace Catch {
     }
 
     bool shouldShowDuration(IConfig const& config, double duration) {
+        // EZP MPI customization: duration lines are emitted by the master only,
+        // otherwise every rank prints them and the output interleaves.
+        if(0 != ezp::get_env<>().rank()) return false;
         if(config.showDurations() == ShowDurations::Always) {
             return true;
         }
